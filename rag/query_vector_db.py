@@ -1,3 +1,4 @@
+import os
 import sys
 from pathlib import Path
 from enum import Enum
@@ -10,8 +11,7 @@ from typing import List, Tuple, Dict, Union
 from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings
 
-openai_key = "###"
-openai_org = "###"
+# Do not call load_dotenv() here; main.py will load .env and/or set env vars from CLI before importing this module.
 
 class RAGFormat(Enum):
     PROBLEM_DESCRIPTION_OBJECTIVE = 1
@@ -21,20 +21,30 @@ class RAGFormat(Enum):
 
 constraint_df = pd.read_pickle(constraint_path)
 
-def load_vector_db(vector_db_path: Path, model_name: str = "text-embedding-3-large") -> Chroma:
+
+def load_vector_db(vector_db_path: Path, model_name: str = "text-embedding-3-large", openai_api_key: str | None = None, base_url: str | None = None) -> Chroma:
     """
     Loads the vector database from the specified directory.
 
     Args:
         vector_db_path (Path): The path to the vector database directory.
         model_name (str): The model name for generating embeddings.
+        openai_api_key (str|None): Optional OpenAI API key override. Falls back to OPENAI_API_KEY env var.
+        base_url (str|None): Optional OpenAI base URL override. Falls back to OPENAI_API_BASE env var.
 
     Returns:
         Chroma: The loaded vector database.
     """
-    embedding_function = OpenAIEmbeddings(model=model_name, openai_api_key=openai_key, organization=openai_org)
+    openai_api_key = openai_api_key or os.environ.get("OPENAI_API_KEY")
+    base_url = base_url or os.environ.get("OPENAI_API_BASE")
+
+    embedding_function = OpenAIEmbeddings(model=model_name,
+                                          openai_api_key=openai_api_key,
+                                          base_url=base_url)
     return Chroma(persist_directory=str(vector_db_path), embedding_function=embedding_function)
 
+
+# Preload DBs using env vars at import time (still backward compatible). If you want lazy loading, call load_vector_db from your runtime code.
 problem_desciption_vector_db = load_vector_db(problem_descriptions_vector_db_path)
 constraint_vector_db = load_vector_db(constraint_vector_db_path)
 objective_descriptions_vector_db = load_vector_db(objective_descriptions_vector_db_path)
@@ -56,7 +66,6 @@ def get_rag_from_problem_description(description: str, format_type: RAGFormat, t
     similar_documents_remove_duplicates = [document for document in similar_documents if document[0].page_content != description][:top_k]
     for i in range(top_k):
         document = similar_documents_remove_duplicates[i][0]
-        document.metadata['key']
         if format_type == RAGFormat.PROBLEM_DESCRIPTION_OBJECTIVE:
             rag_text += f"Problem Description:\n{document.page_content}\n\nObjective:\n{constraint_df[constraint_df.problem_name == document.metadata['key']].iloc[0].objective_description}\n\n"
         elif format_type == RAGFormat.PROBLEM_DESCRIPTION_CONSTRAINTS:

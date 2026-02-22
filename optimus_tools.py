@@ -139,4 +139,4 @@ def get_intro_latex_code_map(fname) -> Dict:
 
 if __name__ == "__main__":
     
-    get_intro_latex_code_map("./description.txt")
+    get_intro_latex_code_map("./desc.txt")

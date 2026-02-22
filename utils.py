@@ -1,14 +1,53 @@
 import os
 import json
+import time
+
 from groq import Groq
 import openai
+from dotenv import load_dotenv
 
-groq_key = "###"
-openai_key = "###"
-openai_org = "###"
+# Keep loading .env for backward compatibility; CLI will override os.environ before imports when using main.py
+load_dotenv()
 
-groq_client = Groq(api_key=groq_key)
-open_ai_client = openai.Client(api_key=openai_key, organization=openai_org)
+# Remove module-level reads and client creation; provide factory functions that read from os.environ at runtime
+
+
+def get_openai_client(api_key: str | None = None, base_url: str | None = None):
+    """Create and return an OpenAI client. If api_key/base_url are not provided, fall back to env vars."""
+    api_key = api_key or os.environ.get("OPENAI_API_KEY")
+    base_url = base_url or os.environ.get("OPENAI_API_BASE")
+    if not api_key:
+        raise RuntimeError("OpenAI API key not provided. Set OPENAI_API_KEY env var or pass --openai-api-key")
+    return openai.Client(api_key=api_key, base_url=base_url)
+
+
+# "llama3-70b-8192"
+def get_response(prompt, model: str | None = None, api_key: str | None = None, base_url: str | None = None):
+    """Call the chat completion API and return the text response.
+
+    model: if None, will fall back to MODEL_NAME env var.
+    api_key/base_url: optional overrides for the OpenAI client.
+    """
+    model = model or os.environ.get("MODEL_NAME")
+    if not model:
+        raise RuntimeError("Model name not provided. Set MODEL_NAME env var or pass --model-name")
+
+    print("开始访问大模型")
+    start_time = time.time()
+
+    client = get_openai_client(api_key=api_key, base_url=base_url)
+    chat_completion = client.chat.completions.create(
+                            messages=[{"role": "user", "content": prompt,} ],
+                            model=model,
+                        )
+
+    res = chat_completion.choices[0].message.content
+
+    end_time = time.time()
+    print("访问大模型结束，耗时：{}秒".format(end_time - start_time))
+
+
+    return res
 
 
 def extract_json_from_end(text):
@@ -88,6 +127,7 @@ def extract_json_from_end_backup(text):
     return jj
 
 
+
 def extract_list_from_end(text):
     ind = len(text) - 1
     while text[ind] != "]":
@@ -108,25 +148,6 @@ def extract_list_from_end(text):
     return jj
 
 
-# "llama3-70b-8192"
-def get_response(prompt, model="llama3-70b-8192"):
-    if model == "llama3-70b-8192":
-        client = groq_client
-    else:
-        client = open_ai_client
-    chat_completion = client.chat.completions.create(
-        messages=[
-            {
-                "role": "user",
-                "content": prompt,
-            }
-        ],
-        model=model,
-    )
-
-    res = chat_completion.choices[0].message.content
-    return res
-
 
 def load_state(state_file):
     with open(state_file, "r") as f:
@@ -137,6 +158,7 @@ def load_state(state_file):
 def save_state(state, dir):
     with open(dir, "w") as f:
         json.dump(state, f, indent=4)
+
 
 
 def shape_string_to_list(shape_string):
@@ -151,6 +173,7 @@ def shape_string_to_list(shape_string):
     if len(shape_list) == 1 and shape_list[0] == "":
         shape_list = []
     return shape_list
+
 
 
 def extract_equal_sign_closed(text):
@@ -199,9 +222,3 @@ def get_labels(dir):
         labels = json.load(f)
     return labels
 
-
-if __name__ == "__main__":
-    
-    text = 'To maximize the number of successfully transmitted shows, we can introduce a new variable called "TotalTransmittedShows". This variable represents the total number of shows that are successfully transmitted.\n\nThe constraint can be formulated as follows:\n\n\\[\n\\text{{Maximize }} TotalTransmittedShows\n\\]\n\nTo model this constraint in the MILP formulation, we need to add the following to the variables list:\n\n\\{\n    "TotalTransmittedShows": \\{\n        "shape": [],\n        "type": "integer",\n        "definition": "The total number of shows transmitted"\n    \\}\n\\}\n\nAnd the following auxiliary constraint:\n\n\\[\n\\forall i \\in \\text{{NumberOfShows}}, \\sum_{j=1}^{\\text{{NumberOfStations}}} \\text{{Transmitted}}[i][j] = \\text{{TotalTransmittedShows}}\n\\]\n\nThe complete output in the requested JSON format is:\n\n\\{\n    "FORMULATION": "",\n    "NEW VARIABLES": \\{\n        "TotalTransmittedShows": \\{\n            "shape": [],\n            "type": "integer",\n            "definition": "The total number of shows transmitted"\n        \\}\n    \\},\n    "AUXILIARY CONSTRAINTS": [\n        ""\n    ]\n\\'
-    
-    extract_json_from_end(text)

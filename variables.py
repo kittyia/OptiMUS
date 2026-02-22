@@ -1,6 +1,6 @@
 import os
 import json
-from V3.utils import extract_json_from_end, get_response
+from utils import extract_json_from_end, get_response
 
 import re
 

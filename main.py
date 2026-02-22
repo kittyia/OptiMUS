@@ -3,6 +3,25 @@ import time
 import json
 import argparse
 
+# Parse CLI args early so we can set OpenAI-related env vars before importing modules
+parser = argparse.ArgumentParser(description="Run the optimization problem")
+parser.add_argument("--dir", type=str, help="Directory of the problem")
+parser.add_argument("--devmode", type=int, default=1)
+parser.add_argument("--rag-mode", type=str, default=None, help="RAG mode (name or value)")
+parser.add_argument("--openai-api-key", "-k", type=str, default=None, help="OpenAI API key")
+parser.add_argument("--openai-api-base", "-b", type=str, default=None, help="OpenAI API base URL")
+parser.add_argument("--model-name", "-m", type=str, default=None, help="Model name to use")
+args = parser.parse_args()
+
+# If provided on the CLI, override environment variables (this makes CLI take precedence over .env)
+if args.openai_api_key:
+    os.environ["OPENAI_API_KEY"] = args.openai_api_key
+if args.openai_api_base:
+    os.environ["OPENAI_API_BASE"] = args.openai_api_base
+if args.model_name:
+    os.environ["MODEL_NAME"] = args.model_name
+
+# Now import the rest of the application (these modules may read env vars at import-time)
 from parameters import get_params
 from constraint import get_constraints
 from constraint_model import get_constraint_formulations
@@ -15,11 +34,19 @@ from execute_code import execute_and_debug
 from utils import create_state, get_labels
 from rag.rag_utils import RAGMode
 
-parser = argparse.ArgumentParser(description="Run the optimization problem")
-parser.add_argument("--dir", type=str, help="Directory of the problem")
-parser.add_argument("--devmode", type=int, default=1)
-parser.add_argument("--rag-mode", type=RAGMode, choices=list(RAGMode), default=None, help="RAG mode")
-args = parser.parse_args()
+
+# Convert rag-mode CLI arg (string) to the enum if provided
+_selected_rag_mode = None
+if args.rag_mode is not None:
+    # Try by name first, then by integer value
+    try:
+        _selected_rag_mode = RAGMode[args.rag_mode]
+    except Exception:
+        try:
+            _selected_rag_mode = RAGMode(int(args.rag_mode))
+        except Exception:
+            _selected_rag_mode = None
+
 
 if __name__ == "__main__":
 
@@ -27,9 +54,9 @@ if __name__ == "__main__":
     # Read the params state
     ########## SET THIS BEFORE RUNNING! ##########
     DEV_MODE = args.devmode
-    RAG_MODE = args.rag_mode
+    RAG_MODE = _selected_rag_mode
     ERROR_CORRECTION = True
-    MODEL = "gpt-4o"
+    MODEL = os.environ.get("MODEL_NAME", "Qwen/Qwen3-8B")
     # MODEL = "llama3-70b-8192"
     ##############################################
 
