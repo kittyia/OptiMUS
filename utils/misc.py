@@ -246,7 +246,7 @@ def get_openai_client():
         with open("config.json") as f:
             config = json.load(f)
         api_key = config.get("openai_api_key", "")
-        api_base = None  # 使用默认值
+        api_base = None
 
     if len(api_key) < 10:
         raise ValueError("Please provide a valid OpenAI API key via --api-key or config.json")
@@ -256,16 +256,17 @@ def get_openai_client():
         client = openai.Client(
             api_key=api_key,
             base_url=api_base,
-            organization=os.environ.get("OPENAI_ORG_ID") or config.get("openai_org_id", "")
+            organization=os.environ.get("OPENAI_ORG_ID") or (
+                config.get("openai_org_id", "") if 'config' in locals() else "")
         )
     else:
         client = openai.Client(
             api_key=api_key,
-            organization=os.environ.get("OPENAI_ORG_ID") or config.get("openai_org_id", "")
+            organization=os.environ.get("OPENAI_ORG_ID") or (
+                config.get("openai_org_id", "") if 'config' in locals() else "")
         )
 
     return client
-
 
 def get_tai_client():
     # 优先从环境变量读取

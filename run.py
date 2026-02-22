@@ -58,16 +58,16 @@ def main():
     if args.api_base:
         os.environ["OPENAI_API_BASE"] = args.api_base
 
-    if not args.model in [
-        "gpt-4-1106-preview",
-        "gpt-3.5-turbo",
-        "mistralai/Mixtral-8x7B-Instruct-v0.1",
-        "mistral-medium",
-    ]:
-        print(
-            "Invalid model name! Please choose from 'gpt-4-1106-preview', 'gpt-3.5-turbo', 'mistralai/Mixtral-8x7B-Instruct-v0.1', 'mistral-medium'"
-        )
-        exit(0)
+    # if not args.model in [
+    #     "gpt-4-1106-preview",
+    #     "gpt-3.5-turbo",
+    #     "mistralai/Mixtral-8x7B-Instruct-v0.1",
+    #     "mistral-medium",
+    # ]:
+    #     print(
+    #         "Invalid model name! Please choose from 'gpt-4-1106-preview', 'gpt-3.5-turbo', 'mistralai/Mixtral-8x7B-Instruct-v0.1', 'mistral-medium'"
+    #     )
+    #     exit(0)
 
     dataset = args.dataset.lower()
     problem = args.problem
@@ -99,7 +99,7 @@ def main():
     tai_client = get_tai_client()
     mistral_client = get_mistral_client()
 
-    if args.model.startswith("gpt"):
+    if args.model.startswith("gpt") or args.model.startswith("Qwen"):
         client = openai_client
     elif args.model.startswith("mistral-medium"):
         client = mistral_client
