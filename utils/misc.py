@@ -2,6 +2,7 @@
 Define templates for json file
 """
 
+import os
 import json
 from typing import List, Dict, Union
 import openai
@@ -236,32 +237,55 @@ def sanity_check(state):
 
 
 def get_openai_client():
-    with open("config.json") as f:
-        config = json.load(f)
-    if len(config["openai_api_key"]) < 10:
-        raise ValueError("Please provide a valid OpenAI API key in config.json")
-    config["openai_api_key"]
+    # 优先从环境变量读取
+    api_key = os.environ.get("OPENAI_API_KEY")
+    api_base = os.environ.get("OPENAI_API_BASE")
 
-    client = openai.Client(
-        api_key=config["openai_api_key"], organization=config["openai_org_id"]
-    )
+    # 如果没有环境变量，再从 config.json 读取
+    if not api_key:
+        with open("config.json") as f:
+            config = json.load(f)
+        api_key = config.get("openai_api_key", "")
+        api_base = None  # 使用默认值
+
+    if len(api_key) < 10:
+        raise ValueError("Please provide a valid OpenAI API key via --api-key or config.json")
+
+    # 创建 client，如果有 api_base 就使用，否则用默认值
+    if api_base:
+        client = openai.Client(
+            api_key=api_key,
+            base_url=api_base,
+            organization=os.environ.get("OPENAI_ORG_ID") or config.get("openai_org_id", "")
+        )
+    else:
+        client = openai.Client(
+            api_key=api_key,
+            organization=os.environ.get("OPENAI_ORG_ID") or config.get("openai_org_id", "")
+        )
 
     return client
 
 
 def get_tai_client():
-    with open("config.json") as f:
-        config = json.load(f)
-    if len(config["together_api_key"]) < 10:
-        raise ValueError("Please provide a valid Together API key in config.json")
+    # 优先从环境变量读取
+    api_key = os.environ.get("TOGETHER_API_KEY")
+    api_base = os.environ.get("TOGETHER_API_BASE", "https://api.together.xyz")
+
+    if not api_key:
+        with open("config.json") as f:
+            config = json.load(f)
+        api_key = config.get("together_api_key", "")
+
+    if len(api_key) < 10:
+        raise ValueError("Please provide a valid Together API key via environment variable or config.json")
 
     client = openai.OpenAI(
-        api_key=config["together_api_key"],
-        base_url="https://api.together.xyz",
+        api_key=api_key,
+        base_url=api_base,
     )
 
     return client
-
 
 def get_mistral_client():
     with open("config.json") as f:

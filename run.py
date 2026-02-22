@@ -36,7 +36,27 @@ def main():
         default=8,
         help="Number of max agent selections",
     )
+
+    # 新增：API Key 和 Base URL 参数
+    parser.add_argument(
+        "--api-key",
+        type=str,
+        help="OpenAI API key"
+    )
+
+    parser.add_argument("--api-base",
+                        type=str,
+                        help="OpenAI API base URL",
+                        default=None
+    )
+
     args = parser.parse_args()
+
+    # 将命令行参数写入环境变量
+    if args.api_key:
+        os.environ["OPENAI_API_KEY"] = args.api_key
+    if args.api_base:
+        os.environ["OPENAI_API_BASE"] = args.api_base
 
     if not args.model in [
         "gpt-4-1106-preview",
