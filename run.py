@@ -95,10 +95,6 @@ def main():
     tai_client = get_tai_client()
     mistral_client = get_mistral_client()
 
-    openai_client = get_openai_client()
-    tai_client = get_tai_client()
-    mistral_client = get_mistral_client()
-
     if args.model.startswith("gpt") or args.model.startswith("Qwen"):
         client = openai_client
     elif args.model.startswith("mistral-medium"):
