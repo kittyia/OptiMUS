@@ -1,23 +1,21 @@
 import os
+# 这两行代码需要放在最前面
+openai_key = os.environ.get("API_KEY")
+openai_url = os.environ.get("BASE_URL")
+
+
 import json
-from groq import Groq
 import openai
 
-groq_key = "###"
-openai_key = "###"
-openai_org = "###"
-
-groq_client = Groq(api_key=groq_key)
-open_ai_client = openai.Client(api_key=openai_key, organization=openai_org)
+open_ai_client = openai.OpenAI(api_key=openai_key, base_url=openai_url)
 
 
 def extract_json_from_end(text):
-    
     try:
         return extract_json_from_end_backup(text)
     except:
         pass
-    
+
     # Find the start of the JSON object
     json_start = text.find("{")
     if json_start == -1:
@@ -25,7 +23,7 @@ def extract_json_from_end(text):
 
     # Extract text starting from the first '{'
     json_text = text[json_start:]
-    
+
     # Remove backslashes used for escaping in LaTeX or other formats
     json_text = json_text.replace("\\", "")
 
@@ -56,8 +54,8 @@ def extract_json_from_end(text):
 
     return jj
 
-def extract_json_from_end_backup(text):
 
+def extract_json_from_end_backup(text):
     if "```json" in text:
         text = text.split("```json")[1]
         text = text.split("```")[0]
@@ -81,10 +79,10 @@ def extract_json_from_end_backup(text):
         if ind_comment == -1:
             break
         ind_end = text.find("\n", ind_comment)
-        text = text[:ind_comment] + text[ind_end + 1 :]
+        text = text[:ind_comment] + text[ind_end + 1:]
 
     # convert to json format
-    jj = json.loads(text[ind + 1 :])
+    jj = json.loads(text[ind + 1:])
     return jj
 
 
@@ -104,26 +102,17 @@ def extract_list_from_end(text):
         ind -= 1
 
     # convert to json format
-    jj = json.loads(text[ind + 1 :])
+    jj = json.loads(text[ind + 1:])
     return jj
 
 
 # "llama3-70b-8192"
-def get_response(prompt, model="llama3-70b-8192"):
-    if model == "llama3-70b-8192":
-        client = groq_client
-    else:
-        client = open_ai_client
+def get_response(prompt, model):
+    client = open_ai_client
     chat_completion = client.chat.completions.create(
-        messages=[
-            {
-                "role": "user",
-                "content": prompt,
-            }
-        ],
+        messages=[{"role": "user", "content": prompt}],
         model=model,
     )
-
     res = chat_completion.choices[0].message.content
     return res
 
@@ -156,7 +145,7 @@ def shape_string_to_list(shape_string):
 def extract_equal_sign_closed(text):
     ind_1 = text.find("=====")
     ind_2 = text.find("=====", ind_1 + 1)
-    obj = text[ind_1 + 6 : ind_2].strip()
+    obj = text[ind_1 + 6: ind_2].strip()
     return obj
 
 
@@ -194,6 +183,7 @@ def create_state(parent_dir, run_dir):
     state = {"description": desc, "parameters": params}
     return state
 
+
 def get_labels(dir):
     with open(os.path.join(dir, "labels.json"), "r") as f:
         labels = json.load(f)
@@ -201,7 +191,6 @@ def get_labels(dir):
 
 
 if __name__ == "__main__":
-    
     text = 'To maximize the number of successfully transmitted shows, we can introduce a new variable called "TotalTransmittedShows". This variable represents the total number of shows that are successfully transmitted.\n\nThe constraint can be formulated as follows:\n\n\\[\n\\text{{Maximize }} TotalTransmittedShows\n\\]\n\nTo model this constraint in the MILP formulation, we need to add the following to the variables list:\n\n\\{\n    "TotalTransmittedShows": \\{\n        "shape": [],\n        "type": "integer",\n        "definition": "The total number of shows transmitted"\n    \\}\n\\}\n\nAnd the following auxiliary constraint:\n\n\\[\n\\forall i \\in \\text{{NumberOfShows}}, \\sum_{j=1}^{\\text{{NumberOfStations}}} \\text{{Transmitted}}[i][j] = \\text{{TotalTransmittedShows}}\n\\]\n\nThe complete output in the requested JSON format is:\n\n\\{\n    "FORMULATION": "",\n    "NEW VARIABLES": \\{\n        "TotalTransmittedShows": \\{\n            "shape": [],\n            "type": "integer",\n            "definition": "The total number of shows transmitted"\n        \\}\n    \\},\n    "AUXILIARY CONSTRAINTS": [\n        ""\n    ]\n\\'
-    
+
     extract_json_from_end(text)

@@ -1,3 +1,4 @@
+import re
 import json
 from utils import get_response, extract_json_from_end, shape_string_to_list
 import pandas as pd

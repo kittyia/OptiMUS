@@ -3,6 +3,22 @@ import time
 import json
 import argparse
 
+from rag.rag_utils import RAGMode
+
+parser = argparse.ArgumentParser(description="Run the optimization problem")
+parser.add_argument("--dir", type=str, help="Directory of the problem")
+parser.add_argument("--devmode", type=int, default=1)
+parser.add_argument("--rag-mode", type=RAGMode, choices=list(RAGMode), default=None, help="RAG mode")
+parser.add_argument("--model", type=str, default="Qwen/Qwen3-8B", help="Model name")
+parser.add_argument("--base_url", type=str, default=None, help="Base URL of model")
+parser.add_argument("--api_key", type=str, default=None, help="API key of model")
+args = parser.parse_args()
+
+os.environ["API_KEY"] = args.api_key
+os.environ["BASE_URL"] = args.base_url
+os.environ["MODEL"] = args.model
+
+
 from parameters import get_params
 from constraint import get_constraints
 from constraint_model import get_constraint_formulations
@@ -13,13 +29,7 @@ from objective import get_objective
 from objective_model import get_objective_formulation
 from execute_code import execute_and_debug
 from utils import create_state, get_labels
-from rag.rag_utils import RAGMode
 
-parser = argparse.ArgumentParser(description="Run the optimization problem")
-parser.add_argument("--dir", type=str, help="Directory of the problem")
-parser.add_argument("--devmode", type=int, default=1)
-parser.add_argument("--rag-mode", type=RAGMode, choices=list(RAGMode), default=None, help="RAG mode")
-args = parser.parse_args()
 
 if __name__ == "__main__":
 
@@ -29,8 +39,7 @@ if __name__ == "__main__":
     DEV_MODE = args.devmode
     RAG_MODE = args.rag_mode
     ERROR_CORRECTION = True
-    MODEL = "gpt-4o"
-    # MODEL = "llama3-70b-8192"
+    MODEL = args.model
     ##############################################
 
     if DEV_MODE:

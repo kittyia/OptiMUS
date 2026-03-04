@@ -121,7 +121,7 @@ if __name__ == "__main__":
     with open(os.path.join(dir, "desc.txt"), "r") as f:
         desc = f.read()
 
-    with open(os.path.join(dir, "data.json"), "r") as f:
+    with open(os.path.join(dir, "params.json"), "r") as f:
         data = json.load(f)
 
     desc = desc + "\n" + json.dumps(data, indent=4)

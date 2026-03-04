@@ -1,3 +1,6 @@
+import os
+MODEL = os.environ.get("MODEL")
+
 import json
 import pandas as pd
 from rag.query_vector_db import RAGFormat, get_rag_from_problem_categories, get_rag_from_problem_description
@@ -204,7 +207,7 @@ def extract_score_constraint(desc, text, params, vars, constraints, c, logger):
                     logger.log(prompt)
                 llm_response = get_response(
                     prompt,
-                    model="gpt-4o",  # you can pass this as an argument to the function instead of hardcoding it
+                    model=MODEL,  # you can pass this as an argument to the function instead of hardcoding it
                 )
                 if logger:
                     logger.log("---")
