@@ -1,0 +1,66 @@
+{
+    "parametrized_description": "Fit the \u2018best\u2019 straight line y = bx + a where the objective is to minimize the maximum deviation of all the K observed values of Y from the value predicted by the linear relationship. The observed values of y are given by Y and the observed values of x are given by X.",
+    "keywords": [
+        "optimization",
+        "minimization",
+        "maximization"
+    ],
+    "parameters": {
+        "NumObs": {
+            "description": "Number of observed data points",
+            "shape": []
+        },
+        "Y": {
+            "description": "Observed values of y",
+            "shape": [
+                "NumObs"
+            ]
+        },
+        "X": {
+            "description": "Observed values of x",
+            "shape": [
+                "NumObs"
+            ]
+        }
+    },
+    "variables": {
+        "Intercept": {
+            "description": "Intercept of the fitted line (a)",
+            "type": "continuous",
+            "shape": []
+        },
+        "Slope": {
+            "description": "Slope of the fitted line (b)",
+            "type": "continuous",
+            "shape": []
+        },
+        "MaxDev": {
+            "description": "The maximum absolute deviation across all data points",
+            "type": "continuous",
+            "shape": []
+        }
+    },
+    "constraints": [
+        {
+            "description": "The deviation is the absolute difference between predicted y values and observed y values",
+            "formulation": "MaxDev \\geq (Slope \\times X_{k} + Intercept) - Y_{k}, \\quad \\forall k \\in \\{1, \\ldots, NumObs\\}",
+            "code": {
+                "gurobipy": "for k in range(NumObs):\n    model.addConstr(MaxDev >= (Slope * X[k] + Intercept) - Y[k], name=f\"PosDev_{k}\")"
+            }
+        },
+        {
+            "description": "Deviation should be minimized for all K observed values",
+            "formulation": "MaxDev \\geq Y_{k} - (Slope \\times X_{k} + Intercept), \\quad \\forall k \\in \\{1, \\ldots, NumObs\\}",
+            "code": {
+                "gurobipy": "for k in range(NumObs):\n    model.addConstr(MaxDev >= Y[k] - (Slope * X[k] + Intercept), name=f\"NegDev_{k}\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize the maximum deviation of all K observed values from the predicted y values",
+        "formulation": "\\min \\ MaxDev",
+        "code": {
+            "gurobipy": "model.setObjective(MaxDev, GRB.MINIMIZE)"
+        }
+    }
+}

@@ -1,0 +1,82 @@
+{
+    "parametrized_description": "Maximize the total value of the packed items, where the knapsack has a capacity of C. Each item k has a value of Value and a size of Size.",
+    "keywords": [
+        "optimization",
+        "maximization"
+    ],
+    "parameters": {
+        "C": {
+            "description": "Total Capacity of the Knapsack",
+            "shape": []
+        },
+        "Value": {
+            "description": "Value of item k",
+            "shape": [
+                "NumItems"
+            ]
+        },
+        "Size": {
+            "description": "Size of item k",
+            "shape": [
+                "NumItems"
+            ]
+        },
+        "NumItems": {
+            "description": "Number of items",
+            "shape": []
+        }
+    },
+    "variables": {
+        "IsIncluded": {
+            "description": "Whether item k is included in the knapsack (1 if included, 0 otherwise)",
+            "type": "integer",
+            "shape": [
+                "NumItems"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "The total size of the items in the knapsack must not exceed the capacity C",
+            "formulation": "\\sum_{k=1}^{NumItems} Size_{k} \\times IsIncluded_{k} \\leq C",
+            "code": {
+                "gurobipy": "model.addConstr(quicksum(Size[k] * IsIncluded[k] for k in range(NumItems)) <= C, name=\"KnapsackCapacity\")"
+            }
+        },
+        {
+            "description": "Each item can either be included or not in the knapsack - cannot be fractioned",
+            "formulation": "IsIncluded_{k} \\in \\{0, 1\\}, \\quad \\forall k \\in \\{1, \\ldots, NumItems\\}",
+            "code": {
+                "gurobipy": "for k in range(NumItems):\n    model.addConstr(IsIncluded[k] <= 1, name=f\"Binary_{k}\")"
+            }
+        },
+        {
+            "description": "The knapsack capacity C is non-negative",
+            "formulation": "C \\geq 0",
+            "code": {
+                "gurobipy": "# C is a parameter, non-negativity is inherent"
+            }
+        },
+        {
+            "description": "Each item k has a non-negative size",
+            "formulation": "Size_{k} \\geq 0, \\quad \\forall k \\in \\{1, \\ldots, NumItems\\}",
+            "code": {
+                "gurobipy": "# Size is a parameter, non-negativity is inherent"
+            }
+        },
+        {
+            "description": "Each item k has a non-negative value",
+            "formulation": "Value_{k} \\geq 0, \\quad \\forall k \\in \\{1, \\ldots, NumItems\\}",
+            "code": {
+                "gurobipy": "# Value is a parameter, non-negativity is inherent"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Maximize the total value of the items packed in the knapsack",
+        "formulation": "\\max \\sum_{k=1}^{NumItems} Value_{k} \\times IsIncluded_{k}",
+        "code": {
+            "gurobipy": "model.setObjective(quicksum(Value[k] * IsIncluded[k] for k in range(NumItems)), GRB.MAXIMIZE)"
+        }
+    }
+}

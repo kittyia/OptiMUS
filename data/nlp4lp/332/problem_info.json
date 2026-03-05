@@ -1,0 +1,70 @@
+{
+    "parametrized_description": "How to distribute these files on the floppy disks in order to minimize the number of floppy disks used, given that each floppy disk has a Capacity and there are N different files with sizes represented by Size.",
+    "keywords": [
+        "optimization",
+        "minimization"
+    ],
+    "parameters": {
+        "Capacity": {
+            "description": "Total capacity of a floppy disk",
+            "shape": []
+        },
+        "NumFiles": {
+            "description": "Number of files to save",
+            "shape": []
+        },
+        "Size": {
+            "description": "Size of each file j",
+            "shape": [
+                "NumFiles"
+            ]
+        }
+    },
+    "variables": {
+        "DiskUsed": {
+            "description": "Binary variable indicating whether disk d is used",
+            "type": "integer",
+            "shape": [
+                "NumFiles"
+            ]
+        },
+        "Assign": {
+            "description": "Binary variable indicating whether file j is assigned to disk d",
+            "type": "integer",
+            "shape": [
+                "NumFiles",
+                "NumFiles"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "The sum of file sizes on each floppy disk cannot exceed the Capacity",
+            "formulation": "\\sum_{j=1}^{NumFiles} Size_j \\times Assign_{j,d} \\leq Capacity \\times DiskUsed_d \\quad \\forall d \\in \\{1, \\ldots, NumFiles\\}",
+            "code": {
+                "gurobipy": "model.addConstrs((quicksum(Size[j] * Assign[j, d] for j in range(NumFiles)) <= Capacity * DiskUsed[d] for d in range(NumFiles)), name=\"DiskCapacity\")"
+            }
+        },
+        {
+            "description": "Each file must be placed on exactly one floppy disk",
+            "formulation": "\\sum_{d=1}^{NumFiles} Assign_{j,d} = 1 \\quad \\forall j \\in \\{1, \\ldots, NumFiles\\}",
+            "code": {
+                "gurobipy": "model.addConstrs((quicksum(Assign[j, d] for d in range(NumFiles)) == 1 for j in range(NumFiles)), name=\"FileAssign\")"
+            }
+        },
+        {
+            "description": "DiskUsed and Assign variables are binary (0 or 1)",
+            "formulation": "DiskUsed_d \\in \\{0, 1\\} \\quad \\forall d, \\quad Assign_{j,d} \\in \\{0, 1\\} \\quad \\forall j, d",
+            "code": {
+                "gurobipy": "# Binary constraints are enforced via variable type (GRB.BINARY) when creating variables"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize the number of floppy disks used in the distribution of files",
+        "formulation": "\\min \\sum_{d=1}^{NumFiles} DiskUsed_d",
+        "code": {
+            "gurobipy": "model.setObjective(quicksum(DiskUsed[d] for d in range(NumFiles)), GRB.MINIMIZE)"
+        }
+    }
+}

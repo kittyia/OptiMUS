@@ -1,0 +1,71 @@
+{
+    "parametrized_description": "A school district has NumNeighborhoods neighborhoods, NumSchools schools, and NumGrades grades. Each school s has Capacity for each grade g. Each neighborhood n has Population students of each grade g. The Distance from each neighborhood to each school is known. Assign all students to schools to minimize total distance traveled, while respecting school capacities.",
+    "keywords": [
+        "assignment",
+        "transportation",
+        "school districting"
+    ],
+    "parameters": {
+        "NumSchools": {
+            "description": "Total number of schools",
+            "shape": []
+        },
+        "NumGrades": {
+            "description": "Total number of grades",
+            "shape": []
+        },
+        "NumNeighborhoods": {
+            "description": "Total number of neighborhoods",
+            "shape": []
+        },
+        "Capacity": {
+            "description": "Capacity of school s for grade g",
+            "shape": ["NumSchools", "NumGrades"]
+        },
+        "Population": {
+            "description": "Number of students of grade g in neighborhood n",
+            "shape": ["NumNeighborhoods", "NumGrades"]
+        },
+        "Distance": {
+            "description": "Distance from neighborhood n to school s",
+            "shape": ["NumNeighborhoods", "NumSchools"]
+        }
+    },
+    "variables": {
+        "Assignment": {
+            "description": "Number of students of grade g from neighborhood n assigned to school s",
+            "type": "continuous",
+            "shape": ["NumNeighborhoods", "NumSchools", "NumGrades"]
+        }
+    },
+    "constraints": [
+        {
+            "description": "All students of each grade in each neighborhood must be assigned to a school.",
+            "formulation": "\\sum_{s=1}^{NumSchools} Assignment_{n,s,g} = Population_{n,g} \\quad \\forall n, g",
+            "code": {
+                "gurobipy": "model.addConstrs((quicksum(Assignment[n, s, g] for s in range(NumSchools)) == Population[n][g] for n in range(NumNeighborhoods) for g in range(NumGrades)), name=\"AllAssigned\")"
+            }
+        },
+        {
+            "description": "The number of students assigned to each school for each grade must not exceed the school's capacity.",
+            "formulation": "\\sum_{n=1}^{NumNeighborhoods} Assignment_{n,s,g} \\leq Capacity_{s,g} \\quad \\forall s, g",
+            "code": {
+                "gurobipy": "model.addConstrs((quicksum(Assignment[n, s, g] for n in range(NumNeighborhoods)) <= Capacity[s][g] for s in range(NumSchools) for g in range(NumGrades)), name=\"SchoolCapacity\")"
+            }
+        },
+        {
+            "description": "All assignment values must be non-negative.",
+            "formulation": "Assignment_{n,s,g} \\geq 0 \\quad \\forall n, s, g",
+            "code": {
+                "gurobipy": "model.addConstrs((Assignment[n, s, g] >= 0 for n in range(NumNeighborhoods) for s in range(NumSchools) for g in range(NumGrades)), name=\"NonNeg\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize the total distance traveled by all students.",
+        "formulation": "\\min \\sum_{n=1}^{NumNeighborhoods} \\sum_{s=1}^{NumSchools} \\sum_{g=1}^{NumGrades} Distance_{n,s} \\times Assignment_{n,s,g}",
+        "code": {
+            "gurobipy": "model.setObjective(quicksum(Distance[n][s] * Assignment[n, s, g] for n in range(NumNeighborhoods) for s in range(NumSchools) for g in range(NumGrades)), GRB.MINIMIZE)"
+        }
+    }
+}

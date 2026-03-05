@@ -1,0 +1,143 @@
+{
+    "parametrized_description": "What selling, storing and manufacturing policy should the company pursue in order to maximize profit? The company has M machines and produces K different products. Each product k has a profit of Profit. The time taken to manufacture product k on machine m is given by Time. There are maintenance times for each machine m in each time period i, denoted by Maintain. The limit for storing product k for time period i is given by Limit, and the company has a store price of StorePrice. The company aims to keep a quantity of KeepQuantity for product k, and there are WorkHours working hours available for production.",
+    "keywords": [
+        "optimization",
+        "maximization"
+    ],
+    "parameters": {
+        "NumMachines": {
+            "description": "Number of total machines",
+            "shape": [
+                "NumMachinesTypes"
+            ]
+        },
+        "Profit": {
+            "description": "Profit for product k",
+            "shape": [
+                "NumProducts"
+            ]
+        },
+        "NumProducts": {
+            "description": "Number of products",
+            "shape": []
+        },
+        "NumMachinesTypes": {
+            "description": "Number of types of machines",
+            "shape": []
+        },
+        "NumPeriods": {
+            "description": "Number of time periods",
+            "shape": []
+        },
+        "Time": {
+            "description": "Time taken by product k on machine m",
+            "shape": [
+                "NumProducts",
+                "NumMachinesTypes"
+            ]
+        },
+        "Maintain": {
+            "description": "Maintenance time for machine m in time period i",
+            "shape": [
+                "NumMachinesTypes",
+                "NumPeriods"
+            ]
+        },
+        "Limit": {
+            "description": "Limit of storing product k for time period i",
+            "shape": [
+                "NumProducts",
+                "NumPeriods"
+            ]
+        },
+        "StorePrice": {
+            "description": "Price for storing products",
+            "shape": []
+        },
+        "KeepQuantity": {
+            "description": "Quantity of product k to keep",
+            "shape": []
+        },
+        "NumWorkHours": {
+            "description": "Number of working hours",
+            "shape": []
+        }
+    },
+    "variables": {
+        "Sell": {
+            "description": "Amount of product k sold in period i",
+            "type": "continuous",
+            "shape": [
+                "NumProducts",
+                "NumPeriods"
+            ]
+        },
+        "Manufacture": {
+            "description": "Amount of product k manufactured in period i",
+            "type": "continuous",
+            "shape": [
+                "NumProducts",
+                "NumPeriods"
+            ]
+        },
+        "Store": {
+            "description": "Amount of product k stored at end of period i",
+            "type": "continuous",
+            "shape": [
+                "NumProducts",
+                "NumPeriods"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "Machine capacity constraint: total production time on each machine type in each period must not exceed available hours (considering maintenance)",
+            "formulation": "\\sum_{k=1}^{NumProducts} Time_{k,m} \\times Manufacture_{k,i} \\leq NumWorkHours \\times 24 \\times (NumMachines_{m} - Maintain_{m,i}), \\quad \\forall m, i",
+            "code": {
+                "gurobipy": "for m in range(NumMachinesTypes):\n    for i in range(NumPeriods):\n        model.addConstr(gurobipy.quicksum(Time[k][m] * Manufacture[k][i] for k in range(NumProducts)) <= NumWorkHours * 24 * (NumMachines[m] - Maintain[m][i]), name=f\"MachineCapacity_{m}_{i}\")"
+            }
+        },
+        {
+            "description": "Sales limit: amount sold of product k in period i must not exceed the marketing limit",
+            "formulation": "Sell_{k,i} \\leq Limit_{k,i}, \\quad \\forall k, i",
+            "code": {
+                "gurobipy": "for k in range(NumProducts):\n    for i in range(NumPeriods):\n        model.addConstr(Sell[k][i] <= Limit[k][i], name=f\"SalesLimit_{k}_{i}\")"
+            }
+        },
+        {
+            "description": "Storage limit: at most 100 units of each product can be stored at any time",
+            "formulation": "Store_{k,i} \\leq 100, \\quad \\forall k, i",
+            "code": {
+                "gurobipy": "for k in range(NumProducts):\n    for i in range(NumPeriods):\n        model.addConstr(Store[k][i] <= 100, name=f\"StorageLimit_{k}_{i}\")"
+            }
+        },
+        {
+            "description": "Inventory balance: storage at end of period equals previous storage plus manufacturing minus sales. No initial stock.",
+            "formulation": "Store_{k,i} = Store_{k,i-1} + Manufacture_{k,i} - Sell_{k,i}, \\quad \\forall k, i \\quad (Store_{k,0} = Manufacture_{k,0} - Sell_{k,0})",
+            "code": {
+                "gurobipy": "for k in range(NumProducts):\n    for i in range(NumPeriods):\n        if i == 0:\n            model.addConstr(Store[k][i] == Manufacture[k][i] - Sell[k][i], name=f\"Balance_{k}_{i}\")\n        else:\n            model.addConstr(Store[k][i] == Store[k][i-1] + Manufacture[k][i] - Sell[k][i], name=f\"Balance_{k}_{i}\")"
+            }
+        },
+        {
+            "description": "At the end of the last period, we must have KeepQuantity of each product in storage",
+            "formulation": "Store_{k,NumPeriods} = KeepQuantity, \\quad \\forall k",
+            "code": {
+                "gurobipy": "for k in range(NumProducts):\n    model.addConstr(Store[k][NumPeriods-1] == KeepQuantity, name=f\"FinalStock_{k}\")"
+            }
+        },
+        {
+            "description": "Products must have non-negative production, sales, and storage quantities",
+            "formulation": "Sell_{k,i} \\geq 0, \\quad Manufacture_{k,i} \\geq 0, \\quad Store_{k,i} \\geq 0, \\quad \\forall k, i",
+            "code": {
+                "gurobipy": "for k in range(NumProducts):\n    for i in range(NumPeriods):\n        model.addConstr(Sell[k][i] >= 0, name=f\"NonNegSell_{k}_{i}\")\n        model.addConstr(Manufacture[k][i] >= 0, name=f\"NonNegMfg_{k}_{i}\")\n        model.addConstr(Store[k][i] >= 0, name=f\"NonNegStore_{k}_{i}\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Maximize the company's profit from selling its products while accounting for storage costs",
+        "formulation": "\\max \\ \\sum_{k=1}^{NumProducts} \\sum_{i=1}^{NumPeriods} \\left( Profit_{k} \\times Sell_{k,i} - StorePrice \\times Store_{k,i} \\right)",
+        "code": {
+            "gurobipy": "model.setObjective(gurobipy.quicksum(Profit[k] * Sell[k][i] - StorePrice * Store[k][i] for k in range(NumProducts) for i in range(NumPeriods)), GRB.MAXIMIZE)"
+        }
+    }
+}

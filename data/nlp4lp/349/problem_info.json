@@ -1,0 +1,108 @@
+{
+    "parametrized_description": "How many batches of each part should the manufacturer produce each month to maximize profit, taking into account the number of machines (M), the number of types of parts (P), the time required to produce a batch on machine m for part p (TimeRequired), the cost of operating machine m for a month (MachineCosts), the time each machine m is available for production each month (Availability), the price at which part p can be sold (Prices), and the setup time required before producing a batch of part p (SetupTime)?",
+    "keywords": [
+        "optimization",
+        "maximization"
+    ],
+    "parameters": {
+        "M": {
+            "description": "The number of machines available",
+            "shape": []
+        },
+        "P": {
+            "description": "The number of types of parts to produce",
+            "shape": []
+        },
+        "TimeRequired": {
+            "description": "The time required to produce a batch on machine m for part p",
+            "shape": [
+                "M",
+                "P"
+            ]
+        },
+        "MachineCosts": {
+            "description": "The cost of operating machine m for a month",
+            "shape": [
+                "M"
+            ]
+        },
+        "Availability": {
+            "description": "The time each machine m is available for production each month",
+            "shape": [
+                "M"
+            ]
+        },
+        "Prices": {
+            "description": "The price at which part p can be sold",
+            "shape": [
+                "P"
+            ]
+        },
+        "SetupTime": {
+            "description": "The setup time required before producing a batch of part p",
+            "shape": [
+                "P"
+            ]
+        }
+    },
+    "variables": {
+        "Batches": {
+            "description": "Number of batches of each part p produced",
+            "type": "continuous",
+            "shape": [
+                "P"
+            ]
+        },
+        "SetupFlag": {
+            "description": "Binary flag indicating whether part p is set up for production (1) or not (0)",
+            "type": "integer",
+            "shape": [
+                "P"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "Each machine m can be used for up to Availability hours per month",
+            "formulation": "\\sum_{p=1}^{P} TimeRequired_{m,p} \\times Batches_{p} \\leq Availability_{m} \\quad \\forall m \\in \\{2, \\ldots, M\\}",
+            "code": {
+                "gurobipy": "for m in range(1, M):\n    model.addConstr(quicksum(TimeRequired[m][p] * Batches[p] for p in range(P)) <= Availability[m], name=f\"MachineAvail_{m}\")"
+            }
+        },
+        {
+            "description": "Time required to produce a batch of part p on machine m plus the setup time for part p must not exceed the available time on machine m",
+            "formulation": "\\sum_{p=1}^{P} \\left( TimeRequired_{1,p} \\times Batches_{p} + SetupTime_{p} \\times SetupFlag_{p} \\right) \\leq Availability_{1}",
+            "code": {
+                "gurobipy": "model.addConstr(quicksum(TimeRequired[0][p] * Batches[p] + SetupTime[p] * SetupFlag[p] for p in range(P)) <= Availability[0], name=\"Machine1WithSetup\")"
+            }
+        },
+        {
+            "description": "Number of batches for each part is non-negative",
+            "formulation": "Batches_{p} \\geq 0 \\quad \\forall p \\in \\{1, \\ldots, P\\}",
+            "code": {
+                "gurobipy": "for p in range(P):\n    model.addConstr(Batches[p] >= 0, name=f\"BatchNonNeg_{p}\")"
+            }
+        },
+        {
+            "description": "If any batches of part p are produced, the setup flag must be 1",
+            "formulation": "Batches_{p} \\leq M_{big} \\times SetupFlag_{p} \\quad \\forall p \\in \\{1, \\ldots, P\\}",
+            "code": {
+                "gurobipy": "M_big = 10000\nfor p in range(P):\n    model.addConstr(Batches[p] <= M_big * SetupFlag[p], name=f\"SetupLink_{p}\")"
+            }
+        },
+        {
+            "description": "Setup flag is binary for each part",
+            "formulation": "SetupFlag_{p} \\in \\{0, 1\\} \\quad \\forall p \\in \\{1, \\ldots, P\\}",
+            "code": {
+                "gurobipy": "for p in range(P):\n    model.addConstr(SetupFlag[p] <= 1, name=f\"SetupBinary_{p}\")\n    model.addConstr(SetupFlag[p] >= 0, name=f\"SetupBinaryLB_{p}\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Maximize profit, which is the total revenue from selling the parts minus the total operating costs of the machines",
+        "formulation": "\\max \\ \\sum_{p=1}^{P} Prices_{p} \\times Batches_{p} - \\sum_{m=1}^{M} MachineCosts_{m} \\times \\left( \\sum_{p=1}^{P} TimeRequired_{m,p} \\times Batches_{p} \\right)",
+        "code": {
+            "gurobipy": "model.setObjective(\n    quicksum(Prices[p] * Batches[p] for p in range(P))\n    - quicksum(MachineCosts[m] * quicksum(TimeRequired[m][p] * Batches[p] for p in range(P)) for m in range(M)),\n    GRB.MAXIMIZE)"
+        }
+    }
+}

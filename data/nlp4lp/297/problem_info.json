@@ -1,0 +1,101 @@
+{
+    "parametrized_description": "A landscaper has A square feet of grass land in a customer's backyard where they need to cut grass using either a heavy-duty yard machine or a gas lawn mower. For each square foot of land, the heavy-duty yard machine requires TimeHeavyDuty seconds while the gas lawn mower takes TimeGasMower seconds. Per square foot, the heavy-duty yard machine produces PollutionHeavyDuty units of pollution and requires FuelHeavyDuty units of fuel. Conversely, the gas lawn mower generates PollutionGasMower units of pollution for each square foot and requires FuelGasMower units of fuel. There are FuelTotal units of fuel available and the landscaper can produce no more than PollutionMax units of pollution. For how many square feet should each machine be used to minimize the time required to cut this customer's backyard?",
+    "keywords": [
+        "optimization",
+        "minimization"
+    ],
+    "parameters": {
+        "TotalArea": {
+            "description": "Total area of grass land in square feet",
+            "shape": []
+        },
+        "TimeHeavyDuty": {
+            "description": "Time required in seconds to cut one square foot of land using the heavy-duty yard machine",
+            "shape": []
+        },
+        "TimeGasMower": {
+            "description": "Time required in seconds to cut one square foot of land using the gas lawn mower",
+            "shape": []
+        },
+        "PollutionHeavyDuty": {
+            "description": "Pollution produced per square foot by the heavy-duty yard machine",
+            "shape": []
+        },
+        "PollutionGasMower": {
+            "description": "Pollution produced per square foot by the gas lawn mower",
+            "shape": []
+        },
+        "FuelHeavyDuty": {
+            "description": "Fuel required per square foot by the heavy-duty yard machine",
+            "shape": []
+        },
+        "FuelGasMower": {
+            "description": "Fuel required per square foot by the gas lawn mower",
+            "shape": []
+        },
+        "TotalFuel": {
+            "description": "Total units of fuel available",
+            "shape": []
+        },
+        "MaxPollution": {
+            "description": "Maximum allowable units of pollution",
+            "shape": []
+        }
+    },
+    "variables": {
+        "AreaHeavyDuty": {
+            "description": "Square feet of land cut by the heavy-duty yard machine",
+            "type": "continuous",
+            "shape": []
+        },
+        "AreaGasMower": {
+            "description": "Square feet of land cut by the gas lawn mower",
+            "type": "continuous",
+            "shape": []
+        }
+    },
+    "constraints": [
+        {
+            "description": "Square feet cut by heavy-duty yard machine is non-negative",
+            "formulation": "AreaHeavyDuty \\geq 0",
+            "code": {
+                "gurobipy": "model.addConstr(AreaHeavyDuty >= 0, name=\"HeavyDutyNonNeg\")"
+            }
+        },
+        {
+            "description": "Square feet cut by gas lawn mower is non-negative",
+            "formulation": "AreaGasMower \\geq 0",
+            "code": {
+                "gurobipy": "model.addConstr(AreaGasMower >= 0, name=\"GasMowerNonNeg\")"
+            }
+        },
+        {
+            "description": "Total square feet cut is equal to TotalArea",
+            "formulation": "AreaHeavyDuty + AreaGasMower = TotalArea",
+            "code": {
+                "gurobipy": "model.addConstr(AreaHeavyDuty + AreaGasMower == TotalArea, name=\"TotalAreaConstr\")"
+            }
+        },
+        {
+            "description": "Total pollution produced by heavy-duty yard machine and gas lawn mower is at most MaxPollution",
+            "formulation": "PollutionHeavyDuty \\times AreaHeavyDuty + PollutionGasMower \\times AreaGasMower \\leq MaxPollution",
+            "code": {
+                "gurobipy": "model.addConstr(PollutionHeavyDuty * AreaHeavyDuty + PollutionGasMower * AreaGasMower <= MaxPollution, name=\"MaxPollutionConstr\")"
+            }
+        },
+        {
+            "description": "Total fuel used by heavy-duty yard machine and gas lawn mower is at most TotalFuel",
+            "formulation": "FuelHeavyDuty \\times AreaHeavyDuty + FuelGasMower \\times AreaGasMower \\leq TotalFuel",
+            "code": {
+                "gurobipy": "model.addConstr(FuelHeavyDuty * AreaHeavyDuty + FuelGasMower * AreaGasMower <= TotalFuel, name=\"TotalFuelConstr\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize the total time required to cut TotalArea square feet of grass",
+        "formulation": "\\min \\ TimeHeavyDuty \\times AreaHeavyDuty + TimeGasMower \\times AreaGasMower",
+        "code": {
+            "gurobipy": "model.setObjective(TimeHeavyDuty * AreaHeavyDuty + TimeGasMower * AreaGasMower, GRB.MINIMIZE)"
+        }
+    }
+}

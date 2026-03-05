@@ -1,0 +1,164 @@
+{
+    "parametrized_description": "What maintaining, selling, storing, and manufacturing policy should the company pursue in order to maximize profit? The company has M machines, each with a specific downtime Downtime. There are K products, each with an associated profit Profit and a production time on each machine given by Time. Products must adhere to limits given by Limit. The price for storing products is StorePrice, and they must keep a quantity of KeepQuantity in the store. The company has WorkHours work hours available for all machines combined.",
+    "keywords": [
+        "optimization",
+        "maximization"
+    ],
+    "parameters": {
+        "M": {
+            "description": "Number of machines",
+            "shape": []
+        },
+        "P": {
+            "description": "Number of products",
+            "shape": []
+        },
+        "T": {
+            "description": "Number of months",
+            "shape": []
+        },
+        "Profit": {
+            "description": "Profit for each product",
+            "shape": [
+                "P"
+            ]
+        },
+        "Time": {
+            "description": "Time required to produce each product on each machine",
+            "shape": [
+                "P",
+                "M"
+            ]
+        },
+        "Downtime": {
+            "description": "Downtime for each machine",
+            "shape": [
+                "M"
+            ]
+        },
+        "Limit": {
+            "description": "Limit for each product on constraints",
+            "shape": [
+                "T",
+                "P"
+            ]
+        },
+        "StorePrice": {
+            "description": "Price for storing products",
+            "shape": []
+        },
+        "KeepQuantity": {
+            "description": "Quantity of products to keep in store",
+            "shape": []
+        },
+        "WorkHours": {
+            "description": "Number of work hours available",
+            "shape": []
+        },
+        "NumMachines": {
+            "description": "Number of each type of machine",
+            "shape": [
+                "M"
+            ]
+        }
+    },
+    "variables": {
+        "Sell": {
+            "description": "Amount of product p sold in month t",
+            "type": "continuous",
+            "shape": [
+                "P",
+                "T"
+            ]
+        },
+        "Manufacture": {
+            "description": "Amount of product p manufactured in month t",
+            "type": "continuous",
+            "shape": [
+                "P",
+                "T"
+            ]
+        },
+        "Store": {
+            "description": "Amount of product p stored at end of month t",
+            "type": "continuous",
+            "shape": [
+                "P",
+                "T"
+            ]
+        },
+        "Maintain": {
+            "description": "Number of machines of type m under maintenance in month t",
+            "type": "integer",
+            "shape": [
+                "M",
+                "T"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "Machine capacity constraint: total production time on each machine type in each month must not exceed available hours (two shifts, considering maintenance)",
+            "formulation": "\\sum_{p=1}^{P} Time_{p,m} \\times Manufacture_{p,t} \\leq WorkHours \\times 2 \\times 24 \\times (NumMachines_{m} - Maintain_{m,t}), \\quad \\forall m, t",
+            "code": {
+                "gurobipy": "for m in range(M):\n    for t in range(T):\n        model.addConstr(gurobipy.quicksum(Time[p][m] * Manufacture[p][t] for p in range(P)) <= WorkHours * 2 * 24 * (NumMachines[m] - Maintain[m][t]), name=f\"MachineCapacity_{m}_{t}\")"
+            }
+        },
+        {
+            "description": "Sales limit: amount sold of product p in month t must not exceed the marketing limit",
+            "formulation": "Sell_{p,t} \\leq Limit_{t,p}, \\quad \\forall p, t",
+            "code": {
+                "gurobipy": "for p in range(P):\n    for t in range(T):\n        model.addConstr(Sell[p][t] <= Limit[t][p], name=f\"SalesLimit_{p}_{t}\")"
+            }
+        },
+        {
+            "description": "Storage limit: at most 100 units of each product can be stored at any time",
+            "formulation": "Store_{p,t} \\leq 100, \\quad \\forall p, t",
+            "code": {
+                "gurobipy": "for p in range(P):\n    for t in range(T):\n        model.addConstr(Store[p][t] <= 100, name=f\"StorageLimit_{p}_{t}\")"
+            }
+        },
+        {
+            "description": "Inventory balance: storage at end of month equals previous storage plus manufacturing minus sales. No initial stock.",
+            "formulation": "Store_{p,t} = Store_{p,t-1} + Manufacture_{p,t} - Sell_{p,t}, \\quad \\forall p, t \\quad (Store_{p,0} = Manufacture_{p,0} - Sell_{p,0})",
+            "code": {
+                "gurobipy": "for p in range(P):\n    for t in range(T):\n        if t == 0:\n            model.addConstr(Store[p][t] == Manufacture[p][t] - Sell[p][t], name=f\"Balance_{p}_{t}\")\n        else:\n            model.addConstr(Store[p][t] == Store[p][t-1] + Manufacture[p][t] - Sell[p][t], name=f\"Balance_{p}_{t}\")"
+            }
+        },
+        {
+            "description": "At the end of the last month, we must have KeepQuantity of each product in storage",
+            "formulation": "Store_{p,T} = KeepQuantity, \\quad \\forall p",
+            "code": {
+                "gurobipy": "for p in range(P):\n    model.addConstr(Store[p][T-1] == KeepQuantity, name=f\"FinalStock_{p}\")"
+            }
+        },
+        {
+            "description": "Each machine type must have exactly Downtime months of maintenance scheduled over the planning horizon",
+            "formulation": "\\sum_{t=1}^{T} Maintain_{m,t} = Downtime_{m} \\times NumMachines_{m}, \\quad \\forall m",
+            "code": {
+                "gurobipy": "for m in range(M):\n    model.addConstr(gurobipy.quicksum(Maintain[m][t] for t in range(T)) == Downtime[m] * NumMachines[m], name=f\"TotalMaintenance_{m}\")"
+            }
+        },
+        {
+            "description": "Number of machines under maintenance cannot exceed the number of machines of that type",
+            "formulation": "0 \\leq Maintain_{m,t} \\leq NumMachines_{m}, \\quad \\forall m, t",
+            "code": {
+                "gurobipy": "for m in range(M):\n    for t in range(T):\n        model.addConstr(Maintain[m][t] >= 0, name=f\"MaintainNonNeg_{m}_{t}\")\n        model.addConstr(Maintain[m][t] <= NumMachines[m], name=f\"MaintainMax_{m}_{t}\")"
+            }
+        },
+        {
+            "description": "All production, sales, and storage variables must be non-negative",
+            "formulation": "Sell_{p,t} \\geq 0, \\quad Manufacture_{p,t} \\geq 0, \\quad Store_{p,t} \\geq 0, \\quad \\forall p, t",
+            "code": {
+                "gurobipy": "for p in range(P):\n    for t in range(T):\n        model.addConstr(Sell[p][t] >= 0, name=f\"NonNegSell_{p}_{t}\")\n        model.addConstr(Manufacture[p][t] >= 0, name=f\"NonNegMfg_{p}_{t}\")\n        model.addConstr(Store[p][t] >= 0, name=f\"NonNegStore_{p}_{t}\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Maximize the company's profit from its manufacturing and sales operations while considering maintenance, storage and work hour constraints",
+        "formulation": "\\max \\ \\sum_{p=1}^{P} \\sum_{t=1}^{T} \\left( Profit_{p} \\times Sell_{p,t} - StorePrice \\times Store_{p,t} \\right)",
+        "code": {
+            "gurobipy": "model.setObjective(gurobipy.quicksum(Profit[p] * Sell[p][t] - StorePrice * Store[p][t] for p in range(P) for t in range(T)), GRB.MAXIMIZE)"
+        }
+    }
+}

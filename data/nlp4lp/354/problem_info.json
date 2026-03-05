@@ -1,0 +1,63 @@
+{
+    "parametrized_description": "PROBLEM TYPE: MILP\n\nPROBLEM INFO:\n\n- A paper company produces large rolls of paper with a width of large_roll_width inches.\n- These large rolls are cut into smaller rolls of various widths options to meet customer demand.\n- There are M different types of smaller rolls.\n- The demand for rolls of width inch_j \u200bis demand_j\u200b units.\n- The company has N different cutting patterns available for producing the smaller rolls.\n- For pattern i, the number of rolls of width j that are produced is \\var{pattern_{i,j}}.\n\nINPUT FORMAT: \n\n{\n    \"large_roll_width\": large_roll_width,\n    \"roll_width_options\": [inch_j for j in 1, ..., M],\n    \"demands\": [demand_j for j in 1, ..., M],\n    \"patterns\": [[pattern_{i,j} for j in 1, ..., M] for i in 1, ..., N]\n}\n\nOBJECTIVE: Determine the minimum number of large large_roll_width-inch rolls needed to fulfill all the orders.\n\nOUTPUT INFO:\n\n- The different cutting patterns applied to the large rolls are detailed in patterns.\n- The total number of large rolls of paper used in this optimization is total_large_rolls_used.\n\nOUTPUT FORMAT:\n\n{\n    \"patterns\": [\n        {\n         \"pattern\": [pattern_j for i in 1, ..., M]\n         \"amount\": amount_i\n        }\n        for i in 1, ..., N\n    ],\n    \"total_large_rolls_used\": total_large_rolls\n}",
+    "keywords": [
+        "optimization"
+    ],
+    "parameters": {
+        "large_roll_width": {
+            "description": "large_roll_width",
+            "shape": []
+        },
+        "demands": {
+            "description": "demands",
+            "shape": [
+                "N"
+            ]
+        },
+        "roll_width_options": {
+            "description": "roll_width_options",
+            "shape": [
+                "N"
+            ]
+        },
+        "patterns": {
+            "description": "patterns",
+            "shape": [
+                "N",
+                "M"
+            ]
+        }
+    },
+    "variables": {
+        "PatternAmount": {
+            "description": "Number of large rolls cut using pattern i",
+            "type": "integer",
+            "shape": [
+                "N"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "The demand for each type of smaller roll must be met",
+            "formulation": "\\sum_{i=1}^{N} patterns_{i,j} \\times PatternAmount_{i} \\geq demands_{j} \\quad \\forall j \\in \\{1, \\ldots, M\\}",
+            "code": {
+                "gurobipy": "M = len(demands)\nN_patterns = len(patterns)\nfor j in range(M):\n    model.addConstr(quicksum(patterns[i][j] * PatternAmount[i] for i in range(N_patterns)) >= demands[j], name=f\"DemandMet_{j}\")"
+            }
+        },
+        {
+            "description": "The number of large rolls cut using each pattern must be non-negative",
+            "formulation": "PatternAmount_{i} \\geq 0 \\quad \\forall i \\in \\{1, \\ldots, N\\}",
+            "code": {
+                "gurobipy": "N_patterns = len(patterns)\nfor i in range(N_patterns):\n    model.addConstr(PatternAmount[i] >= 0, name=f\"PatternNonNeg_{i}\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize the total number of large rolls used",
+        "formulation": "\\min \\ \\sum_{i=1}^{N} PatternAmount_{i}",
+        "code": {
+            "gurobipy": "N_patterns = len(patterns)\nmodel.setObjective(quicksum(PatternAmount[i] for i in range(N_patterns)), GRB.MINIMIZE)"
+        }
+    }
+}

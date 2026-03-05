@@ -1,0 +1,68 @@
+{
+    "parametrized_description": "We want to minimize the total prices of the foods to purchase. Each food type has a price, a nutrition matrix that contains the amount of nutrients in each food, and there is a demand for each type of nutrient to be met.",
+    "keywords": [
+        "optimization",
+        "minimization"
+    ],
+    "parameters": {
+        "K": {
+            "description": "Number of different types of food",
+            "shape": []
+        },
+        "M": {
+            "description": "Number of nutrients to consider",
+            "shape": []
+        },
+        "Price": {
+            "description": "Price of food k",
+            "shape": [
+                "K"
+            ]
+        },
+        "Demand": {
+            "description": "Demand for nutrient m",
+            "shape": [
+                "M"
+            ]
+        },
+        "Nutrition": {
+            "description": "Amount of nutrient m in food k",
+            "shape": [
+                "K",
+                "M"
+            ]
+        }
+    },
+    "variables": {
+        "Quantity": {
+            "description": "Quantity of food k to purchase",
+            "type": "continuous",
+            "shape": [
+                "K"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "The total amount of each nutrient from all food types must meet or exceed the specific demand for that nutrient",
+            "formulation": "\\sum_{k=1}^{K} Nutrition_{k,m} \\times Quantity_{k} \\geq Demand_{m}, \\quad \\forall m \\in \\{1, \\ldots, M\\}",
+            "code": {
+                "gurobipy": "for m in range(M):\n    model.addConstr(quicksum(Nutrition[k][m] * Quantity[k] for k in range(K)) >= Demand[m], name=f\"NutrientDemand_{m}\")"
+            }
+        },
+        {
+            "description": "The number of units purchased from each food type is non-negative",
+            "formulation": "Quantity_{k} \\geq 0, \\quad \\forall k \\in \\{1, \\ldots, K\\}",
+            "code": {
+                "gurobipy": "for k in range(K):\n    model.addConstr(Quantity[k] >= 0, name=f\"NonNeg_{k}\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize the total price of the foods purchased while meeting the nutritional demands",
+        "formulation": "\\min \\sum_{k=1}^{K} Price_{k} \\times Quantity_{k}",
+        "code": {
+            "gurobipy": "model.setObjective(quicksum(Price[k] * Quantity[k] for k in range(K)), GRB.MINIMIZE)"
+        }
+    }
+}

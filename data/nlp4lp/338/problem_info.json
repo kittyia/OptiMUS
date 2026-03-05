@@ -1,0 +1,57 @@
+{
+    "parametrized_description": "How many officers should the town assign to each shift in order to minimize the total cost, given that there are S shifts, defined by the number of officers needed for each shift OfficersNeeded, and the respective costs of assigning an officer to each shift ShiftCosts?",
+    "keywords": [
+        "optimization",
+        "minimization"
+    ],
+    "parameters": {
+        "NumShifts": {
+            "description": "Number of shifts for which officers are needed",
+            "shape": []
+        },
+        "OfficersNeeded": {
+            "description": "Number of officers needed for shift s",
+            "shape": [
+                "NumShifts"
+            ]
+        },
+        "ShiftCosts": {
+            "description": "Cost of assigning an officer to shift s",
+            "shape": [
+                "NumShifts"
+            ]
+        }
+    },
+    "variables": {
+        "OfficersAssigned": {
+            "description": "Number of officers starting their two-shift duty at shift s",
+            "type": "integer",
+            "shape": [
+                "NumShifts"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "Number of officers assigned to start at each shift is non-negative",
+            "formulation": "OfficersAssigned_{s} \\geq 0 \\quad \\forall s",
+            "code": {
+                "gurobipy": "for s in range(NumShifts):\n    model.addConstr(OfficersAssigned[s] >= 0, name=f\"NonNeg_{s}\")"
+            }
+        },
+        {
+            "description": "The number of officers on duty during each shift meets OfficersNeeded. Officers starting at shift s work shifts s and s+1 (with wrap-around).",
+            "formulation": "OfficersAssigned_{s} + OfficersAssigned_{s-1} \\geq OfficersNeeded_{s} \\quad \\forall s \\quad (\\text{indices mod } NumShifts)",
+            "code": {
+                "gurobipy": "for s in range(NumShifts):\n    model.addConstr(OfficersAssigned[s] + OfficersAssigned[(s - 1) % NumShifts] >= OfficersNeeded[s], name=f\"Coverage_{s}\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize the total cost of assigning officers to each of the S shifts",
+        "formulation": "\\min \\ \\sum_{s} ShiftCosts_{s} \\times OfficersAssigned_{s}",
+        "code": {
+            "gurobipy": "model.setObjective(gp.quicksum(ShiftCosts[s] * OfficersAssigned[s] for s in range(NumShifts)), GRB.MINIMIZE)"
+        }
+    }
+}

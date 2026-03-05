@@ -1,0 +1,68 @@
+{
+    "parametrized_description": "Determine the quantities to be produced such that all the production constraints are satisfied and the profit is maximized. The parameters include the number of different products NumProducts and the number of different machines NumMachines. Each product k requires ProduceTime_{k,m} to produce on machine m. Each machine m has a total available time of AvailableTime_m. The profit from producing one unit of product k is Profit_k.",
+    "keywords": [
+        "optimization",
+        "maximization"
+    ],
+    "parameters": {
+        "NumProducts": {
+            "description": "Number of different products",
+            "shape": []
+        },
+        "NumMachines": {
+            "description": "Number of different machines",
+            "shape": []
+        },
+        "ProduceTime": {
+            "description": "Time to produce one unit of product k on machine m",
+            "shape": [
+                "NumProducts",
+                "NumMachines"
+            ]
+        },
+        "AvailableTime": {
+            "description": "Total available time on machine m",
+            "shape": [
+                "NumMachines"
+            ]
+        },
+        "Profit": {
+            "description": "Profit from producing one unit of product k",
+            "shape": [
+                "NumProducts"
+            ]
+        }
+    },
+    "variables": {
+        "Quantity": {
+            "description": "Production quantity for product k",
+            "type": "continuous",
+            "shape": [
+                "NumProducts"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "Each product k must be produced in non-negative quantities",
+            "formulation": "Quantity_{k} \\geq 0, \\quad \\forall k \\in \\{1, \\ldots, NumProducts\\}",
+            "code": {
+                "gurobipy": "for k in range(NumProducts):\n    model.addConstr(Quantity[k] >= 0, name=f\"NonNeg_{k}\")"
+            }
+        },
+        {
+            "description": "For each machine m, the total production time for all products cannot exceed AvailableTime",
+            "formulation": "\\sum_{k=1}^{NumProducts} ProduceTime_{k,m} \\times Quantity_{k} \\leq AvailableTime_{m}, \\quad \\forall m \\in \\{1, \\ldots, NumMachines\\}",
+            "code": {
+                "gurobipy": "for m in range(NumMachines):\n    model.addConstr(quicksum(ProduceTime[k][m] * Quantity[k] for k in range(NumProducts)) <= AvailableTime[m], name=f\"MachineTime_{m}\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Maximize the total profit from producing different products subject to production time constraints on each machine",
+        "formulation": "\\max \\sum_{k=1}^{NumProducts} Profit_{k} \\times Quantity_{k}",
+        "code": {
+            "gurobipy": "model.setObjective(quicksum(Profit[k] * Quantity[k] for k in range(NumProducts)), GRB.MAXIMIZE)"
+        }
+    }
+}

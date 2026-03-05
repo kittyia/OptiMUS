@@ -1,0 +1,94 @@
+{
+    "parametrized_description": "How many batches of each part should the manufacturer produce each month to maximize profit? The manufacturer has M machines and P parts to be produced. Each machine m has an associated cost of MachineCosts, time requirement TimeRequired, and availability Availability per month. Each part p has a selling price Prices and a production minimum requirement MinBatches.",
+    "keywords": [
+        "optimization",
+        "maximization"
+    ],
+    "parameters": {
+        "M": {
+            "description": "Number of machines",
+            "shape": []
+        },
+        "P": {
+            "description": "Number of parts to be produced",
+            "shape": []
+        },
+        "TimeRequired": {
+            "description": "Time required to produce a batch of part p on machine m",
+            "shape": [
+                "M",
+                "P"
+            ]
+        },
+        "MachineCosts": {
+            "description": "Cost associated with running machine m",
+            "shape": [
+                "M"
+            ]
+        },
+        "Availability": {
+            "description": "Availability of machine m per month",
+            "shape": [
+                "M"
+            ]
+        },
+        "Prices": {
+            "description": "Selling price of a batch of part p",
+            "shape": [
+                "P"
+            ]
+        },
+        "MinBatches": {
+            "description": "Minimum number of batches of part p that should be produced",
+            "shape": [
+                "P"
+            ]
+        }
+    },
+    "variables": {
+        "Batches": {
+            "description": "Number of batches of part p produced",
+            "type": "continuous",
+            "shape": [
+                "P"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "Number of batches for each part p is non-negative",
+            "formulation": "Batches_{p} \\geq 0 \\quad \\forall p",
+            "code": {
+                "gurobipy": "for p in range(P):\n    model.addConstr(Batches[p] >= 0, name=f\"NonNeg_{p}\")"
+            }
+        },
+        {
+            "description": "For machines 0 through M-3, the total time used does not exceed Availability[m]",
+            "formulation": "\\sum_{p} TimeRequired_{m,p} \\times Batches_{p} \\leq Availability_{m} \\quad \\forall m \\in \\{0, \\ldots, M-3\\}",
+            "code": {
+                "gurobipy": "for m in range(M - 2):\n    model.addConstr(gp.quicksum(TimeRequired[m][p] * Batches[p] for p in range(P)) <= Availability[m], name=f\"MachineAvail_{m}\")"
+            }
+        },
+        {
+            "description": "Machines M-2 and M-1 share availability: their combined usage cannot exceed their combined availability",
+            "formulation": "\\sum_{p} TimeRequired_{M-2,p} \\times Batches_{p} + \\sum_{p} TimeRequired_{M-1,p} \\times Batches_{p} \\leq Availability_{M-2} + Availability_{M-1}",
+            "code": {
+                "gurobipy": "model.addConstr(gp.quicksum(TimeRequired[M-2][p] * Batches[p] for p in range(P)) + gp.quicksum(TimeRequired[M-1][p] * Batches[p] for p in range(P)) <= Availability[M-2] + Availability[M-1], name=\"SharedMachineAvail\")"
+            }
+        },
+        {
+            "description": "Each part p must be produced in at least MinBatches[p] batches",
+            "formulation": "Batches_{p} \\geq MinBatches_{p} \\quad \\forall p",
+            "code": {
+                "gurobipy": "for p in range(P):\n    model.addConstr(Batches[p] >= MinBatches[p], name=f\"MinProd_{p}\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Maximize the manufacturer's profit from producing parts, which is calculated from the selling prices of parts minus the costs of using machines",
+        "formulation": "\\max \\ \\sum_{p} Prices_{p} \\times Batches_{p} - \\sum_{m} MachineCosts_{m} \\times \\sum_{p} TimeRequired_{m,p} \\times Batches_{p}",
+        "code": {
+            "gurobipy": "model.setObjective(gp.quicksum(Prices[p] * Batches[p] for p in range(P)) - gp.quicksum(MachineCosts[m] * gp.quicksum(TimeRequired[m][p] * Batches[p] for p in range(P)) for m in range(M)), GRB.MAXIMIZE)"
+        }
+    }
+}

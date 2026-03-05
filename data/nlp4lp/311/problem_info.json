@@ -1,0 +1,152 @@
+{
+    "parametrized_description": "The company\u2019s declared objective is to minimize redundancy. Requirement are given as K different resources each having I specific requirements, where Strength is the strength of each type of resource, LessOneWaste is the value when wastage of resources is less than optimal, MoreOneWaste is the value when wastage of resources is more than optimal. Recruit is the number of recruited resources of each type, CostRedundancy is the cost of redundancy for each type of resource, NumOverman signifies the number of overmanned positions, CostOverman is the cost of overmanning for each type of resource, and NumShortwork represents the number of shortworked positions with CostShort as the cost of short working for each type of resource. How should they operate in order to do this?",
+    "keywords": [
+        "optimization",
+        "minimization"
+    ],
+    "parameters": {
+        "K": {
+            "description": "Total number of different types of resources",
+            "shape": []
+        },
+        "I": {
+            "description": "Number of different requirements for each type of resource",
+            "shape": []
+        },
+        "Strength": {
+            "description": "Strength of each type of resource",
+            "shape": [
+                "K"
+            ]
+        },
+        "LessOneWaste": {
+            "description": "Value when wastage of resources is less than optimal",
+            "shape": [
+                "K"
+            ]
+        },
+        "MoreOneWaste": {
+            "description": "Value when wastage of resources is more than optimal",
+            "shape": [
+                "K"
+            ]
+        },
+        "Recruit": {
+            "description": "Number of recruited resources of each type",
+            "shape": [
+                "K"
+            ]
+        },
+        "CostRedundancy": {
+            "description": "Cost of redundancy for each type of resource",
+            "shape": [
+                "K"
+            ]
+        },
+        "NumOverman": {
+            "description": "Number of overmanned positions",
+            "shape": []
+        },
+        "CostOverman": {
+            "description": "Cost of overmanning for each type of resource",
+            "shape": [
+                "K"
+            ]
+        },
+        "NumShortwork": {
+            "description": "Number of shortworked positions",
+            "shape": []
+        },
+        "CostShort": {
+            "description": "Cost of short working for each type of resource",
+            "shape": [
+                "K"
+            ]
+        },
+        "Requirement": {
+            "description": "Manpower requirements for each type of resource over the years",
+            "shape": [
+                "K",
+                "I"
+            ]
+        }
+    },
+    "variables": {
+        "RecruitNum": {
+            "description": "Number of workers recruited in category k in year i",
+            "type": "continuous",
+            "shape": [
+                "K",
+                "I"
+            ]
+        },
+        "Overmanning": {
+            "description": "Number of overmanned workers in category k in year i",
+            "type": "continuous",
+            "shape": [
+                "K",
+                "I"
+            ]
+        },
+        "Short": {
+            "description": "Number of short-time workers in category k in year i",
+            "type": "continuous",
+            "shape": [
+                "K",
+                "I"
+            ]
+        },
+        "Redundancy": {
+            "description": "Number of workers made redundant in category k in year i",
+            "type": "continuous",
+            "shape": [
+                "K",
+                "I"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "All decision variables must be non-negative",
+            "formulation": "RecruitNum_{k,i} \\geq 0, \\quad Overmanning_{k,i} \\geq 0, \\quad Short_{k,i} \\geq 0, \\quad Redundancy_{k,i} \\geq 0, \\quad \\forall k, i",
+            "code": {
+                "gurobipy": "for k in range(K):\n    for i in range(I):\n        model.addConstr(RecruitNum[k][i] >= 0, name=f\"NonNegRecruit_{k}_{i}\")\n        model.addConstr(Overmanning[k][i] >= 0, name=f\"NonNegOverman_{k}_{i}\")\n        model.addConstr(Short[k][i] >= 0, name=f\"NonNegShort_{k}_{i}\")\n        model.addConstr(Redundancy[k][i] >= 0, name=f\"NonNegRedundancy_{k}_{i}\")"
+            }
+        },
+        {
+            "description": "Recruitment in each category is limited to the maximum recruit number",
+            "formulation": "RecruitNum_{k,i} \\leq Recruit_{k}, \\quad \\forall k, i",
+            "code": {
+                "gurobipy": "for k in range(K):\n    for i in range(I):\n        model.addConstr(RecruitNum[k][i] <= Recruit[k], name=f\"MaxRecruit_{k}_{i}\")"
+            }
+        },
+        {
+            "description": "Short-time working in each category is limited to NumShortwork",
+            "formulation": "Short_{k,i} \\leq NumShortwork, \\quad \\forall k, i",
+            "code": {
+                "gurobipy": "for k in range(K):\n    for i in range(I):\n        model.addConstr(Short[k][i] <= NumShortwork, name=f\"MaxShort_{k}_{i}\")"
+            }
+        },
+        {
+            "description": "Total overmanning across all categories is limited to NumOverman in each year",
+            "formulation": "\\sum_{k=1}^{K} Overmanning_{k,i} \\leq NumOverman, \\quad \\forall i",
+            "code": {
+                "gurobipy": "for i in range(I):\n    model.addConstr(gurobipy.quicksum(Overmanning[k][i] for k in range(K)) <= NumOverman, name=f\"MaxOverman_{i}\")"
+            }
+        },
+        {
+            "description": "Manpower balance: workforce in each category and year equals the requirement plus overmanning minus short-time contribution. First year uses Strength as the starting workforce.",
+            "formulation": "Requirement_{k,i} + Overmanning_{k,i} - 0.5 \\times Short_{k,i} = (1 - MoreOneWaste_{k}) \\times (PreviousWorkforce_{k,i}) + (1 - LessOneWaste_{k}) \\times RecruitNum_{k,i} - Redundancy_{k,i}, \\quad \\forall k, i",
+            "code": {
+                "gurobipy": "for k in range(K):\n    for i in range(I):\n        if i == 0:\n            prev_workforce = Strength[k]\n        else:\n            prev_workforce = Requirement[k][i-1] + Overmanning[k][i-1] - 0.5 * Short[k][i-1]\n        model.addConstr(Requirement[k][i] + Overmanning[k][i] - 0.5 * Short[k][i] == (1 - MoreOneWaste[k]) * prev_workforce + (1 - LessOneWaste[k]) * RecruitNum[k][i] - Redundancy[k][i], name=f\"Balance_{k}_{i}\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize the total number of redundancies across all categories and years",
+        "formulation": "\\min \\ \\sum_{k=1}^{K} \\sum_{i=1}^{I} Redundancy_{k,i}",
+        "code": {
+            "gurobipy": "model.setObjective(gurobipy.quicksum(Redundancy[k][i] for k in range(K) for i in range(I)), GRB.MINIMIZE)"
+        }
+    }
+}

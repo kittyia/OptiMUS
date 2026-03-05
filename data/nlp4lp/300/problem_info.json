@@ -1,0 +1,81 @@
+{
+    "parametrized_description": "A hospital needs to transport TotalPatients patients every day. A type II ambulance can move AmbulanceCapacity patients every shift and costs the hospital AmbulanceCost. A hospital van can move VanCapacity patients and costs the hospital VanCost every shift. The hospital can have at most MaxVanShiftProportion of shifts be hospital vans due to union limitations of the type II ambulance drivers. How many shifts using each type of vehicle should be scheduled to minimize the total cost to the hospital?",
+    "keywords": [
+        "optimization"
+    ],
+    "parameters": {
+        "NumPatients": {
+            "description": "Number of patients to be transported daily",
+            "shape": []
+        },
+        "CapacityAmbulance": {
+            "description": "Capacity of a Type II ambulance in terms of patients per shift",
+            "shape": []
+        },
+        "CostAmbulance": {
+            "description": "Cost of a Type II ambulance per shift",
+            "shape": []
+        },
+        "CapacityVan": {
+            "description": "Capacity of a hospital van in terms of patients per shift",
+            "shape": []
+        },
+        "CostVan": {
+            "description": "Cost of a hospital van per shift",
+            "shape": []
+        },
+        "MaxVanShiftsPercent": {
+            "description": "Maximum percentage of shifts that can be hospital vans",
+            "shape": []
+        }
+    },
+    "variables": {
+        "NumAmbulanceShifts": {
+            "description": "Number of shifts using a type II ambulance",
+            "type": "integer",
+            "shape": []
+        },
+        "NumVanShifts": {
+            "description": "Number of shifts using a hospital van",
+            "type": "integer",
+            "shape": []
+        }
+    },
+    "constraints": [
+        {
+            "description": "Number of ambulance shifts is non-negative",
+            "formulation": "NumAmbulanceShifts \\geq 0",
+            "code": {
+                "gurobipy": "model.addConstr(NumAmbulanceShifts >= 0, name=\"AmbulanceNonNeg\")"
+            }
+        },
+        {
+            "description": "Number of van shifts is non-negative",
+            "formulation": "NumVanShifts \\geq 0",
+            "code": {
+                "gurobipy": "model.addConstr(NumVanShifts >= 0, name=\"VanNonNeg\")"
+            }
+        },
+        {
+            "description": "Total patients transported must be at least NumPatients",
+            "formulation": "CapacityAmbulance \\times NumAmbulanceShifts + CapacityVan \\times NumVanShifts \\geq NumPatients",
+            "code": {
+                "gurobipy": "model.addConstr(CapacityAmbulance * NumAmbulanceShifts + CapacityVan * NumVanShifts >= NumPatients, name=\"MinPatientsConstr\")"
+            }
+        },
+        {
+            "description": "The number of van shifts must not exceed MaxVanShiftsPercent of total shifts",
+            "formulation": "NumVanShifts \\leq MaxVanShiftsPercent \\times (NumAmbulanceShifts + NumVanShifts)",
+            "code": {
+                "gurobipy": "model.addConstr(NumVanShifts <= MaxVanShiftsPercent * (NumAmbulanceShifts + NumVanShifts), name=\"MaxVanPropConstr\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize the total cost to the hospital",
+        "formulation": "\\min \\ CostAmbulance \\times NumAmbulanceShifts + CostVan \\times NumVanShifts",
+        "code": {
+            "gurobipy": "model.setObjective(CostAmbulance * NumAmbulanceShifts + CostVan * NumVanShifts, GRB.MINIMIZE)"
+        }
+    }
+}

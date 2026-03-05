@@ -1,0 +1,168 @@
+{
+    "parametrized_description": "How much regular and overtime labor should be utilized each week to assemble the baskets to maximize the profit over the season? The costs for regular and overtime labor are RegularCost and OvertimeCost, respectively. Each basket requires AssemblyTime to assemble, and the material cost per basket is MaterialCost. Baskets are sold at SellingPrice, with a holding cost of HoldingCost and a salvage value of SalvageValue at the end of the season. For each week w, the demand for baskets is Demand, with available regular and overtime labor given by RegularLabor and OvertimeLabor respectively.",
+    "keywords": [
+        "optimization",
+        "maximization"
+    ],
+    "parameters": {
+        "RegularCost": {
+            "description": "Cost of regular labor per unit of time",
+            "shape": []
+        },
+        "OvertimeCost": {
+            "description": "Cost of overtime labor per unit of time",
+            "shape": []
+        },
+        "AssemblyTime": {
+            "description": "Time required to assemble a single basket",
+            "shape": []
+        },
+        "MaterialCost": {
+            "description": "Cost of materials per basket",
+            "shape": []
+        },
+        "SellingPrice": {
+            "description": "Selling price per basket",
+            "shape": []
+        },
+        "HoldingCost": {
+            "description": "Holding cost per basket per unit of time",
+            "shape": []
+        },
+        "SalvageValue": {
+            "description": "Salvage value per unsold basket at the end of the season",
+            "shape": []
+        },
+        "Weeks": {
+            "description": "Total number of weeks for the season",
+            "shape": []
+        },
+        "Demand": {
+            "description": "Demand for baskets in week w",
+            "shape": [
+                "Weeks"
+            ]
+        },
+        "RegularLabor": {
+            "description": "Number of regular labor units available in week w",
+            "shape": [
+                "Weeks"
+            ]
+        },
+        "OvertimeLabor": {
+            "description": "Number of overtime labor units available in week w",
+            "shape": [
+                "Weeks"
+            ]
+        }
+    },
+    "variables": {
+        "RegularUsed": {
+            "description": "Hours of regular labor used in week w",
+            "type": "continuous",
+            "shape": [
+                "Weeks"
+            ]
+        },
+        "OvertimeUsed": {
+            "description": "Hours of overtime labor used in week w",
+            "type": "continuous",
+            "shape": [
+                "Weeks"
+            ]
+        },
+        "RegularBasket": {
+            "description": "Number of baskets assembled with regular labor in week w",
+            "type": "continuous",
+            "shape": [
+                "Weeks"
+            ]
+        },
+        "OvertimeBasket": {
+            "description": "Number of baskets assembled with overtime labor in week w",
+            "type": "continuous",
+            "shape": [
+                "Weeks"
+            ]
+        },
+        "Inventory": {
+            "description": "Number of baskets on hand at the end of week w",
+            "type": "continuous",
+            "shape": [
+                "Weeks"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "Regular labor used in any week is at most RegularLabor",
+            "formulation": "RegularUsed_{w} \\leq RegularLabor_{w} \\quad \\forall w",
+            "code": {
+                "gurobipy": "for w in range(Weeks):\n    model.addConstr(RegularUsed[w] <= RegularLabor[w], name=f\"RegularCap_{w}\")"
+            }
+        },
+        {
+            "description": "Overtime labor used in any week is at most OvertimeLabor",
+            "formulation": "OvertimeUsed_{w} \\leq OvertimeLabor_{w} \\quad \\forall w",
+            "code": {
+                "gurobipy": "for w in range(Weeks):\n    model.addConstr(OvertimeUsed[w] <= OvertimeLabor[w], name=f\"OvertimeCap_{w}\")"
+            }
+        },
+        {
+            "description": "Number of baskets assembled with regular labor equals regular hours used divided by assembly time",
+            "formulation": "RegularBasket_{w} = \\frac{RegularUsed_{w}}{AssemblyTime} \\quad \\forall w",
+            "code": {
+                "gurobipy": "for w in range(Weeks):\n    model.addConstr(RegularBasket[w] == RegularUsed[w] / AssemblyTime, name=f\"RegBasketDef_{w}\")"
+            }
+        },
+        {
+            "description": "Number of baskets assembled with overtime labor equals overtime hours used divided by assembly time",
+            "formulation": "OvertimeBasket_{w} = \\frac{OvertimeUsed_{w}}{AssemblyTime} \\quad \\forall w",
+            "code": {
+                "gurobipy": "for w in range(Weeks):\n    model.addConstr(OvertimeBasket[w] == OvertimeUsed[w] / AssemblyTime, name=f\"OTBasketDef_{w}\")"
+            }
+        },
+        {
+            "description": "Inventory balance: inventory at end of week w equals inventory from previous week plus production minus demand. For week 0, no initial inventory.",
+            "formulation": "Inventory_{w} = Inventory_{w-1} + RegularBasket_{w} + OvertimeBasket_{w} - Demand_{w} \\quad \\forall w \\quad (Inventory_{-1} = 0)",
+            "code": {
+                "gurobipy": "model.addConstr(Inventory[0] == RegularBasket[0] + OvertimeBasket[0] - Demand[0], name=\"InvBalance_0\")\nfor w in range(1, Weeks):\n    model.addConstr(Inventory[w] == Inventory[w-1] + RegularBasket[w] + OvertimeBasket[w] - Demand[w], name=f\"InvBalance_{w}\")"
+            }
+        },
+        {
+            "description": "Number of baskets assembled must be non-negative",
+            "formulation": "RegularBasket_{w} \\geq 0, \\quad OvertimeBasket_{w} \\geq 0 \\quad \\forall w",
+            "code": {
+                "gurobipy": "for w in range(Weeks):\n    model.addConstr(RegularBasket[w] >= 0, name=f\"RegBasketNonNeg_{w}\")\n    model.addConstr(OvertimeBasket[w] >= 0, name=f\"OTBasketNonNeg_{w}\")"
+            }
+        },
+        {
+            "description": "Regular labor used must be non-negative",
+            "formulation": "RegularUsed_{w} \\geq 0 \\quad \\forall w",
+            "code": {
+                "gurobipy": "for w in range(Weeks):\n    model.addConstr(RegularUsed[w] >= 0, name=f\"RegUsedNonNeg_{w}\")"
+            }
+        },
+        {
+            "description": "Overtime labor used must be non-negative",
+            "formulation": "OvertimeUsed_{w} \\geq 0 \\quad \\forall w",
+            "code": {
+                "gurobipy": "for w in range(Weeks):\n    model.addConstr(OvertimeUsed[w] >= 0, name=f\"OTUsedNonNeg_{w}\")"
+            }
+        },
+        {
+            "description": "Inventory must be non-negative (demand must be met each week)",
+            "formulation": "Inventory_{w} \\geq 0 \\quad \\forall w",
+            "code": {
+                "gurobipy": "for w in range(Weeks):\n    model.addConstr(Inventory[w] >= 0, name=f\"InvNonNeg_{w}\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Maximize profit from assembly and sale of baskets over the season",
+        "formulation": "\\max \\ \\sum_{w=0}^{W-2} \\left( SellingPrice \\times Demand_{w} - RegularCost \\times RegularUsed_{w} - OvertimeCost \\times OvertimeUsed_{w} - MaterialCost \\times (RegularBasket_{w} + OvertimeBasket_{w}) - HoldingCost \\times Inventory_{w} \\right) + SellingPrice \\times Demand_{W-1} - RegularCost \\times RegularUsed_{W-1} - OvertimeCost \\times OvertimeUsed_{W-1} - MaterialCost \\times (RegularBasket_{W-1} + OvertimeBasket_{W-1}) + SalvageValue \\times Inventory_{W-1}",
+        "code": {
+            "gurobipy": "model.setObjective(\n    gp.quicksum(SellingPrice * Demand[w] - RegularCost * RegularUsed[w] - OvertimeCost * OvertimeUsed[w] - MaterialCost * (RegularBasket[w] + OvertimeBasket[w]) - HoldingCost * Inventory[w] for w in range(Weeks - 1)) + SellingPrice * Demand[Weeks - 1] - RegularCost * RegularUsed[Weeks - 1] - OvertimeCost * OvertimeUsed[Weeks - 1] - MaterialCost * (RegularBasket[Weeks - 1] + OvertimeBasket[Weeks - 1]) + SalvageValue * Inventory[Weeks - 1],\n    GRB.MAXIMIZE)"
+        }
+    }
+}

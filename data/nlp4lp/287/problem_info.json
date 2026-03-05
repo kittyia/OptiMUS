@@ -1,0 +1,79 @@
+{
+    "parametrized_description": "An investor has TotalInvestment to allocate between telecom and healthcare. The telecom investment must be at least MinTelecomHealthcareRatio times the healthcare investment and cannot exceed MaxTelecomInvestment. Telecom yields TelecomInterestRate and healthcare yields HealthcareInterestRate. Maximize total profit.",
+    "keywords": [
+        "portfolio optimization",
+        "investment",
+        "linear programming"
+    ],
+    "parameters": {
+        "TotalInvestment": {
+            "description": "Total amount of money available for investment",
+            "shape": []
+        },
+        "MinTelecomHealthcareRatio": {
+            "description": "Minimum ratio of telecom investment to healthcare investment",
+            "shape": []
+        },
+        "MaxTelecomInvestment": {
+            "description": "Maximum investment allowed in telecom",
+            "shape": []
+        },
+        "TelecomInterestRate": {
+            "description": "Interest rate earned from telecom investments",
+            "shape": []
+        },
+        "HealthcareInterestRate": {
+            "description": "Interest rate earned from healthcare investments",
+            "shape": []
+        }
+    },
+    "variables": {
+        "InvestTelecom": {
+            "description": "Amount invested in telecom",
+            "type": "continuous",
+            "shape": []
+        },
+        "InvestHealthcare": {
+            "description": "Amount invested in healthcare",
+            "type": "continuous",
+            "shape": []
+        }
+    },
+    "constraints": [
+        {
+            "description": "Total investment must not exceed TotalInvestment.",
+            "formulation": "InvestTelecom + InvestHealthcare \\leq TotalInvestment",
+            "code": {
+                "gurobipy": "model.addConstr(InvestTelecom + InvestHealthcare <= TotalInvestment, name=\"TotalBudget\")"
+            }
+        },
+        {
+            "description": "Telecom investment must be at least MinTelecomHealthcareRatio times healthcare investment.",
+            "formulation": "InvestTelecom \\geq MinTelecomHealthcareRatio \\times InvestHealthcare",
+            "code": {
+                "gurobipy": "model.addConstr(InvestTelecom >= MinTelecomHealthcareRatio * InvestHealthcare, name=\"TelecomRatio\")"
+            }
+        },
+        {
+            "description": "Telecom investment must not exceed MaxTelecomInvestment.",
+            "formulation": "InvestTelecom \\leq MaxTelecomInvestment",
+            "code": {
+                "gurobipy": "model.addConstr(InvestTelecom <= MaxTelecomInvestment, name=\"MaxTelecom\")"
+            }
+        },
+        {
+            "description": "Investment amounts must be non-negative.",
+            "formulation": "InvestTelecom \\geq 0, \\quad InvestHealthcare \\geq 0",
+            "code": {
+                "gurobipy": "model.addConstr(InvestTelecom >= 0, name=\"TelecomNonNeg\")\nmodel.addConstr(InvestHealthcare >= 0, name=\"HealthcareNonNeg\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Maximize total profit from investments.",
+        "formulation": "\\max \\ TelecomInterestRate \\times InvestTelecom + HealthcareInterestRate \\times InvestHealthcare",
+        "code": {
+            "gurobipy": "model.setObjective(TelecomInterestRate * InvestTelecom + HealthcareInterestRate * InvestHealthcare, GRB.MAXIMIZE)"
+        }
+    }
+}

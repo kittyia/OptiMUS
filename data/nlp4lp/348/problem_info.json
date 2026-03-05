@@ -1,0 +1,136 @@
+{
+    "parametrized_description": "Determine a strategy to minimize costs from unloading (UnloadCosts), storage (HoldingCost), and crane rentals (CraneCost) over the period. The demands over the time periods are given by Demands, with a corresponding unloading capacity per period specified by UnloadCapacity. The system starts with an initial inventory of containers given by InitContainer, and the maximum container inventory is limited to MaxContainer. The logistics also involve NumCranes number of cranes with CraneCapacity each to aid in the unloading process.",
+    "keywords": [
+        "optimization",
+        "minimization"
+    ],
+    "parameters": {
+        "T": {
+            "description": "The number of time periods",
+            "shape": []
+        },
+        "Demands": {
+            "description": "Demand at time t",
+            "shape": [
+                "T"
+            ]
+        },
+        "UnloadCosts": {
+            "description": "Unloading cost at time t",
+            "shape": [
+                "T"
+            ]
+        },
+        "UnloadCapacity": {
+            "description": "Unloading capacity at time t",
+            "shape": [
+                "T"
+            ]
+        },
+        "HoldingCost": {
+            "description": "Cost for holding containers",
+            "shape": []
+        },
+        "MaxContainer": {
+            "description": "Maximum number of containers that can be held",
+            "shape": []
+        },
+        "InitContainer": {
+            "description": "Initial number of containers at the start",
+            "shape": []
+        },
+        "NumCranes": {
+            "description": "Number of cranes available for unloading",
+            "shape": []
+        },
+        "CraneCapacity": {
+            "description": "Capacity of each crane",
+            "shape": []
+        },
+        "CraneCost": {
+            "description": "Cost for renting each crane",
+            "shape": []
+        }
+    },
+    "variables": {
+        "Amount": {
+            "description": "Number of containers unloaded in each time period t",
+            "type": "integer",
+            "shape": [
+                "T"
+            ]
+        },
+        "Crane": {
+            "description": "Number of cranes rented in each time period t",
+            "type": "integer",
+            "shape": [
+                "T"
+            ]
+        },
+        "Inventory": {
+            "description": "Number of containers in the yard at the end of each time period t",
+            "type": "integer",
+            "shape": [
+                "T"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "Demands must be met for each time period",
+            "formulation": "Crane_{t} \\times CraneCapacity \\geq Demands_{t} \\quad \\forall t \\in \\{1, \\ldots, T\\}",
+            "code": {
+                "gurobipy": "for t in range(T):\n    model.addConstr(Crane[t] * CraneCapacity >= Demands[t], name=f\"DemandMet_{t}\")"
+            }
+        },
+        {
+            "description": "Unloading capacity per period cannot exceed the specified UnloadCapacity",
+            "formulation": "Amount_{t} \\leq UnloadCapacity_{t} \\quad \\forall t \\in \\{1, \\ldots, T\\}",
+            "code": {
+                "gurobipy": "for t in range(T):\n    model.addConstr(Amount[t] <= UnloadCapacity[t], name=f\"UnloadCap_{t}\")"
+            }
+        },
+        {
+            "description": "Maximum container inventory must not exceed MaxContainer",
+            "formulation": "Inventory_{t} \\leq MaxContainer \\quad \\forall t \\in \\{1, \\ldots, T\\}",
+            "code": {
+                "gurobipy": "for t in range(T):\n    model.addConstr(Inventory[t] <= MaxContainer, name=f\"MaxInv_{t}\")"
+            }
+        },
+        {
+            "description": "Inventory balance constraint: inventory at end of period equals previous inventory plus unloaded minus demand",
+            "formulation": "Inventory_{t} = Inventory_{t-1} + Amount_{t} - Demands_{t} \\quad \\forall t \\in \\{1, \\ldots, T\\}, \\quad Inventory_{0} = InitContainer",
+            "code": {
+                "gurobipy": "for t in range(T):\n    if t == 0:\n        model.addConstr(Inventory[t] == InitContainer + Amount[t] - Demands[t], name=f\"InvBalance_{t}\")\n    else:\n        model.addConstr(Inventory[t] == Inventory[t-1] + Amount[t] - Demands[t], name=f\"InvBalance_{t}\")"
+            }
+        },
+        {
+            "description": "The yard should not contain any containers after the end of the last month",
+            "formulation": "Inventory_{T} = 0",
+            "code": {
+                "gurobipy": "model.addConstr(Inventory[T-1] == 0, name=\"FinalInventoryZero\")"
+            }
+        },
+        {
+            "description": "Number of cranes rented per period cannot exceed the maximum number of cranes available",
+            "formulation": "Crane_{t} \\leq NumCranes \\quad \\forall t \\in \\{1, \\ldots, T\\}",
+            "code": {
+                "gurobipy": "for t in range(T):\n    model.addConstr(Crane[t] <= NumCranes, name=f\"MaxCranes_{t}\")"
+            }
+        },
+        {
+            "description": "Non-negativity constraints for all decision variables",
+            "formulation": "Amount_{t} \\geq 0, \\quad Crane_{t} \\geq 0, \\quad Inventory_{t} \\geq 0 \\quad \\forall t \\in \\{1, \\ldots, T\\}",
+            "code": {
+                "gurobipy": "for t in range(T):\n    model.addConstr(Amount[t] >= 0, name=f\"AmountNonNeg_{t}\")\n    model.addConstr(Crane[t] >= 0, name=f\"CraneNonNeg_{t}\")\n    model.addConstr(Inventory[t] >= 0, name=f\"InvNonNeg_{t}\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize the total costs of UnloadCosts, HoldingCost, and CraneCost",
+        "formulation": "\\min \\ \\sum_{t=1}^{T} \\left( UnloadCosts_{t} \\times Amount_{t} + HoldingCost \\times Inventory_{t} + CraneCost \\times Crane_{t} \\right)",
+        "code": {
+            "gurobipy": "model.setObjective(\n    quicksum(UnloadCosts[t] * Amount[t] + HoldingCost * Inventory[t] + CraneCost * Crane[t] for t in range(T)),\n    GRB.MINIMIZE)"
+        }
+    }
+}

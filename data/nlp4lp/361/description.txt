@@ -1,0 +1,24 @@
+Background: Improving fulfillment efficiency is critical for long-term sustainability of online grocery retailing. We want to reduce order fulfillment cost by order consolidation. Motivated by the observation that a significant percentage of buyers place multiple orders within a short time interval, we want a scheme that attempts to consolidate such "multiorders" to reduce the number of parcels and hence, the shipping cost. At the same time, it cannot significantly disturb the existing order fulfillment process or undermine the customer service level. Successful execution of the scheme requires a prediction of multiorder probabilities and a control policy that selectively prioritizes order processing. For the prediction task, we formulate a binary classification problem and use machine-learning algorithms to predict in real time the probability of a multiorder. We want to make employ an LP-based approximation on a rolling basis, where the main idea is that in any period $t$, given the updated state, we treat all the random variables as deterministic and replace them with our predictions. A multiorder is a set of two or more orders that satisfy the following criteria: (1) placed by the same buyer, (2) placed on the same day, (3) have the same delivery address, (4) assigned to the same fulfillment center (FC), and (5) satisfy the free shipping requirements. Multiorders can be consolidated into a single parcel, reducing shipping costs. A hit, or multiorder hit, occurs when a new order arrives that can be consolidated with an existing order in the pool, forming a multiorder. Capturing a hit means successfully identifying and consolidating these orders, resulting in cost savings.
+    
+Objective: Maximize multiorder hits. We construct the objective function to be the total stay of the orders in the pool, weighted by their multiorder probabilities
+
+Parameters:
+- \mathcal{S}_{t,s}^k (T, L, K): The pool set is according to arrival time in period $s$ and who are still in the pool at them beginning of $t$, meaning $\mathcal{S}_{t}=\mathcal{S}_{t,T-L} + \ldots + \mathcal{S}_{t, t-1}. We further partition each set $\mathcal{S}_{t,s}$ into $K$ groups based on the orders' multiorder probabilities, meaning $\mathcal{S}_{t,s}=\mathcal{S}_{t,s}^1 + \ldots + \mathcal{S}_{t,s}^k$ where the superscript denotes the probability group and $s=t-L,\ldots,t-1$. This refers to the initial state before multiorder clearance
+- \mathcal{S}_{t,s}^{'k} (T, L, K): The pool set is according to arrival time in period $s$ and who are still in the pool at them beginning of $t$, meaning $\mathcal{S}_{t}=\mathcal{S}_{t,T-L} + \ldots + \mathcal{S}_{t, t-1}. We further partition each set $\mathcal{S}_{t,s}$ into $K$ groups based on the orders' multiorder probabilities, meaning $\mathcal{S}_{t,s}=\mathcal{S}_{t,s}^1 + \ldots + \mathcal{S}_{t,s}^k$ where the superscript denotes the probability group and $s=t-L,\ldots,t-1$. This refers to the initial state after multiorder clearance
+- L (): The maximum stay in the pool
+- \mathcal{I}_t (T): The set of orders $\mathcal{I}_t$ arrives at the system
+- \epsilon_{t,s}^k (T, L, K): The number of orders in set $\mathcal{S}_{t,s}^k$ that are hit by multiorders
+- \mathcal{S}_{t,s}^{'k} (T, L, K): The updated pool state
+- \mathcal{I}_t^{'k} (T, K): Multiorders that remain $\mathcal{I}_t^{'}. This also supports partitioning the set of orders $\mathcal{I}_t$ into $K$ groups based on the orders' multiorder probabilities, meaning $\mathcal{I}_t=\mathcal{I}_t^1 + \ldots + \mathcal{I}_t^k$ where the superscript denotes the probability group
+- $O_{t,s}^k$ (L+1, K): How many and which orders from the pool should be released. $O_{t,s}^k$ are the number of orders arrived in group $k$ at time $s$ that are released at $t$
+- \overline{F}_t (T): Maximum number of fulfillment orders released from the pool in each period $t$
+- c_F (T): Per-unit penalty for violating the max flow constraint in period $t$
+- p (K): The middle value of the corresponding probability interval for group $k$
+- C (T): The cap on the total number of orders held in the pool at any time $t$
+
+Constraints:
+- Maximum flow constraint. The FC operations impose a limit on our outbound fulfillment order flow in terms of the maximum number of fulfillment orders released from the pool in each period $t$, denoted by $\overline{F}_t$. This is to minimize flow disturbance and to accommodate the existing order-processing capacity schedule
+- Maximum stay constraint. For each order, there is a maximum amount of time in the pool, denoted by $L$
+- Pool size constraint. There should be a cap on the total number of orders held in the pool at any time, donoted by $C_t$
+- End-of-horizon constaint. No orders should be carried over to the next day; the pool has to be emptied by the end of the day.
+    

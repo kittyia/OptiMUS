@@ -1,0 +1,80 @@
+{
+    "parametrized_description": "Minimize the total transportation cost. This cost is calculated based on the number of depots I, the number of ports J, the cost Price per unit distance for transporting goods, and the distance Distance between depot i and port j.",
+    "keywords": [
+        "optimization",
+        "minimization"
+    ],
+    "parameters": {
+        "I": {
+            "description": "Number of depots",
+            "shape": []
+        },
+        "J": {
+            "description": "Number of ports",
+            "shape": []
+        },
+        "Price": {
+            "description": "Cost per unit distance for transporting goods",
+            "shape": []
+        },
+        "Distance": {
+            "description": "Distance between depot i and port j",
+            "shape": [
+                "I",
+                "J"
+            ]
+        },
+        "NumDepot": {
+            "description": "Number of containers available in depot i",
+            "shape": [
+                "I"
+            ]
+        },
+        "NumPort": {
+            "description": "Container requirement in port j",
+            "shape": [
+                "J"
+            ]
+        }
+    },
+    "variables": {
+        "Number": {
+            "description": "Number of containers sent from depot i to port j",
+            "type": "continuous",
+            "shape": [
+                "I",
+                "J"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "The total number of containers sent from depot i cannot exceed the available containers NumDepot_i",
+            "formulation": "\\sum_{j=1}^{J} Number_{i,j} \\leq NumDepot_i \\quad \\forall i \\in \\{1, \\ldots, I\\}",
+            "code": {
+                "gurobipy": "model.addConstrs((quicksum(Number[i, j] for j in range(J)) <= NumDepot[i] for i in range(I)), name=\"DepotSupply\")"
+            }
+        },
+        {
+            "description": "The total number of containers received at port j must meet the requirement NumPort_j",
+            "formulation": "\\sum_{i=1}^{I} Number_{i,j} \\geq NumPort_j \\quad \\forall j \\in \\{1, \\ldots, J\\}",
+            "code": {
+                "gurobipy": "model.addConstrs((quicksum(Number[i, j] for i in range(I)) >= NumPort[j] for j in range(J)), name=\"PortDemand\")"
+            }
+        },
+        {
+            "description": "Number of containers sent must be non-negative",
+            "formulation": "Number_{i,j} \\geq 0 \\quad \\forall i \\in \\{1, \\ldots, I\\}, \\quad \\forall j \\in \\{1, \\ldots, J\\}",
+            "code": {
+                "gurobipy": "model.addConstrs((Number[i, j] >= 0 for i in range(I) for j in range(J)), name=\"NonNeg\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize the total transportation cost from depots to ports",
+        "formulation": "\\min \\sum_{i=1}^{I} \\sum_{j=1}^{J} Price \\times Distance_{i,j} \\times \\frac{Number_{i,j}}{2}",
+        "code": {
+            "gurobipy": "model.setObjective(quicksum(Price * Distance[i][j] * Number[i, j] / 2 for i in range(I) for j in range(J)), GRB.MINIMIZE)"
+        }
+    }
+}

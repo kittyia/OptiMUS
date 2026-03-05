@@ -1,0 +1,74 @@
+{
+    "parametrized_description": "Fit the 'best' straight line Y = bX + a to this set of data points. The objective is to minimise the sum of absolute deviations of each observed value of Y from the value predicted by the linear relationship.",
+    "keywords": [
+        "optimization",
+        "minimization"
+    ],
+    "parameters": {
+        "K": {
+            "description": "Number of data points",
+            "shape": []
+        },
+        "Y": {
+            "description": "Observed values of the dependent variable",
+            "shape": [
+                "K"
+            ]
+        },
+        "X": {
+            "description": "Observed values of the independent variable",
+            "shape": [
+                "K"
+            ]
+        }
+    },
+    "variables": {
+        "Intercept": {
+            "description": "Intercept of the fitted line (a)",
+            "type": "continuous",
+            "shape": []
+        },
+        "Slope": {
+            "description": "Slope of the fitted line (b)",
+            "type": "continuous",
+            "shape": []
+        },
+        "AbsDev": {
+            "description": "Absolute deviation of observed Y from predicted Y for data point k",
+            "type": "continuous",
+            "shape": [
+                "K"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "The absolute deviation for each data point must be at least the positive deviation",
+            "formulation": "AbsDev_{k} \\geq (Slope \\times X_{k} + Intercept) - Y_{k}, \\quad \\forall k \\in \\{1, \\ldots, K\\}",
+            "code": {
+                "gurobipy": "for k in range(K):\n    model.addConstr(AbsDev[k] >= (Slope * X[k] + Intercept) - Y[k], name=f\"PosDev_{k}\")"
+            }
+        },
+        {
+            "description": "The absolute deviation for each data point must be at least the negative deviation",
+            "formulation": "AbsDev_{k} \\geq Y_{k} - (Slope \\times X_{k} + Intercept), \\quad \\forall k \\in \\{1, \\ldots, K\\}",
+            "code": {
+                "gurobipy": "for k in range(K):\n    model.addConstr(AbsDev[k] >= Y[k] - (Slope * X[k] + Intercept), name=f\"NegDev_{k}\")"
+            }
+        },
+        {
+            "description": "Absolute deviations must be non-negative",
+            "formulation": "AbsDev_{k} \\geq 0, \\quad \\forall k \\in \\{1, \\ldots, K\\}",
+            "code": {
+                "gurobipy": "for k in range(K):\n    model.addConstr(AbsDev[k] >= 0, name=f\"AbsDevNonNeg_{k}\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize the sum of absolute deviations between the observed Y values and the values predicted by the model Y = bX + a",
+        "formulation": "\\min \\sum_{k=1}^{K} AbsDev_{k}",
+        "code": {
+            "gurobipy": "model.setObjective(quicksum(AbsDev[k] for k in range(K)), GRB.MINIMIZE)"
+        }
+    }
+}

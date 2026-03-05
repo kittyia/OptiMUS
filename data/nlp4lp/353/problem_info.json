@@ -1,0 +1,71 @@
+{
+    "parametrized_description": "Determine the shortest route that the traveler can take to visit all N towns and return to StartCity.",
+    "keywords": [
+        "optimization",
+        "minimization"
+    ],
+    "parameters": {
+        "N": {
+            "description": "Number of towns to visit",
+            "shape": []
+        },
+        "StartCity": {
+            "description": "Index of the start city",
+            "shape": []
+        },
+        "Distances": {
+            "description": "Distance from city i to city j",
+            "shape": [
+                "N",
+                "N"
+            ]
+        }
+    },
+    "variables": {
+        "Route": {
+            "description": "Binary variable indicating whether the route goes directly from city i to city j (1) or not (0)",
+            "type": "integer",
+            "shape": [
+                "N",
+                "N"
+            ]
+        },
+        "Order": {
+            "description": "Position of city i in the tour sequence (used for subtour elimination)",
+            "type": "continuous",
+            "shape": [
+                "N"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "The traveler must visit each town exactly once",
+            "formulation": "\\sum_{j=1, j \\neq i}^{N} Route_{i,j} = 1 \\quad \\forall i \\in \\{1, \\ldots, N\\}",
+            "code": {
+                "gurobipy": "for i in range(N):\n    model.addConstr(quicksum(Route[i][j] for j in range(N) if j != i) == 1, name=f\"LeaveCity_{i}\")"
+            }
+        },
+        {
+            "description": "The traveler must return to StartCity after visiting all other towns",
+            "formulation": "\\sum_{i=1, i \\neq j}^{N} Route_{i,j} = 1 \\quad \\forall j \\in \\{1, \\ldots, N\\}",
+            "code": {
+                "gurobipy": "for j in range(N):\n    model.addConstr(quicksum(Route[i][j] for i in range(N) if i != j) == 1, name=f\"EnterCity_{j}\")"
+            }
+        },
+        {
+            "description": "The distance between any two towns is non-negative",
+            "formulation": "Order_{i} - Order_{j} + N \\times Route_{i,j} \\leq N - 1 \\quad \\forall i, j \\in \\{1, \\ldots, N\\}, i \\neq StartCity, j \\neq StartCity, i \\neq j",
+            "code": {
+                "gurobipy": "for i in range(N):\n    for j in range(N):\n        if i != StartCity and j != StartCity and i != j:\n            model.addConstr(Order[i] - Order[j] + N * Route[i][j] <= N - 1, name=f\"SubtourElim_{i}_{j}\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize the total travel distance for the route",
+        "formulation": "\\min \\ \\sum_{i=1}^{N} \\sum_{j=1, j \\neq i}^{N} Distances_{i,j} \\times Route_{i,j}",
+        "code": {
+            "gurobipy": "model.setObjective(\n    quicksum(Distances[i][j] * Route[i][j] for i in range(N) for j in range(N) if i != j),\n    GRB.MINIMIZE)"
+        }
+    }
+}

@@ -1,0 +1,119 @@
+{
+    "parametrized_description": "Custom Tees wants to optimize its ad clicks. Their plan is to meet certain goals for clicks from both young and old age groups. They have a set target of GoalYoung clicks by young individuals, GoalOld clicks by old individuals, GoalUniqueYoung unique clicks by young, and GoalUniqueOld unique clicks by old. They can gather clicks from a total of A different ad types. Each ad type provides a varying number of clicks by young individuals YoungClicks and by old individuals OldClicks. Each ad type also incurs different costs Costs, has a maximum limit for the number of clicks MaxClicks, and provides a number of unique clicks UniqueClicks. Custom Tees wants to know how many clicks from each ad type should they purchase to minimize the overall cost while meeting their click goals.",
+    "keywords": [
+        "optimization",
+        "minimization"
+    ],
+    "parameters": {
+        "GoalYoung": {
+            "description": "Total goal for clicks by young individuals",
+            "shape": []
+        },
+        "GoalOld": {
+            "description": "Total goal for clicks by old individuals",
+            "shape": []
+        },
+        "GoalUniqueYoung": {
+            "description": "Total goal for unique clicks by young individuals",
+            "shape": []
+        },
+        "GoalUniqueOld": {
+            "description": "Total goal for unique clicks by old individuals",
+            "shape": []
+        },
+        "YoungClicks": {
+            "description": "Number of clicks by young individuals for each ad type",
+            "shape": [
+                "NumAdTypes"
+            ]
+        },
+        "OldClicks": {
+            "description": "Number of clicks by old individuals for each ad type",
+            "shape": [
+                "NumAdTypes"
+            ]
+        },
+        "Costs": {
+            "description": "Cost associated with each ad type",
+            "shape": [
+                "NumAdTypes"
+            ]
+        },
+        "MaxClicks": {
+            "description": "Maximum number of clicks possible for each ad type",
+            "shape": [
+                "NumAdTypes"
+            ]
+        },
+        "UniqueClicks": {
+            "description": "Number of unique clicks for each ad type",
+            "shape": [
+                "NumAdTypes"
+            ]
+        },
+        "NumAdTypes": {
+            "description": "Number of different ad types",
+            "shape": []
+        }
+    },
+    "variables": {
+        "Clicks": {
+            "description": "Number of clicks purchased from each ad type (in thousands)",
+            "type": "continuous",
+            "shape": [
+                "NumAdTypes"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "Total clicks from young individuals must meet or exceed GoalYoung",
+            "formulation": "\\sum_{a=1}^{NumAdTypes} \\frac{YoungClicks_a}{100} \\times Clicks_a \\geq GoalYoung",
+            "code": {
+                "gurobipy": "model.addConstr(quicksum(YoungClicks[a] / 100 * Clicks[a] for a in range(NumAdTypes)) >= GoalYoung, name=\"YoungGoal\")"
+            }
+        },
+        {
+            "description": "Total clicks from old individuals must meet or exceed GoalOld",
+            "formulation": "\\sum_{a=1}^{NumAdTypes} \\frac{OldClicks_a}{100} \\times Clicks_a \\geq GoalOld",
+            "code": {
+                "gurobipy": "model.addConstr(quicksum(OldClicks[a] / 100 * Clicks[a] for a in range(NumAdTypes)) >= GoalOld, name=\"OldGoal\")"
+            }
+        },
+        {
+            "description": "Total unique clicks from young individuals must meet or exceed GoalUniqueYoung",
+            "formulation": "\\sum_{a=1}^{NumAdTypes} \\frac{UniqueClicks_a}{100} \\times \\frac{YoungClicks_a}{100} \\times Clicks_a \\geq GoalUniqueYoung",
+            "code": {
+                "gurobipy": "model.addConstr(quicksum(UniqueClicks[a] / 100 * YoungClicks[a] / 100 * Clicks[a] for a in range(NumAdTypes)) >= GoalUniqueYoung, name=\"UniqueYoungGoal\")"
+            }
+        },
+        {
+            "description": "Total unique clicks from old individuals must meet or exceed GoalUniqueOld",
+            "formulation": "\\sum_{a=1}^{NumAdTypes} \\frac{UniqueClicks_a}{100} \\times \\frac{OldClicks_a}{100} \\times Clicks_a \\geq GoalUniqueOld",
+            "code": {
+                "gurobipy": "model.addConstr(quicksum(UniqueClicks[a] / 100 * OldClicks[a] / 100 * Clicks[a] for a in range(NumAdTypes)) >= GoalUniqueOld, name=\"UniqueOldGoal\")"
+            }
+        },
+        {
+            "description": "Number of clicks from each ad type must not exceed its MaxClicks",
+            "formulation": "Clicks_a \\leq MaxClicks_a \\quad \\forall a \\in \\{1, \\ldots, NumAdTypes\\}",
+            "code": {
+                "gurobipy": "model.addConstrs((Clicks[a] <= MaxClicks[a] for a in range(NumAdTypes)), name=\"MaxClickLimit\")"
+            }
+        },
+        {
+            "description": "Number of clicks for each ad type must be non-negative",
+            "formulation": "Clicks_a \\geq 0 \\quad \\forall a \\in \\{1, \\ldots, NumAdTypes\\}",
+            "code": {
+                "gurobipy": "model.addConstrs((Clicks[a] >= 0 for a in range(NumAdTypes)), name=\"ClicksNonNeg\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize the overall cost while meeting the young and old click goals",
+        "formulation": "\\min \\sum_{a=1}^{NumAdTypes} Costs_a \\times Clicks_a",
+        "code": {
+            "gurobipy": "model.setObjective(quicksum(Costs[a] * Clicks[a] for a in range(NumAdTypes)), GRB.MINIMIZE)"
+        }
+    }
+}

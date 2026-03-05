@@ -1,0 +1,129 @@
+{
+    "parametrized_description": "Which generators should be working in which periods of the day to minimize the total cost given the demand (Demand) for each period, the number of each generator (NumGenerator), the minimum (MinLevel) and maximum (MaxLevel) levels of each generator, the running costs (RunCost), the extra costs (ExtraCost), and the start-up costs (StartCost) for each generator?",
+    "keywords": [
+        "optimization",
+        "minimization"
+    ],
+    "parameters": {
+        "T": {
+            "description": "Total number of periods",
+            "shape": []
+        },
+        "K": {
+            "description": "Total number of generators",
+            "shape": []
+        },
+        "Demand": {
+            "description": "Demand during period t",
+            "shape": [
+                "T"
+            ]
+        },
+        "NumGenerator": {
+            "description": "Number of generator k",
+            "shape": [
+                "K"
+            ]
+        },
+        "MinLevel": {
+            "description": "Minimum level of generator k",
+            "shape": [
+                "K"
+            ]
+        },
+        "MaxLevel": {
+            "description": "Maximum level of generator k",
+            "shape": [
+                "K"
+            ]
+        },
+        "RunCost": {
+            "description": "Running cost of generator k",
+            "shape": [
+                "K"
+            ]
+        },
+        "ExtraCost": {
+            "description": "Extra cost of generator k",
+            "shape": [
+                "K"
+            ]
+        },
+        "StartCost": {
+            "description": "Start-up cost of generator k",
+            "shape": [
+                "K"
+            ]
+        }
+    },
+    "variables": {
+        "NumOn": {
+            "description": "Number of generators of type k that are on in period t",
+            "type": "integer",
+            "shape": [
+                "K",
+                "T"
+            ]
+        },
+        "NumStart": {
+            "description": "Number of generators of type k that are started in period t",
+            "type": "integer",
+            "shape": [
+                "K",
+                "T"
+            ]
+        },
+        "ExtraOutput": {
+            "description": "Total extra output above minimum level for generator type k in period t",
+            "type": "continuous",
+            "shape": [
+                "K",
+                "T"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "Generator output must meet or exceed the demand for each period",
+            "formulation": "\\sum_{k=1}^{K} (MinLevel_{k} \\times NumOn_{k,t} + ExtraOutput_{k,t}) \\geq Demand_{t}, \\quad \\forall t \\in \\{1, \\ldots, T\\}",
+            "code": {
+                "gurobipy": "for t in range(T):\n    model.addConstr(quicksum(MinLevel[k] * NumOn[k][t] + ExtraOutput[k][t] for k in range(K)) >= Demand[t], name=f\"MeetDemand_{t}\")"
+            }
+        },
+        {
+            "description": "Each generator can operate only within its minimum and maximum levels",
+            "formulation": "ExtraOutput_{k,t} \\leq (MaxLevel_{k} - MinLevel_{k}) \\times NumOn_{k,t}, \\quad \\forall k \\in \\{1, \\ldots, K\\}, \\forall t \\in \\{1, \\ldots, T\\}",
+            "code": {
+                "gurobipy": "for k in range(K):\n    for t in range(T):\n        model.addConstr(ExtraOutput[k][t] <= (MaxLevel[k] - MinLevel[k]) * NumOn[k][t], name=f\"MaxOutput_{k}_{t}\")"
+            }
+        },
+        {
+            "description": "The total number of generators used cannot exceed the available number of each generator",
+            "formulation": "NumOn_{k,t} \\leq NumGenerator_{k}, \\quad \\forall k \\in \\{1, \\ldots, K\\}, \\forall t \\in \\{1, \\ldots, T\\}",
+            "code": {
+                "gurobipy": "for k in range(K):\n    for t in range(T):\n        model.addConstr(NumOn[k][t] <= NumGenerator[k], name=f\"MaxGen_{k}_{t}\")"
+            }
+        },
+        {
+            "description": "The number of generators started in each period is at least the increase in generators on from the previous period",
+            "formulation": "NumStart_{k,t} \\geq NumOn_{k,t} - NumOn_{k,t-1}, \\quad \\forall k \\in \\{1, \\ldots, K\\}, \\forall t \\in \\{2, \\ldots, T\\}",
+            "code": {
+                "gurobipy": "for k in range(K):\n    model.addConstr(NumStart[k][0] >= NumOn[k][0], name=f\"Start_{k}_0\")\n    for t in range(1, T):\n        model.addConstr(NumStart[k][t] >= NumOn[k][t] - NumOn[k][t-1], name=f\"Start_{k}_{t}\")"
+            }
+        },
+        {
+            "description": "Number of generators on and started must be non-negative, and extra output must be non-negative",
+            "formulation": "NumOn_{k,t} \\geq 0, \\quad NumStart_{k,t} \\geq 0, \\quad ExtraOutput_{k,t} \\geq 0, \\quad \\forall k, t",
+            "code": {
+                "gurobipy": "for k in range(K):\n    for t in range(T):\n        model.addConstr(NumOn[k][t] >= 0, name=f\"OnNonNeg_{k}_{t}\")\n        model.addConstr(NumStart[k][t] >= 0, name=f\"StartNonNeg_{k}_{t}\")\n        model.addConstr(ExtraOutput[k][t] >= 0, name=f\"ExtraNonNeg_{k}_{t}\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize the total cost of running generators, which includes running costs, extra costs for exceeding certain thresholds, and start-up costs",
+        "formulation": "\\min \\sum_{k=1}^{K} \\sum_{t=1}^{T} (RunCost_{k} \\times NumOn_{k,t} + ExtraCost_{k} \\times ExtraOutput_{k,t} + StartCost_{k} \\times NumStart_{k,t})",
+        "code": {
+            "gurobipy": "model.setObjective(quicksum(RunCost[k] * NumOn[k][t] + ExtraCost[k] * ExtraOutput[k][t] + StartCost[k] * NumStart[k][t] for k in range(K) for t in range(T)), GRB.MINIMIZE)"
+        }
+    }
+}

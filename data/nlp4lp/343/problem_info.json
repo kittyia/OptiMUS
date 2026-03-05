@@ -1,0 +1,76 @@
+{
+    "parametrized_description": "How much electricity should each power plant send to each city to minimize the total transmission cost, given there are P power plants with a supply capacity of Supply, C cities with a demand of Demand, and the transmission costs between power plants and cities are TransmissionCosts?",
+    "keywords": [
+        "optimization",
+        "minimization"
+    ],
+    "parameters": {
+        "P": {
+            "description": "Number of power plants",
+            "shape": []
+        },
+        "C": {
+            "description": "Number of cities",
+            "shape": []
+        },
+        "Supply": {
+            "description": "Electricity supply capacity of power plant p",
+            "shape": [
+                "P"
+            ]
+        },
+        "Demand": {
+            "description": "Electricity demand of city c",
+            "shape": [
+                "C"
+            ]
+        },
+        "TransmissionCosts": {
+            "description": "Transmission cost from power plant p to city c",
+            "shape": [
+                "P",
+                "C"
+            ]
+        }
+    },
+    "variables": {
+        "Send": {
+            "description": "Amount of electricity sent from power plant p to city c (in million kwh)",
+            "type": "continuous",
+            "shape": [
+                "P",
+                "C"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "Each power plant p cannot send more electricity than its supply capacity",
+            "formulation": "\\sum_{c} Send_{p,c} \\leq Supply_{p} \\quad \\forall p",
+            "code": {
+                "gurobipy": "for p in range(P):\n    model.addConstr(gp.quicksum(Send[p, c] for c in range(C)) <= Supply[p], name=f\"SupplyCap_{p}\")"
+            }
+        },
+        {
+            "description": "Each city c must have its electricity demand met",
+            "formulation": "\\sum_{p} Send_{p,c} \\geq Demand_{c} \\quad \\forall c",
+            "code": {
+                "gurobipy": "for c in range(C):\n    model.addConstr(gp.quicksum(Send[p, c] for p in range(P)) >= Demand[c], name=f\"DemandMet_{c}\")"
+            }
+        },
+        {
+            "description": "Electricity sent from any power plant to any city is non-negative",
+            "formulation": "Send_{p,c} \\geq 0 \\quad \\forall p, c",
+            "code": {
+                "gurobipy": "for p in range(P):\n    for c in range(C):\n        model.addConstr(Send[p, c] >= 0, name=f\"NonNeg_{p}_{c}\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize the total transmission cost from power plants to cities",
+        "formulation": "\\min \\ \\sum_{p} \\sum_{c} TransmissionCosts_{p,c} \\times Send_{p,c}",
+        "code": {
+            "gurobipy": "model.setObjective(gp.quicksum(TransmissionCosts[p][c] * Send[p, c] for p in range(P) for c in range(C)), GRB.MINIMIZE)"
+        }
+    }
+}

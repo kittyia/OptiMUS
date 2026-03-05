@@ -1,0 +1,60 @@
+{
+    "parametrized_description": "A company manufactures M types of products using N types of raw materials. The available amount of each raw material is given by Available. Each product requires a certain amount of each raw material per unit produced, specified by Requirements. Each product generates revenue per unit given by Prices. Determine the optimal quantity of each product to produce to maximize total revenue without exceeding the available raw materials.",
+    "keywords": [
+        "production planning",
+        "resource allocation",
+        "linear programming"
+    ],
+    "parameters": {
+        "M": {
+            "description": "Number of different products produced by the firm",
+            "shape": []
+        },
+        "N": {
+            "description": "Number of different raw materials used by the firm",
+            "shape": []
+        },
+        "Available": {
+            "description": "Available amount of raw material i",
+            "shape": ["N"]
+        },
+        "Requirements": {
+            "description": "Amount of raw material i required to produce one unit of product j",
+            "shape": ["N", "M"]
+        },
+        "Prices": {
+            "description": "Revenue earned from selling one unit of product j",
+            "shape": ["M"]
+        }
+    },
+    "variables": {
+        "Quantity": {
+            "description": "Quantity of product j to produce",
+            "type": "continuous",
+            "shape": ["M"]
+        }
+    },
+    "constraints": [
+        {
+            "description": "The total usage of each raw material must not exceed its available amount.",
+            "formulation": "\\sum_{j=1}^{M} Requirements_{i,j} \\times Quantity_j \\leq Available_i \\quad \\forall i \\in \\{1, \\ldots, N\\}",
+            "code": {
+                "gurobipy": "model.addConstrs((quicksum(Requirements[i][j] * Quantity[j] for j in range(M)) <= Available[i] for i in range(N)), name=\"RawMaterial\")"
+            }
+        },
+        {
+            "description": "The quantity of each product produced must be non-negative.",
+            "formulation": "Quantity_j \\geq 0 \\quad \\forall j \\in \\{1, \\ldots, M\\}",
+            "code": {
+                "gurobipy": "model.addConstrs((Quantity[j] >= 0 for j in range(M)), name=\"NonNeg\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Maximize total revenue from selling all products.",
+        "formulation": "\\max \\sum_{j=1}^{M} Prices_j \\times Quantity_j",
+        "code": {
+            "gurobipy": "model.setObjective(quicksum(Prices[j] * Quantity[j] for j in range(M)), GRB.MAXIMIZE)"
+        }
+    }
+}

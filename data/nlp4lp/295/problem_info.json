@@ -1,0 +1,85 @@
+{
+    "parametrized_description": "A chemical company uses two tests, a salinity test and a pH test. Each unit of the salinity test requires ProbesSalinity probes. Whereas each unit of the pH test requires ProbesPH probes. The chemical company must perform at least MinPHTests pH tests. In total, at least MinTotalTests tests must be performed. Further, because of the importance of the salinity test, there must be at most MaxPHSalinityRatio times more pH tests than salinity tests. How many times should each test be performed to minimize the total number of probes used?",
+    "keywords": [
+        "optimization",
+        "minimization"
+    ],
+    "parameters": {
+        "ProbesPerSalinityTest": {
+            "description": "Probes required per salinity test",
+            "shape": []
+        },
+        "ProbesPerPHTest": {
+            "description": "Probes required per pH test",
+            "shape": []
+        },
+        "MinPHTests": {
+            "description": "Minimum number of pH tests to be performed",
+            "shape": []
+        },
+        "MinTotalTests": {
+            "description": "Minimum total number of tests to be performed",
+            "shape": []
+        },
+        "MaxPHtoSalinityRatio": {
+            "description": "Maximum ratio of number of pH tests to salinity tests",
+            "shape": []
+        }
+    },
+    "variables": {
+        "NumSalinityTests": {
+            "description": "Number of salinity tests to perform",
+            "type": "integer",
+            "shape": []
+        },
+        "NumPHTests": {
+            "description": "Number of pH tests to perform",
+            "type": "integer",
+            "shape": []
+        }
+    },
+    "constraints": [
+        {
+            "description": "At least MinPHTests pH tests must be performed",
+            "formulation": "NumPHTests \\geq MinPHTests",
+            "code": {
+                "gurobipy": "model.addConstr(NumPHTests >= MinPHTests, name=\"MinPHConstr\")"
+            }
+        },
+        {
+            "description": "At least MinTotalTests tests must be performed in total",
+            "formulation": "NumSalinityTests + NumPHTests \\geq MinTotalTests",
+            "code": {
+                "gurobipy": "model.addConstr(NumSalinityTests + NumPHTests >= MinTotalTests, name=\"MinTotalConstr\")"
+            }
+        },
+        {
+            "description": "The number of pH tests must not exceed MaxPHtoSalinityRatio times the number of salinity tests",
+            "formulation": "NumPHTests \\leq MaxPHtoSalinityRatio \\times NumSalinityTests",
+            "code": {
+                "gurobipy": "model.addConstr(NumPHTests <= MaxPHtoSalinityRatio * NumSalinityTests, name=\"PHtoSalinityRatio\")"
+            }
+        },
+        {
+            "description": "The number of salinity tests is non-negative",
+            "formulation": "NumSalinityTests \\geq 0",
+            "code": {
+                "gurobipy": "model.addConstr(NumSalinityTests >= 0, name=\"SalinityNonNeg\")"
+            }
+        },
+        {
+            "description": "The number of pH tests is non-negative",
+            "formulation": "NumPHTests \\geq 0",
+            "code": {
+                "gurobipy": "model.addConstr(NumPHTests >= 0, name=\"PHNonNeg\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize the total number of probes used in both salinity and pH tests",
+        "formulation": "\\min \\ ProbesPerSalinityTest \\times NumSalinityTests + ProbesPerPHTest \\times NumPHTests",
+        "code": {
+            "gurobipy": "model.setObjective(ProbesPerSalinityTest * NumSalinityTests + ProbesPerPHTest * NumPHTests, GRB.MINIMIZE)"
+        }
+    }
+}

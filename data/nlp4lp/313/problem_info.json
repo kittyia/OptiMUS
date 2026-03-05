@@ -1,0 +1,115 @@
+{
+    "parametrized_description": "To maximize profit, which mines should be operated each year and how much should they produce? The company has K mines and can operate at most MaxWork in any given year. For each mine k, there is a royalty cost of Royalty, a production limit of Limit, and the material extracted has a quality of Quality. Each client i requires a material with at least RequiredQuality. The price per unit of material sold is Price, with a discount Discount applied to the royalty cost for each unit sold.",
+    "keywords": [
+        "optimization",
+        "maximization"
+    ],
+    "parameters": {
+        "K": {
+            "description": "Number of mines",
+            "shape": []
+        },
+        "MaxWork": {
+            "description": "Maximum number of mines that can be operated in a year",
+            "shape": []
+        },
+        "NumYears": {
+            "description": "Number of years the company will be operating",
+            "shape": []
+        },
+        "Royalty": {
+            "description": "Royalty cost for operating mine k",
+            "shape": [
+                "K"
+            ]
+        },
+        "Limit": {
+            "description": "Production limit for mine k",
+            "shape": [
+                "K"
+            ]
+        },
+        "Quality": {
+            "description": "Quality of the material from mine k",
+            "shape": [
+                "K"
+            ]
+        },
+        "RequiredQuality": {
+            "description": "Required quality of the material for each year",
+            "shape": [
+                "NumYears"
+            ]
+        },
+        "Price": {
+            "description": "Price per unit of material sold",
+            "shape": []
+        },
+        "Discount": {
+            "description": "Discount rate on the royalty cost per unit of material sold",
+            "shape": []
+        }
+    },
+    "variables": {
+        "IsOperated": {
+            "description": "Binary variable indicating whether mine k is operated in year i",
+            "type": "integer",
+            "shape": [
+                "K",
+                "NumYears"
+            ]
+        },
+        "Amount": {
+            "description": "Amount of ore produced by mine k in year i",
+            "type": "continuous",
+            "shape": [
+                "K",
+                "NumYears"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "Number of operated mines does not exceed MaxWork in each year",
+            "formulation": "\\sum_{k=1}^{K} IsOperated_{k,i} \\leq MaxWork, \\quad \\forall i \\in \\{1, \\ldots, NumYears\\}",
+            "code": {
+                "gurobipy": "for i in range(NumYears):\n    model.addConstr(gurobipy.quicksum(IsOperated[k][i] for k in range(K)) <= MaxWork, name=f\"MaxMines_{i}\")"
+            }
+        },
+        {
+            "description": "Each mine k produces a non-negative amount of material",
+            "formulation": "Amount_{k,i} \\geq 0, \\quad \\forall k, i",
+            "code": {
+                "gurobipy": "for k in range(K):\n    for i in range(NumYears):\n        model.addConstr(Amount[k][i] >= 0, name=f\"NonNegAmount_{k}_{i}\")"
+            }
+        },
+        {
+            "description": "Each mine k has a production limit of Limit, and can only produce if operated",
+            "formulation": "Amount_{k,i} \\leq Limit_{k} \\times IsOperated_{k,i}, \\quad \\forall k, i",
+            "code": {
+                "gurobipy": "for k in range(K):\n    for i in range(NumYears):\n        model.addConstr(Amount[k][i] <= Limit[k] * IsOperated[k][i], name=f\"ProdLimit_{k}_{i}\")"
+            }
+        },
+        {
+            "description": "The blended quality of ore in each year must equal the required quality (weighted average)",
+            "formulation": "\\sum_{k=1}^{K} Quality_{k} \\times Amount_{k,i} = RequiredQuality_{i} \\times \\sum_{k=1}^{K} Amount_{k,i}, \\quad \\forall i",
+            "code": {
+                "gurobipy": "for i in range(NumYears):\n    model.addConstr(gurobipy.quicksum(Quality[k] * Amount[k][i] for k in range(K)) == RequiredQuality[i] * gurobipy.quicksum(Amount[k][i] for k in range(K)), name=f\"QualityReq_{i}\")"
+            }
+        },
+        {
+            "description": "If a mine is operated in a future year, it must be kept open (operated or maintained) in all previous years",
+            "formulation": "IsOperated_{k,i} \\leq IsOperated_{k,i-1}, \\quad \\forall k, \\forall i \\geq 2 \\quad \\text{(once closed, stays closed)}",
+            "code": {
+                "gurobipy": "for k in range(K):\n    for i in range(1, NumYears):\n        model.addConstr(IsOperated[k][i] <= IsOperated[k][i-1], name=f\"OpenContinuity_{k}_{i}\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Maximize the company's discounted profit from operating the mines and selling the material produced",
+        "formulation": "\\max \\ \\sum_{i=1}^{NumYears} \\frac{1}{(1 + Discount)^{i}} \\left( Price \\times \\sum_{k=1}^{K} Amount_{k,i} - \\sum_{k=1}^{K} Royalty_{k} \\times IsOperated_{k,i} \\right)",
+        "code": {
+            "gurobipy": "model.setObjective(gurobipy.quicksum((1 / (1 + Discount) ** (i + 1)) * (Price * gurobipy.quicksum(Amount[k][i] for k in range(K)) - gurobipy.quicksum(Royalty[k] * IsOperated[k][i] for k in range(K))) for i in range(NumYears)), GRB.MAXIMIZE)"
+        }
+    }
+}

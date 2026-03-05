@@ -1,0 +1,134 @@
+{
+    "parametrized_description": "How much of each alloy should the company use in each type of steel, and how much of each steel type should be produced to maximize profit? The company has A different alloys and S different steel types. For each alloy a in 1, ..., A, there is an available amount of AvailableAlloy, a carbon content of CarbonContent, a nickel content of NickelContent, and an alloy price of AlloyPrice. For each steel type s in 1, ..., S, there is a steel price of SteelPrice, a minimum required carbon content of CarbonMin, and a maximum allowed nickel content of NickelMax.",
+    "keywords": [
+        "optimization",
+        "maximization"
+    ],
+    "parameters": {
+        "A": {
+            "description": "Total number of different alloys",
+            "shape": []
+        },
+        "S": {
+            "description": "Total number of different steel types",
+            "shape": []
+        },
+        "AvailableAlloy": {
+            "description": "Available amount of alloy a",
+            "shape": [
+                "A"
+            ]
+        },
+        "CarbonContent": {
+            "description": "Carbon content of alloy a",
+            "shape": [
+                "A"
+            ]
+        },
+        "NickelContent": {
+            "description": "Nickel content of alloy a",
+            "shape": [
+                "A"
+            ]
+        },
+        "AlloyPrice": {
+            "description": "Price of alloy a",
+            "shape": [
+                "A"
+            ]
+        },
+        "SteelPrice": {
+            "description": "Price of steel type s",
+            "shape": [
+                "S"
+            ]
+        },
+        "CarbonMin": {
+            "description": "Minimum required carbon content for steel type s",
+            "shape": [
+                "S"
+            ]
+        },
+        "NickelMax": {
+            "description": "Maximum allowed nickel content for steel type s",
+            "shape": [
+                "S"
+            ]
+        }
+    },
+    "variables": {
+        "AlloyAmount": {
+            "description": "Amount of alloy a used in steel type s (in tons)",
+            "type": "continuous",
+            "shape": [
+                "A",
+                "S"
+            ]
+        },
+        "TotalSteel": {
+            "description": "Total amount of steel type s produced (in tons)",
+            "type": "continuous",
+            "shape": [
+                "S"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "For each alloy a, the total amount used across all steel types cannot exceed AvailableAlloy[a]",
+            "formulation": "\\sum_{s} AlloyAmount_{a,s} \\leq AvailableAlloy_{a} \\quad \\forall a",
+            "code": {
+                "gurobipy": "for a in range(A):\n    model.addConstr(gp.quicksum(AlloyAmount[a, s] for s in range(S)) <= AvailableAlloy[a], name=f\"AlloyAvail_{a}\")"
+            }
+        },
+        {
+            "description": "The carbon content in each steel type s must be at least CarbonMin[s]",
+            "formulation": "\\sum_{a} CarbonContent_{a} \\times AlloyAmount_{a,s} \\geq CarbonMin_{s} \\times TotalSteel_{s} \\quad \\forall s",
+            "code": {
+                "gurobipy": "for s in range(S):\n    model.addConstr(gp.quicksum(CarbonContent[a] * AlloyAmount[a, s] for a in range(A)) >= CarbonMin[s] * TotalSteel[s], name=f\"CarbonMin_{s}\")"
+            }
+        },
+        {
+            "description": "The nickel content in each steel type s must not exceed NickelMax[s]",
+            "formulation": "\\sum_{a} NickelContent_{a} \\times AlloyAmount_{a,s} \\leq NickelMax_{s} \\times TotalSteel_{s} \\quad \\forall s",
+            "code": {
+                "gurobipy": "for s in range(S):\n    model.addConstr(gp.quicksum(NickelContent[a] * AlloyAmount[a, s] for a in range(A)) <= NickelMax[s] * TotalSteel[s], name=f\"NickelMax_{s}\")"
+            }
+        },
+        {
+            "description": "The total amount of alloys used for each steel type s equals the total steel produced for that type",
+            "formulation": "\\sum_{a} AlloyAmount_{a,s} = TotalSteel_{s} \\quad \\forall s",
+            "code": {
+                "gurobipy": "for s in range(S):\n    model.addConstr(gp.quicksum(AlloyAmount[a, s] for a in range(A)) == TotalSteel[s], name=f\"SteelTotal_{s}\")"
+            }
+        },
+        {
+            "description": "For each steel type s, at most 40% of alloy 1 can be used",
+            "formulation": "AlloyAmount_{0,s} \\leq 0.4 \\times TotalSteel_{s} \\quad \\forall s",
+            "code": {
+                "gurobipy": "for s in range(S):\n    model.addConstr(AlloyAmount[0, s] <= 0.4 * TotalSteel[s], name=f\"Alloy1Limit_{s}\")"
+            }
+        },
+        {
+            "description": "For each steel type s, the amount produced is non-negative",
+            "formulation": "TotalSteel_{s} \\geq 0 \\quad \\forall s",
+            "code": {
+                "gurobipy": "for s in range(S):\n    model.addConstr(TotalSteel[s] >= 0, name=f\"SteelNonNeg_{s}\")"
+            }
+        },
+        {
+            "description": "For each alloy a and steel type s, the alloy amount used is non-negative",
+            "formulation": "AlloyAmount_{a,s} \\geq 0 \\quad \\forall a, s",
+            "code": {
+                "gurobipy": "for a in range(A):\n    for s in range(S):\n        model.addConstr(AlloyAmount[a, s] >= 0, name=f\"AlloyNonNeg_{a}_{s}\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Maximize the profit from producing the different steel types, considering the cost of the alloys and the revenue from the steel",
+        "formulation": "\\max \\ \\sum_{s} SteelPrice_{s} \\times TotalSteel_{s} - \\sum_{a} \\sum_{s} AlloyPrice_{a} \\times AlloyAmount_{a,s}",
+        "code": {
+            "gurobipy": "model.setObjective(gp.quicksum(SteelPrice[s] * TotalSteel[s] for s in range(S)) - gp.quicksum(AlloyPrice[a] * AlloyAmount[a, s] for a in range(A) for s in range(S)), GRB.MAXIMIZE)"
+        }
+    }
+}

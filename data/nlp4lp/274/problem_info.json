@@ -1,0 +1,52 @@
+{
+    "parametrized_description": "A hospital needs to schedule nurses for the night shift over T days. The demand for nurses varies each day as given by Demand. Each nurse works Period consecutive days followed by (T - Period) days off in a cyclic weekly pattern. Determine the minimum number of nurses to hire to meet the daily demand.",
+    "keywords": [
+        "nurse scheduling",
+        "workforce planning",
+        "integer programming"
+    ],
+    "parameters": {
+        "T": {
+            "description": "Total number of days in the scheduling period",
+            "shape": []
+        },
+        "Period": {
+            "description": "Number of consecutive days each nurse works",
+            "shape": []
+        },
+        "Demand": {
+            "description": "Number of nurses required on each day",
+            "shape": ["T"]
+        }
+    },
+    "variables": {
+        "Start": {
+            "description": "Number of nurses starting their shift cycle on day t",
+            "type": "integer",
+            "shape": ["T"]
+        }
+    },
+    "constraints": [
+        {
+            "description": "The number of nurses working on each day must meet the demand. A nurse starting on day s works on days s, s+1, ..., s+Period-1 (mod T).",
+            "formulation": "\\sum_{s : t \\in \\{s, s+1, \\ldots, s+Period-1\\} \\mod T} Start_s \\geq Demand_t \\quad \\forall t",
+            "code": {
+                "gurobipy": "for t in range(T):\n    model.addConstr(quicksum(Start[s] for s in range(T) if t in [(s + d) % T for d in range(Period)]) >= Demand[t], name=f\"Demand_{t}\")"
+            }
+        },
+        {
+            "description": "Number of nurses starting on each day must be non-negative.",
+            "formulation": "Start_t \\geq 0 \\quad \\forall t",
+            "code": {
+                "gurobipy": "model.addConstrs((Start[t] >= 0 for t in range(T)), name=\"NonNeg\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize the total number of nurses hired.",
+        "formulation": "\\min \\sum_{t=1}^{T} Start_t",
+        "code": {
+            "gurobipy": "model.setObjective(quicksum(Start[t] for t in range(T)), GRB.MINIMIZE)"
+        }
+    }
+}

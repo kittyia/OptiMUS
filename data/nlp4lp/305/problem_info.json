@@ -1,0 +1,85 @@
+{
+    "parametrized_description": "We want to know how many times should we execute each process to maximize the revenue for the next month (you can assume that the number of times that each process is executed is a floating point number). The problem involves O options, P price points, and L processes with Allocated resources, Price at each price point, Input required for each option in each process, Output produced for each price point in each process, and Cost for each process.",
+    "keywords": [
+        "optimization",
+        "maximization"
+    ],
+    "parameters": {
+        "O": {
+            "description": "Number of options",
+            "shape": []
+        },
+        "P": {
+            "description": "Number of price points",
+            "shape": []
+        },
+        "L": {
+            "description": "Number of processes",
+            "shape": []
+        },
+        "Allocated": {
+            "description": "Allocated resources for each option",
+            "shape": [
+                "O"
+            ]
+        },
+        "Price": {
+            "description": "Price at each price point",
+            "shape": [
+                "P"
+            ]
+        },
+        "Input": {
+            "description": "Input resources required for each option in each process",
+            "shape": [
+                "L",
+                "O"
+            ]
+        },
+        "Output": {
+            "description": "Output produced for each price point in each process",
+            "shape": [
+                "L",
+                "P"
+            ]
+        },
+        "Cost": {
+            "description": "Cost for each process",
+            "shape": [
+                "L"
+            ]
+        }
+    },
+    "variables": {
+        "Execute": {
+            "description": "Number of times process l is executed",
+            "type": "continuous",
+            "shape": [
+                "L"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "Each process execution number is non-negative",
+            "formulation": "Execute_{l} \\geq 0, \\quad \\forall l \\in \\{1, \\ldots, L\\}",
+            "code": {
+                "gurobipy": "for l in range(L):\n    model.addConstr(Execute[l] >= 0, name=f\"NonNegExec_{l}\")"
+            }
+        },
+        {
+            "description": "Total input usage for each crude type across all processes does not exceed allocated resources",
+            "formulation": "\\sum_{l=1}^{L} Input_{l,i} \\times Execute_{l} \\leq Allocated_{i}, \\quad \\forall i \\in \\{1, \\ldots, O\\}",
+            "code": {
+                "gurobipy": "for i in range(O):\n    model.addConstr(gurobipy.quicksum(Input[l][i] * Execute[l] for l in range(L)) <= Allocated[i], name=f\"ResourceLimit_{i}\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Maximize the total profit, which is the revenue from selling products minus the cost of running processes",
+        "formulation": "\\max \\ \\sum_{l=1}^{L} \\left( \\sum_{p=1}^{P} Price_{p} \\times Output_{l,p} - Cost_{l} \\right) \\times Execute_{l}",
+        "code": {
+            "gurobipy": "model.setObjective(gurobipy.quicksum((gurobipy.quicksum(Price[p] * Output[l][p] for p in range(P)) - Cost[l]) * Execute[l] for l in range(L)), GRB.MAXIMIZE)"
+        }
+    }
+}

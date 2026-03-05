@@ -1,0 +1,88 @@
+{
+    "parametrized_description": "We want to know how many shares the investor needs to sell in order to raise the needed money, net of capital gains and transaction costs, K, while maximizing the expected value of his portfolio next year. The investor initially bought Bought shares at a purchase price of BuyPrice per share. The current market price and expected future market price of the shares are CurrentPrice and FuturePrice, respectively. The transaction cost rate per share sold is TransactionRate, and the capital gains tax rate is TaxRate.",
+    "keywords": [
+        "optimization",
+        "maximization"
+    ],
+    "parameters": {
+        "N": {
+            "description": "Number of different shares",
+            "shape": []
+        },
+        "Bought": {
+            "description": "Amount of each share initially bought",
+            "shape": [
+                "N"
+            ]
+        },
+        "BuyPrice": {
+            "description": "Purchase price of each share",
+            "shape": [
+                "N"
+            ]
+        },
+        "CurrentPrice": {
+            "description": "Current market price of each share",
+            "shape": [
+                "N"
+            ]
+        },
+        "FuturePrice": {
+            "description": "Expected future market price of each share",
+            "shape": [
+                "N"
+            ]
+        },
+        "TransactionRate": {
+            "description": "Transaction cost rate per share sold",
+            "shape": []
+        },
+        "TaxRate": {
+            "description": "Capital gains tax rate on the profit from selling shares",
+            "shape": []
+        },
+        "K": {
+            "description": "Amount of money the investor needs to raise",
+            "shape": []
+        }
+    },
+    "variables": {
+        "Sell": {
+            "description": "Number of shares of stock i to sell",
+            "type": "continuous",
+            "shape": [
+                "N"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "Number of shares sold is non-negative",
+            "formulation": "Sell_{i} \\geq 0, \\quad \\forall i \\in \\{1, \\ldots, N\\}",
+            "code": {
+                "gurobipy": "for i in range(N):\n    model.addConstr(Sell[i] >= 0, name=f\"NonNegSell_{i}\")"
+            }
+        },
+        {
+            "description": "Number of shares sold is less than or equal to Bought",
+            "formulation": "Sell_{i} \\leq Bought_{i}, \\quad \\forall i \\in \\{1, \\ldots, N\\}",
+            "code": {
+                "gurobipy": "for i in range(N):\n    model.addConstr(Sell[i] <= Bought[i], name=f\"MaxSell_{i}\")"
+            }
+        },
+        {
+            "description": "Amount raised from selling shares after deducting transaction costs and capital gains taxes is at least K",
+            "formulation": "\\sum_{i=1}^{N} \\left( CurrentPrice_{i} \\times Sell_{i} - \\frac{TransactionRate}{100} \\times CurrentPrice_{i} \\times Sell_{i} - \\frac{TaxRate}{100} \\times \\max(CurrentPrice_{i} - BuyPrice_{i}, 0) \\times Sell_{i} \\right) \\geq K",
+            "code": {
+                "gurobipy": "model.addConstr(gurobipy.quicksum(CurrentPrice[i] * Sell[i] - (TransactionRate / 100) * CurrentPrice[i] * Sell[i] - (TaxRate / 100) * max(CurrentPrice[i] - BuyPrice[i], 0) * Sell[i] for i in range(N)) >= K, name=\"RaiseMoney\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Maximize the expected value of the investor's portfolio next year",
+        "formulation": "\\max \\ \\sum_{i=1}^{N} FuturePrice_{i} \\times (Bought_{i} - Sell_{i})",
+        "code": {
+            "gurobipy": "model.setObjective(gurobipy.quicksum(FuturePrice[i] * (Bought[i] - Sell[i]) for i in range(N)), GRB.MAXIMIZE)"
+        }
+    }
+}

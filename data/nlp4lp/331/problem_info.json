@@ -1,0 +1,117 @@
+{
+    "parametrized_description": "How should the manufacture manage the steel to maximize profit? The manufacture has to decide on the optimal quantity of SteelQuantity tons of steel to produce, taking into account the required ManganesePercent percent manganese and ensuring the silicon content is between SiliconMinPercent percent and SiliconMaxPercent percent. The available stocks contain SiliconContent percent Silicon and ManganeseContent percent Manganese. The price of manganese is set at ManganesePrice per ton, and the material cost for each stock is MaterialCost. The company sells the steel at a price of SellingPrice per ton but also incurs a melting cost of MeltingPrice per ton.",
+    "keywords": [
+        "optimization",
+        "maximization"
+    ],
+    "parameters": {
+        "SteelQuantity": {
+            "description": "Amount of steel to produce in tons",
+            "shape": []
+        },
+        "ManganesePercent": {
+            "description": "Percentage of manganese in the steel required",
+            "shape": []
+        },
+        "SiliconMinPercent": {
+            "description": "Minimum percentage of silicon in the steel required",
+            "shape": []
+        },
+        "SiliconMaxPercent": {
+            "description": "Maximum percentage of silicon in the steel allowed",
+            "shape": []
+        },
+        "NumMinerals": {
+            "description": "Number of different types of minerals available",
+            "shape": []
+        },
+        "SiliconContent": {
+            "description": "Silicon content in the k-th stock",
+            "shape": [
+                "NumMinerals"
+            ]
+        },
+        "ManganeseContent": {
+            "description": "Manganese content in the k-th stock",
+            "shape": [
+                "NumMinerals"
+            ]
+        },
+        "ManganesePrice": {
+            "description": "Price of manganese per ton",
+            "shape": []
+        },
+        "MaterialCost": {
+            "description": "Cost of the k-th stock material per ton",
+            "shape": [
+                "NumMinerals"
+            ]
+        },
+        "SellingPrice": {
+            "description": "Selling price of steel per ton",
+            "shape": []
+        },
+        "MeltingPrice": {
+            "description": "Price to melt one ton of steel",
+            "shape": []
+        }
+    },
+    "variables": {
+        "Amount": {
+            "description": "Amount of each mineral melted in tons",
+            "type": "continuous",
+            "shape": [
+                "NumMinerals"
+            ]
+        },
+        "NumMang": {
+            "description": "Amount of manganese directly added in tons",
+            "type": "continuous",
+            "shape": []
+        }
+    },
+    "constraints": [
+        {
+            "description": "Total quantity of steel produced is SteelQuantity tons",
+            "formulation": "\\sum_{k=1}^{NumMinerals} Amount_k + NumMang = SteelQuantity",
+            "code": {
+                "gurobipy": "model.addConstr(quicksum(Amount[k] for k in range(NumMinerals)) + NumMang == SteelQuantity, name=\"TotalSteel\")"
+            }
+        },
+        {
+            "description": "Steel must contain at least ManganesePercent percent manganese",
+            "formulation": "\\sum_{k=1}^{NumMinerals} \\frac{ManganeseContent_k}{100} \\times Amount_k + NumMang \\geq \\frac{ManganesePercent}{100} \\times SteelQuantity",
+            "code": {
+                "gurobipy": "model.addConstr(quicksum(ManganeseContent[k] / 100 * Amount[k] for k in range(NumMinerals)) + NumMang >= ManganesePercent / 100 * SteelQuantity, name=\"MnMin\")"
+            }
+        },
+        {
+            "description": "Silicon content in steel must be at least SiliconMinPercent percent",
+            "formulation": "\\sum_{k=1}^{NumMinerals} \\frac{SiliconContent_k}{100} \\times Amount_k \\geq \\frac{SiliconMinPercent}{100} \\times SteelQuantity",
+            "code": {
+                "gurobipy": "model.addConstr(quicksum(SiliconContent[k] / 100 * Amount[k] for k in range(NumMinerals)) >= SiliconMinPercent / 100 * SteelQuantity, name=\"SiMin\")"
+            }
+        },
+        {
+            "description": "Silicon content in steel must be at most SiliconMaxPercent percent",
+            "formulation": "\\sum_{k=1}^{NumMinerals} \\frac{SiliconContent_k}{100} \\times Amount_k \\leq \\frac{SiliconMaxPercent}{100} \\times SteelQuantity",
+            "code": {
+                "gurobipy": "model.addConstr(quicksum(SiliconContent[k] / 100 * Amount[k] for k in range(NumMinerals)) <= SiliconMaxPercent / 100 * SteelQuantity, name=\"SiMax\")"
+            }
+        },
+        {
+            "description": "Amount of each mineral must be non-negative",
+            "formulation": "Amount_k \\geq 0 \\quad \\forall k \\in \\{1, \\ldots, NumMinerals\\}, \\quad NumMang \\geq 0",
+            "code": {
+                "gurobipy": "model.addConstrs((Amount[k] >= 0 for k in range(NumMinerals)), name=\"AmountNonNeg\")\nmodel.addConstr(NumMang >= 0, name=\"MangNonNeg\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Maximize the company's profit from the steel produced",
+        "formulation": "\\max \\ SellingPrice \\times SteelQuantity - \\sum_{k=1}^{NumMinerals} (MaterialCost_k \\times Amount_k + MeltingPrice \\times Amount_k) - ManganesePrice \\times NumMang",
+        "code": {
+            "gurobipy": "model.setObjective(SellingPrice * SteelQuantity - quicksum((MaterialCost[k] + MeltingPrice) * Amount[k] for k in range(NumMinerals)) - ManganesePrice * NumMang, GRB.MAXIMIZE)"
+        }
+    }
+}

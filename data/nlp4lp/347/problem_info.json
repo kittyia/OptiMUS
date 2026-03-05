@@ -1,0 +1,86 @@
+{
+    "parametrized_description": "Determine the optimal path the delivery person should take to ensure the package is delivered in the least amount of time. The path is constrained by the number of east-west streets, N, and the number of north-south streets, W. Each east-west street segment WestTime and each north-south street segment NorthTime takes a certain amount of time to cross.",
+    "keywords": [
+        "optimization",
+        "minimization"
+    ],
+    "parameters": {
+        "N": {
+            "description": "Number of east-west streets",
+            "shape": []
+        },
+        "W": {
+            "description": "Number of north-south streets",
+            "shape": []
+        },
+        "WestTime": {
+            "description": "Time to cross street segment going west, for given street n and segment w",
+            "shape": [
+                "N",
+                "W"
+            ]
+        },
+        "NorthTime": {
+            "description": "Time to cross street segment going north, for given street n and segment w",
+            "shape": [
+                "W",
+                "N"
+            ]
+        }
+    },
+    "variables": {
+        "WestFlow": {
+            "description": "Flow (fraction) on the westward edge from intersection (n, w) to (n, w+1)",
+            "type": "continuous",
+            "shape": [
+                "N",
+                "W"
+            ]
+        },
+        "NorthFlow": {
+            "description": "Flow (fraction) on the northward edge from intersection (n, w) to (n+1, w)",
+            "type": "continuous",
+            "shape": [
+                "N",
+                "W"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "The number of east-west street segments used cannot exceed N",
+            "formulation": "\\sum_{n=1}^{N} \\sum_{w=1}^{W-1} WestFlow_{n,w} + \\sum_{n=1}^{N-1} \\sum_{w=1}^{W} NorthFlow_{n,w} = (N - 1) + (W - 1)",
+            "code": {
+                "gurobipy": "model.addConstr(\n    quicksum(WestFlow[n][w] for n in range(N) for w in range(W - 1))\n    + quicksum(NorthFlow[n][w] for n in range(N - 1) for w in range(W))\n    == (N - 1) + (W - 1), name=\"TotalFlow\")"
+            }
+        },
+        {
+            "description": "The number of north-south street segments used cannot exceed W",
+            "formulation": "\\text{Flow conservation at each interior node: } \\sum_{\\text{in}} flow = \\sum_{\\text{out}} flow \\quad \\forall \\text{ interior nodes}",
+            "code": {
+                "gurobipy": "for n in range(N):\n    for w in range(W):\n        inflow = 0\n        outflow = 0\n        if w > 0:\n            inflow += WestFlow[n][w - 1]\n        if n > 0:\n            inflow += NorthFlow[n - 1][w]\n        if w < W - 1:\n            outflow += WestFlow[n][w]\n        if n < N - 1:\n            outflow += NorthFlow[n][w]\n        if (n == 0 and w == 0):\n            model.addConstr(outflow - inflow == 1, name=f\"FlowSource_{n}_{w}\")\n        elif (n == N - 1 and w == W - 1):\n            model.addConstr(inflow - outflow == 1, name=f\"FlowSink_{n}_{w}\")\n        else:\n            model.addConstr(inflow == outflow, name=f\"FlowConserv_{n}_{w}\")"
+            }
+        },
+        {
+            "description": "East-west street segments are non-negative",
+            "formulation": "WestFlow_{n,w} \\geq 0 \\quad \\forall n \\in \\{1, \\ldots, N\\}, \\forall w \\in \\{1, \\ldots, W-1\\}",
+            "code": {
+                "gurobipy": "for n in range(N):\n    for w in range(W - 1):\n        model.addConstr(WestFlow[n][w] >= 0, name=f\"WestFlowNonNeg_{n}_{w}\")"
+            }
+        },
+        {
+            "description": "North-south street segments are non-negative",
+            "formulation": "NorthFlow_{n,w} \\geq 0 \\quad \\forall n \\in \\{1, \\ldots, N-1\\}, \\forall w \\in \\{1, \\ldots, W\\}",
+            "code": {
+                "gurobipy": "for n in range(N - 1):\n    for w in range(W):\n        model.addConstr(NorthFlow[n][w] >= 0, name=f\"NorthFlowNonNeg_{n}_{w}\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize the total amount of time to deliver the package",
+        "formulation": "\\min \\ \\sum_{n=1}^{N} \\sum_{w=1}^{W-1} WestTime_{n,w} \\times WestFlow_{n,w} + \\sum_{n=1}^{N-1} \\sum_{w=1}^{W} NorthTime_{n,w} \\times NorthFlow_{n,w}",
+        "code": {
+            "gurobipy": "model.setObjective(\n    quicksum(WestTime[n][w] * WestFlow[n][w] for n in range(N) for w in range(W - 1))\n    + quicksum(NorthTime[n][w] * NorthFlow[n][w] for n in range(N - 1) for w in range(W)),\n    GRB.MINIMIZE)"
+        }
+    }
+}

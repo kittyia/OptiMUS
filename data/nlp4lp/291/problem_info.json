@@ -1,0 +1,97 @@
+{
+    "parametrized_description": "A store owner spends at most MaxExpenditure per month on carrots and cucumbers. Carrots cost CostCarrot each and cucumbers cost CostCucumber each. Profit is ProfitCarrot per carrot and ProfitCucumber per cucumber. Cucumbers sold is at most CucumberFraction of carrots sold. Between MinCarrots and MaxCarrots carrots are sold per month. Maximize profit.",
+    "keywords": [
+        "retail optimization",
+        "linear programming"
+    ],
+    "parameters": {
+        "MaxExpenditure": {
+            "description": "Maximum monthly expenditure on carrots and cucumbers",
+            "shape": []
+        },
+        "CostCarrot": {
+            "description": "Cost of one carrot",
+            "shape": []
+        },
+        "CostCucumber": {
+            "description": "Cost of one cucumber",
+            "shape": []
+        },
+        "ProfitCarrot": {
+            "description": "Profit from selling one carrot",
+            "shape": []
+        },
+        "ProfitCucumber": {
+            "description": "Profit from selling one cucumber",
+            "shape": []
+        },
+        "CucumberFraction": {
+            "description": "Maximum ratio of cucumbers sold to carrots sold",
+            "shape": []
+        },
+        "MinCarrots": {
+            "description": "Minimum number of carrots sold per month",
+            "shape": []
+        },
+        "MaxCarrots": {
+            "description": "Maximum number of carrots sold per month",
+            "shape": []
+        }
+    },
+    "variables": {
+        "NumCarrots": {
+            "description": "Number of carrots to sell per month",
+            "type": "continuous",
+            "shape": []
+        },
+        "NumCucumbers": {
+            "description": "Number of cucumbers to sell per month",
+            "type": "continuous",
+            "shape": []
+        }
+    },
+    "constraints": [
+        {
+            "description": "Total expenditure must not exceed MaxExpenditure.",
+            "formulation": "CostCarrot \\times NumCarrots + CostCucumber \\times NumCucumbers \\leq MaxExpenditure",
+            "code": {
+                "gurobipy": "model.addConstr(CostCarrot * NumCarrots + CostCucumber * NumCucumbers <= MaxExpenditure, name=\"Budget\")"
+            }
+        },
+        {
+            "description": "Cucumbers sold must be at most CucumberFraction times carrots sold.",
+            "formulation": "NumCucumbers \\leq CucumberFraction \\times NumCarrots",
+            "code": {
+                "gurobipy": "model.addConstr(NumCucumbers <= CucumberFraction * NumCarrots, name=\"CucumberLimit\")"
+            }
+        },
+        {
+            "description": "At least MinCarrots carrots must be sold.",
+            "formulation": "NumCarrots \\geq MinCarrots",
+            "code": {
+                "gurobipy": "model.addConstr(NumCarrots >= MinCarrots, name=\"MinCarrots\")"
+            }
+        },
+        {
+            "description": "At most MaxCarrots carrots can be sold.",
+            "formulation": "NumCarrots \\leq MaxCarrots",
+            "code": {
+                "gurobipy": "model.addConstr(NumCarrots <= MaxCarrots, name=\"MaxCarrots\")"
+            }
+        },
+        {
+            "description": "Number of cucumbers must be non-negative.",
+            "formulation": "NumCucumbers \\geq 0",
+            "code": {
+                "gurobipy": "model.addConstr(NumCucumbers >= 0, name=\"CucumberNonNeg\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Maximize total profit from carrots and cucumbers.",
+        "formulation": "\\max \\ ProfitCarrot \\times NumCarrots + ProfitCucumber \\times NumCucumbers",
+        "code": {
+            "gurobipy": "model.setObjective(ProfitCarrot * NumCarrots + ProfitCucumber * NumCucumbers, GRB.MAXIMIZE)"
+        }
+    }
+}

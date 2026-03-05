@@ -1,0 +1,82 @@
+{
+    "parametrized_description": "A park is designing their trails and can either create a wide trail or a narrow trail. A wide trail can take WideCapacity visitors every day while the narrow trail expects NarrowCapacity visitors every day. The wide trail will introduce WideGarbage units of garbage and the narrow trail will introduce NarrowGarbage units of garbage. There can be at most MaxWideTrails wide trails and the park hopes to have at most MaxCapacity visitors every day. How many of each type of trail should the park construct to minimize the total amount of garbage produced.",
+    "keywords": [
+        "optimization",
+        "minimization"
+    ],
+    "parameters": {
+        "MaxWideTrails": {
+            "description": "Maximum number of wide trails allowed",
+            "shape": []
+        },
+        "MaxVisitorsPerDay": {
+            "description": "Maximum number of visitors allowed per day",
+            "shape": []
+        },
+        "VisitorsPerWideTrail": {
+            "description": "Number of visitors per day on a wide trail",
+            "shape": []
+        },
+        "VisitorsPerNarrowTrail": {
+            "description": "Number of visitors per day on a narrow trail",
+            "shape": []
+        },
+        "GarbagePerWideTrail": {
+            "description": "Units of garbage produced per wide trail",
+            "shape": []
+        },
+        "GarbagePerNarrowTrail": {
+            "description": "Units of garbage produced per narrow trail",
+            "shape": []
+        }
+    },
+    "variables": {
+        "NumWideTrails": {
+            "description": "Number of wide trails to construct",
+            "type": "integer",
+            "shape": []
+        },
+        "NumNarrowTrails": {
+            "description": "Number of narrow trails to construct",
+            "type": "integer",
+            "shape": []
+        }
+    },
+    "constraints": [
+        {
+            "description": "Number of wide trails is non-negative",
+            "formulation": "NumWideTrails \\geq 0",
+            "code": {
+                "gurobipy": "model.addConstr(NumWideTrails >= 0, name=\"WideNonNeg\")"
+            }
+        },
+        {
+            "description": "Number of narrow trails is non-negative",
+            "formulation": "NumNarrowTrails \\geq 0",
+            "code": {
+                "gurobipy": "model.addConstr(NumNarrowTrails >= 0, name=\"NarrowNonNeg\")"
+            }
+        },
+        {
+            "description": "Number of wide trails does not exceed MaxWideTrails",
+            "formulation": "NumWideTrails \\leq MaxWideTrails",
+            "code": {
+                "gurobipy": "model.addConstr(NumWideTrails <= MaxWideTrails, name=\"MaxWideConstr\")"
+            }
+        },
+        {
+            "description": "Total visitors every day does not exceed MaxVisitorsPerDay",
+            "formulation": "VisitorsPerWideTrail \\times NumWideTrails + VisitorsPerNarrowTrail \\times NumNarrowTrails \\leq MaxVisitorsPerDay",
+            "code": {
+                "gurobipy": "model.addConstr(VisitorsPerWideTrail * NumWideTrails + VisitorsPerNarrowTrail * NumNarrowTrails <= MaxVisitorsPerDay, name=\"MaxVisitorsConstr\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize the total amount of garbage produced by the trails",
+        "formulation": "\\min \\ GarbagePerWideTrail \\times NumWideTrails + GarbagePerNarrowTrail \\times NumNarrowTrails",
+        "code": {
+            "gurobipy": "model.setObjective(GarbagePerWideTrail * NumWideTrails + GarbagePerNarrowTrail * NumNarrowTrails, GRB.MINIMIZE)"
+        }
+    }
+}

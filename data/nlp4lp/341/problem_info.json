@@ -1,0 +1,113 @@
+{
+    "parametrized_description": "How many batches of each part should the manufacturer produce each month to maximize profit, considering the following parameters: number of machines (M), number of parts (P), time required (TimeRequired), machine costs (MachineCosts), machine availability (Availability), selling prices (Prices), minimum batches required (MinBatches), extra costs (ExtraCosts), and maximum extra hours (MaxExtra)?",
+    "keywords": [
+        "optimization",
+        "maximization"
+    ],
+    "parameters": {
+        "M": {
+            "description": "Number of machines",
+            "shape": []
+        },
+        "P": {
+            "description": "Number of parts",
+            "shape": []
+        },
+        "TimeRequired": {
+            "description": "Time required to produce a batch of part p on machine m",
+            "shape": [
+                "M",
+                "P"
+            ]
+        },
+        "MachineCosts": {
+            "description": "Cost associated with running machine m",
+            "shape": [
+                "M"
+            ]
+        },
+        "Availability": {
+            "description": "Availability of machine m for production each month",
+            "shape": [
+                "M"
+            ]
+        },
+        "Prices": {
+            "description": "Price obtained from selling a batch of part p",
+            "shape": [
+                "P"
+            ]
+        },
+        "MinBatches": {
+            "description": "Minimum number of batches of part p that should be produced",
+            "shape": [
+                "P"
+            ]
+        },
+        "ExtraCosts": {
+            "description": "Extra cost incurred when running machine m beyond regular operation",
+            "shape": [
+                "M"
+            ]
+        },
+        "MaxExtra": {
+            "description": "Maximum extra hours machine m can be run",
+            "shape": [
+                "M"
+            ]
+        }
+    },
+    "variables": {
+        "Batches": {
+            "description": "Number of batches of part p produced",
+            "type": "continuous",
+            "shape": [
+                "P"
+            ]
+        },
+        "ExtraTime": {
+            "description": "Additional hours purchased for machine m",
+            "type": "continuous",
+            "shape": [
+                "M"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "Number of batches of each part is non-negative",
+            "formulation": "Batches_{p} \\geq 0 \\quad \\forall p",
+            "code": {
+                "gurobipy": "for p in range(P):\n    model.addConstr(Batches[p] >= 0, name=f\"BatchNonNeg_{p}\")"
+            }
+        },
+        {
+            "description": "Total production time on machine m does not exceed availability plus extra time purchased",
+            "formulation": "\\sum_{p} TimeRequired_{m,p} \\times Batches_{p} \\leq Availability_{m} + ExtraTime_{m} \\quad \\forall m",
+            "code": {
+                "gurobipy": "for m in range(M):\n    model.addConstr(gp.quicksum(TimeRequired[m][p] * Batches[p] for p in range(P)) <= Availability[m] + ExtraTime[m], name=f\"MachineAvail_{m}\")"
+            }
+        },
+        {
+            "description": "Minimum production of each part must meet or exceed MinBatches",
+            "formulation": "Batches_{p} \\geq MinBatches_{p} \\quad \\forall p",
+            "code": {
+                "gurobipy": "for p in range(P):\n    model.addConstr(Batches[p] >= MinBatches[p], name=f\"MinProd_{p}\")"
+            }
+        },
+        {
+            "description": "Extra hours used cannot exceed MaxExtra hours for each machine",
+            "formulation": "0 \\leq ExtraTime_{m} \\leq MaxExtra_{m} \\quad \\forall m",
+            "code": {
+                "gurobipy": "for m in range(M):\n    model.addConstr(ExtraTime[m] >= 0, name=f\"ExtraNonNeg_{m}\")\n    model.addConstr(ExtraTime[m] <= MaxExtra[m], name=f\"ExtraMax_{m}\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Maximize the manufacturer's profit from part production, considering the costs and constraints on production capacity and time",
+        "formulation": "\\max \\ \\sum_{p} Prices_{p} \\times Batches_{p} - \\sum_{m} MachineCosts_{m} \\times \\sum_{p} TimeRequired_{m,p} \\times Batches_{p} - \\sum_{m} ExtraCosts_{m} \\times ExtraTime_{m}",
+        "code": {
+            "gurobipy": "model.setObjective(gp.quicksum(Prices[p] * Batches[p] for p in range(P)) - gp.quicksum(MachineCosts[m] * gp.quicksum(TimeRequired[m][p] * Batches[p] for p in range(P)) for m in range(M)) - gp.quicksum(ExtraCosts[m] * ExtraTime[m] for m in range(M)), GRB.MAXIMIZE)"
+        }
+    }
+}

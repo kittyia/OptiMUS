@@ -1,0 +1,66 @@
+{
+    "parametrized_description": "A random variable Z takes values 0, 1, ..., K with unknown probabilities p_0, p_1, ..., p_K. The first moment E[Z] = ExpectedZ and the second moment E[Z^2] = ExpectedZSquared are given. Find a probability distribution that provides a lower bound on the fourth moment E[Z^4] using linear programming.",
+    "keywords": [
+        "moment problem",
+        "probability bounds",
+        "linear programming"
+    ],
+    "parameters": {
+        "K": {
+            "description": "Maximum value the random variable Z can take",
+            "shape": []
+        },
+        "ExpectedZ": {
+            "description": "Given expected value E[Z]",
+            "shape": []
+        },
+        "ExpectedZSquared": {
+            "description": "Given expected value E[Z^2]",
+            "shape": []
+        }
+    },
+    "variables": {
+        "Prob": {
+            "description": "Probability that Z takes value k",
+            "type": "continuous",
+            "shape": ["K"]
+        }
+    },
+    "constraints": [
+        {
+            "description": "Probabilities must sum to 1.",
+            "formulation": "\\sum_{k=0}^{K} Prob_k = 1",
+            "code": {
+                "gurobipy": "model.addConstr(quicksum(Prob[k] for k in range(K + 1)) == 1, name=\"ProbSum\")"
+            }
+        },
+        {
+            "description": "The first moment must equal ExpectedZ.",
+            "formulation": "\\sum_{k=0}^{K} k \\times Prob_k = ExpectedZ",
+            "code": {
+                "gurobipy": "model.addConstr(quicksum(k * Prob[k] for k in range(K + 1)) == ExpectedZ, name=\"FirstMoment\")"
+            }
+        },
+        {
+            "description": "The second moment must equal ExpectedZSquared.",
+            "formulation": "\\sum_{k=0}^{K} k^2 \\times Prob_k = ExpectedZSquared",
+            "code": {
+                "gurobipy": "model.addConstr(quicksum(k**2 * Prob[k] for k in range(K + 1)) == ExpectedZSquared, name=\"SecondMoment\")"
+            }
+        },
+        {
+            "description": "All probabilities must be non-negative.",
+            "formulation": "Prob_k \\geq 0 \\quad \\forall k \\in \\{0, \\ldots, K\\}",
+            "code": {
+                "gurobipy": "model.addConstrs((Prob[k] >= 0 for k in range(K + 1)), name=\"NonNeg\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize the fourth moment E[Z^4] to find its lower bound.",
+        "formulation": "\\min \\sum_{k=0}^{K} k^4 \\times Prob_k",
+        "code": {
+            "gurobipy": "model.setObjective(quicksum(k**4 * Prob[k] for k in range(K + 1)), GRB.MINIMIZE)"
+        }
+    }
+}

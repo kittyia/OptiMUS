@@ -1,0 +1,104 @@
+{
+    "parametrized_description": "We are aiming at maximizing total net income subject to the Cash availability and machine capacity limitations. The problem parameters include: the initial Cash available, the Hour(s) required to produce each of the P products, the Cost to produce each of the products, the Price at which each product can be sold, the InvestPercentage of income from each product to be reinvested, the UpgradeHours required for upgrading the machinery, the UpgradeCost associated with upgrading, and the total available AvailableHours for machine operation.",
+    "keywords": [
+        "optimization",
+        "maximization"
+    ],
+    "parameters": {
+        "P": {
+            "description": "Number of products",
+            "shape": []
+        },
+        "Cash": {
+            "description": "Initial cash available for investment",
+            "shape": []
+        },
+        "Hour": {
+            "description": "Hours required to produce one unit of product i",
+            "shape": [
+                "P"
+            ]
+        },
+        "Cost": {
+            "description": "Cost to produce one unit of product i",
+            "shape": [
+                "P"
+            ]
+        },
+        "Price": {
+            "description": "Selling price for one unit of product i",
+            "shape": [
+                "P"
+            ]
+        },
+        "InvestPercentage": {
+            "description": "Percentage of income to reinvest for product i",
+            "shape": [
+                "P"
+            ]
+        },
+        "UpgradeHours": {
+            "description": "Hours required for upgrading the machinery",
+            "shape": []
+        },
+        "UpgradeCost": {
+            "description": "Cost associated with upgrading the machinery",
+            "shape": []
+        },
+        "AvailableHours": {
+            "description": "Total available machine hours",
+            "shape": []
+        }
+    },
+    "variables": {
+        "Production": {
+            "description": "Number of units of product i to produce",
+            "type": "continuous",
+            "shape": [
+                "P"
+            ]
+        },
+        "Upgrade": {
+            "description": "Binary variable indicating whether to upgrade machinery (1) or not (0)",
+            "type": "integer",
+            "shape": []
+        }
+    },
+    "constraints": [
+        {
+            "description": "Production quantities are non-negative",
+            "formulation": "Production_i \\geq 0, \\quad \\forall i \\in \\{0, \\ldots, P-1\\}",
+            "code": {
+                "gurobipy": "for i in range(P):\n    model.addConstr(Production[i] >= 0, name=f\"ProdNonNeg_{i}\")"
+            }
+        },
+        {
+            "description": "Upgrade variable is binary (0 or 1)",
+            "formulation": "Upgrade \\in \\{0, 1\\}",
+            "code": {
+                "gurobipy": "model.addConstr(Upgrade <= 1, name=\"UpgradeBinary\")\nmodel.addConstr(Upgrade >= 0, name=\"UpgradeNonNeg\")"
+            }
+        },
+        {
+            "description": "Total production hours for all products do not exceed available hours (plus upgrade hours if upgrading)",
+            "formulation": "\\sum_{i=0}^{P-1} Hour_i \\times Production_i \\leq AvailableHours + UpgradeHours \\times Upgrade",
+            "code": {
+                "gurobipy": "model.addConstr(quicksum(Hour[i] * Production[i] for i in range(P)) <= AvailableHours + UpgradeHours * Upgrade, name=\"MachineCapacity\")"
+            }
+        },
+        {
+            "description": "Total production cost plus upgrade cost must not exceed the available cash plus reinvested revenue",
+            "formulation": "\\sum_{i=0}^{P-1} Cost_i \\times Production_i + UpgradeCost \\times Upgrade \\leq Cash + \\sum_{i=0}^{P-1} InvestPercentage_i \\times Price_i \\times Production_i",
+            "code": {
+                "gurobipy": "model.addConstr(quicksum(Cost[i] * Production[i] for i in range(P)) + UpgradeCost * Upgrade <= Cash + quicksum(InvestPercentage[i] * Price[i] * Production[i] for i in range(P)), name=\"CashBalance\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Maximize total net income considering production, selling price, cost, and reinvestment",
+        "formulation": "\\max \\ \\sum_{i=0}^{P-1} (Price_i - Cost_i - InvestPercentage_i \\times Price_i) \\times Production_i - UpgradeCost \\times Upgrade",
+        "code": {
+            "gurobipy": "model.setObjective(quicksum((Price[i] - Cost[i] - InvestPercentage[i] * Price[i]) * Production[i] for i in range(P)) - UpgradeCost * Upgrade, GRB.MAXIMIZE)"
+        }
+    }
+}

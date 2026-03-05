@@ -1,0 +1,143 @@
+{
+    "parametrized_description": "We want to maximize the daily profit of the company, which is the total revenue minus the total cost. The company has N different products, each requiring AssemblyHour hours for assembly, TestingHour hours for testing, and with a material cost of MaterialCost. The company cannot exceed MaxAssembly hours for assembly and MaxTesting hours for testing. Each product can be sold at Price, but there is an opportunity to work MaxOvertimeAssembly overtime hours for assembly at a cost of OvertimeAssemblyCost per hour. Additionally, a material discount of MaterialDiscount is offered when a purchase reaches the DiscountThreshold.",
+    "keywords": [
+        "optimization",
+        "maximization"
+    ],
+    "parameters": {
+        "N": {
+            "description": "Number of different products",
+            "shape": []
+        },
+        "AssemblyHour": {
+            "description": "Hours required to assemble product i",
+            "shape": [
+                "N"
+            ]
+        },
+        "TestingHour": {
+            "description": "Hours required to test product i",
+            "shape": [
+                "N"
+            ]
+        },
+        "MaterialCost": {
+            "description": "Material cost for product i",
+            "shape": [
+                "N"
+            ]
+        },
+        "MaxAssembly": {
+            "description": "Maximum total hours available for assembly",
+            "shape": []
+        },
+        "MaxTesting": {
+            "description": "Maximum total hours available for testing",
+            "shape": []
+        },
+        "Price": {
+            "description": "Selling price for product i",
+            "shape": [
+                "N"
+            ]
+        },
+        "MaxOvertimeAssembly": {
+            "description": "Maximum overtime hours available for assembly",
+            "shape": []
+        },
+        "OvertimeAssemblyCost": {
+            "description": "Overtime cost for assembly per hour",
+            "shape": []
+        },
+        "MaterialDiscount": {
+            "description": "Discount on material cost when a certain threshold is reached",
+            "shape": []
+        },
+        "DiscountThreshold": {
+            "description": "Threshold for the quantity to reach to obtain the material discount",
+            "shape": []
+        }
+    },
+    "variables": {
+        "UnitsProduced": {
+            "description": "Number of units of product i produced",
+            "type": "continuous",
+            "shape": [
+                "N"
+            ]
+        },
+        "OvertimeAssembly": {
+            "description": "Number of overtime assembly hours scheduled",
+            "type": "continuous",
+            "shape": []
+        },
+        "MaterialBought": {
+            "description": "Total amount spent on raw materials",
+            "type": "continuous",
+            "shape": []
+        },
+        "DiscountApplied": {
+            "description": "Binary variable indicating whether the material discount is applied (1) or not (0)",
+            "type": "integer",
+            "shape": []
+        }
+    },
+    "constraints": [
+        {
+            "description": "Total assembly hours must not exceed MaxAssembly hours plus overtime assembly hours",
+            "formulation": "\\sum_{i=1}^{N} AssemblyHour_{i} \\times UnitsProduced_{i} \\leq MaxAssembly + OvertimeAssembly",
+            "code": {
+                "gurobipy": "model.addConstr(gurobipy.quicksum(AssemblyHour[i] * UnitsProduced[i] for i in range(N)) <= MaxAssembly + OvertimeAssembly, name=\"AssemblyCapacity\")"
+            }
+        },
+        {
+            "description": "Total testing hours must not exceed MaxTesting hours",
+            "formulation": "\\sum_{i=1}^{N} TestingHour_{i} \\times UnitsProduced_{i} \\leq MaxTesting",
+            "code": {
+                "gurobipy": "model.addConstr(gurobipy.quicksum(TestingHour[i] * UnitsProduced[i] for i in range(N)) <= MaxTesting, name=\"TestingCapacity\")"
+            }
+        },
+        {
+            "description": "The number of products produced is non-negative",
+            "formulation": "UnitsProduced_{i} \\geq 0, \\quad \\forall i \\in \\{1, \\ldots, N\\}",
+            "code": {
+                "gurobipy": "for i in range(N):\n    model.addConstr(UnitsProduced[i] >= 0, name=f\"NonNegProd_{i}\")"
+            }
+        },
+        {
+            "description": "The number of overtime assembly hours used is at most MaxOvertimeAssembly",
+            "formulation": "0 \\leq OvertimeAssembly \\leq MaxOvertimeAssembly",
+            "code": {
+                "gurobipy": "model.addConstr(OvertimeAssembly >= 0, name=\"OvertimeNonNeg\")\nmodel.addConstr(OvertimeAssembly <= MaxOvertimeAssembly, name=\"OvertimeMax\")"
+            }
+        },
+        {
+            "description": "MaterialBought equals the total material cost of all products produced",
+            "formulation": "MaterialBought = \\sum_{i=1}^{N} MaterialCost_{i} \\times UnitsProduced_{i}",
+            "code": {
+                "gurobipy": "model.addConstr(MaterialBought == gurobipy.quicksum(MaterialCost[i] * UnitsProduced[i] for i in range(N)), name=\"MaterialBoughtDef\")"
+            }
+        },
+        {
+            "description": "If DiscountApplied is 1 then MaterialBought must be at least DiscountThreshold; if 0 then MaterialBought can be below threshold",
+            "formulation": "MaterialBought \\geq DiscountThreshold \\times DiscountApplied",
+            "code": {
+                "gurobipy": "model.addConstr(MaterialBought >= DiscountThreshold * DiscountApplied, name=\"DiscountActivation\")"
+            }
+        },
+        {
+            "description": "If MaterialBought exceeds DiscountThreshold then discount must be applied",
+            "formulation": "MaterialBought \\leq DiscountThreshold + (M - DiscountThreshold) \\times DiscountApplied",
+            "code": {
+                "gurobipy": "BigM = 1e7\nmodel.addConstr(MaterialBought <= DiscountThreshold + (BigM - DiscountThreshold) * DiscountApplied, name=\"DiscountForce\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Maximize the total daily profit, which is the total revenue minus the total cost including overtime costs, regular material costs, and considering material discounts",
+        "formulation": "\\max \\ \\sum_{i=1}^{N} Price_{i} \\times UnitsProduced_{i} - OvertimeAssemblyCost \\times OvertimeAssembly - MaterialBought \\times (1 - \\frac{MaterialDiscount}{100} \\times DiscountApplied)",
+        "code": {
+            "gurobipy": "model.setObjective(gurobipy.quicksum(Price[i] * UnitsProduced[i] for i in range(N)) - OvertimeAssemblyCost * OvertimeAssembly - MaterialBought * (1 - (MaterialDiscount / 100) * DiscountApplied), GRB.MAXIMIZE)"
+        }
+    }
+}

@@ -1,0 +1,82 @@
+{
+    "parametrized_description": "A municipality hires full-time and part-time staff to deliver mail. Part-time staff works PartTimeHours hours per week and gets paid PartTimePayment dollars whereas a full-time staff works FullTimeHours hours every week and gets paid FullTimePayment dollars for that week. Since it is the week leading up to a holiday, planning ahead, the municipality needs TotalLaborHours hours of mail staff labor. The municipality has a budget of TotalBudget dollars for mail delivery for this season. How many of each type of staff should the municipality hire to decrease the total number of staff?",
+    "keywords": [
+        "optimization",
+        "minimization"
+    ],
+    "parameters": {
+        "PartTimeHours": {
+            "description": "Part-time staff weekly working hours",
+            "shape": []
+        },
+        "PartTimeWage": {
+            "description": "Part-time staff weekly wage",
+            "shape": []
+        },
+        "FullTimeHours": {
+            "description": "Full-time staff weekly working hours",
+            "shape": []
+        },
+        "FullTimeWage": {
+            "description": "Full-time staff weekly wage",
+            "shape": []
+        },
+        "TotalHoursRequired": {
+            "description": "Total weekly working hours required",
+            "shape": []
+        },
+        "TotalBudget": {
+            "description": "Total budget for mail delivery",
+            "shape": []
+        }
+    },
+    "variables": {
+        "NumFullTime": {
+            "description": "Number of full-time staff to hire",
+            "type": "integer",
+            "shape": []
+        },
+        "NumPartTime": {
+            "description": "Number of part-time staff to hire",
+            "type": "integer",
+            "shape": []
+        }
+    },
+    "constraints": [
+        {
+            "description": "Number of full-time staff is non-negative",
+            "formulation": "NumFullTime \\geq 0",
+            "code": {
+                "gurobipy": "model.addConstr(NumFullTime >= 0, name=\"FullTimeNonNeg\")"
+            }
+        },
+        {
+            "description": "Number of part-time staff is non-negative",
+            "formulation": "NumPartTime \\geq 0",
+            "code": {
+                "gurobipy": "model.addConstr(NumPartTime >= 0, name=\"PartTimeNonNeg\")"
+            }
+        },
+        {
+            "description": "Total hours worked by part-time and full-time staff must meet TotalHoursRequired",
+            "formulation": "FullTimeHours \\times NumFullTime + PartTimeHours \\times NumPartTime \\geq TotalHoursRequired",
+            "code": {
+                "gurobipy": "model.addConstr(FullTimeHours * NumFullTime + PartTimeHours * NumPartTime >= TotalHoursRequired, name=\"TotalHoursConstr\")"
+            }
+        },
+        {
+            "description": "Total payment to part-time and full-time staff is at most TotalBudget",
+            "formulation": "FullTimeWage \\times NumFullTime + PartTimeWage \\times NumPartTime \\leq TotalBudget",
+            "code": {
+                "gurobipy": "model.addConstr(FullTimeWage * NumFullTime + PartTimeWage * NumPartTime <= TotalBudget, name=\"BudgetConstr\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize the total number of full-time and part-time staff hired",
+        "formulation": "\\min \\ NumFullTime + NumPartTime",
+        "code": {
+            "gurobipy": "model.setObjective(NumFullTime + NumPartTime, GRB.MINIMIZE)"
+        }
+    }
+}

@@ -1,0 +1,107 @@
+{
+    "parametrized_description": "Determine the amount of buying and selling in each period to maximize the profit over the months, given the constraints of maximum storage Capacity, holding costs HoldingCost, selling prices Price, and buying costs Cost.",
+    "keywords": [
+        "optimization",
+        "maximization"
+    ],
+    "parameters": {
+        "Capacity": {
+            "description": "Maximum storage capacity",
+            "shape": []
+        },
+        "HoldingCost": {
+            "description": "Cost of holding one unit of product",
+            "shape": []
+        },
+        "NumPeriods": {
+            "description": "Number of time periods",
+            "shape": []
+        },
+        "Price": {
+            "description": "Selling price in each period",
+            "shape": [
+                "NumPeriods"
+            ]
+        },
+        "Cost": {
+            "description": "Cost of buying in each period",
+            "shape": [
+                "NumPeriods"
+            ]
+        }
+    },
+    "variables": {
+        "BuyQuantity": {
+            "description": "Amount of commodity bought in each period",
+            "type": "continuous",
+            "shape": [
+                "NumPeriods"
+            ]
+        },
+        "SellQuantity": {
+            "description": "Amount of commodity sold in each period",
+            "type": "continuous",
+            "shape": [
+                "NumPeriods"
+            ]
+        },
+        "Stock": {
+            "description": "Amount of commodity in stock at the end of each period",
+            "type": "continuous",
+            "shape": [
+                "NumPeriods"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "The amount of goods held in storage must be non-negative",
+            "formulation": "Stock_n \\geq 0 \\quad \\forall n \\in \\{1, \\ldots, NumPeriods\\}",
+            "code": {
+                "gurobipy": "model.addConstrs((Stock[n] >= 0 for n in range(NumPeriods)), name=\"StockNonNeg\")"
+            }
+        },
+        {
+            "description": "The amount of goods sold in each period must be non-negative",
+            "formulation": "SellQuantity_n \\geq 0 \\quad \\forall n \\in \\{1, \\ldots, NumPeriods\\}",
+            "code": {
+                "gurobipy": "model.addConstrs((SellQuantity[n] >= 0 for n in range(NumPeriods)), name=\"SellNonNeg\")"
+            }
+        },
+        {
+            "description": "The amount of goods bought in each period must be non-negative",
+            "formulation": "BuyQuantity_n \\geq 0 \\quad \\forall n \\in \\{1, \\ldots, NumPeriods\\}",
+            "code": {
+                "gurobipy": "model.addConstrs((BuyQuantity[n] >= 0 for n in range(NumPeriods)), name=\"BuyNonNeg\")"
+            }
+        },
+        {
+            "description": "The amount of goods stored must not exceed the maximum storage capacity, Capacity",
+            "formulation": "Stock_n \\leq Capacity \\quad \\forall n \\in \\{1, \\ldots, NumPeriods\\}",
+            "code": {
+                "gurobipy": "model.addConstrs((Stock[n] <= Capacity for n in range(NumPeriods)), name=\"CapacityLimit\")"
+            }
+        },
+        {
+            "description": "Stock balance: stock at end of period equals stock from previous period plus purchases minus sales",
+            "formulation": "Stock_n = Stock_{n-1} + BuyQuantity_n - SellQuantity_n \\quad \\forall n \\in \\{1, \\ldots, NumPeriods\\}, \\quad Stock_0 = 0",
+            "code": {
+                "gurobipy": "model.addConstr(Stock[0] == BuyQuantity[0] - SellQuantity[0], name=\"StockBalance_0\")\nmodel.addConstrs((Stock[n] == Stock[n-1] + BuyQuantity[n] - SellQuantity[n] for n in range(1, NumPeriods)), name=\"StockBalance\")"
+            }
+        },
+        {
+            "description": "The warehouse must be empty at the end of the last period",
+            "formulation": "Stock_{NumPeriods} = 0",
+            "code": {
+                "gurobipy": "model.addConstr(Stock[NumPeriods - 1] == 0, name=\"EmptyAtEnd\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Maximize the total profit over the months from buying and selling goods",
+        "formulation": "\\max \\sum_{n=1}^{NumPeriods} (Price_n \\times SellQuantity_n - Cost_n \\times BuyQuantity_n - HoldingCost \\times Stock_n)",
+        "code": {
+            "gurobipy": "model.setObjective(quicksum(Price[n] * SellQuantity[n] - Cost[n] * BuyQuantity[n] - HoldingCost * Stock[n] for n in range(NumPeriods)), GRB.MAXIMIZE)"
+        }
+    }
+}

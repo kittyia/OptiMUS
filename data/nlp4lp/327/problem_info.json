@@ -1,0 +1,86 @@
+{
+    "parametrized_description": "The manufacturer wishes to find the amounts of the various alloys needed and to determine the cheapest combination given AlloyQuantity, the total quantity of alloy to produce, Target, the quantity of target components in the alloy, Ratio, the ratio of each component k in alloy m, and Price, the price of each alloy k.",
+    "keywords": [
+        "optimization",
+        "minimization"
+    ],
+    "parameters": {
+        "AlloyQuantity": {
+            "description": "Quantity of alloy to produce",
+            "shape": []
+        },
+        "NumMetals": {
+            "description": "Number of metals",
+            "shape": []
+        },
+        "NumAlloys": {
+            "description": "Number of alloys",
+            "shape": []
+        },
+        "Target": {
+            "description": "Quantity of target components in the alloy",
+            "shape": [
+                "NumMetals"
+            ]
+        },
+        "Ratio": {
+            "description": "Ratio of each component k in the alloy m",
+            "shape": [
+                "NumAlloys",
+                "NumMetals"
+            ]
+        },
+        "Price": {
+            "description": "Price of each alloy k",
+            "shape": [
+                "NumAlloys"
+            ]
+        }
+    },
+    "variables": {
+        "Amount": {
+            "description": "Amount of each alloy used in the production",
+            "type": "continuous",
+            "shape": [
+                "NumAlloys"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "The total quantity of alloys produced is exactly AlloyQuantity",
+            "formulation": "\\sum_{k=1}^{NumAlloys} Amount_k = AlloyQuantity",
+            "code": {
+                "gurobipy": "model.addConstr(quicksum(Amount[k] for k in range(NumAlloys)) == AlloyQuantity, name=\"TotalQuantity\")"
+            }
+        },
+        {
+            "description": "The quantity of each target component in the alloy must be met",
+            "formulation": "\\sum_{k=1}^{NumAlloys} Ratio_{k,m} \\times Amount_k \\geq Target_m \\quad \\forall m \\in \\{1, \\ldots, NumMetals\\}",
+            "code": {
+                "gurobipy": "model.addConstrs((quicksum(Ratio[k][m] * Amount[k] for k in range(NumAlloys)) >= Target[m] for m in range(NumMetals)), name=\"TargetMet\")"
+            }
+        },
+        {
+            "description": "The quantity of component k in alloy m must adhere to the specified Ratio",
+            "formulation": "\\sum_{k=1}^{NumAlloys} Ratio_{k,m} \\times Amount_k \\leq Target_m \\quad \\forall m \\in \\{1, \\ldots, NumMetals\\}",
+            "code": {
+                "gurobipy": "model.addConstrs((quicksum(Ratio[k][m] * Amount[k] for k in range(NumAlloys)) <= Target[m] for m in range(NumMetals)), name=\"TargetUpper\")"
+            }
+        },
+        {
+            "description": "Each alloy's quantity is non-negative",
+            "formulation": "Amount_k \\geq 0 \\quad \\forall k \\in \\{1, \\ldots, NumAlloys\\}",
+            "code": {
+                "gurobipy": "model.addConstrs((Amount[k] >= 0 for k in range(NumAlloys)), name=\"AmountNonNeg\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize the sum of the costs of the alloys used in the production",
+        "formulation": "\\min \\sum_{k=1}^{NumAlloys} Price_k \\times Amount_k",
+        "code": {
+            "gurobipy": "model.setObjective(quicksum(Price[k] * Amount[k] for k in range(NumAlloys)), GRB.MINIMIZE)"
+        }
+    }
+}

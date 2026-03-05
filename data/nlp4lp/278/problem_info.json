@@ -1,0 +1,60 @@
+{
+    "parametrized_description": "A firm makes NumParts types of spare automobile parts using NumMachines machines. Producing one unit of part k on machine s requires Time worker-hours. Each machine s has Capacity worker-hours available. Each part k yields Profit per unit. Determine how many of each part to produce to maximize total profit.",
+    "keywords": [
+        "production planning",
+        "resource allocation",
+        "linear programming"
+    ],
+    "parameters": {
+        "NumParts": {
+            "description": "Number of types of spare parts",
+            "shape": []
+        },
+        "NumMachines": {
+            "description": "Number of machines",
+            "shape": []
+        },
+        "Time": {
+            "description": "Worker-hours required to produce one unit of part k on machine s",
+            "shape": ["NumParts", "NumMachines"]
+        },
+        "Profit": {
+            "description": "Profit from producing one unit of part k",
+            "shape": ["NumParts"]
+        },
+        "Capacity": {
+            "description": "Available worker-hours capacity of machine s",
+            "shape": ["NumMachines"]
+        }
+    },
+    "variables": {
+        "Quantity": {
+            "description": "Number of units of part k to produce",
+            "type": "continuous",
+            "shape": ["NumParts"]
+        }
+    },
+    "constraints": [
+        {
+            "description": "Total worker-hours used on each machine must not exceed its capacity.",
+            "formulation": "\\sum_{k=1}^{NumParts} Time_{k,s} \\times Quantity_k \\leq Capacity_s \\quad \\forall s \\in \\{1, \\ldots, NumMachines\\}",
+            "code": {
+                "gurobipy": "model.addConstrs((quicksum(Time[k][s] * Quantity[k] for k in range(NumParts)) <= Capacity[s] for s in range(NumMachines)), name=\"MachineCapacity\")"
+            }
+        },
+        {
+            "description": "Production quantities must be non-negative.",
+            "formulation": "Quantity_k \\geq 0 \\quad \\forall k",
+            "code": {
+                "gurobipy": "model.addConstrs((Quantity[k] >= 0 for k in range(NumParts)), name=\"NonNeg\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Maximize total profit from all parts produced.",
+        "formulation": "\\max \\sum_{k=1}^{NumParts} Profit_k \\times Quantity_k",
+        "code": {
+            "gurobipy": "model.setObjective(quicksum(Profit[k] * Quantity[k] for k in range(NumParts)), GRB.MAXIMIZE)"
+        }
+    }
+}

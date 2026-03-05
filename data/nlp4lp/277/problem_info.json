@@ -1,0 +1,110 @@
+{
+    "parametrized_description": "A rocket travels along a straight path with discrete-time dynamics: x_{t+1} = x_t + v_t and v_{t+1} = v_t + a_t. The rocket starts at position InitialPosition with velocity InitialVelocity and must reach position FinalPosition with velocity FinalVelocity at time TotalTime. The goal is to minimize the maximum thrust (maximum absolute acceleration) to reduce passenger discomfort.",
+    "keywords": [
+        "optimal control",
+        "trajectory optimization",
+        "minimax"
+    ],
+    "parameters": {
+        "InitialPosition": {
+            "description": "Initial position of the rocket",
+            "shape": []
+        },
+        "InitialVelocity": {
+            "description": "Initial velocity of the rocket",
+            "shape": []
+        },
+        "FinalPosition": {
+            "description": "Target final position of the rocket",
+            "shape": []
+        },
+        "FinalVelocity": {
+            "description": "Target final velocity of the rocket",
+            "shape": []
+        },
+        "TotalTime": {
+            "description": "Total number of time steps",
+            "shape": []
+        }
+    },
+    "variables": {
+        "Position": {
+            "description": "Position of the rocket at time t",
+            "type": "continuous",
+            "shape": ["TotalTime"]
+        },
+        "Velocity": {
+            "description": "Velocity of the rocket at time t",
+            "type": "continuous",
+            "shape": ["TotalTime"]
+        },
+        "Acceleration": {
+            "description": "Acceleration (thrust) of the rocket at time t",
+            "type": "continuous",
+            "shape": ["TotalTime"]
+        },
+        "MaxThrust": {
+            "description": "Maximum absolute acceleration across all time steps",
+            "type": "continuous",
+            "shape": []
+        }
+    },
+    "constraints": [
+        {
+            "description": "Position dynamics: x_{t+1} = x_t + v_t.",
+            "formulation": "Position_{t+1} = Position_t + Velocity_t \\quad \\forall t \\in \\{0, \\ldots, TotalTime-2\\}",
+            "code": {
+                "gurobipy": "model.addConstrs((Position[t+1] == Position[t] + Velocity[t] for t in range(TotalTime - 1)), name=\"PosDynamics\")"
+            }
+        },
+        {
+            "description": "Velocity dynamics: v_{t+1} = v_t + a_t.",
+            "formulation": "Velocity_{t+1} = Velocity_t + Acceleration_t \\quad \\forall t \\in \\{0, \\ldots, TotalTime-2\\}",
+            "code": {
+                "gurobipy": "model.addConstrs((Velocity[t+1] == Velocity[t] + Acceleration[t] for t in range(TotalTime - 1)), name=\"VelDynamics\")"
+            }
+        },
+        {
+            "description": "Initial position constraint.",
+            "formulation": "Position_0 = InitialPosition",
+            "code": {
+                "gurobipy": "model.addConstr(Position[0] == InitialPosition, name=\"InitPos\")"
+            }
+        },
+        {
+            "description": "Initial velocity constraint.",
+            "formulation": "Velocity_0 = InitialVelocity",
+            "code": {
+                "gurobipy": "model.addConstr(Velocity[0] == InitialVelocity, name=\"InitVel\")"
+            }
+        },
+        {
+            "description": "Final position constraint.",
+            "formulation": "Position_{TotalTime-1} = FinalPosition",
+            "code": {
+                "gurobipy": "model.addConstr(Position[TotalTime - 1] == FinalPosition, name=\"FinalPos\")"
+            }
+        },
+        {
+            "description": "Final velocity constraint.",
+            "formulation": "Velocity_{TotalTime-1} = FinalVelocity",
+            "code": {
+                "gurobipy": "model.addConstr(Velocity[TotalTime - 1] == FinalVelocity, name=\"FinalVel\")"
+            }
+        },
+        {
+            "description": "MaxThrust must be at least the absolute value of each acceleration.",
+            "formulation": "MaxThrust \\geq Acceleration_t \\quad \\text{and} \\quad MaxThrust \\geq -Acceleration_t \\quad \\forall t",
+            "code": {
+                "gurobipy": "model.addConstrs((MaxThrust >= Acceleration[t] for t in range(TotalTime)), name=\"MaxThrustPos\")\nmodel.addConstrs((MaxThrust >= -Acceleration[t] for t in range(TotalTime)), name=\"MaxThrustNeg\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize the maximum thrust (absolute acceleration) over all time steps.",
+        "formulation": "\\min \\ MaxThrust",
+        "code": {
+            "gurobipy": "model.setObjective(MaxThrust, GRB.MINIMIZE)"
+        }
+    }
+}

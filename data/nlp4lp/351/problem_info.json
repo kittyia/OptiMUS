@@ -1,0 +1,81 @@
+{
+    "parametrized_description": "Determine the assignment of consultants to projects that minimizes the total cost, given the fixed FixedCosts for each project, AdditionalCosts for assigning consultant i to project j, and the MaxProjectsPerConsultant that can be handled by a single consultant.",
+    "keywords": [
+        "optimization",
+        "minimization"
+    ],
+    "parameters": {
+        "FixedCosts": {
+            "description": "Fixed cost for project j",
+            "shape": [
+                "NumConsultants"
+            ]
+        },
+        "AdditionalCosts": {
+            "description": "Additional cost for assigning consultant i to project j",
+            "shape": [
+                "NumProjects",
+                "NumConsultants"
+            ]
+        },
+        "MaxProjectsPerConsultant": {
+            "description": "Maximum number of projects that can be assigned to a consultant",
+            "shape": []
+        },
+        "NumProjects": {
+            "description": "Number of projects",
+            "shape": []
+        },
+        "NumConsultants": {
+            "description": "Number of consultants",
+            "shape": []
+        }
+    },
+    "variables": {
+        "Assignment": {
+            "description": "Binary variable indicating whether project i is assigned to consultant j (1) or not (0)",
+            "type": "integer",
+            "shape": [
+                "NumProjects",
+                "NumConsultants"
+            ]
+        },
+        "Hired": {
+            "description": "Binary variable indicating whether consultant j is hired (1) or not (0)",
+            "type": "integer",
+            "shape": [
+                "NumConsultants"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "Each consultant can handle up to MaxProjectsPerConsultant projects",
+            "formulation": "\\sum_{i=1}^{NumProjects} Assignment_{i,j} \\leq MaxProjectsPerConsultant \\quad \\forall j \\in \\{1, \\ldots, NumConsultants\\}",
+            "code": {
+                "gurobipy": "for j in range(NumConsultants):\n    model.addConstr(quicksum(Assignment[i][j] for i in range(NumProjects)) <= MaxProjectsPerConsultant, name=f\"MaxProjects_{j}\")"
+            }
+        },
+        {
+            "description": "Each project must be assigned at least one consultant",
+            "formulation": "\\sum_{j=1}^{NumConsultants} Assignment_{i,j} = 1 \\quad \\forall i \\in \\{1, \\ldots, NumProjects\\}",
+            "code": {
+                "gurobipy": "for i in range(NumProjects):\n    model.addConstr(quicksum(Assignment[i][j] for j in range(NumConsultants)) == 1, name=f\"ProjectAssigned_{i}\")"
+            }
+        },
+        {
+            "description": "Consultants must be assigned to projects in a way that their total number of projects does not exceed MaxProjectsPerConsultant",
+            "formulation": "Assignment_{i,j} \\leq Hired_{j} \\quad \\forall i \\in \\{1, \\ldots, NumProjects\\}, \\forall j \\in \\{1, \\ldots, NumConsultants\\}",
+            "code": {
+                "gurobipy": "for i in range(NumProjects):\n    for j in range(NumConsultants):\n        model.addConstr(Assignment[i][j] <= Hired[j], name=f\"HiredLink_{i}_{j}\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize the total cost of assigning consultants to projects",
+        "formulation": "\\min \\ \\sum_{j=1}^{NumConsultants} FixedCosts_{j} \\times Hired_{j} + \\sum_{i=1}^{NumProjects} \\sum_{j=1}^{NumConsultants} AdditionalCosts_{i,j} \\times Assignment_{i,j}",
+        "code": {
+            "gurobipy": "model.setObjective(\n    quicksum(FixedCosts[j] * Hired[j] for j in range(NumConsultants))\n    + quicksum(AdditionalCosts[i][j] * Assignment[i][j] for i in range(NumProjects) for j in range(NumConsultants)),\n    GRB.MINIMIZE)"
+        }
+    }
+}

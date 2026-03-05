@@ -1,0 +1,102 @@
+{
+    "parametrized_description": "Formulate the problem of determining the production schedule that minimizes the cost, where the demand for each product is given by Demand, the maximum production amount under regular conditions is MaxRegularAmount, cost of regular production per unit is CostRegular, cost of production under overtime conditions per unit is CostOvertime, and the cost to store one unit of product is StoreCost.",
+    "keywords": [
+        "optimization",
+        "minimization"
+    ],
+    "parameters": {
+        "Demand": {
+            "description": "Demand of product n",
+            "shape": [
+                "NumMonths"
+            ]
+        },
+        "MaxRegularAmount": {
+            "description": "Maximum production amount under regular conditions",
+            "shape": []
+        },
+        "CostRegular": {
+            "description": "Cost of production under regular conditions per unit",
+            "shape": []
+        },
+        "CostOvertime": {
+            "description": "Cost of production under overtime conditions per unit",
+            "shape": []
+        },
+        "StoreCost": {
+            "description": "Cost to store one unit of product",
+            "shape": []
+        },
+        "NumMonths": {
+            "description": "Number of months in the planning horizon",
+            "shape": []
+        }
+    },
+    "variables": {
+        "RegQuant": {
+            "description": "Quantity of products produced using regular production in each month",
+            "type": "continuous",
+            "shape": [
+                "NumMonths"
+            ]
+        },
+        "OverQuant": {
+            "description": "Quantity of products produced using overtime production in each month",
+            "type": "continuous",
+            "shape": [
+                "NumMonths"
+            ]
+        },
+        "Inventory": {
+            "description": "Inventory held at the end of each month",
+            "type": "continuous",
+            "shape": [
+                "NumMonths"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "Demand for each product must be met",
+            "formulation": "Inventory_{n-1} + RegQuant_n + OverQuant_n - Demand_n = Inventory_n \\quad \\forall n \\in \\{1, \\ldots, NumMonths\\}, \\quad Inventory_0 = 0",
+            "code": {
+                "gurobipy": "model.addConstr(RegQuant[0] + OverQuant[0] - Demand[0] == Inventory[0], name=\"DemandBalance_0\")\nmodel.addConstrs((Inventory[n-1] + RegQuant[n] + OverQuant[n] - Demand[n] == Inventory[n] for n in range(1, NumMonths)), name=\"DemandBalance\")"
+            }
+        },
+        {
+            "description": "Maximum production under regular conditions cannot exceed MaxRegularAmount",
+            "formulation": "RegQuant_n \\leq MaxRegularAmount \\quad \\forall n \\in \\{1, \\ldots, NumMonths\\}",
+            "code": {
+                "gurobipy": "model.addConstrs((RegQuant[n] <= MaxRegularAmount for n in range(NumMonths)), name=\"MaxRegular\")"
+            }
+        },
+        {
+            "description": "Regular production quantity must be non-negative",
+            "formulation": "RegQuant_n \\geq 0 \\quad \\forall n \\in \\{1, \\ldots, NumMonths\\}",
+            "code": {
+                "gurobipy": "model.addConstrs((RegQuant[n] >= 0 for n in range(NumMonths)), name=\"RegNonNeg\")"
+            }
+        },
+        {
+            "description": "Overtime production quantity must be non-negative",
+            "formulation": "OverQuant_n \\geq 0 \\quad \\forall n \\in \\{1, \\ldots, NumMonths\\}",
+            "code": {
+                "gurobipy": "model.addConstrs((OverQuant[n] >= 0 for n in range(NumMonths)), name=\"OverNonNeg\")"
+            }
+        },
+        {
+            "description": "Inventory must be non-negative",
+            "formulation": "Inventory_n \\geq 0 \\quad \\forall n \\in \\{1, \\ldots, NumMonths\\}",
+            "code": {
+                "gurobipy": "model.addConstrs((Inventory[n] >= 0 for n in range(NumMonths)), name=\"InvNonNeg\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize the total cost of production and storage",
+        "formulation": "\\min \\sum_{n=1}^{NumMonths} (CostRegular \\times RegQuant_n + CostOvertime \\times OverQuant_n + StoreCost \\times Inventory_n)",
+        "code": {
+            "gurobipy": "model.setObjective(quicksum(CostRegular * RegQuant[n] + CostOvertime * OverQuant[n] + StoreCost * Inventory[n] for n in range(NumMonths)), GRB.MINIMIZE)"
+        }
+    }
+}

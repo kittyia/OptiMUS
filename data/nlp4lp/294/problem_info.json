@@ -1,0 +1,85 @@
+{
+    "parametrized_description": "Both coconut oil and lavender need to be added to a body wash. One unit of coconut oil takes CoconutOilTime minutes to be effective while one unit of lavender takes LavenderTime minutes to be effective. The body wash must contain at least MinCoconutOilUnits units of coconut oil and at most MaxCombinedUnits units of both ingredients. Since too much coconut oil can make the body wash too oily, there can be at most MaxOilLavenderRatio times the amount of coconut oil as lavenders in the body wash. How many units of each should be added to the body wash to minimize the total amount of time it takes for the mixture to be effective? (Note: one must be added before the other)",
+    "keywords": [
+        "optimization",
+        "minimization"
+    ],
+    "parameters": {
+        "TimeCoconutOil": {
+            "description": "Time taken for one unit of coconut oil to be effective",
+            "shape": []
+        },
+        "TimeLavender": {
+            "description": "Time taken for one unit of lavender to be effective",
+            "shape": []
+        },
+        "MinCoconutOil": {
+            "description": "Minimum required units of coconut oil",
+            "shape": []
+        },
+        "MaxTotalUnits": {
+            "description": "Maximum allowed units of both ingredients combined",
+            "shape": []
+        },
+        "MaxCoconutToLavenderRatio": {
+            "description": "Ratio constraint for the maximum units of coconut oil to lavender",
+            "shape": []
+        }
+    },
+    "variables": {
+        "UnitsCoconutOil": {
+            "description": "Number of units of coconut oil to add",
+            "type": "continuous",
+            "shape": []
+        },
+        "UnitsLavender": {
+            "description": "Number of units of lavender to add",
+            "type": "continuous",
+            "shape": []
+        }
+    },
+    "constraints": [
+        {
+            "description": "Coconut oil units are non-negative",
+            "formulation": "UnitsCoconutOil \\geq 0",
+            "code": {
+                "gurobipy": "model.addConstr(UnitsCoconutOil >= 0, name=\"CoconutOilNonNeg\")"
+            }
+        },
+        {
+            "description": "Lavender units are non-negative",
+            "formulation": "UnitsLavender \\geq 0",
+            "code": {
+                "gurobipy": "model.addConstr(UnitsLavender >= 0, name=\"LavenderNonNeg\")"
+            }
+        },
+        {
+            "description": "At least MinCoconutOil units of coconut oil must be added",
+            "formulation": "UnitsCoconutOil \\geq MinCoconutOil",
+            "code": {
+                "gurobipy": "model.addConstr(UnitsCoconutOil >= MinCoconutOil, name=\"MinCoconutOilConstr\")"
+            }
+        },
+        {
+            "description": "At most MaxTotalUnits of coconut oil and lavender can be added in total",
+            "formulation": "UnitsCoconutOil + UnitsLavender \\leq MaxTotalUnits",
+            "code": {
+                "gurobipy": "model.addConstr(UnitsCoconutOil + UnitsLavender <= MaxTotalUnits, name=\"MaxTotalUnitsConstr\")"
+            }
+        },
+        {
+            "description": "The ratio of coconut oil to lavender units cannot exceed MaxCoconutToLavenderRatio",
+            "formulation": "UnitsCoconutOil \\leq MaxCoconutToLavenderRatio \\times UnitsLavender",
+            "code": {
+                "gurobipy": "model.addConstr(UnitsCoconutOil <= MaxCoconutToLavenderRatio * UnitsLavender, name=\"MaxRatioConstr\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize the total effective time for the body wash mixture",
+        "formulation": "\\min \\ TimeCoconutOil \\times UnitsCoconutOil + TimeLavender \\times UnitsLavender",
+        "code": {
+            "gurobipy": "model.setObjective(TimeCoconutOil * UnitsCoconutOil + TimeLavender * UnitsLavender, GRB.MINIMIZE)"
+        }
+    }
+}

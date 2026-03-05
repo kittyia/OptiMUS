@@ -1,0 +1,78 @@
+{
+    "parametrized_description": "Calculate the minimum number of employees to hire such that the requirements for coverage (as described by Num) can be met with each employee working for WorkingDays consecutive days followed by at least RestingDays consecutive resting days.",
+    "keywords": [
+        "optimization",
+        "minimization"
+    ],
+    "parameters": {
+        "Num": {
+            "description": "The number of users on the nth day",
+            "shape": [
+                "Days"
+            ]
+        },
+        "WorkingDays": {
+            "description": "Number of consecutive working days before a resting period",
+            "shape": []
+        },
+        "RestingDays": {
+            "description": "Number of consecutive resting days",
+            "shape": []
+        },
+        "Days": {
+            "description": "Number of days",
+            "shape": []
+        }
+    },
+    "variables": {
+        "StartCount": {
+            "description": "Number of employees starting their work cycle on day n",
+            "type": "integer",
+            "shape": [
+                "Days"
+            ]
+        },
+        "TotalEmployees": {
+            "description": "Total number of employees hired",
+            "type": "integer",
+            "shape": []
+        }
+    },
+    "constraints": [
+        {
+            "description": "Each employee works for WorkingDays consecutive days followed by RestingDays days off, and the total employees working on each day must meet the requirement",
+            "formulation": "\\sum_{n : \\text{day } d \\text{ falls in working window of cycle starting day } n} StartCount_n \\geq Num_d \\quad \\forall d \\in \\{1, \\ldots, Days\\}",
+            "code": {
+                "gurobipy": "cycle = WorkingDays + RestingDays\nfor d in range(Days):\n    model.addConstr(quicksum(StartCount[n] for n in range(Days) if (d - n) % cycle < WorkingDays and (d - n) % cycle >= 0) >= Num[d], name=f\"Coverage_{d}\")"
+            }
+        },
+        {
+            "description": "Each employee must have at least RestingDays consecutive days of rest after working WorkingDays days",
+            "formulation": "\\text{Enforced by the cyclic scheduling structure of StartCount}",
+            "code": {
+                "gurobipy": "# This constraint is implicitly enforced by the definition of StartCount and the coverage constraint structure"
+            }
+        },
+        {
+            "description": "Number of employees is a non-negative integer",
+            "formulation": "StartCount_n \\geq 0 \\quad \\forall n \\in \\{1, \\ldots, Days\\}, \\quad TotalEmployees \\geq 0",
+            "code": {
+                "gurobipy": "model.addConstrs((StartCount[n] >= 0 for n in range(Days)), name=\"StartNonNeg\")\nmodel.addConstr(TotalEmployees >= 0, name=\"TotalNonNeg\")"
+            }
+        },
+        {
+            "description": "TotalEmployees equals the sum of all employees starting on each day",
+            "formulation": "TotalEmployees = \\sum_{n=1}^{Days} StartCount_n",
+            "code": {
+                "gurobipy": "model.addConstr(TotalEmployees == quicksum(StartCount[n] for n in range(Days)), name=\"TotalDef\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize the number of employees to hire to meet the coverage requirements",
+        "formulation": "\\min \\ TotalEmployees",
+        "code": {
+            "gurobipy": "model.setObjective(TotalEmployees, GRB.MINIMIZE)"
+        }
+    }
+}

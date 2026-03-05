@@ -1,0 +1,159 @@
+{
+    "parametrized_description": "A company is dealing with I different items over a planning horizon of M months. The buy price of item i in month m is given by BuyPrice. All items can be sold after refining for the same SellPrice. Each item is either a vegetable or not, which is indicated by IsVegetable. There is a limited refining capability where at most MaxVegetableRefiningPerMonth of vegetables and MaxNonVegetableRefiningPerMonth of non-vegetables can be refined in any given month. The company has a storage size of StorageSize and incurs a StorageCost for storing items per month. The refined products must fall within a hardness range of MinHardness to MaxHardness, where the hardness of item i is Hardness. Initially, the storage contains an amount of InitialAmount of items. What buying, storing, and manufacturing policy should the company pursue in order to maximize profit?",
+    "keywords": [
+        "optimization",
+        "maximization"
+    ],
+    "parameters": {
+        "M": {
+            "description": "Number of months",
+            "shape": []
+        },
+        "I": {
+            "description": "Number of different items",
+            "shape": []
+        },
+        "BuyPrice": {
+            "description": "Month m buy price of item i",
+            "shape": [
+                "M",
+                "I"
+            ]
+        },
+        "SellPrice": {
+            "description": "Sell price of the products after refining",
+            "shape": []
+        },
+        "IsVegetable": {
+            "description": "Indicator whether item i is a vegetable",
+            "shape": [
+                "I"
+            ]
+        },
+        "MaxVegetableRefiningPerMonth": {
+            "description": "Maximum refining capability for vegetables per month",
+            "shape": []
+        },
+        "MaxNonVegetableRefiningPerMonth": {
+            "description": "Maximum refining capability for non-vegetables per month",
+            "shape": []
+        },
+        "StorageSize": {
+            "description": "Size of the storage",
+            "shape": []
+        },
+        "StorageCost": {
+            "description": "Cost for storing items per month",
+            "shape": []
+        },
+        "MaxHardness": {
+            "description": "The maximum hardness allowed for the products after refining",
+            "shape": []
+        },
+        "MinHardness": {
+            "description": "The minimum hardness required for the products after refining",
+            "shape": []
+        },
+        "Hardness": {
+            "description": "Hardness of item i",
+            "shape": [
+                "I"
+            ]
+        },
+        "InitialAmount": {
+            "description": "Initial amount of items in storage at the beginning of the planning horizon",
+            "shape": []
+        }
+    },
+    "variables": {
+        "Buy": {
+            "description": "Amount of item i bought in month m",
+            "type": "continuous",
+            "shape": [
+                "M",
+                "I"
+            ]
+        },
+        "Refine": {
+            "description": "Amount of item i refined in month m",
+            "type": "continuous",
+            "shape": [
+                "M",
+                "I"
+            ]
+        },
+        "Storage": {
+            "description": "Amount of item i stored at the end of month m",
+            "type": "continuous",
+            "shape": [
+                "M",
+                "I"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "All items bought, stored, and refined are non-negative",
+            "formulation": "Buy_{m,i} \\geq 0, \\quad Refine_{m,i} \\geq 0, \\quad Storage_{m,i} \\geq 0, \\quad \\forall m, i",
+            "code": {
+                "gurobipy": "for m in range(M):\n    for i in range(I):\n        model.addConstr(Buy[m][i] >= 0, name=f\"NonNegBuy_{m}_{i}\")\n        model.addConstr(Refine[m][i] >= 0, name=f\"NonNegRefine_{m}_{i}\")\n        model.addConstr(Storage[m][i] >= 0, name=f\"NonNegStorage_{m}_{i}\")"
+            }
+        },
+        {
+            "description": "Hardness of refined items must be at least MinHardness (linearized)",
+            "formulation": "\\sum_{i=1}^{I} Hardness_{i} \\times Refine_{m,i} \\geq MinHardness \\times \\sum_{i=1}^{I} Refine_{m,i}, \\quad \\forall m",
+            "code": {
+                "gurobipy": "for m in range(M):\n    model.addConstr(gurobipy.quicksum(Hardness[i] * Refine[m][i] for i in range(I)) >= MinHardness * gurobipy.quicksum(Refine[m][i] for i in range(I)), name=f\"MinHardness_{m}\")"
+            }
+        },
+        {
+            "description": "Hardness of refined items must not exceed MaxHardness (linearized)",
+            "formulation": "\\sum_{i=1}^{I} Hardness_{i} \\times Refine_{m,i} \\leq MaxHardness \\times \\sum_{i=1}^{I} Refine_{m,i}, \\quad \\forall m",
+            "code": {
+                "gurobipy": "for m in range(M):\n    model.addConstr(gurobipy.quicksum(Hardness[i] * Refine[m][i] for i in range(I)) <= MaxHardness * gurobipy.quicksum(Refine[m][i] for i in range(I)), name=f\"MaxHardness_{m}\")"
+            }
+        },
+        {
+            "description": "At most MaxVegetableRefiningPerMonth vegetables can be refined per month",
+            "formulation": "\\sum_{i : IsVegetable_i} Refine_{m,i} \\leq MaxVegetableRefiningPerMonth, \\quad \\forall m",
+            "code": {
+                "gurobipy": "for m in range(M):\n    model.addConstr(gurobipy.quicksum(Refine[m][i] for i in range(I) if IsVegetable[i]) <= MaxVegetableRefiningPerMonth, name=f\"MaxVegRefine_{m}\")"
+            }
+        },
+        {
+            "description": "At most MaxNonVegetableRefiningPerMonth non-vegetables can be refined per month",
+            "formulation": "\\sum_{i : \\neg IsVegetable_i} Refine_{m,i} \\leq MaxNonVegetableRefiningPerMonth, \\quad \\forall m",
+            "code": {
+                "gurobipy": "for m in range(M):\n    model.addConstr(gurobipy.quicksum(Refine[m][i] for i in range(I) if not IsVegetable[i]) <= MaxNonVegetableRefiningPerMonth, name=f\"MaxNonVegRefine_{m}\")"
+            }
+        },
+        {
+            "description": "Total storage used per item must not exceed StorageSize",
+            "formulation": "Storage_{m,i} \\leq StorageSize, \\quad \\forall m, i",
+            "code": {
+                "gurobipy": "for m in range(M):\n    for i in range(I):\n        model.addConstr(Storage[m][i] <= StorageSize, name=f\"StorageLimit_{m}_{i}\")"
+            }
+        },
+        {
+            "description": "Inventory balance: storage at end of month equals previous storage plus purchases minus refining. For the first month, previous storage is InitialAmount.",
+            "formulation": "Storage_{m,i} = Storage_{m-1,i} + Buy_{m,i} - Refine_{m,i}, \\quad \\forall m, i \\quad (Storage_{0,i} = InitialAmount)",
+            "code": {
+                "gurobipy": "for m in range(M):\n    for i in range(I):\n        if m == 0:\n            model.addConstr(Storage[m][i] == InitialAmount + Buy[m][i] - Refine[m][i], name=f\"Balance_{m}_{i}\")\n        else:\n            model.addConstr(Storage[m][i] == Storage[m-1][i] + Buy[m][i] - Refine[m][i], name=f\"Balance_{m}_{i}\")"
+            }
+        },
+        {
+            "description": "At the end of the last month, storage must equal InitialAmount for each item",
+            "formulation": "Storage_{M,i} = InitialAmount, \\quad \\forall i",
+            "code": {
+                "gurobipy": "for i in range(I):\n    model.addConstr(Storage[M-1][i] == InitialAmount, name=f\"FinalStorage_{i}\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Maximize the company's profit by determining the optimal buying, storing, and manufacturing policy",
+        "formulation": "\\max \\ \\sum_{m=1}^{M} \\left( SellPrice \\times \\sum_{i=1}^{I} Refine_{m,i} - \\sum_{i=1}^{I} BuyPrice_{m,i} \\times Buy_{m,i} - StorageCost \\times \\sum_{i=1}^{I} Storage_{m,i} \\right)",
+        "code": {
+            "gurobipy": "model.setObjective(gurobipy.quicksum(SellPrice * gurobipy.quicksum(Refine[m][i] for i in range(I)) - gurobipy.quicksum(BuyPrice[m][i] * Buy[m][i] for i in range(I)) - StorageCost * gurobipy.quicksum(Storage[m][i] for i in range(I)) for m in range(M)), GRB.MAXIMIZE)"
+        }
+    }
+}

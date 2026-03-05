@@ -1,0 +1,68 @@
+{
+    "parametrized_description": "A road is divided into NumSegments segments illuminated by NumLamps lamps. The illumination of each segment is a linear combination of lamp powers with known Coefficients. Given DesiredIlluminations for each segment, choose lamp powers to minimize the maximum absolute deviation between actual and desired illumination across all segments.",
+    "keywords": [
+        "illumination",
+        "approximation",
+        "minimax optimization"
+    ],
+    "parameters": {
+        "NumSegments": {
+            "description": "Number of road segments",
+            "shape": []
+        },
+        "NumLamps": {
+            "description": "Number of lamps",
+            "shape": []
+        },
+        "Coefficients": {
+            "description": "Coefficient showing how much illumination segment i gets from lamp j",
+            "shape": ["NumSegments", "NumLamps"]
+        },
+        "DesiredIlluminations": {
+            "description": "Desired illumination level for each segment",
+            "shape": ["NumSegments"]
+        }
+    },
+    "variables": {
+        "Power": {
+            "description": "Power of each lamp",
+            "type": "continuous",
+            "shape": ["NumLamps"]
+        },
+        "MaxDeviation": {
+            "description": "Maximum absolute deviation between actual and desired illumination",
+            "type": "continuous",
+            "shape": []
+        }
+    },
+    "constraints": [
+        {
+            "description": "MaxDeviation must be at least the positive deviation for each segment.",
+            "formulation": "MaxDeviation \\geq \\sum_{j=1}^{NumLamps} Coefficients_{i,j} \\times Power_j - DesiredIlluminations_i \\quad \\forall i",
+            "code": {
+                "gurobipy": "model.addConstrs((MaxDeviation >= quicksum(Coefficients[i][j] * Power[j] for j in range(NumLamps)) - DesiredIlluminations[i] for i in range(NumSegments)), name=\"DevPos\")"
+            }
+        },
+        {
+            "description": "MaxDeviation must be at least the negative deviation for each segment.",
+            "formulation": "MaxDeviation \\geq DesiredIlluminations_i - \\sum_{j=1}^{NumLamps} Coefficients_{i,j} \\times Power_j \\quad \\forall i",
+            "code": {
+                "gurobipy": "model.addConstrs((MaxDeviation >= DesiredIlluminations[i] - quicksum(Coefficients[i][j] * Power[j] for j in range(NumLamps)) for i in range(NumSegments)), name=\"DevNeg\")"
+            }
+        },
+        {
+            "description": "Lamp powers must be non-negative.",
+            "formulation": "Power_j \\geq 0 \\quad \\forall j",
+            "code": {
+                "gurobipy": "model.addConstrs((Power[j] >= 0 for j in range(NumLamps)), name=\"NonNeg\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize the maximum absolute deviation between actual and desired illumination.",
+        "formulation": "\\min \\ MaxDeviation",
+        "code": {
+            "gurobipy": "model.setObjective(MaxDeviation, GRB.MINIMIZE)"
+        }
+    }
+}

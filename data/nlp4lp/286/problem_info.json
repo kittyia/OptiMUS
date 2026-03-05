@@ -1,0 +1,100 @@
+{
+    "parametrized_description": "A lighting company makes desk-lamps and night-lamps. There is demand for at least DemandDeskLamps desk-lamps and DemandNightLamps night-lamps per day. Production is limited to MaxDeskLamps desk-lamps and MaxNightLamps night-lamps per day. A contract requires at least MinTotalLamps total lamps per day. Profit is ProfitDeskLamp per desk-lamp and ProfitNightLamp per night-lamp. Maximize profit.",
+    "keywords": [
+        "production planning",
+        "linear programming"
+    ],
+    "parameters": {
+        "DemandDeskLamps": {
+            "description": "Minimum expected demand for desk-lamps per day",
+            "shape": []
+        },
+        "DemandNightLamps": {
+            "description": "Minimum expected demand for night-lamps per day",
+            "shape": []
+        },
+        "MaxDeskLamps": {
+            "description": "Maximum production capacity for desk-lamps per day",
+            "shape": []
+        },
+        "MaxNightLamps": {
+            "description": "Maximum production capacity for night-lamps per day",
+            "shape": []
+        },
+        "MinTotalLamps": {
+            "description": "Minimum total lamps to produce per day to satisfy contract",
+            "shape": []
+        },
+        "ProfitDeskLamp": {
+            "description": "Profit per desk-lamp sold",
+            "shape": []
+        },
+        "ProfitNightLamp": {
+            "description": "Profit per night-lamp sold",
+            "shape": []
+        }
+    },
+    "variables": {
+        "NumDeskLamps": {
+            "description": "Number of desk-lamps to produce per day",
+            "type": "continuous",
+            "shape": []
+        },
+        "NumNightLamps": {
+            "description": "Number of night-lamps to produce per day",
+            "type": "continuous",
+            "shape": []
+        }
+    },
+    "constraints": [
+        {
+            "description": "Desk-lamp production must meet minimum demand.",
+            "formulation": "NumDeskLamps \\geq DemandDeskLamps",
+            "code": {
+                "gurobipy": "model.addConstr(NumDeskLamps >= DemandDeskLamps, name=\"DemandDesk\")"
+            }
+        },
+        {
+            "description": "Night-lamp production must meet minimum demand.",
+            "formulation": "NumNightLamps \\geq DemandNightLamps",
+            "code": {
+                "gurobipy": "model.addConstr(NumNightLamps >= DemandNightLamps, name=\"DemandNight\")"
+            }
+        },
+        {
+            "description": "Desk-lamp production must not exceed capacity.",
+            "formulation": "NumDeskLamps \\leq MaxDeskLamps",
+            "code": {
+                "gurobipy": "model.addConstr(NumDeskLamps <= MaxDeskLamps, name=\"MaxDesk\")"
+            }
+        },
+        {
+            "description": "Night-lamp production must not exceed capacity.",
+            "formulation": "NumNightLamps \\leq MaxNightLamps",
+            "code": {
+                "gurobipy": "model.addConstr(NumNightLamps <= MaxNightLamps, name=\"MaxNight\")"
+            }
+        },
+        {
+            "description": "Total production must meet contract minimum.",
+            "formulation": "NumDeskLamps + NumNightLamps \\geq MinTotalLamps",
+            "code": {
+                "gurobipy": "model.addConstr(NumDeskLamps + NumNightLamps >= MinTotalLamps, name=\"MinTotal\")"
+            }
+        },
+        {
+            "description": "Production quantities must be non-negative.",
+            "formulation": "NumDeskLamps \\geq 0, \\quad NumNightLamps \\geq 0",
+            "code": {
+                "gurobipy": "model.addConstr(NumDeskLamps >= 0, name=\"DeskNonNeg\")\nmodel.addConstr(NumNightLamps >= 0, name=\"NightNonNeg\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Maximize total profit from desk-lamps and night-lamps.",
+        "formulation": "\\max \\ ProfitDeskLamp \\times NumDeskLamps + ProfitNightLamp \\times NumNightLamps",
+        "code": {
+            "gurobipy": "model.setObjective(ProfitDeskLamp * NumDeskLamps + ProfitNightLamp * NumNightLamps, GRB.MAXIMIZE)"
+        }
+    }
+}

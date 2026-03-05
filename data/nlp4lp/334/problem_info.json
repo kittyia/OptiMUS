@@ -1,0 +1,94 @@
+{
+    "parametrized_description": "How many of each product should the sports produce in order to maximize its profit for the month, given the N different raw materials available, where each material i has an available amount of Available, and each product j has a requirement of Requirements units of material i, a selling price of Prices, a production cost of Costs, and a market demand of Demands?",
+    "keywords": [
+        "optimization",
+        "maximization"
+    ],
+    "parameters": {
+        "N": {
+            "description": "Number of different raw materials",
+            "shape": []
+        },
+        "M": {
+            "description": "Number of different products",
+            "shape": []
+        },
+        "Available": {
+            "description": "Amount of raw material i available",
+            "shape": [
+                "N"
+            ]
+        },
+        "Requirements": {
+            "description": "Amount of raw material i required to produce one unit of product j",
+            "shape": [
+                "N",
+                "M"
+            ]
+        },
+        "Prices": {
+            "description": "Price at which product j can be sold",
+            "shape": [
+                "M"
+            ]
+        },
+        "Costs": {
+            "description": "Cost of producing one unit of product j",
+            "shape": [
+                "M"
+            ]
+        },
+        "Demands": {
+            "description": "Demand for product j",
+            "shape": [
+                "M"
+            ]
+        }
+    },
+    "variables": {
+        "Amount": {
+            "description": "Number of units of product j to produce",
+            "type": "continuous",
+            "shape": [
+                "M"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "All products must be produced using available raw materials without exceeding their amounts",
+            "formulation": "\\sum_{j=1}^{M} Requirements_{i,j} \\times Amount_j \\leq Available_i \\quad \\forall i \\in \\{1, \\ldots, N\\}",
+            "code": {
+                "gurobipy": "model.addConstrs((quicksum(Requirements[i][j] * Amount[j] for j in range(M)) <= Available[i] for i in range(N)), name=\"RawMaterial\")"
+            }
+        },
+        {
+            "description": "Each product's production must meet its raw material requirement per unit",
+            "formulation": "\\sum_{j=1}^{M} Requirements_{i,j} \\times Amount_j \\leq Available_i \\quad \\forall i \\in \\{1, \\ldots, N\\}",
+            "code": {
+                "gurobipy": "model.addConstrs((quicksum(Requirements[i][j] * Amount[j] for j in range(M)) <= Available[i] for i in range(N)), name=\"MaterialReq\")"
+            }
+        },
+        {
+            "description": "Each product's production should not exceed its market demand",
+            "formulation": "Amount_j \\leq Demands_j \\quad \\forall j \\in \\{1, \\ldots, M\\}",
+            "code": {
+                "gurobipy": "model.addConstrs((Amount[j] <= Demands[j] for j in range(M)), name=\"DemandLimit\")"
+            }
+        },
+        {
+            "description": "Number of units produced of each product must be non-negative",
+            "formulation": "Amount_j \\geq 0 \\quad \\forall j \\in \\{1, \\ldots, M\\}",
+            "code": {
+                "gurobipy": "model.addConstrs((Amount[j] >= 0 for j in range(M)), name=\"AmountNonNeg\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Maximize the profit for the month by determining the number of each product to produce",
+        "formulation": "\\max \\sum_{j=1}^{M} (Prices_j - Costs_j) \\times Amount_j",
+        "code": {
+            "gurobipy": "model.setObjective(quicksum((Prices[j] - Costs[j]) * Amount[j] for j in range(M)), GRB.MAXIMIZE)"
+        }
+    }
+}

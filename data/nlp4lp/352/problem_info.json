@@ -1,0 +1,141 @@
+{
+    "parametrized_description": "Determine the most cost-effective combination of interventions to halt the intruder's progress within the network. The MILP problem includes parameters: processing times at the central system (IsolateCentral, ScanCentral), processing times at the distributed system (IsolateDistributed, ScanDistributed), costs (CentralCost, DistributedCost), and maximum hours (CentralMaxHours, DistributedMaxHours) for a number of interventions N.",
+    "keywords": [
+        "optimization",
+        "minimization"
+    ],
+    "parameters": {
+        "N": {
+            "description": "Number of interventions",
+            "shape": []
+        },
+        "IsolateCentral": {
+            "description": "Processing time for isolating at the central system for each intervention",
+            "shape": [
+                "N"
+            ]
+        },
+        "ScanCentral": {
+            "description": "Processing time for scanning at the central system for each intervention",
+            "shape": [
+                "N"
+            ]
+        },
+        "IsolateDistributed": {
+            "description": "Processing time for isolating at the distributed system for each intervention",
+            "shape": [
+                "N"
+            ]
+        },
+        "ScanDistributed": {
+            "description": "Processing time for scanning at the distributed system for each intervention",
+            "shape": [
+                "N"
+            ]
+        },
+        "CentralCost": {
+            "description": "Cost for central system intervention",
+            "shape": []
+        },
+        "DistributedCost": {
+            "description": "Cost for distributed system intervention",
+            "shape": []
+        },
+        "CentralMaxHours": {
+            "description": "Maximum hours of operation for the central system",
+            "shape": []
+        },
+        "DistributedMaxHours": {
+            "description": "Maximum hours of operation for the distributed system",
+            "shape": []
+        }
+    },
+    "variables": {
+        "IsolateCentralVar": {
+            "description": "Binary variable indicating whether cluster i is treated with isolate via central processing (1) or not (0)",
+            "type": "integer",
+            "shape": [
+                "N"
+            ]
+        },
+        "ScanCentralVar": {
+            "description": "Binary variable indicating whether cluster i is treated with scan via central processing (1) or not (0)",
+            "type": "integer",
+            "shape": [
+                "N"
+            ]
+        },
+        "IsolateDistributedVar": {
+            "description": "Binary variable indicating whether cluster i is treated with isolate via distributed processing (1) or not (0)",
+            "type": "integer",
+            "shape": [
+                "N"
+            ]
+        },
+        "ScanDistributedVar": {
+            "description": "Binary variable indicating whether cluster i is treated with scan via distributed processing (1) or not (0)",
+            "type": "integer",
+            "shape": [
+                "N"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "Processing time for isolation in the central system multiplied by the number of such interventions is less than or equal to CentralMaxHours",
+            "formulation": "\\sum_{i=1}^{N} IsolateCentral_{i} \\times IsolateCentralVar_{i} + \\sum_{i=1}^{N} ScanCentral_{i} \\times ScanCentralVar_{i} \\leq CentralMaxHours",
+            "code": {
+                "gurobipy": "model.addConstr(\n    quicksum(IsolateCentral[i] * IsolateCentralVar[i] for i in range(N))\n    + quicksum(ScanCentral[i] * ScanCentralVar[i] for i in range(N))\n    <= CentralMaxHours, name=\"CentralHoursLimit\")"
+            }
+        },
+        {
+            "description": "Processing time for scanning in the central system multiplied by the number of such interventions is less than or equal to CentralMaxHours",
+            "formulation": "\\sum_{i=1}^{N} IsolateDistributed_{i} \\times IsolateDistributedVar_{i} + \\sum_{i=1}^{N} ScanDistributed_{i} \\times ScanDistributedVar_{i} \\leq DistributedMaxHours",
+            "code": {
+                "gurobipy": "model.addConstr(\n    quicksum(IsolateDistributed[i] * IsolateDistributedVar[i] for i in range(N))\n    + quicksum(ScanDistributed[i] * ScanDistributedVar[i] for i in range(N))\n    <= DistributedMaxHours, name=\"DistributedHoursLimit\")"
+            }
+        },
+        {
+            "description": "Processing time for isolation in the distributed system multiplied by the number of such interventions is less than or equal to DistributedMaxHours",
+            "formulation": "IsolateCentralVar_{i} + ScanCentralVar_{i} + IsolateDistributedVar_{i} + ScanDistributedVar_{i} = 1 \\quad \\forall i \\in \\{1, \\ldots, N\\}",
+            "code": {
+                "gurobipy": "for i in range(N):\n    model.addConstr(IsolateCentralVar[i] + ScanCentralVar[i] + IsolateDistributedVar[i] + ScanDistributedVar[i] == 1, name=f\"OneIntervention_{i}\")"
+            }
+        },
+        {
+            "description": "Processing time for scanning in the distributed system multiplied by the number of such interventions is less than or equal to DistributedMaxHours",
+            "formulation": "IsolateCentralVar_{i} \\in \\{0, 1\\}, \\quad ScanCentralVar_{i} \\in \\{0, 1\\} \\quad \\forall i \\in \\{1, \\ldots, N\\}",
+            "code": {
+                "gurobipy": "for i in range(N):\n    model.addConstr(IsolateCentralVar[i] >= 0, name=f\"IsolateCentralLB_{i}\")\n    model.addConstr(IsolateCentralVar[i] <= 1, name=f\"IsolateCentralUB_{i}\")\n    model.addConstr(ScanCentralVar[i] >= 0, name=f\"ScanCentralLB_{i}\")\n    model.addConstr(ScanCentralVar[i] <= 1, name=f\"ScanCentralUB_{i}\")"
+            }
+        },
+        {
+            "description": "The total number of interventions for both systems is equal to N",
+            "formulation": "\\sum_{i=1}^{N} \\left( IsolateCentralVar_{i} + ScanCentralVar_{i} + IsolateDistributedVar_{i} + ScanDistributedVar_{i} \\right) = N",
+            "code": {
+                "gurobipy": "model.addConstr(\n    quicksum(IsolateCentralVar[i] + ScanCentralVar[i] + IsolateDistributedVar[i] + ScanDistributedVar[i] for i in range(N)) == N, name=\"TotalInterventions\")"
+            }
+        },
+        {
+            "description": "Number of central system interventions is non-negative and integer-valued",
+            "formulation": "IsolateCentralVar_{i} \\geq 0, \\quad ScanCentralVar_{i} \\geq 0 \\quad \\forall i \\in \\{1, \\ldots, N\\}",
+            "code": {
+                "gurobipy": "for i in range(N):\n    model.addConstr(IsolateCentralVar[i] >= 0, name=f\"IsolateCentralNonNeg_{i}\")\n    model.addConstr(ScanCentralVar[i] >= 0, name=f\"ScanCentralNonNeg_{i}\")"
+            }
+        },
+        {
+            "description": "Number of distributed system interventions is non-negative and integer-valued",
+            "formulation": "IsolateDistributedVar_{i} \\geq 0, \\quad ScanDistributedVar_{i} \\geq 0 \\quad \\forall i \\in \\{1, \\ldots, N\\}",
+            "code": {
+                "gurobipy": "for i in range(N):\n    model.addConstr(IsolateDistributedVar[i] >= 0, name=f\"IsolateDistNonNeg_{i}\")\n    model.addConstr(ScanDistributedVar[i] >= 0, name=f\"ScanDistNonNeg_{i}\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize the total cost of interventions at the central and distributed systems",
+        "formulation": "\\min \\ \\sum_{i=1}^{N} CentralCost \\times \\left( IsolateCentral_{i} \\times IsolateCentralVar_{i} + ScanCentral_{i} \\times ScanCentralVar_{i} \\right) + \\sum_{i=1}^{N} DistributedCost \\times \\left( IsolateDistributed_{i} \\times IsolateDistributedVar_{i} + ScanDistributed_{i} \\times ScanDistributedVar_{i} \\right)",
+        "code": {
+            "gurobipy": "model.setObjective(\n    quicksum(CentralCost * (IsolateCentral[i] * IsolateCentralVar[i] + ScanCentral[i] * ScanCentralVar[i]) for i in range(N))\n    + quicksum(DistributedCost * (IsolateDistributed[i] * IsolateDistributedVar[i] + ScanDistributed[i] * ScanDistributedVar[i]) for i in range(N)),\n    GRB.MINIMIZE)"
+        }
+    }
+}

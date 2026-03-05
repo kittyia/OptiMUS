@@ -1,0 +1,94 @@
+{
+    "parametrized_description": "A fashion brand sells NumberOfArticles articles of clothing. Each article has an initial price InitialPrices and a price elasticity Elasticities. Price changes must be in multiples of 1 euro. At most a fraction MaxPriceChange of prices can be changed. Each new price must be within MaxPriceDeviation of the initial price. Each article has a maximum production volume MaxProductionVolume. Given sales forecasts SalesForecast per article, choose new integer prices for each article to maximize total expected revenue.",
+    "keywords": [
+        "pricing",
+        "price elasticity",
+        "revenue maximization"
+    ],
+    "parameters": {
+        "NumberOfArticles": {
+            "description": "Number of articles in the assortment",
+            "shape": []
+        },
+        "InitialPrices": {
+            "description": "Initial prices of the articles",
+            "shape": ["NumberOfArticles"]
+        },
+        "Elasticities": {
+            "description": "Price elasticity for each article",
+            "shape": ["NumberOfArticles"]
+        },
+        "MaxPriceChange": {
+            "description": "Maximum fraction of prices that can be changed",
+            "shape": []
+        },
+        "MaxPriceDeviation": {
+            "description": "Maximum allowed deviation of each new price from the initial price as a fraction",
+            "shape": []
+        },
+        "MaxProductionVolume": {
+            "description": "Maximum production volume for each article",
+            "shape": ["NumberOfArticles"]
+        },
+        "SalesForecast": {
+            "description": "Sales forecast for each article",
+            "shape": ["NumberOfArticles"]
+        }
+    },
+    "variables": {
+        "NewPrice": {
+            "description": "New price for each article in euros",
+            "type": "integer",
+            "shape": ["NumberOfArticles"]
+        },
+        "Changed": {
+            "description": "Binary indicator of whether the price of each article is changed",
+            "type": "binary",
+            "shape": ["NumberOfArticles"]
+        }
+    },
+    "constraints": [
+        {
+            "description": "The new price for each article must be at least (1 - MaxPriceDeviation) times the initial price.",
+            "formulation": "NewPrice_i \\geq \\lceil InitialPrices_i \\times (1 - MaxPriceDeviation) \\rceil \\quad \\forall i",
+            "code": {
+                "gurobipy": "import math\nmodel.addConstrs((NewPrice[i] >= math.ceil(InitialPrices[i] * (1 - MaxPriceDeviation)) for i in range(NumberOfArticles)), name=\"PriceLB\")"
+            }
+        },
+        {
+            "description": "The new price for each article must be at most (1 + MaxPriceDeviation) times the initial price.",
+            "formulation": "NewPrice_i \\leq \\lfloor InitialPrices_i \\times (1 + MaxPriceDeviation) \\rfloor \\quad \\forall i",
+            "code": {
+                "gurobipy": "import math\nmodel.addConstrs((NewPrice[i] <= math.floor(InitialPrices[i] * (1 + MaxPriceDeviation)) for i in range(NumberOfArticles)), name=\"PriceUB\")"
+            }
+        },
+        {
+            "description": "If a price is changed, the Changed indicator must be 1.",
+            "formulation": "NewPrice_i - InitialPrices_i \\leq M_i \\times Changed_i \\quad \\forall i \\\\ InitialPrices_i - NewPrice_i \\leq M_i \\times Changed_i \\quad \\forall i",
+            "code": {
+                "gurobipy": "for i in range(NumberOfArticles):\n    M_i = math.floor(InitialPrices[i] * MaxPriceDeviation)\n    model.addConstr(NewPrice[i] - InitialPrices[i] <= M_i * Changed[i], name=f\"ChangedUB_{i}\")\n    model.addConstr(InitialPrices[i] - NewPrice[i] <= M_i * Changed[i], name=f\"ChangedLB_{i}\")"
+            }
+        },
+        {
+            "description": "At most MaxPriceChange fraction of all articles can have their price changed.",
+            "formulation": "\\sum_{i=1}^{NumberOfArticles} Changed_i \\leq MaxPriceChange \\times NumberOfArticles",
+            "code": {
+                "gurobipy": "model.addConstr(quicksum(Changed[i] for i in range(NumberOfArticles)) <= MaxPriceChange * NumberOfArticles, name=\"MaxChanges\")"
+            }
+        },
+        {
+            "description": "Expected sales for each article cannot exceed the maximum production volume.",
+            "formulation": "SalesForecast_i \\times \\left( \\frac{NewPrice_i}{InitialPrices_i} \\right)^{Elasticities_i} \\leq MaxProductionVolume_i \\quad \\forall i",
+            "code": {
+                "gurobipy": "model.addConstrs((SalesForecast[i] * (NewPrice[i] / InitialPrices[i]) ** Elasticities[i] <= MaxProductionVolume[i] for i in range(NumberOfArticles)), name=\"MaxProd\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Maximize total expected revenue across all articles, where expected sales depend on price elasticity.",
+        "formulation": "\\max \\sum_{i=1}^{NumberOfArticles} NewPrice_i \\times SalesForecast_i \\times \\left( \\frac{NewPrice_i}{InitialPrices_i} \\right)^{Elasticities_i}",
+        "code": {
+            "gurobipy": "model.setObjective(quicksum(NewPrice[i] * SalesForecast[i] * (NewPrice[i] / InitialPrices[i]) ** Elasticities[i] for i in range(NumberOfArticles)), GRB.MAXIMIZE)"
+        }
+    }
+}

@@ -1,0 +1,72 @@
+{
+    "parametrized_description": "The objective is to maximize the number of units of currency N that we end up with at the end of the day, through a sequence of currency transactions. We start with a certain amount Start for each currency, there is a limit Limit to the number of transactions we can perform for each currency, and the exchange rates are given by Rate.",
+    "keywords": [
+        "optimization",
+        "maximization"
+    ],
+    "parameters": {
+        "N": {
+            "description": "Number of different currencies",
+            "shape": []
+        },
+        "Start": {
+            "description": "Initial amount of currency i",
+            "shape": [
+                "N"
+            ]
+        },
+        "Limit": {
+            "description": "Limit for the number of transactions for currency i",
+            "shape": [
+                "N"
+            ]
+        },
+        "Rate": {
+            "description": "Exchange rate from currency i to currency j",
+            "shape": [
+                "N",
+                "N"
+            ]
+        }
+    },
+    "variables": {
+        "Amount": {
+            "description": "Amount of currency i exchanged to currency j",
+            "type": "continuous",
+            "shape": [
+                "N",
+                "N"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "All exchange amounts are non-negative",
+            "formulation": "Amount_{i,j} \\geq 0, \\quad \\forall i, j \\in \\{0, \\ldots, N-1\\}",
+            "code": {
+                "gurobipy": "for i in range(N):\n    for j in range(N):\n        model.addConstr(Amount[i][j] >= 0, name=f\"AmountNonNeg_{i}_{j}\")"
+            }
+        },
+        {
+            "description": "Total amount exchanged out of currency i cannot exceed the starting amount plus what is exchanged into currency i",
+            "formulation": "\\sum_{j=0}^{N-1} Amount_{i,j} \\leq Start_i + \\sum_{j=0}^{N-1} Rate_{j,i} \\times Amount_{j,i}, \\quad \\forall i \\in \\{0, \\ldots, N-1\\}",
+            "code": {
+                "gurobipy": "for i in range(N):\n    model.addConstr(quicksum(Amount[i][j] for j in range(N)) <= Start[i] + quicksum(Rate[j][i] * Amount[j][i] for j in range(N)), name=f\"FlowBalance_{i}\")"
+            }
+        },
+        {
+            "description": "Total amount of currency i involved in exchanges does not exceed the limit Limit_i",
+            "formulation": "\\sum_{j=0}^{N-1} Amount_{i,j} + \\sum_{j=0}^{N-1} Amount_{j,i} \\leq Limit_i, \\quad \\forall i \\in \\{0, \\ldots, N-1\\}",
+            "code": {
+                "gurobipy": "for i in range(N):\n    model.addConstr(quicksum(Amount[i][j] for j in range(N)) + quicksum(Amount[j][i] for j in range(N)) <= Limit[i], name=f\"TransLimit_{i}\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Maximize the final total number of units of currency N",
+        "formulation": "\\max \\ Start_{N-1} + \\sum_{j=0}^{N-1} Rate_{j,N-1} \\times Amount_{j,N-1} - \\sum_{j=0}^{N-1} Amount_{N-1,j}",
+        "code": {
+            "gurobipy": "model.setObjective(Start[N-1] + quicksum(Rate[j][N-1] * Amount[j][N-1] for j in range(N)) - quicksum(Amount[N-1][j] for j in range(N)), GRB.MAXIMIZE)"
+        }
+    }
+}

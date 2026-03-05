@@ -1,0 +1,129 @@
+{
+    "parametrized_description": "Maximize total production in the last two years using the given constraints on production inputs from two resource types (InputOne and InputTwo), manpower allocations (ManpowerOne and ManpowerTwo), stock levels (Stock), capacities (Capacity), and the upper limit of manpower (ManpowerLimit).",
+    "keywords": [
+        "optimization",
+        "maximization"
+    ],
+    "parameters": {
+        "InputOne": {
+            "description": "The production inputs from resource type one to product k in year j",
+            "shape": [
+                "NumIndustries",
+                "NumIndustries"
+            ]
+        },
+        "ManpowerOne": {
+            "description": "The manpower allocated to resource type one for product k",
+            "shape": [
+                "NumIndustries"
+            ]
+        },
+        "InputTwo": {
+            "description": "The production inputs from resource type two to product k in year j",
+            "shape": [
+                "NumIndustries",
+                "NumIndustries"
+            ]
+        },
+        "ManpowerTwo": {
+            "description": "The manpower allocated to resource type two for product k",
+            "shape": [
+                "NumIndustries"
+            ]
+        },
+        "Stock": {
+            "description": "Stock levels of product k at the start of the planning horizon",
+            "shape": [
+                "NumIndustries"
+            ]
+        },
+        "Capacity": {
+            "description": "Production capacity for product k",
+            "shape": [
+                "NumIndustries"
+            ]
+        },
+        "ManpowerLimit": {
+            "description": "The upper limit of manpower",
+            "shape": []
+        },
+        "NumIndustries": {
+            "description": "Number of industries",
+            "shape": []
+        },
+        "NumYears": {
+            "description": "Number of years",
+            "shape": []
+        }
+    },
+    "variables": {
+        "Produce": {
+            "description": "Amount of units produced by industry k in year t",
+            "type": "continuous",
+            "shape": [
+                "NumIndustries",
+                "NumYears"
+            ]
+        },
+        "BuildCapa": {
+            "description": "Amount of units used to build productive capacity for industry k in year t",
+            "type": "continuous",
+            "shape": [
+                "NumIndustries",
+                "NumYears"
+            ]
+        },
+        "StockHold": {
+            "description": "Amount of stock of industry k held at end of year t",
+            "type": "continuous",
+            "shape": [
+                "NumIndustries",
+                "NumYears"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "Material balance: output plus previous stock minus current stock minus inputs to production and capacity building must be non-negative",
+            "formulation": "Produce_{k,t} + StockHold_{k,t-1} - StockHold_{k,t} - \\sum_{j=1}^{NumIndustries} InputOne_{j,k} \\times Produce_{j,t} - \\sum_{j=1}^{NumIndustries} InputTwo_{j,k} \\times BuildCapa_{j,t} \\geq 0, \\quad \\forall k \\in \\{1, \\ldots, NumIndustries\\}, \\forall t \\in \\{1, \\ldots, NumYears\\}",
+            "code": {
+                "gurobipy": "for k in range(NumIndustries):\n    for t in range(NumYears):\n        stock_prev = Stock[k] if t == 0 else StockHold[k][t-1]\n        model.addConstr(Produce[k][t] + stock_prev - StockHold[k][t] - quicksum(InputOne[j][k] * Produce[j][t] for j in range(NumIndustries)) - quicksum(InputTwo[j][k] * BuildCapa[j][t] for j in range(NumIndustries)) >= 0, name=f\"Balance_{k}_{t}\")"
+            }
+        },
+        {
+            "description": "Production capacities must be respected according to Capacity",
+            "formulation": "Produce_{k,t} \\leq Capacity_{k} + \\sum_{t'=1}^{t-2} BuildCapa_{k,t'}, \\quad \\forall k \\in \\{1, \\ldots, NumIndustries\\}, \\forall t \\in \\{1, \\ldots, NumYears\\}",
+            "code": {
+                "gurobipy": "for k in range(NumIndustries):\n    for t in range(NumYears):\n        if t <= 1:\n            model.addConstr(Produce[k][t] <= Capacity[k], name=f\"CapLimit_{k}_{t}\")\n        else:\n            model.addConstr(Produce[k][t] <= Capacity[k] + quicksum(BuildCapa[k][tp] for tp in range(t-1)), name=f\"CapLimit_{k}_{t}\")"
+            }
+        },
+        {
+            "description": "The total manpower used must not exceed the upper limit, ManpowerLimit",
+            "formulation": "\\sum_{k=1}^{NumIndustries} ManpowerOne_{k} \\times Produce_{k,t} + \\sum_{k=1}^{NumIndustries} ManpowerTwo_{k} \\times BuildCapa_{k,t} \\leq ManpowerLimit, \\quad \\forall t \\in \\{1, \\ldots, NumYears\\}",
+            "code": {
+                "gurobipy": "for t in range(NumYears):\n    model.addConstr(quicksum(ManpowerOne[k] * Produce[k][t] for k in range(NumIndustries)) + quicksum(ManpowerTwo[k] * BuildCapa[k][t] for k in range(NumIndustries)) <= ManpowerLimit, name=f\"ManpowerLimit_{t}\")"
+            }
+        },
+        {
+            "description": "Stock levels must be maintained as per Stock non-negativity and limits",
+            "formulation": "StockHold_{k,t} \\geq 0, \\quad \\forall k \\in \\{1, \\ldots, NumIndustries\\}, \\forall t \\in \\{1, \\ldots, NumYears\\}",
+            "code": {
+                "gurobipy": "for k in range(NumIndustries):\n    for t in range(NumYears):\n        model.addConstr(StockHold[k][t] >= 0, name=f\"StockNonNeg_{k}_{t}\")"
+            }
+        },
+        {
+            "description": "All variables of production, resources, and manpower must be non-negative",
+            "formulation": "Produce_{k,t} \\geq 0, \\quad BuildCapa_{k,t} \\geq 0, \\quad \\forall k \\in \\{1, \\ldots, NumIndustries\\}, \\forall t \\in \\{1, \\ldots, NumYears\\}",
+            "code": {
+                "gurobipy": "for k in range(NumIndustries):\n    for t in range(NumYears):\n        model.addConstr(Produce[k][t] >= 0, name=f\"ProdNonNeg_{k}_{t}\")\n        model.addConstr(BuildCapa[k][t] >= 0, name=f\"BuildNonNeg_{k}_{t}\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Maximize total production in the last two years",
+        "formulation": "\\max \\sum_{k=1}^{NumIndustries} \\sum_{t=NumYears-1}^{NumYears} Produce_{k,t}",
+        "code": {
+            "gurobipy": "model.setObjective(quicksum(Produce[k][t] for k in range(NumIndustries) for t in range(NumYears - 2, NumYears)), GRB.MAXIMIZE)"
+        }
+    }
+}

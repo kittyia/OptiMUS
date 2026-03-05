@@ -1,0 +1,67 @@
+{
+    "parametrized_description": "PROBLEM TYPE\nLP\n\nINPUT FORMAT \n\n{\n    \"A\": [[a_i_j for j in 1, ..., N] for i in 1, ..., M],\n    \"b\": [b_i for i in 1, ..., M]\n}\n\nOBJECTIVE\nWe are interested in finding a ball with the largest possible radius, which is entirely contained within the set P (The center of such a ball is called the Chebychev center of P).",
+    "keywords": [
+        "optimization",
+        "maximization"
+    ],
+    "parameters": {
+        "M": {
+            "description": "The number of inequalities defining the set P",
+            "shape": []
+        },
+        "N": {
+            "description": "The ambient space dimension of the set P",
+            "shape": []
+        },
+        "A": {
+            "description": "The coefficients of the linear inequalities defining the set P",
+            "shape": [
+                "M",
+                "N"
+            ]
+        },
+        "B": {
+            "description": "The right-hand side of the inequalities defining the set P",
+            "shape": [
+                "M"
+            ]
+        }
+    },
+    "variables": {
+        "Center": {
+            "description": "Coordinates of the center of the ball (Chebyshev center)",
+            "type": "continuous",
+            "shape": [
+                "N"
+            ]
+        },
+        "Radius": {
+            "description": "Radius of the largest inscribed ball",
+            "type": "continuous",
+            "shape": []
+        }
+    },
+    "constraints": [
+        {
+            "description": "The radius of the ball is non-negative",
+            "formulation": "Radius \\geq 0",
+            "code": {
+                "gurobipy": "model.addConstr(Radius >= 0, name=\"RadiusNonNeg\")"
+            }
+        },
+        {
+            "description": "The ball must be completely within the set P, which is defined by the constraints Ax <= b. For each inequality i, the constraint is a_i^T y + ||a_i|| * r <= b_i.",
+            "formulation": "\\sum_{j=0}^{N-1} A_{i,j} \\times Center_j + \\|a_i\\|_2 \\times Radius \\leq B_i, \\quad \\forall i \\in \\{0, \\ldots, M-1\\}",
+            "code": {
+                "gurobipy": "import math\nfor i in range(M):\n    norm_ai = math.sqrt(sum(A[i][j] ** 2 for j in range(N)))\n    model.addConstr(quicksum(A[i][j] * Center[j] for j in range(N)) + norm_ai * Radius <= B[i], name=f\"BallInP_{i}\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Maximize the radius r of the ball centered at the Chebyshev center that lies entirely within P",
+        "formulation": "\\max \\ Radius",
+        "code": {
+            "gurobipy": "model.setObjective(Radius, GRB.MAXIMIZE)"
+        }
+    }
+}

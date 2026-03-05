@@ -1,0 +1,84 @@
+{
+    "parametrized_description": "A state is planning its electricity capacity for T time periods. The demand for electricity each period is Demand. Existing oil-fired plants provide capacity OilCap each period. The state can build coal plants at cost CoalCost per unit of capacity and nuclear plants at cost NukeCost per unit of capacity. Nuclear power must not exceed MaxNuke fraction of total capacity. Coal plants last CoalLife periods and nuclear plants last NukeLife periods. Determine how much coal and nuclear capacity to build each period to minimize total construction cost while meeting demand.",
+    "keywords": [
+        "capacity planning",
+        "energy",
+        "infrastructure investment"
+    ],
+    "parameters": {
+        "T": {
+            "description": "Number of time periods",
+            "shape": []
+        },
+        "Demand": {
+            "description": "Demand for electricity in each time period",
+            "shape": ["T"]
+        },
+        "OilCap": {
+            "description": "Available capacity from existing oil-fired plants in each time period",
+            "shape": ["T"]
+        },
+        "CoalCost": {
+            "description": "Cost per unit of capacity for building a coal plant",
+            "shape": []
+        },
+        "NukeCost": {
+            "description": "Cost per unit of capacity for building a nuclear plant",
+            "shape": []
+        },
+        "MaxNuke": {
+            "description": "Maximum fraction of total capacity that can be nuclear",
+            "shape": []
+        },
+        "CoalLife": {
+            "description": "Lifespan of a coal plant in time periods",
+            "shape": []
+        },
+        "NukeLife": {
+            "description": "Lifespan of a nuclear plant in time periods",
+            "shape": []
+        }
+    },
+    "variables": {
+        "CoalBuilt": {
+            "description": "Amount of coal capacity built in each time period",
+            "type": "continuous",
+            "shape": ["T"]
+        },
+        "NukeBuilt": {
+            "description": "Amount of nuclear capacity built in each time period",
+            "type": "continuous",
+            "shape": ["T"]
+        }
+    },
+    "constraints": [
+        {
+            "description": "Total available capacity (oil + active coal + active nuclear) must meet demand in each period.",
+            "formulation": "OilCap_t + \\sum_{s=\\max(1,t-CoalLife+1)}^{t} CoalBuilt_s + \\sum_{s=\\max(1,t-NukeLife+1)}^{t} NukeBuilt_s \\geq Demand_t \\quad \\forall t",
+            "code": {
+                "gurobipy": "for t in range(T):\n    coal_active = quicksum(CoalBuilt[s] for s in range(max(0, t - CoalLife + 1), t + 1))\n    nuke_active = quicksum(NukeBuilt[s] for s in range(max(0, t - NukeLife + 1), t + 1))\n    model.addConstr(OilCap[t] + coal_active + nuke_active >= Demand[t], name=f\"DemandMet_{t}\")"
+            }
+        },
+        {
+            "description": "Nuclear capacity must not exceed MaxNuke fraction of total capacity in each period.",
+            "formulation": "\\sum_{s=\\max(1,t-NukeLife+1)}^{t} NukeBuilt_s \\leq MaxNuke \\times \\left( OilCap_t + \\sum_{s=\\max(1,t-CoalLife+1)}^{t} CoalBuilt_s + \\sum_{s=\\max(1,t-NukeLife+1)}^{t} NukeBuilt_s \\right) \\quad \\forall t",
+            "code": {
+                "gurobipy": "for t in range(T):\n    coal_active = quicksum(CoalBuilt[s] for s in range(max(0, t - CoalLife + 1), t + 1))\n    nuke_active = quicksum(NukeBuilt[s] for s in range(max(0, t - NukeLife + 1), t + 1))\n    model.addConstr(nuke_active <= MaxNuke * (OilCap[t] + coal_active + nuke_active), name=f\"NukeLimit_{t}\")"
+            }
+        },
+        {
+            "description": "Capacity built in each period must be non-negative.",
+            "formulation": "CoalBuilt_t \\geq 0, \\quad NukeBuilt_t \\geq 0 \\quad \\forall t",
+            "code": {
+                "gurobipy": "model.addConstrs((CoalBuilt[t] >= 0 for t in range(T)), name=\"CoalNonNeg\")\nmodel.addConstrs((NukeBuilt[t] >= 0 for t in range(T)), name=\"NukeNonNeg\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize total cost of building coal and nuclear plants over all periods.",
+        "formulation": "\\min \\sum_{t=1}^{T} \\left( CoalCost \\times CoalBuilt_t + NukeCost \\times NukeBuilt_t \\right)",
+        "code": {
+            "gurobipy": "model.setObjective(quicksum(CoalCost * CoalBuilt[t] + NukeCost * NukeBuilt[t] for t in range(T)), GRB.MINIMIZE)"
+        }
+    }
+}

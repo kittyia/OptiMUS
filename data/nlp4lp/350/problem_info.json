@@ -1,0 +1,67 @@
+{
+    "parametrized_description": "Select the combination of translators that ensures all required languages can be translated into, at the minimum possible cost. There are N translators, each with an associated cost of Cost. Each translator i is capable of translating a set of languages Languages. The objective is to meet the translation needs for M required languages, listed in RequiredLanguages.",
+    "keywords": [
+        "optimization",
+        "minimization"
+    ],
+    "parameters": {
+        "N": {
+            "description": "Number of translators",
+            "shape": []
+        },
+        "Cost": {
+            "description": "Cost of translator i",
+            "shape": [
+                "N"
+            ]
+        },
+        "Languages": {
+            "description": "Set of languages that translator i can translate",
+            "shape": [
+                "N"
+            ]
+        },
+        "M": {
+            "description": "Number of required languages",
+            "shape": []
+        },
+        "RequiredLanguages": {
+            "description": "List of required languages",
+            "shape": [
+                "M"
+            ]
+        }
+    },
+    "variables": {
+        "Selected": {
+            "description": "Binary variable indicating whether translator i is selected (1) or not (0)",
+            "type": "integer",
+            "shape": [
+                "N"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "Each of the M required languages must be translated into",
+            "formulation": "\\sum_{i : \\text{RequiredLanguages}_{m} \\in \\text{Languages}_{i}} Selected_{i} \\geq 1 \\quad \\forall m \\in \\{1, \\ldots, M\\}",
+            "code": {
+                "gurobipy": "for m in range(M):\n    model.addConstr(quicksum(Selected[i] for i in range(N) if RequiredLanguages[m] in Languages[i]) >= 1, name=f\"LangCover_{m}\")"
+            }
+        },
+        {
+            "description": "Only translators from the set of N translators can be selected",
+            "formulation": "Selected_{i} \\in \\{0, 1\\} \\quad \\forall i \\in \\{1, \\ldots, N\\}",
+            "code": {
+                "gurobipy": "for i in range(N):\n    model.addConstr(Selected[i] <= 1, name=f\"SelectedBinary_{i}\")\n    model.addConstr(Selected[i] >= 0, name=f\"SelectedNonNeg_{i}\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize the total cost of translators while ensuring coverage for all M required languages",
+        "formulation": "\\min \\ \\sum_{i=1}^{N} Cost_{i} \\times Selected_{i}",
+        "code": {
+            "gurobipy": "model.setObjective(quicksum(Cost[i] * Selected[i] for i in range(N)), GRB.MINIMIZE)"
+        }
+    }
+}

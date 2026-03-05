@@ -1,0 +1,99 @@
+{
+    "parametrized_description": "A brewery can ferment their product into either wine or kombucha. Each unit of wine requires FruitWine units of fruit and WaterWine units of water. Each unit of kombucha requires FruitKombucha units of fruit and TeaKombucha units of tea. The company has available WaterAvailable units of water and TeaAvailable units of tea. Wine sells for more, therefore the number of wine must be larger than the number of kombucha. Additionally, at least MinKombuchaProp of their products made must be kombucha. How many of each should the brewery make to minimize the total units of fruit required?",
+    "keywords": [
+        "optimization"
+    ],
+    "parameters": {
+        "FruitPerWine": {
+            "description": "Units of fruit needed for one unit of wine",
+            "shape": []
+        },
+        "WaterPerWine": {
+            "description": "Units of water needed for one unit of wine",
+            "shape": []
+        },
+        "FruitPerKombucha": {
+            "description": "Units of fruit needed for one unit of kombucha",
+            "shape": []
+        },
+        "TeaPerKombucha": {
+            "description": "Units of tea needed for one unit of kombucha",
+            "shape": []
+        },
+        "TotalWater": {
+            "description": "Total available units of water",
+            "shape": []
+        },
+        "TotalTea": {
+            "description": "Total available units of tea",
+            "shape": []
+        },
+        "MinKombuchaPercentage": {
+            "description": "Minimum percentage of products made that must be kombucha",
+            "shape": []
+        }
+    },
+    "variables": {
+        "NumWine": {
+            "description": "Number of units of wine to produce",
+            "type": "continuous",
+            "shape": []
+        },
+        "NumKombucha": {
+            "description": "Number of units of kombucha to produce",
+            "type": "continuous",
+            "shape": []
+        }
+    },
+    "constraints": [
+        {
+            "description": "Units of wine produced is non-negative",
+            "formulation": "NumWine \\geq 0",
+            "code": {
+                "gurobipy": "model.addConstr(NumWine >= 0, name=\"WineNonNeg\")"
+            }
+        },
+        {
+            "description": "Units of kombucha produced is non-negative",
+            "formulation": "NumKombucha \\geq 0",
+            "code": {
+                "gurobipy": "model.addConstr(NumKombucha >= 0, name=\"KombuchaNonNeg\")"
+            }
+        },
+        {
+            "description": "Total water used for wine production must not exceed TotalWater",
+            "formulation": "WaterPerWine \\times NumWine \\leq TotalWater",
+            "code": {
+                "gurobipy": "model.addConstr(WaterPerWine * NumWine <= TotalWater, name=\"WaterLimit\")"
+            }
+        },
+        {
+            "description": "Total tea used for kombucha production must not exceed TotalTea",
+            "formulation": "TeaPerKombucha \\times NumKombucha \\leq TotalTea",
+            "code": {
+                "gurobipy": "model.addConstr(TeaPerKombucha * NumKombucha <= TotalTea, name=\"TeaLimit\")"
+            }
+        },
+        {
+            "description": "The number of wine units must be larger than the number of kombucha units",
+            "formulation": "NumWine \\geq NumKombucha + 1",
+            "code": {
+                "gurobipy": "model.addConstr(NumWine >= NumKombucha + 1, name=\"WineMoreThanKombucha\")"
+            }
+        },
+        {
+            "description": "At least MinKombuchaPercentage of total products must be kombucha",
+            "formulation": "NumKombucha \\geq MinKombuchaPercentage \\times (NumWine + NumKombucha)",
+            "code": {
+                "gurobipy": "model.addConstr(NumKombucha >= MinKombuchaPercentage * (NumWine + NumKombucha), name=\"MinKombuchaConstr\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize the total units of fruit required",
+        "formulation": "\\min \\ FruitPerWine \\times NumWine + FruitPerKombucha \\times NumKombucha",
+        "code": {
+            "gurobipy": "model.setObjective(FruitPerWine * NumWine + FruitPerKombucha * NumKombucha, GRB.MINIMIZE)"
+        }
+    }
+}

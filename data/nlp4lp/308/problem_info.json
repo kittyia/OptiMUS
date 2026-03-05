@@ -1,0 +1,192 @@
+{
+    "parametrized_description": "LP or MILP\n\nWhat buying, storing and manufacturing policy should the company pursue in order to maximize profit?\n\n{\n    \"buy_price\": [[BuyPrice for i in 1,...,I] for m in 1,...,M],\n    \"sell_price\": SellPrice,\n    \"is_vegetable\": [IsVegetable for i in 1,...,I],\n    \"max_vegetable_refining_per_month\": MaxVegRefiningPerMonth,\n    \"max_non_vegetable_refining_per_month\": MaxNonVegRefiningPerMonth,\n    \"storage_size\": StorageSize,\n    \"storage_cost\": StorageCost,\n    \"max_hardness\": MaxHardness,\n    \"min_hardness\": MinHardness,\n    \"hardness\": [Hardness for i in 1,...,I],\n    \"init_amount\": InitialAmount,\n    \"min_usage\": MinUsage,\n    \"dependencies\": [Dependencies for i in 1,...,I]\n}",
+    "keywords": [
+        "optimization",
+        "maximization"
+    ],
+    "parameters": {
+        "I": {
+            "description": "Number of goods I",
+            "shape": []
+        },
+        "M": {
+            "description": "Number of months M",
+            "shape": []
+        },
+        "BuyPrice": {
+            "description": "Buying price of good i in month m",
+            "shape": [
+                "I",
+                "M"
+            ]
+        },
+        "SellPrice": {
+            "description": "Selling price",
+            "shape": []
+        },
+        "IsVegetable": {
+            "description": "Indicator whether good i is a vegetable or not",
+            "shape": [
+                "I"
+            ]
+        },
+        "MaxVegRefiningPerMonth": {
+            "description": "Maximum refining capacity for vegetables per month",
+            "shape": []
+        },
+        "MaxNonVegRefiningPerMonth": {
+            "description": "Maximum refining capacity for non-vegetables per month",
+            "shape": []
+        },
+        "StorageSize": {
+            "description": "Storage capacity",
+            "shape": []
+        },
+        "StorageCost": {
+            "description": "Storage cost per unit per month",
+            "shape": []
+        },
+        "MaxHardness": {
+            "description": "Maximum hardness of goods that can be processed",
+            "shape": []
+        },
+        "MinHardness": {
+            "description": "Minimum hardness of goods that can be processed",
+            "shape": []
+        },
+        "Hardness": {
+            "description": "Hardness of good i",
+            "shape": [
+                "I"
+            ]
+        },
+        "InitialAmount": {
+            "description": "Initial amount of goods available for processing",
+            "shape": []
+        },
+        "MinUsage": {
+            "description": "Minimum usage of goods",
+            "shape": []
+        },
+        "Dependencies": {
+            "description": "Dependencies of goods i",
+            "shape": [
+                "I",
+                "I"
+            ]
+        }
+    },
+    "variables": {
+        "Buy": {
+            "description": "Amount of oil i bought in month m",
+            "type": "continuous",
+            "shape": [
+                "M",
+                "I"
+            ]
+        },
+        "Refine": {
+            "description": "Amount of oil i refined in month m",
+            "type": "continuous",
+            "shape": [
+                "M",
+                "I"
+            ]
+        },
+        "Storage": {
+            "description": "Amount of oil i stored at the end of month m",
+            "type": "continuous",
+            "shape": [
+                "M",
+                "I"
+            ]
+        },
+        "Use": {
+            "description": "Binary variable indicating whether oil i is used in month m",
+            "type": "integer",
+            "shape": [
+                "M",
+                "I"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "Maximum amount of vegetables that can be refined per month is defined by MaxVegRefiningPerMonth",
+            "formulation": "\\sum_{i : IsVegetable_i} Refine_{m,i} \\leq MaxVegRefiningPerMonth, \\quad \\forall m",
+            "code": {
+                "gurobipy": "for m in range(M):\n    model.addConstr(gurobipy.quicksum(Refine[m][i] for i in range(I) if IsVegetable[i]) <= MaxVegRefiningPerMonth, name=f\"MaxVegRefine_{m}\")"
+            }
+        },
+        {
+            "description": "Maximum amount of non-vegetables that can be refined per month is defined by MaxNonVegRefiningPerMonth",
+            "formulation": "\\sum_{i : \\neg IsVegetable_i} Refine_{m,i} \\leq MaxNonVegRefiningPerMonth, \\quad \\forall m",
+            "code": {
+                "gurobipy": "for m in range(M):\n    model.addConstr(gurobipy.quicksum(Refine[m][i] for i in range(I) if not IsVegetable[i]) <= MaxNonVegRefiningPerMonth, name=f\"MaxNonVegRefine_{m}\")"
+            }
+        },
+        {
+            "description": "The storage has a size limit defined by StorageSize for each oil",
+            "formulation": "Storage_{m,i} \\leq StorageSize, \\quad \\forall m, i",
+            "code": {
+                "gurobipy": "for m in range(M):\n    for i in range(I):\n        model.addConstr(Storage[m][i] <= StorageSize, name=f\"StorageLimit_{m}_{i}\")"
+            }
+        },
+        {
+            "description": "Hardness of blended product must be within MinHardness and MaxHardness range (linearized)",
+            "formulation": "MinHardness \\times \\sum_{i=1}^{I} Refine_{m,i} \\leq \\sum_{i=1}^{I} Hardness_{i} \\times Refine_{m,i} \\leq MaxHardness \\times \\sum_{i=1}^{I} Refine_{m,i}, \\quad \\forall m",
+            "code": {
+                "gurobipy": "for m in range(M):\n    model.addConstr(gurobipy.quicksum(Hardness[i] * Refine[m][i] for i in range(I)) >= MinHardness * gurobipy.quicksum(Refine[m][i] for i in range(I)), name=f\"MinHardness_{m}\")\n    model.addConstr(gurobipy.quicksum(Hardness[i] * Refine[m][i] for i in range(I)) <= MaxHardness * gurobipy.quicksum(Refine[m][i] for i in range(I)), name=f\"MaxHardness_{m}\")"
+            }
+        },
+        {
+            "description": "If oil i is used in month m, at least MinUsage tons must be refined; linking binary Use variable to Refine",
+            "formulation": "MinUsage \\times Use_{m,i} \\leq Refine_{m,i} \\leq StorageSize \\times Use_{m,i}, \\quad \\forall m, i",
+            "code": {
+                "gurobipy": "for m in range(M):\n    for i in range(I):\n        model.addConstr(Refine[m][i] >= MinUsage * Use[m][i], name=f\"MinUse_{m}_{i}\")\n        model.addConstr(Refine[m][i] <= StorageSize * Use[m][i], name=f\"MaxUse_{m}_{i}\")"
+            }
+        },
+        {
+            "description": "At most 3 oils can be used in any month",
+            "formulation": "\\sum_{i=1}^{I} Use_{m,i} \\leq 3, \\quad \\forall m",
+            "code": {
+                "gurobipy": "for m in range(M):\n    model.addConstr(gurobipy.quicksum(Use[m][i] for i in range(I)) <= 3, name=f\"MaxOils_{m}\")"
+            }
+        },
+        {
+            "description": "Dependencies between oils: if oil i is used and Dependencies[i][j] is 1, then oil j must also be used",
+            "formulation": "Use_{m,i} \\leq Use_{m,j}, \\quad \\forall m, \\forall i,j : Dependencies_{i,j} = 1",
+            "code": {
+                "gurobipy": "for m in range(M):\n    for i in range(I):\n        for j in range(I):\n            if Dependencies[i][j] == 1:\n                model.addConstr(Use[m][i] <= Use[m][j], name=f\"Dep_{m}_{i}_{j}\")"
+            }
+        },
+        {
+            "description": "Inventory balance: storage at end of month equals previous storage plus purchases minus refining. Initial storage is InitialAmount.",
+            "formulation": "Storage_{m,i} = Storage_{m-1,i} + Buy_{m,i} - Refine_{m,i}, \\quad \\forall m, i \\quad (Storage_{0,i} = InitialAmount)",
+            "code": {
+                "gurobipy": "for m in range(M):\n    for i in range(I):\n        if m == 0:\n            model.addConstr(Storage[m][i] == InitialAmount + Buy[m][i] - Refine[m][i], name=f\"Balance_{m}_{i}\")\n        else:\n            model.addConstr(Storage[m][i] == Storage[m-1][i] + Buy[m][i] - Refine[m][i], name=f\"Balance_{m}_{i}\")"
+            }
+        },
+        {
+            "description": "At the end of the last month, storage must equal InitialAmount for each oil",
+            "formulation": "Storage_{M,i} = InitialAmount, \\quad \\forall i",
+            "code": {
+                "gurobipy": "for i in range(I):\n    model.addConstr(Storage[M-1][i] == InitialAmount, name=f\"FinalStorage_{i}\")"
+            }
+        },
+        {
+            "description": "All variables are non-negative and Use is binary",
+            "formulation": "Buy_{m,i} \\geq 0, \\quad Refine_{m,i} \\geq 0, \\quad Storage_{m,i} \\geq 0, \\quad Use_{m,i} \\in \\{0,1\\}, \\quad \\forall m, i",
+            "code": {
+                "gurobipy": "for m in range(M):\n    for i in range(I):\n        model.addConstr(Buy[m][i] >= 0, name=f\"NonNegBuy_{m}_{i}\")\n        model.addConstr(Refine[m][i] >= 0, name=f\"NonNegRefine_{m}_{i}\")\n        model.addConstr(Storage[m][i] >= 0, name=f\"NonNegStorage_{m}_{i}\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Maximize the company's profit from its buying, storing, and manufacturing policy",
+        "formulation": "\\max \\ \\sum_{m=1}^{M} \\left( SellPrice \\times \\sum_{i=1}^{I} Refine_{m,i} - \\sum_{i=1}^{I} BuyPrice_{i,m} \\times Buy_{m,i} - StorageCost \\times \\sum_{i=1}^{I} Storage_{m,i} \\right)",
+        "code": {
+            "gurobipy": "model.setObjective(gurobipy.quicksum(SellPrice * gurobipy.quicksum(Refine[m][i] for i in range(I)) - gurobipy.quicksum(BuyPrice[i][m] * Buy[m][i] for i in range(I)) - StorageCost * gurobipy.quicksum(Storage[m][i] for i in range(I)) for m in range(M)), GRB.MAXIMIZE)"
+        }
+    }
+}

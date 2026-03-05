@@ -1,0 +1,130 @@
+{
+    "parametrized_description": "How many clicks from each ad type should Custom Tees purchase to maximize the number of unique clicks within the Budget? Consider the following parameters: the total number of advertisement types (A), costs of purchasing a click from each advertisement type (Costs), the maximum number of clicks that can be purchased from each advertisement type (MaxClicks), the number of young audience clicks from each advertisement type (YoungClicks), the number of old audience clicks from each advertisement type (OldClicks), and the number of unique clicks from each advertisement type (UniqueClicks). Additionally, consider the goals for the number of clicks from the young (GoalYoung) and old (GoalOld) audience, as well as the goals for the number of unique clicks from the young (GoalUniqueYoung) and old (GoalUniqueOld) audience.",
+    "keywords": [
+        "optimization",
+        "maximization"
+    ],
+    "parameters": {
+        "A": {
+            "description": "Number of advertisement types",
+            "shape": []
+        },
+        "Budget": {
+            "description": "Total budget for purchasing clicks",
+            "shape": []
+        },
+        "Costs": {
+            "description": "Cost of purchasing a click from advertisement type a",
+            "shape": [
+                "A"
+            ]
+        },
+        "MaxClicks": {
+            "description": "Number of maximum clicks that can be purchased from advertisement type a",
+            "shape": [
+                "A"
+            ]
+        },
+        "YoungClicks": {
+            "description": "Number of young audience clicks from advertisement type a",
+            "shape": [
+                "A"
+            ]
+        },
+        "OldClicks": {
+            "description": "Number of old audience clicks from advertisement type a",
+            "shape": [
+                "A"
+            ]
+        },
+        "UniqueClicks": {
+            "description": "Number of unique clicks from advertisement type a",
+            "shape": [
+                "A"
+            ]
+        },
+        "GoalYoung": {
+            "description": "Goal for number of clicks from young audience",
+            "shape": []
+        },
+        "GoalOld": {
+            "description": "Goal for number of clicks from old audience",
+            "shape": []
+        },
+        "GoalUniqueYoung": {
+            "description": "Goal for number of unique clicks from young audience",
+            "shape": []
+        },
+        "GoalUniqueOld": {
+            "description": "Goal for number of unique clicks from old audience",
+            "shape": []
+        }
+    },
+    "variables": {
+        "Clicks": {
+            "description": "Number of clicks purchased from advertisement type a (in thousands)",
+            "type": "continuous",
+            "shape": [
+                "A"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "Total cost of clicks from all advertisement types must not exceed Budget",
+            "formulation": "\\sum_{a} Costs_{a} \\times Clicks_{a} \\leq Budget",
+            "code": {
+                "gurobipy": "model.addConstr(gp.quicksum(Costs[a] * Clicks[a] for a in range(A)) <= Budget, name=\"BudgetLimit\")"
+            }
+        },
+        {
+            "description": "Number of clicks from each advertisement type must not exceed its corresponding MaxClicks",
+            "formulation": "Clicks_{a} \\leq MaxClicks_{a} \\quad \\forall a",
+            "code": {
+                "gurobipy": "for a in range(A):\n    model.addConstr(Clicks[a] <= MaxClicks[a], name=f\"MaxClick_{a}\")"
+            }
+        },
+        {
+            "description": "Number of young audience clicks from all advertisement types must reach at least GoalYoung",
+            "formulation": "\\sum_{a} \\frac{YoungClicks_{a}}{100} \\times Clicks_{a} \\geq GoalYoung",
+            "code": {
+                "gurobipy": "model.addConstr(gp.quicksum(YoungClicks[a] / 100 * Clicks[a] for a in range(A)) >= GoalYoung, name=\"GoalYoung\")"
+            }
+        },
+        {
+            "description": "Number of old audience clicks from all advertisement types must reach at least GoalOld",
+            "formulation": "\\sum_{a} \\frac{OldClicks_{a}}{100} \\times Clicks_{a} \\geq GoalOld",
+            "code": {
+                "gurobipy": "model.addConstr(gp.quicksum(OldClicks[a] / 100 * Clicks[a] for a in range(A)) >= GoalOld, name=\"GoalOld\")"
+            }
+        },
+        {
+            "description": "Number of unique young audience clicks from all advertisement types must reach at least GoalUniqueYoung",
+            "formulation": "\\sum_{a} \\frac{UniqueClicks_{a}}{100} \\times \\frac{YoungClicks_{a}}{100} \\times Clicks_{a} \\geq GoalUniqueYoung",
+            "code": {
+                "gurobipy": "model.addConstr(gp.quicksum(UniqueClicks[a] / 100 * YoungClicks[a] / 100 * Clicks[a] for a in range(A)) >= GoalUniqueYoung, name=\"GoalUniqueYoung\")"
+            }
+        },
+        {
+            "description": "Number of unique old audience clicks from all advertisement types must reach at least GoalUniqueOld",
+            "formulation": "\\sum_{a} \\frac{UniqueClicks_{a}}{100} \\times \\frac{OldClicks_{a}}{100} \\times Clicks_{a} \\geq GoalUniqueOld",
+            "code": {
+                "gurobipy": "model.addConstr(gp.quicksum(UniqueClicks[a] / 100 * OldClicks[a] / 100 * Clicks[a] for a in range(A)) >= GoalUniqueOld, name=\"GoalUniqueOld\")"
+            }
+        },
+        {
+            "description": "Number of clicks from each advertisement type is non-negative",
+            "formulation": "Clicks_{a} \\geq 0 \\quad \\forall a",
+            "code": {
+                "gurobipy": "for a in range(A):\n    model.addConstr(Clicks[a] >= 0, name=f\"NonNeg_{a}\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Maximize the number of unique clicks from all advertisement types within the given Budget",
+        "formulation": "\\max \\ \\sum_{a} \\frac{UniqueClicks_{a}}{100} \\times Clicks_{a}",
+        "code": {
+            "gurobipy": "model.setObjective(gp.quicksum(UniqueClicks[a] / 100 * Clicks[a] for a in range(A)), GRB.MAXIMIZE)"
+        }
+    }
+}

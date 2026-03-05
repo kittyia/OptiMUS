@@ -1,0 +1,71 @@
+{
+    "parametrized_description": "A communication network has NumNodes nodes connected by directed links. Each link from node i to node j has capacity Capacity and transmission cost Cost. There are NumSourceDestPairs source-destination pairs given by SourceDestPairs, each needing to send SourceData bits of data. Data can be split across multiple paths. Determine the flow on each link for each source-destination pair to minimize total transmission cost while respecting link capacities and satisfying all demands.",
+    "keywords": [
+        "network flow",
+        "minimum cost flow",
+        "multicommodity flow"
+    ],
+    "parameters": {
+        "NumNodes": {
+            "description": "Total number of nodes in the network",
+            "shape": []
+        },
+        "Capacity": {
+            "description": "Capacity of the communication link from node i to node j in bits per second",
+            "shape": ["NumNodes", "NumNodes"]
+        },
+        "Cost": {
+            "description": "Cost of transmitting data along the link from node i to node j",
+            "shape": ["NumNodes", "NumNodes"]
+        },
+        "NumSourceDestPairs": {
+            "description": "Number of source-destination pairs",
+            "shape": []
+        },
+        "SourceDestPairs": {
+            "description": "Source and destination node indices for each pair",
+            "shape": ["NumSourceDestPairs", "2"]
+        },
+        "SourceData": {
+            "description": "Amount of data each source needs to send in bits",
+            "shape": ["NumSourceDestPairs"]
+        }
+    },
+    "variables": {
+        "Flow": {
+            "description": "Amount of data flow on link (i, j) for source-destination pair k",
+            "type": "continuous",
+            "shape": ["NumSourceDestPairs", "NumNodes", "NumNodes"]
+        }
+    },
+    "constraints": [
+        {
+            "description": "Total flow on each link across all pairs must not exceed the link capacity.",
+            "formulation": "\\sum_{k=1}^{NumSourceDestPairs} Flow_{k,i,j} \\leq Capacity_{i,j} \\quad \\forall i, j",
+            "code": {
+                "gurobipy": "model.addConstrs((quicksum(Flow[k, i, j] for k in range(NumSourceDestPairs)) <= Capacity[i][j] for i in range(NumNodes) for j in range(NumNodes)), name=\"CapLimit\")"
+            }
+        },
+        {
+            "description": "Flow conservation at each node for each pair: inflow minus outflow equals demand (positive at destination, negative at source, zero elsewhere).",
+            "formulation": "\\sum_{j} Flow_{k,j,n} - \\sum_{j} Flow_{k,n,j} = \\begin{cases} -SourceData_k & \\text{if } n = source_k \\\\ SourceData_k & \\text{if } n = dest_k \\\\ 0 & \\text{otherwise} \\end{cases} \\quad \\forall k, n",
+            "code": {
+                "gurobipy": "for k in range(NumSourceDestPairs):\n    src, dst = SourceDestPairs[k]\n    for n in range(NumNodes):\n        inflow = quicksum(Flow[k, j, n] for j in range(NumNodes))\n        outflow = quicksum(Flow[k, n, j] for j in range(NumNodes))\n        if n == src:\n            model.addConstr(inflow - outflow == -SourceData[k], name=f\"FlowCons_{k}_{n}\")\n        elif n == dst:\n            model.addConstr(inflow - outflow == SourceData[k], name=f\"FlowCons_{k}_{n}\")\n        else:\n            model.addConstr(inflow - outflow == 0, name=f\"FlowCons_{k}_{n}\")"
+            }
+        },
+        {
+            "description": "All flows must be non-negative.",
+            "formulation": "Flow_{k,i,j} \\geq 0 \\quad \\forall k, i, j",
+            "code": {
+                "gurobipy": "model.addConstrs((Flow[k, i, j] >= 0 for k in range(NumSourceDestPairs) for i in range(NumNodes) for j in range(NumNodes)), name=\"FlowNonNeg\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize total transmission cost across all links and all source-destination pairs.",
+        "formulation": "\\min \\sum_{k=1}^{NumSourceDestPairs} \\sum_{i=1}^{NumNodes} \\sum_{j=1}^{NumNodes} Cost_{i,j} \\times Flow_{k,i,j}",
+        "code": {
+            "gurobipy": "model.setObjective(quicksum(Cost[i][j] * Flow[k, i, j] for k in range(NumSourceDestPairs) for i in range(NumNodes) for j in range(NumNodes)), GRB.MINIMIZE)"
+        }
+    }
+}

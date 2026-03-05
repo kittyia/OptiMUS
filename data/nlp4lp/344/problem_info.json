@@ -1,0 +1,76 @@
+{
+    "parametrized_description": "PROBLEM TYPE: LP\n\nINPUT FORMAT:\n\n{\n    \"routes\": [\n       {\n        \"start\": i,\n        \"end\": j,\n        \"C\": Cost_{i,j},\n       }\n    ],\n    \"demand\": [\n        {\n            \"destination\": l,\n            \"D\": Demand_{l}\n        }\n    ],\n    \"supply\": [\n        {\n            \"terminal\": k,\n            \"S\": Supply_{k}\n        }\n    ]\n}\n\nOBJECTIVE: What quantity of soybeans should they transport from source to destination to minimize transportation costs?",
+    "keywords": [
+        "optimization",
+        "minimization"
+    ],
+    "parameters": {
+        "NumTerminals": {
+            "description": "Number of terminals",
+            "shape": []
+        },
+        "NumDestinations": {
+            "description": "Number of destinations",
+            "shape": []
+        },
+        "Cost": {
+            "description": "Cost of transportation for route from terminal i to destination j",
+            "shape": [
+                "NumTerminals",
+                "NumDestinations"
+            ]
+        },
+        "Demand": {
+            "description": "Demand at each destination",
+            "shape": [
+                "NumDestinations"
+            ]
+        },
+        "Supply": {
+            "description": "Supply at each terminal",
+            "shape": [
+                "NumTerminals"
+            ]
+        }
+    },
+    "variables": {
+        "Amount": {
+            "description": "Amount of soybeans shipped from terminal i to destination j",
+            "type": "continuous",
+            "shape": [
+                "NumTerminals",
+                "NumDestinations"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "Transported quantity from terminal to destination is non-negative",
+            "formulation": "Amount_{i,j} \\geq 0 \\quad \\forall i, j",
+            "code": {
+                "gurobipy": "for i in range(NumTerminals):\n    for j in range(NumDestinations):\n        model.addConstr(Amount[i, j] >= 0, name=f\"NonNeg_{i}_{j}\")"
+            }
+        },
+        {
+            "description": "Transported quantity from each terminal cannot exceed its supply",
+            "formulation": "\\sum_{j} Amount_{i,j} \\leq Supply_{i} \\quad \\forall i",
+            "code": {
+                "gurobipy": "for i in range(NumTerminals):\n    model.addConstr(gp.quicksum(Amount[i, j] for j in range(NumDestinations)) <= Supply[i], name=f\"SupplyCap_{i}\")"
+            }
+        },
+        {
+            "description": "Transported quantity to each destination must meet its demand",
+            "formulation": "\\sum_{i} Amount_{i,j} \\geq Demand_{j} \\quad \\forall j",
+            "code": {
+                "gurobipy": "for j in range(NumDestinations):\n    model.addConstr(gp.quicksum(Amount[i, j] for i in range(NumTerminals)) >= Demand[j], name=f\"DemandMet_{j}\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize the total transportation costs of delivering soybeans from terminals to destinations",
+        "formulation": "\\min \\ \\sum_{i} \\sum_{j} Cost_{i,j} \\times Amount_{i,j}",
+        "code": {
+            "gurobipy": "model.setObjective(gp.quicksum(Cost[i][j] * Amount[i, j] for i in range(NumTerminals) for j in range(NumDestinations)), GRB.MINIMIZE)"
+        }
+    }
+}

@@ -1,0 +1,79 @@
+{
+    "parametrized_description": "Jacob has TotalInvestment to invest between a clothing company and a tech company. The clothing investment must be at least ClothingToTechRatio times the tech investment. The tech investment cannot exceed MaxTechInvestment. Clothing earns ClothingInterestRate and tech earns TechInterestRate. Maximize total profit.",
+    "keywords": [
+        "portfolio optimization",
+        "investment",
+        "linear programming"
+    ],
+    "parameters": {
+        "TotalInvestment": {
+            "description": "Total amount of money available to invest",
+            "shape": []
+        },
+        "ClothingToTechRatio": {
+            "description": "Minimum ratio of clothing investment to tech investment",
+            "shape": []
+        },
+        "MaxTechInvestment": {
+            "description": "Maximum investment allowed in tech company",
+            "shape": []
+        },
+        "ClothingInterestRate": {
+            "description": "Interest rate earned from clothing company investment",
+            "shape": []
+        },
+        "TechInterestRate": {
+            "description": "Interest rate earned from tech company investment",
+            "shape": []
+        }
+    },
+    "variables": {
+        "InvestClothing": {
+            "description": "Amount invested in clothing company",
+            "type": "continuous",
+            "shape": []
+        },
+        "InvestTech": {
+            "description": "Amount invested in tech company",
+            "type": "continuous",
+            "shape": []
+        }
+    },
+    "constraints": [
+        {
+            "description": "Total investment must not exceed TotalInvestment.",
+            "formulation": "InvestClothing + InvestTech \\leq TotalInvestment",
+            "code": {
+                "gurobipy": "model.addConstr(InvestClothing + InvestTech <= TotalInvestment, name=\"TotalBudget\")"
+            }
+        },
+        {
+            "description": "Clothing investment must be at least ClothingToTechRatio times tech investment.",
+            "formulation": "InvestClothing \\geq ClothingToTechRatio \\times InvestTech",
+            "code": {
+                "gurobipy": "model.addConstr(InvestClothing >= ClothingToTechRatio * InvestTech, name=\"ClothingRatio\")"
+            }
+        },
+        {
+            "description": "Tech investment must not exceed MaxTechInvestment.",
+            "formulation": "InvestTech \\leq MaxTechInvestment",
+            "code": {
+                "gurobipy": "model.addConstr(InvestTech <= MaxTechInvestment, name=\"MaxTech\")"
+            }
+        },
+        {
+            "description": "Investment amounts must be non-negative.",
+            "formulation": "InvestClothing \\geq 0, \\quad InvestTech \\geq 0",
+            "code": {
+                "gurobipy": "model.addConstr(InvestClothing >= 0, name=\"ClothingNonNeg\")\nmodel.addConstr(InvestTech >= 0, name=\"TechNonNeg\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Maximize total profit from both investments.",
+        "formulation": "\\max \\ ClothingInterestRate \\times InvestClothing + TechInterestRate \\times InvestTech",
+        "code": {
+            "gurobipy": "model.setObjective(ClothingInterestRate * InvestClothing + TechInterestRate * InvestTech, GRB.MAXIMIZE)"
+        }
+    }
+}

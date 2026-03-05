@@ -1,0 +1,75 @@
+{
+    "parametrized_description": "Formulate the problem of determining the quantities of each spare part to be made during the month so as to maximize profit. The number of different spare parts is K. The number of machines capable of making the spare parts is S. The time taken to make spare part k on machine s is given by Time. The profit obtained from making spare part k is Profit. Each machine s has a capacity of Capacity for the spare parts.",
+    "keywords": [
+        "optimization",
+        "maximization"
+    ],
+    "parameters": {
+        "K": {
+            "description": "Number of different spare parts",
+            "shape": []
+        },
+        "S": {
+            "description": "Number of machines capable of making the spare parts",
+            "shape": []
+        },
+        "Time": {
+            "description": "Time taken to make spare part k on machine s",
+            "shape": [
+                "K",
+                "S"
+            ]
+        },
+        "Profit": {
+            "description": "Profit obtained from making spare part k",
+            "shape": [
+                "K"
+            ]
+        },
+        "Capacity": {
+            "description": "Capacity of machine s for the spare parts",
+            "shape": [
+                "S"
+            ]
+        }
+    },
+    "variables": {
+        "Quantity": {
+            "description": "Quantity of each spare part to be produced",
+            "type": "continuous",
+            "shape": [
+                "K"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "Quantities of each spare part must be non-negative",
+            "formulation": "Quantity_k \\geq 0 \\quad \\forall k \\in \\{1, \\ldots, K\\}",
+            "code": {
+                "gurobipy": "model.addConstrs((Quantity[k] >= 0 for k in range(K)), name=\"QuantityNonNeg\")"
+            }
+        },
+        {
+            "description": "Time to produce each spare part must not exceed the available machine time",
+            "formulation": "\\sum_{k=1}^{K} Time_{k,s} \\times Quantity_k \\leq Capacity_s \\quad \\forall s \\in \\{1, \\ldots, S\\}",
+            "code": {
+                "gurobipy": "model.addConstrs((quicksum(Time[k][s] * Quantity[k] for k in range(K)) <= Capacity[s] for s in range(S)), name=\"MachineCapacity\")"
+            }
+        },
+        {
+            "description": "Total time used on each machine s must not exceed its capacity Capacity",
+            "formulation": "\\sum_{k=1}^{K} Time_{k,s} \\times Quantity_k \\leq Capacity_s \\quad \\forall s \\in \\{1, \\ldots, S\\}",
+            "code": {
+                "gurobipy": "model.addConstrs((quicksum(Time[k][s] * Quantity[k] for k in range(K)) <= Capacity[s] for s in range(S)), name=\"TotalMachineTime\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Maximize the total profit from producing the spare parts",
+        "formulation": "\\max \\sum_{k=1}^{K} Profit_k \\times Quantity_k",
+        "code": {
+            "gurobipy": "model.setObjective(quicksum(Profit[k] * Quantity[k] for k in range(K)), GRB.MAXIMIZE)"
+        }
+    }
+}

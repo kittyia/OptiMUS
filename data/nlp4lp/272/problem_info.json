@@ -1,0 +1,165 @@
+{
+    "parametrized_description": "A computer manufacturer produces N systems, each of which is either a general-purpose (GP) or workstation (WS) system indicated by IsWorkstation. Each system i has a price Price, uses DiskDrives units of disk drives and MemoryBoards units of 256K memory boards on average. The CPU supply is limited to MaxCpu units. Disk drive supply is between MinDisk and MaxDisk. Memory board supply is between MinMemory and MaxMemory. Each system i has a maximum demand of Demand units, with total GP demand limited to DemandGP and total WS demand limited to DemandWS. There are Preorder pre-orders for each system that must be fulfilled. An alternative memory board with AltMemory units is available but only compatible with systems where AltCompatible is true. Determine how many of each system to produce to maximize total revenue.",
+    "keywords": [
+        "production planning",
+        "resource allocation",
+        "supply chain"
+    ],
+    "parameters": {
+        "N": {
+            "description": "Number of computer systems",
+            "shape": []
+        },
+        "IsWorkstation": {
+            "description": "Whether system i is a workstation (true) or general-purpose (false)",
+            "shape": ["N"]
+        },
+        "Price": {
+            "description": "Price of system i in dollars",
+            "shape": ["N"]
+        },
+        "DiskDrives": {
+            "description": "Average number of disk drives per unit of system i",
+            "shape": ["N"]
+        },
+        "MemoryBoards": {
+            "description": "Number of 256K memory boards per unit of system i",
+            "shape": ["N"]
+        },
+        "MaxCpu": {
+            "description": "Maximum number of CPUs available",
+            "shape": []
+        },
+        "MinDisk": {
+            "description": "Minimum available disk drive supply",
+            "shape": []
+        },
+        "MaxDisk": {
+            "description": "Maximum available disk drive supply",
+            "shape": []
+        },
+        "MinMemory": {
+            "description": "Minimum available memory board supply",
+            "shape": []
+        },
+        "MaxMemory": {
+            "description": "Maximum available memory board supply",
+            "shape": []
+        },
+        "Demand": {
+            "description": "Maximum demand for system i",
+            "shape": ["N"]
+        },
+        "DemandGP": {
+            "description": "Maximum total demand for all general-purpose systems",
+            "shape": []
+        },
+        "DemandWS": {
+            "description": "Maximum total demand for all workstation systems",
+            "shape": []
+        },
+        "Preorder": {
+            "description": "Number of pre-orders for system i that must be fulfilled",
+            "shape": ["N"]
+        },
+        "AltMemory": {
+            "description": "Number of alternative memory boards available",
+            "shape": []
+        },
+        "AltCompatible": {
+            "description": "Whether alternative memory board is compatible with system i",
+            "shape": ["N"]
+        }
+    },
+    "variables": {
+        "Production": {
+            "description": "Number of units of system i to produce",
+            "type": "continuous",
+            "shape": ["N"]
+        },
+        "AltMemUsed": {
+            "description": "Number of alternative memory boards used for system i",
+            "type": "continuous",
+            "shape": ["N"]
+        }
+    },
+    "constraints": [
+        {
+            "description": "Total CPU usage across all systems must not exceed MaxCpu.",
+            "formulation": "\\sum_{i=1}^{N} Production_i \\leq MaxCpu",
+            "code": {
+                "gurobipy": "model.addConstr(quicksum(Production[i] for i in range(N)) <= MaxCpu, name=\"CpuLimit\")"
+            }
+        },
+        {
+            "description": "Total disk drive usage must be between MinDisk and MaxDisk.",
+            "formulation": "MinDisk \\leq \\sum_{i=1}^{N} DiskDrives_i \\times Production_i \\leq MaxDisk",
+            "code": {
+                "gurobipy": "model.addConstr(quicksum(DiskDrives[i] * Production[i] for i in range(N)) >= MinDisk, name=\"DiskMin\")\nmodel.addConstr(quicksum(DiskDrives[i] * Production[i] for i in range(N)) <= MaxDisk, name=\"DiskMax\")"
+            }
+        },
+        {
+            "description": "Total standard memory board usage minus alternative boards used must be between MinMemory and MaxMemory.",
+            "formulation": "MinMemory \\leq \\sum_{i=1}^{N} MemoryBoards_i \\times Production_i - \\sum_{i=1}^{N} AltMemUsed_i \\leq MaxMemory",
+            "code": {
+                "gurobipy": "model.addConstr(quicksum(MemoryBoards[i] * Production[i] for i in range(N)) - quicksum(AltMemUsed[i] for i in range(N)) >= MinMemory, name=\"MemMin\")\nmodel.addConstr(quicksum(MemoryBoards[i] * Production[i] for i in range(N)) - quicksum(AltMemUsed[i] for i in range(N)) <= MaxMemory, name=\"MemMax\")"
+            }
+        },
+        {
+            "description": "Total alternative memory boards used must not exceed AltMemory.",
+            "formulation": "\\sum_{i=1}^{N} AltMemUsed_i \\leq AltMemory",
+            "code": {
+                "gurobipy": "model.addConstr(quicksum(AltMemUsed[i] for i in range(N)) <= AltMemory, name=\"AltMemLimit\")"
+            }
+        },
+        {
+            "description": "Alternative memory boards can only be used in compatible systems.",
+            "formulation": "AltMemUsed_i = 0 \\quad \\forall i : AltCompatible_i = false",
+            "code": {
+                "gurobipy": "for i in range(N):\n    if not AltCompatible[i]:\n        model.addConstr(AltMemUsed[i] == 0, name=f\"AltCompat_{i}\")"
+            }
+        },
+        {
+            "description": "Production of each system must not exceed its individual demand.",
+            "formulation": "Production_i \\leq Demand_i \\quad \\forall i",
+            "code": {
+                "gurobipy": "model.addConstrs((Production[i] <= Demand[i] for i in range(N)), name=\"DemandLimit\")"
+            }
+        },
+        {
+            "description": "Total production of general-purpose systems must not exceed DemandGP.",
+            "formulation": "\\sum_{i : IsWorkstation_i = false} Production_i \\leq DemandGP",
+            "code": {
+                "gurobipy": "model.addConstr(quicksum(Production[i] for i in range(N) if not IsWorkstation[i]) <= DemandGP, name=\"GPDemand\")"
+            }
+        },
+        {
+            "description": "Total production of workstation systems must not exceed DemandWS.",
+            "formulation": "\\sum_{i : IsWorkstation_i = true} Production_i \\leq DemandWS",
+            "code": {
+                "gurobipy": "model.addConstr(quicksum(Production[i] for i in range(N) if IsWorkstation[i]) <= DemandWS, name=\"WSDemand\")"
+            }
+        },
+        {
+            "description": "Production of each system must fulfill pre-orders.",
+            "formulation": "Production_i \\geq Preorder_i \\quad \\forall i",
+            "code": {
+                "gurobipy": "model.addConstrs((Production[i] >= Preorder[i] for i in range(N)), name=\"Preorder\")"
+            }
+        },
+        {
+            "description": "Production quantities and alternative memory usage must be non-negative.",
+            "formulation": "Production_i \\geq 0, \\quad AltMemUsed_i \\geq 0 \\quad \\forall i",
+            "code": {
+                "gurobipy": "model.addConstrs((Production[i] >= 0 for i in range(N)), name=\"ProdNonNeg\")\nmodel.addConstrs((AltMemUsed[i] >= 0 for i in range(N)), name=\"AltNonNeg\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Maximize total revenue from selling all produced systems.",
+        "formulation": "\\max \\sum_{i=1}^{N} Price_i \\times Production_i",
+        "code": {
+            "gurobipy": "model.setObjective(quicksum(Price[i] * Production[i] for i in range(N)), GRB.MAXIMIZE)"
+        }
+    }
+}

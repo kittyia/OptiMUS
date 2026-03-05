@@ -1,0 +1,77 @@
+{
+    "parametrized_description": "Where should each department be located so as to minimize overall yearly cost? The optimization should consider the benefit of department K being located at location L, the communication costs between departments K and K, and the costs of locating at location L with requirement L.",
+    "keywords": [
+        "optimization"
+    ],
+    "parameters": {
+        "K": {
+            "description": "Number of departments",
+            "shape": []
+        },
+        "L": {
+            "description": "Number of possible locations",
+            "shape": []
+        },
+        "Benefit": {
+            "description": "Benefit of department k being located at location l",
+            "shape": [
+                "K",
+                "L"
+            ]
+        },
+        "Communication": {
+            "description": "Communication costs between departments k and j",
+            "shape": [
+                "K",
+                "K"
+            ]
+        },
+        "Cost": {
+            "description": "Cost of locating at location l with requirement m",
+            "shape": [
+                "L",
+                "L"
+            ]
+        }
+    },
+    "variables": {
+        "IsLocated": {
+            "description": "Whether department k is located at city l (1 if located, 0 otherwise)",
+            "type": "integer",
+            "shape": [
+                "K",
+                "L"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "Each department must be located in exactly one city",
+            "formulation": "\\sum_{l=1}^{L} IsLocated_{k,l} = 1, \\quad \\forall k \\in \\{1, \\ldots, K\\}",
+            "code": {
+                "gurobipy": "for k in range(K):\n    model.addConstr(quicksum(IsLocated[k][l] for l in range(L)) == 1, name=f\"OneLocation_{k}\")"
+            }
+        },
+        {
+            "description": "No city may be the location for more than three departments",
+            "formulation": "\\sum_{k=1}^{K} IsLocated_{k,l} \\leq 3, \\quad \\forall l \\in \\{1, \\ldots, L\\}",
+            "code": {
+                "gurobipy": "for l in range(L):\n    model.addConstr(quicksum(IsLocated[k][l] for k in range(K)) <= 3, name=f\"MaxDepts_{l}\")"
+            }
+        },
+        {
+            "description": "IsLocated variables are binary",
+            "formulation": "IsLocated_{k,l} \\in \\{0, 1\\}, \\quad \\forall k \\in \\{1, \\ldots, K\\}, \\forall l \\in \\{1, \\ldots, L\\}",
+            "code": {
+                "gurobipy": "for k in range(K):\n    for l in range(L):\n        model.addConstr(IsLocated[k][l] <= 1, name=f\"Binary_{k}_{l}\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize overall yearly cost, which is communication cost minus relocation benefits",
+        "formulation": "\\min \\sum_{k=1}^{K} \\sum_{j=1}^{K} \\sum_{l=1}^{L} \\sum_{m=1}^{L} Communication_{k,j} \\times Cost_{l,m} \\times IsLocated_{k,l} \\times IsLocated_{j,m} - \\sum_{k=1}^{K} \\sum_{l=1}^{L} Benefit_{k,l} \\times IsLocated_{k,l}",
+        "code": {
+            "gurobipy": "model.setObjective(quicksum(Communication[k][j] * Cost[l][m] * IsLocated[k][l] * IsLocated[j][m] for k in range(K) for j in range(K) for l in range(L) for m in range(L)) - quicksum(Benefit[k][l] * IsLocated[k][l] for k in range(K) for l in range(L)), GRB.MINIMIZE)"
+        }
+    }
+}

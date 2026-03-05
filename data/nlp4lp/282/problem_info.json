@@ -1,0 +1,80 @@
+{
+    "parametrized_description": "A company must deliver Deliver units of product at the end of each of T months. Production can be stored at StorageCost per unit per month. Changing production level between consecutive months incurs SwitchCost times the absolute change. Starting inventory is zero. Determine the production schedule to minimize total storage and switching costs.",
+    "keywords": [
+        "production planning",
+        "inventory management",
+        "lot sizing"
+    ],
+    "parameters": {
+        "T": {
+            "description": "Total number of months",
+            "shape": []
+        },
+        "Deliver": {
+            "description": "Units of product to deliver at the end of month i",
+            "shape": ["T"]
+        },
+        "StorageCost": {
+            "description": "Cost to hold one unit of product in inventory for one month",
+            "shape": []
+        },
+        "SwitchCost": {
+            "description": "Cost per unit change in production level between consecutive months",
+            "shape": []
+        }
+    },
+    "variables": {
+        "Production": {
+            "description": "Units of product produced in month i",
+            "type": "continuous",
+            "shape": ["T"]
+        },
+        "Inventory": {
+            "description": "Inventory held at the end of month i",
+            "type": "continuous",
+            "shape": ["T"]
+        },
+        "AbsSwitch": {
+            "description": "Absolute change in production level from month i to month i+1",
+            "type": "continuous",
+            "shape": ["T"]
+        }
+    },
+    "constraints": [
+        {
+            "description": "Inventory balance: inventory at end of month equals previous inventory plus production minus delivery.",
+            "formulation": "Inventory_i = Inventory_{i-1} + Production_i - Deliver_i \\quad \\forall i, \\text{ with } Inventory_0 = Production_1 - Deliver_1",
+            "code": {
+                "gurobipy": "model.addConstr(Inventory[0] == Production[0] - Deliver[0], name=\"InvBalance_0\")\nfor i in range(1, T):\n    model.addConstr(Inventory[i] == Inventory[i-1] + Production[i] - Deliver[i], name=f\"InvBalance_{i}\")"
+            }
+        },
+        {
+            "description": "Absolute switching cost constraint: AbsSwitch_i >= |Production_{i+1} - Production_i|.",
+            "formulation": "AbsSwitch_i \\geq Production_{i+1} - Production_i \\quad \\text{and} \\quad AbsSwitch_i \\geq Production_i - Production_{i+1} \\quad \\forall i \\in \\{0, \\ldots, T-2\\}",
+            "code": {
+                "gurobipy": "for i in range(T - 1):\n    model.addConstr(AbsSwitch[i] >= Production[i+1] - Production[i], name=f\"SwitchPos_{i}\")\n    model.addConstr(AbsSwitch[i] >= Production[i] - Production[i+1], name=f\"SwitchNeg_{i}\")"
+            }
+        },
+        {
+            "description": "Inventory must be non-negative at the end of each month.",
+            "formulation": "Inventory_i \\geq 0 \\quad \\forall i",
+            "code": {
+                "gurobipy": "model.addConstrs((Inventory[i] >= 0 for i in range(T)), name=\"InvNonNeg\")"
+            }
+        },
+        {
+            "description": "Production must be non-negative.",
+            "formulation": "Production_i \\geq 0 \\quad \\forall i",
+            "code": {
+                "gurobipy": "model.addConstrs((Production[i] >= 0 for i in range(T)), name=\"ProdNonNeg\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize total cost: storage costs plus production switching costs.",
+        "formulation": "\\min \\sum_{i=1}^{T} StorageCost \\times Inventory_i + \\sum_{i=1}^{T-1} SwitchCost \\times AbsSwitch_i",
+        "code": {
+            "gurobipy": "model.setObjective(quicksum(StorageCost * Inventory[i] for i in range(T)) + quicksum(SwitchCost * AbsSwitch[i] for i in range(T - 1)), GRB.MINIMIZE)"
+        }
+    }
+}

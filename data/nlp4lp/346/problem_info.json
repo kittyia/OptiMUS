@@ -1,0 +1,137 @@
+{
+    "parametrized_description": "Determine the quantity of batches for each part the manufacturer should produce every month, ensuring all constraints are met, where the manufacturer has P different parts, M machines, TimeRequired matrix indicating the time each machine takes to produce a part, MachineCosts indicating the cost of each machine, Availability of each machine, Prices of each part, MinBatches required for each part, a StandardCost of running a machine per hour, an OvertimeCost for running a machine beyond the standard hours, an OvertimeHour available for overtime work for each machine, and a MinProfit that the manufacturer aims to achieve.",
+    "keywords": [
+        "optimization",
+        "minimization",
+        "maximization"
+    ],
+    "parameters": {
+        "M": {
+            "description": "Number of machines",
+            "shape": []
+        },
+        "P": {
+            "description": "Number of parts to be produced",
+            "shape": []
+        },
+        "TimeRequired": {
+            "description": "Time required to produce each part 'p' on machine 'm'",
+            "shape": [
+                "M",
+                "P"
+            ]
+        },
+        "MachineCosts": {
+            "description": "Cost associated with each machine 'm'",
+            "shape": [
+                "M"
+            ]
+        },
+        "Availability": {
+            "description": "Availability in hours of each machine 'm' per month",
+            "shape": [
+                "M"
+            ]
+        },
+        "Prices": {
+            "description": "Price obtained from selling each part 'p'",
+            "shape": [
+                "P"
+            ]
+        },
+        "MinBatches": {
+            "description": "Minimum number of batches of part 'p' that must be produced",
+            "shape": [
+                "P"
+            ]
+        },
+        "StandardCost": {
+            "description": "Standard cost for a machine to run for one hour",
+            "shape": []
+        },
+        "OvertimeCost": {
+            "description": "Overtime cost for a machine to run for one hour beyond the standard availability",
+            "shape": []
+        },
+        "OvertimeHour": {
+            "description": "Numbers of overtime hours available for a machine to run beyond standard availability",
+            "shape": []
+        },
+        "MinProfit": {
+            "description": "The minimum profit the manufacturer wants to achieve",
+            "shape": []
+        }
+    },
+    "variables": {
+        "Batches": {
+            "description": "Number of batches of each part p produced",
+            "type": "continuous",
+            "shape": [
+                "P"
+            ]
+        },
+        "OvertimeUsed": {
+            "description": "Number of overtime hours used on machine 1",
+            "type": "continuous",
+            "shape": []
+        }
+    },
+    "constraints": [
+        {
+            "description": "Each machine's use time per part must not exceed the machine's availability",
+            "formulation": "\\sum_{p=1}^{P} TimeRequired_{m,p} \\times Batches_{p} \\leq Availability_{m} \\quad \\forall m \\in \\{2, \\ldots, M\\}",
+            "code": {
+                "gurobipy": "for m in range(1, M):\n    model.addConstr(quicksum(TimeRequired[m][p] * Batches[p] for p in range(P)) <= Availability[m], name=f\"MachineAvailability_{m}\")"
+            }
+        },
+        {
+            "description": "Each machine has a limited number of overtime hours that can be used",
+            "formulation": "OvertimeUsed \\leq OvertimeHour",
+            "code": {
+                "gurobipy": "model.addConstr(OvertimeUsed <= OvertimeHour, name=\"OvertimeLimit\")"
+            }
+        },
+        {
+            "description": "There is a minimum number of batches to be produced for each part",
+            "formulation": "Batches_{p} \\geq MinBatches_{p} \\quad \\forall p \\in \\{1, \\ldots, P\\}",
+            "code": {
+                "gurobipy": "for p in range(P):\n    model.addConstr(Batches[p] >= MinBatches[p], name=f\"MinBatch_{p}\")"
+            }
+        },
+        {
+            "description": "The total standard and overtime costs must enable achieving a minimum target profit",
+            "formulation": "\\sum_{p=1}^{P} Prices_{p} \\times Batches_{p} - \\sum_{m=2}^{M} MachineCosts_{m} \\times \\left( \\sum_{p=1}^{P} TimeRequired_{m,p} \\times Batches_{p} \\right) - StandardCost \\times \\sum_{p=1}^{P} TimeRequired_{1,p} \\times Batches_{p} - OvertimeCost \\times OvertimeUsed \\geq MinProfit",
+            "code": {
+                "gurobipy": "model.addConstr(\n    quicksum(Prices[p] * Batches[p] for p in range(P))\n    - quicksum(MachineCosts[m] * quicksum(TimeRequired[m][p] * Batches[p] for p in range(P)) for m in range(1, M))\n    - StandardCost * quicksum(TimeRequired[0][p] * Batches[p] for p in range(P))\n    - OvertimeCost * OvertimeUsed\n    >= MinProfit, name=\"MinProfitConstraint\")"
+            }
+        },
+        {
+            "description": "All produced batches for each part must be non-negative",
+            "formulation": "Batches_{p} \\geq 0 \\quad \\forall p \\in \\{1, \\ldots, P\\}",
+            "code": {
+                "gurobipy": "for p in range(P):\n    model.addConstr(Batches[p] >= 0, name=f\"BatchNonNeg_{p}\")"
+            }
+        },
+        {
+            "description": "The time used on each machine when producing parts must be non-negative",
+            "formulation": "\\sum_{p=1}^{P} TimeRequired_{m,p} \\times Batches_{p} \\geq 0 \\quad \\forall m \\in \\{1, \\ldots, M\\}",
+            "code": {
+                "gurobipy": "for m in range(M):\n    model.addConstr(quicksum(TimeRequired[m][p] * Batches[p] for p in range(P)) >= 0, name=f\"TimeNonNeg_{m}\")"
+            }
+        },
+        {
+            "description": "Overtime used on each machine must be non-negative and cannot exceed the available overtime hours",
+            "formulation": "0 \\leq OvertimeUsed \\leq OvertimeHour",
+            "code": {
+                "gurobipy": "model.addConstr(OvertimeUsed >= 0, name=\"OvertimeNonNeg\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Determine the optimal quantity of batches for each part to maximize the manufacturer's monthly profit, given machine availability and costs, while meeting the minimum batch requirements and not exceeding the overtime limits.",
+        "formulation": "\\max \\ \\sum_{p=1}^{P} Prices_{p} \\times Batches_{p} - \\sum_{m=2}^{M} MachineCosts_{m} \\times \\left( \\sum_{p=1}^{P} TimeRequired_{m,p} \\times Batches_{p} \\right) - StandardCost \\times \\sum_{p=1}^{P} TimeRequired_{1,p} \\times Batches_{p} - OvertimeCost \\times OvertimeUsed",
+        "code": {
+            "gurobipy": "model.setObjective(\n    quicksum(Prices[p] * Batches[p] for p in range(P))\n    - quicksum(MachineCosts[m] * quicksum(TimeRequired[m][p] * Batches[p] for p in range(P)) for m in range(1, M))\n    - StandardCost * quicksum(TimeRequired[0][p] * Batches[p] for p in range(P))\n    - OvertimeCost * OvertimeUsed,\n    GRB.MAXIMIZE)"
+        }
+    }
+}

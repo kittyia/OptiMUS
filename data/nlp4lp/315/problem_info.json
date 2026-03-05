@@ -1,0 +1,128 @@
+{
+    "parametrized_description": "Maximize total productive capacity at the end of the five years. The problem parameters are a matrix of coefficients InputOne, a vector of manpower coefficients for input one ManpowerOne, a matrix of coefficients InputTwo, a vector of manpower coefficients for input two ManpowerTwo, initial stock levels Stock, productive capacities Capacity, a company-wide manpower limit ManpowerLimit, and demand for each productive unit Demand.",
+    "keywords": [
+        "optimization",
+        "maximization"
+    ],
+    "parameters": {
+        "NumYears": {
+            "description": "Total number of years in the planning horizon",
+            "shape": []
+        },
+        "NumIndustries": {
+            "description": "Total number of industries",
+            "shape": []
+        },
+        "InputOne": {
+            "description": "Input one coefficients matrix",
+            "shape": [
+                "NumIndustries",
+                "NumIndustries"
+            ]
+        },
+        "ManpowerOne": {
+            "description": "Manpower coefficients for input one",
+            "shape": [
+                "NumIndustries"
+            ]
+        },
+        "InputTwo": {
+            "description": "Input two coefficients matrix",
+            "shape": [
+                "NumIndustries",
+                "NumIndustries"
+            ]
+        },
+        "ManpowerTwo": {
+            "description": "Manpower coefficients for input two",
+            "shape": [
+                "NumIndustries"
+            ]
+        },
+        "Stock": {
+            "description": "Initial stock level for each of the productive units",
+            "shape": [
+                "NumIndustries"
+            ]
+        },
+        "Capacity": {
+            "description": "Productive capacity for each productive unit",
+            "shape": [
+                "NumIndustries"
+            ]
+        },
+        "ManpowerLimit": {
+            "description": "Company-wide manpower limit",
+            "shape": []
+        },
+        "Demand": {
+            "description": "Demand for each of the productive units at the end of the planning horizon",
+            "shape": [
+                "NumIndustries"
+            ]
+        }
+    },
+    "variables": {
+        "Produce": {
+            "description": "Amount of units produced by industry k in year t",
+            "type": "continuous",
+            "shape": [
+                "NumIndustries",
+                "NumYears"
+            ]
+        },
+        "BuildCapa": {
+            "description": "Amount of units used to build productive capacity for industry k in year t",
+            "type": "continuous",
+            "shape": [
+                "NumIndustries",
+                "NumYears"
+            ]
+        },
+        "StockHold": {
+            "description": "Amount of stock of industry k held at end of year t",
+            "type": "continuous",
+            "shape": [
+                "NumIndustries",
+                "NumYears"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "There is a company-wide manpower limit denoted by ManpowerLimit",
+            "formulation": "\\sum_{k=1}^{NumIndustries} ManpowerOne_{k} \\times Produce_{k,t} + \\sum_{k=1}^{NumIndustries} ManpowerTwo_{k} \\times BuildCapa_{k,t} \\leq ManpowerLimit, \\quad \\forall t \\in \\{1, \\ldots, NumYears\\}",
+            "code": {
+                "gurobipy": "for t in range(NumYears):\n    model.addConstr(quicksum(ManpowerOne[k] * Produce[k][t] for k in range(NumIndustries)) + quicksum(ManpowerTwo[k] * BuildCapa[k][t] for k in range(NumIndustries)) <= ManpowerLimit, name=f\"ManpowerLimit_{t}\")"
+            }
+        },
+        {
+            "description": "The production must meet certain demand levels specified by Demand",
+            "formulation": "Produce_{k,t} + StockHold_{k,t-1} - StockHold_{k,t} - \\sum_{j=1}^{NumIndustries} InputOne_{j,k} \\times Produce_{j,t} - \\sum_{j=1}^{NumIndustries} InputTwo_{j,k} \\times BuildCapa_{j,t} \\geq Demand_{k}, \\quad \\forall k \\in \\{1, \\ldots, NumIndustries\\}, \\forall t \\in \\{1, \\ldots, NumYears\\}",
+            "code": {
+                "gurobipy": "for k in range(NumIndustries):\n    for t in range(NumYears):\n        stock_prev = Stock[k] if t == 0 else StockHold[k][t-1]\n        model.addConstr(Produce[k][t] + stock_prev - StockHold[k][t] - quicksum(InputOne[j][k] * Produce[j][t] for j in range(NumIndustries)) - quicksum(InputTwo[j][k] * BuildCapa[j][t] for j in range(NumIndustries)) >= Demand[k], name=f\"Demand_{k}_{t}\")"
+            }
+        },
+        {
+            "description": "Production cannot exceed productive capacity, which increases based on past capacity building",
+            "formulation": "Produce_{k,t} \\leq Capacity_{k} + \\sum_{t'=1}^{t-2} BuildCapa_{k,t'}, \\quad \\forall k \\in \\{1, \\ldots, NumIndustries\\}, \\forall t \\in \\{1, \\ldots, NumYears\\}",
+            "code": {
+                "gurobipy": "for k in range(NumIndustries):\n    for t in range(NumYears):\n        if t <= 1:\n            model.addConstr(Produce[k][t] <= Capacity[k], name=f\"CapLimit_{k}_{t}\")\n        else:\n            model.addConstr(Produce[k][t] <= Capacity[k] + quicksum(BuildCapa[k][tp] for tp in range(t-1)), name=f\"CapLimit_{k}_{t}\")"
+            }
+        },
+        {
+            "description": "Each input usage and productive capacity must be non-negative",
+            "formulation": "Produce_{k,t} \\geq 0, \\quad BuildCapa_{k,t} \\geq 0, \\quad StockHold_{k,t} \\geq 0, \\quad \\forall k, t",
+            "code": {
+                "gurobipy": "for k in range(NumIndustries):\n    for t in range(NumYears):\n        model.addConstr(Produce[k][t] >= 0, name=f\"ProdNonNeg_{k}_{t}\")\n        model.addConstr(BuildCapa[k][t] >= 0, name=f\"BuildNonNeg_{k}_{t}\")\n        model.addConstr(StockHold[k][t] >= 0, name=f\"StockNonNeg_{k}_{t}\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Maximize total productive capacity at the end of the five years",
+        "formulation": "\\max \\sum_{k=1}^{NumIndustries} \\left( Capacity_{k} + \\sum_{t=1}^{NumYears-1} BuildCapa_{k,t} \\right)",
+        "code": {
+            "gurobipy": "model.setObjective(quicksum(Capacity[k] + quicksum(BuildCapa[k][t] for t in range(NumYears - 1)) for k in range(NumIndustries)), GRB.MAXIMIZE)"
+        }
+    }
+}

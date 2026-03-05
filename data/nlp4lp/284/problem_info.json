@@ -1,0 +1,89 @@
+{
+    "parametrized_description": "An accounting firm employs senior accountants at SeniorWage per week and junior accountants at JuniorWage per week. At least MinTotalAccountants accountants are needed, of whom at least MinSeniorAccountants must be senior. The number of senior accountants must be at least SeniorToJuniorRatio times the number of junior accountants. The total weekly wage bill must not exceed WageBillLimit. Minimize the weekly wage bill.",
+    "keywords": [
+        "workforce planning",
+        "linear programming"
+    ],
+    "parameters": {
+        "SeniorWage": {
+            "description": "Weekly wage of a senior accountant",
+            "shape": []
+        },
+        "JuniorWage": {
+            "description": "Weekly wage of a junior accountant",
+            "shape": []
+        },
+        "MinTotalAccountants": {
+            "description": "Minimum total number of accountants required",
+            "shape": []
+        },
+        "MinSeniorAccountants": {
+            "description": "Minimum number of senior accountants required",
+            "shape": []
+        },
+        "SeniorToJuniorRatio": {
+            "description": "Minimum ratio of senior to junior accountants",
+            "shape": []
+        },
+        "WageBillLimit": {
+            "description": "Maximum weekly wage bill",
+            "shape": []
+        }
+    },
+    "variables": {
+        "NumSenior": {
+            "description": "Number of senior accountants to employ",
+            "type": "continuous",
+            "shape": []
+        },
+        "NumJunior": {
+            "description": "Number of junior accountants to employ",
+            "type": "continuous",
+            "shape": []
+        }
+    },
+    "constraints": [
+        {
+            "description": "Total number of accountants must be at least MinTotalAccountants.",
+            "formulation": "NumSenior + NumJunior \\geq MinTotalAccountants",
+            "code": {
+                "gurobipy": "model.addConstr(NumSenior + NumJunior >= MinTotalAccountants, name=\"MinTotal\")"
+            }
+        },
+        {
+            "description": "Number of senior accountants must be at least MinSeniorAccountants.",
+            "formulation": "NumSenior \\geq MinSeniorAccountants",
+            "code": {
+                "gurobipy": "model.addConstr(NumSenior >= MinSeniorAccountants, name=\"MinSenior\")"
+            }
+        },
+        {
+            "description": "Number of senior accountants must be at least SeniorToJuniorRatio times the number of junior accountants.",
+            "formulation": "NumSenior \\geq SeniorToJuniorRatio \\times NumJunior",
+            "code": {
+                "gurobipy": "model.addConstr(NumSenior >= SeniorToJuniorRatio * NumJunior, name=\"Ratio\")"
+            }
+        },
+        {
+            "description": "Total weekly wage bill must not exceed WageBillLimit.",
+            "formulation": "SeniorWage \\times NumSenior + JuniorWage \\times NumJunior \\leq WageBillLimit",
+            "code": {
+                "gurobipy": "model.addConstr(SeniorWage * NumSenior + JuniorWage * NumJunior <= WageBillLimit, name=\"WageBill\")"
+            }
+        },
+        {
+            "description": "Number of accountants must be non-negative.",
+            "formulation": "NumSenior \\geq 0, \\quad NumJunior \\geq 0",
+            "code": {
+                "gurobipy": "model.addConstr(NumSenior >= 0, name=\"SeniorNonNeg\")\nmodel.addConstr(NumJunior >= 0, name=\"JuniorNonNeg\")"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize the total weekly wage bill.",
+        "formulation": "\\min \\ SeniorWage \\times NumSenior + JuniorWage \\times NumJunior",
+        "code": {
+            "gurobipy": "model.setObjective(SeniorWage * NumSenior + JuniorWage * NumJunior, GRB.MINIMIZE)"
+        }
+    }
+}
