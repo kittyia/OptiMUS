@@ -26,13 +26,13 @@ def main():
     print(f"模型: {args.model}")
     print(f"数据目录: {args.base_dir}\n")
 
-    python_exe = Path(__file__).parent / ".venv" / "Scripts" / "python.exe"
+    # python_exe = Path(__file__).parent / ".venv" / "Scripts" / "python.exe"
     main_script = Path(__file__).parent / "main.py"
     base_dir = Path(args.base_dir)
 
-    if not python_exe.exists():
-        print(f"❌ 错误: 找不到Python解释器 {python_exe}")
-        return
+    # if not python_exe.exists():
+    #     print(f"❌ 错误: 找不到Python解释器 {python_exe}")
+    #     return
 
     if not base_dir.exists():
         print(f"❌ 错误: 找不到数据目录 {base_dir}")
@@ -50,8 +50,16 @@ def main():
         print(f"测试: {folder.name}")
 
         # 运行命令
+        # cmd = [
+        #     str(python_exe), str(main_script),
+        #     "--api_key", args.api_key,
+        #     "--base_url", args.base_url,
+        #     "--model", args.model,
+        #     "--dir", str(folder.absolute())
+        # ]
+
         cmd = [
-            str(python_exe), str(main_script),
+            str(main_script),
             "--api_key", args.api_key,
             "--base_url", args.base_url,
             "--model", args.model,
