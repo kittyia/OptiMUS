@@ -1,24 +1,17 @@
+# # main.py 文件开头
+# __import__('pysqlite3')
+# import sys
+# sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+
+
 import os
 import time
 import json
 import argparse
+import sys
+from pathlib import Path
 
 from rag.rag_utils import RAGMode
-
-parser = argparse.ArgumentParser(description="Run the optimization problem")
-parser.add_argument("--dir", type=str, help="Directory of the problem")
-parser.add_argument("--devmode", type=int, default=1)
-parser.add_argument("--rag-mode", type=RAGMode, choices=list(RAGMode), default=None, help="RAG mode")
-parser.add_argument("--model", type=str, default="Qwen/Qwen3-8B", help="Model name")
-parser.add_argument("--base_url", type=str, default=None, help="Base URL of model")
-parser.add_argument("--api_key", type=str, default=None, help="API key of model")
-args = parser.parse_args()
-
-os.environ["API_KEY"] = args.api_key
-os.environ["BASE_URL"] = args.base_url
-os.environ["MODEL"] = args.model
-
-
 from parameters import get_params
 from constraint import get_constraints
 from constraint_model import get_constraint_formulations
@@ -31,16 +24,31 @@ from execute_code import execute_and_debug
 from utils import create_state, get_labels
 
 
-if __name__ == "__main__":
+def run_optimization(dir_path, api_key, base_url, model="Qwen/Qwen3-8B",
+                     devmode=1, rag_mode=None):
+    """
+    运行优化问题的主函数
 
-    dir = args.dir
-    # Read the params state
-    ########## SET THIS BEFORE RUNNING! ##########
-    DEV_MODE = args.devmode
-    RAG_MODE = args.rag_mode
+    Args:
+        dir_path: 问题数据目录
+        api_key: API密钥
+        base_url: API基础URL
+        model: 模型名称
+        devmode: 开发模式 (1 或 0)
+        rag_mode: RAG模式
+    """
+
+    # 设置环境变量
+    os.environ["API_KEY"] = api_key
+    os.environ["BASE_URL"] = base_url
+    os.environ["MODEL"] = model
+
+    # 参数设置
+    dir = dir_path
+    DEV_MODE = devmode
+    RAG_MODE = rag_mode
     ERROR_CORRECTION = True
-    MODEL = args.model
-    ##############################################
+    MODEL = model
 
     if DEV_MODE:
         run_dir = os.path.join(dir, f"run_dev")
@@ -53,15 +61,13 @@ if __name__ == "__main__":
         os.makedirs(run_dir)
 
     state = create_state(dir, run_dir)
-    # TODO del labels
-    # labels = get_labels(dir)
     labels = "None"
     save_state(state, os.path.join(run_dir, "state_1_params.json"))
 
     logger = Logger(f"{run_dir}/log.txt")
     logger.reset()
-    
-    # # ###### Get objective
+
+    # Get objective
     state = load_state(os.path.join(run_dir, "state_1_params.json"))
     objective = get_objective(
         state["description"],
@@ -75,23 +81,23 @@ if __name__ == "__main__":
     print(objective)
     state["objective"] = objective
     save_state(state, os.path.join(run_dir, "state_2_objective.json"))
-    # #######
-    # # # ####### Get constraints
+
+    # Get constraints
     state = load_state(os.path.join(run_dir, "state_2_objective.json"))
     constraints = get_constraints(
-    state["description"],
-    state["parameters"],
-    check=ERROR_CORRECTION,
-    logger=logger,
-    model=MODEL,
-    rag_mode=RAG_MODE,
-    labels=labels,
+        state["description"],
+        state["parameters"],
+        check=ERROR_CORRECTION,
+        logger=logger,
+        model=MODEL,
+        rag_mode=RAG_MODE,
+        labels=labels,
     )
     print(constraints)
     state["constraints"] = constraints
     save_state(state, os.path.join(run_dir, "state_3_constraints.json"))
-    # # # #######
-    # ####### Get constraint formulations
+
+    # Get constraint formulations
     state = load_state(os.path.join(run_dir, "state_3_constraints.json"))
     constraints, variables = get_constraint_formulations(
         state["description"],
@@ -106,8 +112,8 @@ if __name__ == "__main__":
     state["constraints"] = constraints
     state["variables"] = variables
     save_state(state, os.path.join(run_dir, "state_4_constraints_modeled.json"))
-    #######
-    # ####### Get objective formulation
+
+    # Get objective formulation
     state = load_state(os.path.join(run_dir, "state_4_constraints_modeled.json"))
     objective = get_objective_formulation(
         state["description"],
@@ -122,9 +128,8 @@ if __name__ == "__main__":
     state["objective"] = objective
     print("DONE OBJECTIVE FORMULATION")
     save_state(state, os.path.join(run_dir, "state_5_objective_modeled.json"))
-    # #######
 
-    # # ####### Get codes
+    # Get codes
     state = load_state(os.path.join(run_dir, "state_5_objective_modeled.json"))
     constraints, objective = get_codes(
         state["description"],
@@ -138,10 +143,36 @@ if __name__ == "__main__":
     state["constraints"] = constraints
     state["objective"] = objective
     save_state(state, os.path.join(run_dir, "state_6_code.json"))
-    # # #######
 
-    ####### Run the code
+    # Run the code
     state = load_state(os.path.join(run_dir, "state_6_code.json"))
     generate_code(state, run_dir)
     execute_and_debug(state, model=MODEL, dir=run_dir, logger=logger)
-    #######
+
+    return True
+
+
+def main():
+    """命令行入口函数"""
+    parser = argparse.ArgumentParser(description="Run the optimization problem")
+    parser.add_argument("--dir", type=str, required=True, help="Directory of the problem")
+    parser.add_argument("--devmode", type=int, default=1)
+    parser.add_argument("--rag-mode", type=RAGMode, choices=list(RAGMode), default=None, help="RAG mode")
+    parser.add_argument("--model", type=str, default="Qwen/Qwen3-8B", help="Model name")
+    parser.add_argument("--base_url", type=str, required=True, help="Base URL of model")
+    parser.add_argument("--api_key", type=str, required=True, help="API key of model")
+    args = parser.parse_args()
+
+    # 调用函数
+    run_optimization(
+        dir_path=args.dir,
+        api_key=args.api_key,
+        base_url=args.base_url,
+        model=args.model,
+        devmode=args.devmode,
+        rag_mode=args.rag_mode
+    )
+
+
+if __name__ == "__main__":
+    main()
