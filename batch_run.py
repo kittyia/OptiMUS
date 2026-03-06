@@ -1,7 +1,30 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import os
 import argparse
+
+parser = argparse.ArgumentParser(description="批量运行测试脚本")
+
+parser.add_argument("--api_key", type=str, required=True,
+                    help="API密钥")
+parser.add_argument("--base_url", type=str, required=True,
+                    help="API基础URL")
+parser.add_argument("--model", type=str, default="Qwen/Qwen3-8B",
+                    help="模型名称 (默认: Qwen/Qwen3-8B)")
+parser.add_argument("--base_dir", type=str, default="./data/nlp4lp",
+                    help="数据基础目录 (默认: ./data/nlp4lp)")
+parser.add_argument("--devmode", type=int, default=1,
+                    help="开发模式 (默认: 1)")
+
+args = parser.parse_args()
+
+# 设置环境变量
+os.environ["API_KEY"] = args.api_key
+os.environ["BASE_URL"] = args.base_url
+os.environ["MODEL"] = args.model
+
+
 from pathlib import Path
 
 # 直接导入 main.py 中的函数
@@ -9,21 +32,6 @@ from main import run_optimization
 
 
 def main():
-    parser = argparse.ArgumentParser(description="批量运行测试脚本")
-
-    parser.add_argument("--api_key", type=str, required=True,
-                        help="API密钥")
-    parser.add_argument("--base_url", type=str, required=True,
-                        help="API基础URL")
-    parser.add_argument("--model", type=str, default="Qwen/Qwen3-8B",
-                        help="模型名称 (默认: Qwen/Qwen3-8B)")
-    parser.add_argument("--base_dir", type=str, default="./data/nlp4lp",
-                        help="数据基础目录 (默认: ./data/nlp4lp)")
-    parser.add_argument("--devmode", type=int, default=1,
-                        help="开发模式 (默认: 1)")
-
-    args = parser.parse_args()
-
     print("开始批量测试...\n")
     print(f"API地址: {args.base_url}")
     print(f"模型: {args.model}")

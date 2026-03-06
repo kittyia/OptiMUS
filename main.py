@@ -37,12 +37,6 @@ def run_optimization(dir_path, api_key, base_url, model="Qwen/Qwen3-8B",
         devmode: 开发模式 (1 或 0)
         rag_mode: RAG模式
     """
-
-    # 设置环境变量
-    os.environ["API_KEY"] = api_key
-    os.environ["BASE_URL"] = base_url
-    os.environ["MODEL"] = model
-
     # 参数设置
     dir = dir_path
     DEV_MODE = devmode
@@ -162,6 +156,11 @@ def main():
     parser.add_argument("--base_url", type=str, required=True, help="Base URL of model")
     parser.add_argument("--api_key", type=str, required=True, help="API key of model")
     args = parser.parse_args()
+
+    # 设置环境变量
+    os.environ["API_KEY"] = args.api_key
+    os.environ["BASE_URL"] = args.base_url
+    os.environ["MODEL"] = args.model
 
     # 调用函数
     run_optimization(
