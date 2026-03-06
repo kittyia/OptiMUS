@@ -209,7 +209,7 @@ def create_problem_folder(problem_data, folder_name, base_dir):
 
     # 写入desc.txt
     description = problem_data.get('description', 'No description available')
-    with open(os.path.join(prob_dir, 'desc.txt'), 'w', encoding='utf-8') as f:
+    with open(os.path.join(prob_dir, 'description.txt'), 'w', encoding='utf-8') as f:
         f.write(description)
 
     # 获取原始参数并转换为目标格式
@@ -217,7 +217,7 @@ def create_problem_folder(problem_data, folder_name, base_dir):
     transformed_params = transform_parameters(original_params)
 
     # 写入params.json
-    with open(os.path.join(prob_dir, 'params.json'), 'w', encoding='utf-8') as f:
+    with open(os.path.join(prob_dir, 'parameters.json'), 'w', encoding='utf-8') as f:
         json.dump(transformed_params, f, indent=2, ensure_ascii=False)
 
     # 获取problem_info并确定问题类型
@@ -321,16 +321,16 @@ def create_dataset_structure(test_file, validation_file, output_base_dir='datase
     print("├── test/")
     for i in range(1, min(test_count + 1, 6)):
         print(f"│   ├── test_prob_{i}/")
-        print(f"│   │   ├── desc.txt")
-        print(f"│   │   ├── params.json")
+        print(f"│   │   ├── description.txt")
+        print(f"│   │   ├── parameters.json")
         print(f"│   │   └── labels.json")
     if test_count > 5:
         print(f"│   │   ... (and {test_count - 5} more)")
     print("├── validation/")
     for i in range(1, min(val_count + 1, 6)):
         print(f"│   ├── val_prob_{i}/")
-        print(f"│   │   ├── desc.txt")
-        print(f"│   │   ├── params.json")
+        print(f"│   │   ├── description.txt")
+        print(f"│   │   ├── parameters.json")
         print(f"│   │   └── labels.json")
     if val_count > 5:
         print(f"│   │   ... (and {val_count - 5} more)")

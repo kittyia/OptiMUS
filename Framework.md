@@ -20,7 +20,7 @@
 ```python
 # 第 43-46 行
 state = create_state(dir, run_dir)
-# 从 desc.txt 和 params.json 读取
+# 从 description.txt 和 parameters.json 读取
 # state = {
 #     "description": "问题描述",
 #     "parameters": {参数定义}

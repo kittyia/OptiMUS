@@ -53,7 +53,9 @@ if __name__ == "__main__":
         os.makedirs(run_dir)
 
     state = create_state(dir, run_dir)
-    labels = get_labels(dir)
+    # TODO del labels
+    # labels = get_labels(dir)
+    labels = "None"
     save_state(state, os.path.join(run_dir, "state_1_params.json"))
 
     logger = Logger(f"{run_dir}/log.txt")

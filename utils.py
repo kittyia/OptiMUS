@@ -163,8 +163,8 @@ class Logger:
 
 
 def create_state(parent_dir, run_dir):
-    # read params.json
-    with open(os.path.join(parent_dir, "params.json"), "r") as f:
+    # read parameters.json
+    with open(os.path.join(parent_dir, "converted_parameters.json"), "r") as f:
         params = json.load(f)
 
     data = {}
@@ -177,7 +177,7 @@ def create_state(parent_dir, run_dir):
         json.dump(data, f, indent=4)
 
     # read the description
-    with open(os.path.join(parent_dir, "desc.txt"), "r") as f:
+    with open(os.path.join(parent_dir, "description.txt"), "r") as f:
         desc = f.read()
 
     state = {"description": desc, "parameters": params}

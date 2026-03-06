@@ -118,10 +118,10 @@ if __name__ == "__main__":
     if not os.path.exists(os.path.join(dir, "ref_codes")):
         os.makedirs(os.path.join(dir, "ref_codes"))
 
-    with open(os.path.join(dir, "desc.txt"), "r") as f:
+    with open(os.path.join(dir, "description.txt"), "r") as f:
         desc = f.read()
 
-    with open(os.path.join(dir, "params.json"), "r") as f:
+    with open(os.path.join(dir, "converted_parameters.json"), "r") as f:
         data = json.load(f)
 
     desc = desc + "\n" + json.dumps(data, indent=4)

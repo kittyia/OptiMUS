@@ -8,7 +8,7 @@
 # 示例：家具生产问题
 # ============================================================================
 
-# 文件 1：desc.txt （纯自然语言）
+# 文件 1：description.txt （纯自然语言）
 # ============================================================================
 
 DESC_TXT_CONTENT = """
@@ -31,7 +31,7 @@ Business Goal:
 Maximize the total weekly profit from selling chairs and tables.
 """
 
-# 文件 2：params.json （参数定义 + 具体值）
+# 文件 2：parameters.json （参数定义 + 具体值）
 # ============================================================================
 
 PARAMS_JSON_CONTENT = {
@@ -115,13 +115,13 @@ USAGE_STEPS = """
 mkdir furniture_problem
 cd furniture_problem
 
-步骤 2：创建 desc.txt
+步骤 2：创建 description.txt
 -------
-（将 DESC_TXT_CONTENT 的内容保存到 desc.txt）
+（将 DESC_TXT_CONTENT 的内容保存到 description.txt）
 
-步骤 3：创建 params.json
+步骤 3：创建 parameters.json
 -------
-（将 PARAMS_JSON_CONTENT 转为 JSON 保存到 params.json）
+（将 PARAMS_JSON_CONTENT 转为 JSON 保存到 parameters.json）
 
 步骤 4：创建 labels.json
 -------
@@ -143,7 +143,7 @@ furniture_problem/run_dev/
 ├── state_6_code.json             # 生成的代码
 ├── solution.py                   # Python 求解代码
 ├── solution_output.json          # 求解结果
-└── params.json                     # 参数数值
+└── parameters.json                     # 参数数值
 """
 
 # ============================================================================
@@ -152,14 +152,14 @@ furniture_problem/run_dev/
 
 SYSTEM_WORKFLOW = """
 您输入：
-    desc.txt (纯自然语言)
-    params.json (参数和数值)
+    description.txt (纯自然语言)
+    parameters.json (参数和数值)
 
 系统自动执行：
 
 1. create_state()
-   ├─ 读取 desc.txt
-   ├─ 读取 params.json 中的参数定义和值
+   ├─ 读取 description.txt
+   ├─ 读取 parameters.json 中的参数定义和值
    └─ 输出：state_1_params.json
 
 2. get_objective() [LLM]
@@ -270,8 +270,8 @@ OptiMUS v0.3 (optimus_tools.py) vs OptiMUS v2 (agents/)
     v2: run.py, agents/manager.py
 
 输入：
-    v0.3: desc.txt + params.json
-    v2: desc.txt + params.json
+    v0.3: description.txt + parameters.json
+    v2: description.txt + parameters.json
 
 需要手动提供：
     v0.3: ❌ 不需要（LLM 自动提取）
@@ -297,11 +297,11 @@ if __name__ == "__main__":
     print("OptiMUS v0.3 完整使用指南")
     print("=" * 80)
 
-    print("\n【输入文件 1】desc.txt")
+    print("\n【输入文件 1】description.txt")
     print("-" * 80)
     print(DESC_TXT_CONTENT)
 
-    print("\n【输入文件 2】params.json")
+    print("\n【输入文件 2】parameters.json")
     print("-" * 80)
     print(json.dumps(PARAMS_JSON_CONTENT, indent=2))
 
