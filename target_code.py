@@ -4,7 +4,6 @@ from utils import extract_list_from_end, get_response, extract_json_from_end
 
 import re
 
-
 directions = """
 
 And here's how the solver is imported and set up:
@@ -44,7 +43,7 @@ CODE
 =====
 code for defining the constraint (ONLY the constraint definition code, without the imports, the variable definitions, and the solver setup)
 =====
-    
+
 Here's an example for modeling $\\forall i, SalesVolumes[i] \leq MaxProductionVolumes[i]$ where shape of both SalesVolumes and MaxProductionVolumes is [N]:
 
 CODE
@@ -60,7 +59,6 @@ for i in range(N):
 First reason about how the code should be written, and then generate the output.
 Take a deep breath and think step by step.
 """
-
 
 prompt_objective_code = """
 You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
@@ -86,7 +84,7 @@ CODE
 =====
 code for defining the objective (ONLY the objective definition code, without the imports, the variable definitions, and the solver setup)
 =====
-    
+
 Here's an example for modeling $\\max \\sum_{{i=1}}^{{N}} price_i x_i$ where shape of both price and x is [N]:
 
 CODE
@@ -95,12 +93,12 @@ model.setObjective(quicksum(price[i] * x[i] for i in range(N)), GRB.MAXIMIZE)
 =====
 
 - Do not generate anything after the last =====.
+- Make sure that you use ===== before and after the objective.
 - Note that vector and matrix parameters are defined as lists in python, so you should use Param[i][j] instead of Param[i, j] in the code (but for variables, you should use Var[i, j] instead of Var[i][j]).
 
 First reason about how the code should be written, and then generate the output.
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 """
-
 
 qs = []
 
@@ -111,18 +109,18 @@ def extract_code_from_end(text):
         ind_1 = text.find("=====")
         ind_2 = text.find("=====", ind_1 + 1)
 
-        code = text[ind_1 + len("=====") : ind_2].strip()
+        code = text[ind_1 + len("====="): ind_2].strip()
     else:
         ind_1 = text.find("```python")
         ind_2 = text.find("```", ind_1 + 1)
 
-        code = text[ind_1 + len("```") : ind_2].strip()
+        code = text[ind_1 + len("```"): ind_2].strip()
 
     if "```" in code:
         code = code.replace("```python", "").replace("```", "").strip()
 
     if code.startswith("====="):
-        code = code[len("=====") :].strip()
+        code = code[len("====="):].strip()
 
     if code.endswith("====="):
         code = code[: -len("=====")].strip()
@@ -134,15 +132,14 @@ def extract_code_from_end(text):
 
 
 def get_codes(
-    desc,
-    params,
-    vars,
-    constraints,
-    objective,
-    model,
-    check=False,
+        desc,
+        params,
+        vars,
+        constraints,
+        objective,
+        model,
+        check=False,
 ):
-
     coded_constraints = []
     for c in constraints.copy():
         k = 1
@@ -192,18 +189,18 @@ def get_codes(
                 directions=directions,
             )
             res = get_response(prompt, model=model)
-            print("\n\n\n\n+++++")
+            print("\n\n\n\n+++++目标函数开始")
             print(res)
-            print("+++++")
+            print("+++++目标函数结束")
 
             code = extract_code_from_end(res)
             print("目标函数对应的代码：", code)
-            assert 1==0, "在这里故意触发错误，来检查提取的代码是否正确"
             coded_objective["code"] = code
             break
         except Exception as e:
             k -= 1
             if k == 0:
                 raise (e)
+    print("目标函数: ", coded_objective)
 
     return coded_constraints, coded_objective
