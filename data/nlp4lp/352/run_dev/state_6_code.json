@@ -1,0 +1,115 @@
+{
+    "description": "PROBLEM TYPE: MILP\n\nPROBLEM INFO:\n\n- The network faces an intrusion that requires immediate intervention.\n- Interventions include isolating nodes or scanning nodes affected by the intruder.\n- Each cluster of nodes must be treated with one intervention type consistently.\n- Interventions can be processed either centrally or through distributed nodes.\n- The processing times for each type of intervention are different across \\var{N} clusters.\n- The opportunity cost for processing is $\\var{central_cost}/h for central and $\\var{distributed_cost}/h for distributed processing.\n- There is a maximum allotment of \\var{max_central} hours for central processing and \\var{max_distributed} hours for distributed processing to address the intrusion.\n\nINPUT FORMAT: \n\n{\n    \"processing_times\": {\n        \"central\": {\n            \"isolate\": [isolate_central_{i} for i in 1, ..., N],\n            \"scan\": [scan_central_{i} for i in 1, ..., N]\n        },\n        \"distributed\": {\n            \"isolate\": [isolate_distributed_{i} for i in 1, ..., N],\n            \"scan\": [scan_distributed_{i} for i in 1, ..., N]\n        }\n    },\n    \"costs\": {\n        \"central\": central_cost,\n        \"distributed\": distributed_cost\n    },\n    \"max_hours\": {\n        \"central_max_hours\": max_central,\n        \"distributed_max_hours\": max_distributed\n    }\n}\n\nOBJECTIVE: Determine the most cost-effective combination of interventions to halt the intruder's progress within the network.\n\nOUTPUT INFO:\n\n- The output details the intervention type ('isolate' or 'scan') and processing method ('central' or 'distributed') for each cluster.\n- The \\var{total_cost} is the sum of costs for all interventions across the clusters.\n\nOUTPUT FORMAT:\n\n{\n    \"interventions\": {\n        [\n            {\n            \"cluster_id\": cluster_id\n            \"type\": \"isolate\" or \"scan\",\n            \"method\": \"central\" or \"distributed\",\n            \"amount\": amount_i\n            },\n            for i in 1, ..., N\n        ]\n    },\n    \"total_cost\": total_cost\n}\n\n\n\n\n",
+    "parameters": {
+        "N": {
+            "definition": "Number of interventions",
+            "shape": [],
+            "type": "int"
+        },
+        "IsolateCentral": {
+            "definition": "Processing time for isolating at the central system for each intervention",
+            "shape": [
+                "N"
+            ],
+            "type": "string"
+        },
+        "ScanCentral": {
+            "definition": "Processing time for scanning at the central system for each intervention",
+            "shape": [
+                "N"
+            ],
+            "type": "string"
+        },
+        "IsolateDistributed": {
+            "definition": "Processing time for isolating at the distributed system for each intervention",
+            "shape": [
+                "N"
+            ],
+            "type": "string"
+        },
+        "ScanDistributed": {
+            "definition": "Processing time for scanning at the distributed system for each intervention",
+            "shape": [
+                "N"
+            ],
+            "type": "string"
+        },
+        "CentralCost": {
+            "definition": "Cost for central system intervention",
+            "shape": [],
+            "type": "int"
+        },
+        "DistributedCost": {
+            "definition": "Cost for distributed system intervention",
+            "shape": [],
+            "type": "int"
+        },
+        "CentralMaxHours": {
+            "definition": "Maximum hours of operation for the central system",
+            "shape": [],
+            "type": "int"
+        },
+        "DistributedMaxHours": {
+            "definition": "Maximum hours of operation for the distributed system",
+            "shape": [],
+            "type": "int"
+        }
+    },
+    "objective": {
+        "description": "Minimize the total cost of interventions (central and distributed processing) required to halt the intruder\u2019s progress, subject to processing time and maximum hour constraints.",
+        "formulation": "$\\min \\; CentralCost \\sum_{i=1}^{N} \\left( IsolateCentral_i \\, isolateCentral_i + ScanCentral_i \\, scanCentral_i \\right) \\;+\\; DistributedCost \\sum_{i=1}^{N} \\left( IsolateDistributed_i \\, isolateDistributed_i + ScanDistributed_i \\, scanDistributed_i \\right)$",
+        "code": "model.setObjective(\n    CentralCost * quicksum(\n        IsolateCentral[i] * isolateCentral[i] + \n        ScanCentral[i] * scanCentral[i]\n        for i in range(N)\n    )\n    +\n    DistributedCost * quicksum(\n        IsolateDistributed[i] * isolateDistributed[i] + \n        ScanDistributed[i] * scanDistributed[i]\n        for i in range(N)\n    ),\n    GRB.MINIMIZE\n)"
+    },
+    "constraints": [
+        {
+            "description": "Each cluster must be assigned exactly one intervention type and one processing method (i.e., exactly one (type, method) combination per cluster)",
+            "formulation": "$\\\\forall i = 1, \\\\dots, N:\\\\; isolateCentral[i] + isolateDistributed[i] + scanCentral[i] + scanDistributed[i] = 1$",
+            "code": "for i in range(N):\n    model.addConstr(\n        isolateCentral[i] \n        + isolateDistributed[i] \n        + scanCentral[i] \n        + scanDistributed[i] \n        == 1\n    )"
+        },
+        {
+            "description": "The total central processing time (sum of processing times for all clusters assigned to central processing with their chosen intervention type) must not exceed CentralMaxHours",
+            "formulation": "$\\\\sum_{i=1}^{N} \\\\left( IsolateCentral[i] \\\\cdot isolateCentral[i] + ScanCentral[i] \\\\cdot scanCentral[i] \\\\right) \\\\leq CentralMaxHours$",
+            "code": "model.addConstr(\n    sum(IsolateCentral[i] * isolateCentral[i] + \n        ScanCentral[i] * scanCentral[i] \n        for i in range(N)) \n    <= CentralMaxHours\n)"
+        },
+        {
+            "description": "The total distributed processing time (sum of processing times for all clusters assigned to distributed processing with their chosen intervention type) must not exceed DistributedMaxHours",
+            "formulation": "$\\\\sum_{i=1}^{N} \\\\left( IsolateDistributed[i] \\\\cdot isolateDistributed[i] + ScanDistributed[i] \\\\cdot scanDistributed[i] \\\\right) \\\\leq DistributedMaxHours$",
+            "code": "model.addConstr(\n    sum(\n        isolateDistributed[i] * IsolateDistributed[i] +\n        scanDistributed[i] * ScanDistributed[i]\n        for i in range(N)\n    ) <= DistributedMaxHours\n)"
+        },
+        {
+            "description": "All decision variables indicating intervention type and processing method assignments must be binary (0 or 1)",
+            "formulation": "$\\\\forall i = 1, \\\\dots, N:\\\\; isolateCentral[i],\\\\; isolateDistributed[i],\\\\; scanCentral[i],\\\\; scanDistributed[i] \\\\in \\\\{0,1\\\\}$",
+            "code": "for i in range(N):\n    model.addConstr(isolateCentral[i] >= 0)\n    model.addConstr(isolateCentral[i] <= 1)\n    \n    model.addConstr(isolateDistributed[i] >= 0)\n    model.addConstr(isolateDistributed[i] <= 1)\n    \n    model.addConstr(scanCentral[i] >= 0)\n    model.addConstr(scanCentral[i] <= 1)\n    \n    model.addConstr(scanDistributed[i] >= 0)\n    model.addConstr(scanDistributed[i] <= 1)"
+        }
+    ],
+    "variables": {
+        "isolateCentral": {
+            "shape": [
+                "N"
+            ],
+            "type": "binary",
+            "definition": "Equals 1 if cluster i is assigned isolation with central processing, 0 otherwise"
+        },
+        "isolateDistributed": {
+            "shape": [
+                "N"
+            ],
+            "type": "binary",
+            "definition": "Equals 1 if cluster i is assigned isolation with distributed processing, 0 otherwise"
+        },
+        "scanCentral": {
+            "shape": [
+                "N"
+            ],
+            "type": "binary",
+            "definition": "Equals 1 if cluster i is assigned scanning with central processing, 0 otherwise"
+        },
+        "scanDistributed": {
+            "shape": [
+                "N"
+            ],
+            "type": "binary",
+            "definition": "Equals 1 if cluster i is assigned scanning with distributed processing, 0 otherwise"
+        }
+    }
+}

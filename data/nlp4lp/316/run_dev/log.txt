@@ -1,0 +1,1357 @@
+----
+[
+    "Production of each industry k in year t must not exceed its available productive capacity in year t",
+    "For each year t, the total manpower used for production and capacity building across all industries, equal to sum over k of (ManpowerOne[k] * produce[k, t] + ManpowerTwo[k] * buildcapa[k, t]), must not exceed the yearly manpower limit",
+    "For each industry j and year t, the stock at the end of year t equals stock at the end of year t-1 plus production in year t minus the sum over k of InputOne[k, j] multiplied by produce[k, t+1] minus the sum over k of InputTwo[k, j] multiplied by buildcapa[k, t]",
+    "Stock of each industry k in year 0 equals the given initial Stock[k]",
+    "Productive capacity of industry k in year t equals initial Capacity[k] plus the sum of buildcapa[k, τ] for all τ such that τ ≤ t-2 (capacity building has a two-year lag and is permanent)",
+    "Stocks of each industry k in each year must be non-negative",
+    "Production levels produce[k, t] must be non-negative for all industries and years",
+    "Capacity building levels buildcapa[k, t] must be non-negative for all industries and years"
+]
+----
++++++++++++++++++++
+++ Constraint Qs ++
++++++++++++++++++++
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+PROBLEM INFO:
+
+- An economy consists of several industries. 
+- Each unit produced by one of the industries (a unit will be taken as £1’s worth of value of production) requires inputs from possibly its own industry as well as other industries. 
+- Industry \var{k} requires \var{inputone_{k, j}} input from industy \var{j}.
+- Industry \var{k} requires \var{manpowerone_{k}} units of manpower.
+- There is a time lag in the economy so that the output in year t + 1 requires an input in year t.
+- Output from an industry may also be used to build productive capacity for itself or other industries in future years.
+- To give unit increases (capacity for £1’s worth of extra production) in productive capacity of industry \var{k}, \var{j} units of industry \var{inputtwo_{k, j}} and \var{manpowertwo{k}} units of manpower are needed.
+- Input from an industry in year t results in a (permanent) increase in productive capacity in year t + 2.
+- Stocks of goods may be held from year to year. 
+- At present (year 0), the stocks of industry \var{k} is \var{stock_{k}}, and the capacity of industry \var{k} is \var{capacity_{k}}.
+- There is a limited yearly manpower capacity of \var{manpower_limit}.
+
+
+INPUT FORMAT:
+
+{
+    "inputone": [[inputone_{k, j} for j in 1,...,K] for k in 1,...,K],
+    "manpowerone": [manpowerone_{k} for k in 1,...,K],
+    "inputtwo": [[inputtwo_{k, j} for j in 1,...,K] for k in 1,...,K],
+    "manpowertwo": [manpowertwo_{k} for k in 1,...,K],
+    "stock": [stock_{k} for k in 1,...,K],
+    "capacity": [capacity_{k} for k in 1,...,K],
+    "manpower_limit": manpower_limit,
+}
+
+
+OBJECTIVE: Maximize total production in the last two years.
+
+OUTPUT INFO:
+
+- \var{produce} represents the amount of units produced by each industry in each year
+- \var{buildcapa} represents the amount of units used to build productive capacity for each industry in each year
+- \var{stockhold} represents the amount of stock of each industry held in each year
+
+OUTPUT FORMAT:
+
+{
+    "produce": [[produce_{k, t} for t in 1,...,T] for k in 1,...,K],
+    "buildcapa": [[buildcapa_{k, t} for t in 1,...,T] for k in 1,...,K],
+    "stockhold": [[stock_{k, t} for t in 1,...,T] for for k in 1,...,K]
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "InputOne": {
+        "definition": "The production inputs from resource type one to product k in year j",
+        "shape": [
+            "NumIndustries",
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "ManpowerOne": {
+        "definition": "The manpower allocated to resource type one for product k",
+        "shape": [
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "InputTwo": {
+        "definition": "The production inputs from resource type two to product k in year j",
+        "shape": [
+            "NumIndustries",
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "ManpowerTwo": {
+        "definition": "The manpower allocated to resource type two for product k",
+        "shape": [
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "Stock": {
+        "definition": "Stock levels of product k at the start of the planning horizon",
+        "shape": [
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "Capacity": {
+        "definition": "Production capacity for product k",
+        "shape": [
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "ManpowerLimit": {
+        "definition": "The upper limit of manpower",
+        "shape": [],
+        "type": "float"
+    },
+    "NumIndustries": {
+        "definition": "Number of industries",
+        "shape": [],
+        "type": "int"
+    },
+    "NumYears": {
+        "definition": "Number of years",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: Production of each industry k in year t must not exceed its available productive capacity in year t
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is definitely a constraint and it must be explicitly modeled.
+
+### Why?
+
+- The problem states that each industry has a given **initial productive capacity**.
+- Additional capacity can be built, and this new capacity becomes available after a two-year lag.
+- Since capacity is explicitly modeled and dynamically evolves over time, it only has meaning if it **limits production**.
+
+If production were not constrained by available capacity, then:
+- Initial capacity would be irrelevant.
+- Capacity-building decisions would have no operational effect.
+- The intertemporal structure (capacity becoming available in \( t+2 \)) would be meaningless.
+
+Thus, the natural and necessary interpretation is:
+
+\[
+\text{produce}_{k,t} \le \text{available capacity}_{k,t}
+\]
+
+for all industries \(k\) and years \(t\).
+
+This is a standard and essential constraint in multi-period production-capacity planning models.
+
+### Conclusion
+
+✅ This is unquestionably a required constraint in the LP formulation.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+PROBLEM INFO:
+
+- An economy consists of several industries. 
+- Each unit produced by one of the industries (a unit will be taken as £1’s worth of value of production) requires inputs from possibly its own industry as well as other industries. 
+- Industry \var{k} requires \var{inputone_{k, j}} input from industy \var{j}.
+- Industry \var{k} requires \var{manpowerone_{k}} units of manpower.
+- There is a time lag in the economy so that the output in year t + 1 requires an input in year t.
+- Output from an industry may also be used to build productive capacity for itself or other industries in future years.
+- To give unit increases (capacity for £1’s worth of extra production) in productive capacity of industry \var{k}, \var{j} units of industry \var{inputtwo_{k, j}} and \var{manpowertwo{k}} units of manpower are needed.
+- Input from an industry in year t results in a (permanent) increase in productive capacity in year t + 2.
+- Stocks of goods may be held from year to year. 
+- At present (year 0), the stocks of industry \var{k} is \var{stock_{k}}, and the capacity of industry \var{k} is \var{capacity_{k}}.
+- There is a limited yearly manpower capacity of \var{manpower_limit}.
+
+
+INPUT FORMAT:
+
+{
+    "inputone": [[inputone_{k, j} for j in 1,...,K] for k in 1,...,K],
+    "manpowerone": [manpowerone_{k} for k in 1,...,K],
+    "inputtwo": [[inputtwo_{k, j} for j in 1,...,K] for k in 1,...,K],
+    "manpowertwo": [manpowertwo_{k} for k in 1,...,K],
+    "stock": [stock_{k} for k in 1,...,K],
+    "capacity": [capacity_{k} for k in 1,...,K],
+    "manpower_limit": manpower_limit,
+}
+
+
+OBJECTIVE: Maximize total production in the last two years.
+
+OUTPUT INFO:
+
+- \var{produce} represents the amount of units produced by each industry in each year
+- \var{buildcapa} represents the amount of units used to build productive capacity for each industry in each year
+- \var{stockhold} represents the amount of stock of each industry held in each year
+
+OUTPUT FORMAT:
+
+{
+    "produce": [[produce_{k, t} for t in 1,...,T] for k in 1,...,K],
+    "buildcapa": [[buildcapa_{k, t} for t in 1,...,T] for k in 1,...,K],
+    "stockhold": [[stock_{k, t} for t in 1,...,T] for for k in 1,...,K]
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "InputOne": {
+        "definition": "The production inputs from resource type one to product k in year j",
+        "shape": [
+            "NumIndustries",
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "ManpowerOne": {
+        "definition": "The manpower allocated to resource type one for product k",
+        "shape": [
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "InputTwo": {
+        "definition": "The production inputs from resource type two to product k in year j",
+        "shape": [
+            "NumIndustries",
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "ManpowerTwo": {
+        "definition": "The manpower allocated to resource type two for product k",
+        "shape": [
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "Stock": {
+        "definition": "Stock levels of product k at the start of the planning horizon",
+        "shape": [
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "Capacity": {
+        "definition": "Production capacity for product k",
+        "shape": [
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "ManpowerLimit": {
+        "definition": "The upper limit of manpower",
+        "shape": [],
+        "type": "float"
+    },
+    "NumIndustries": {
+        "definition": "Number of industries",
+        "shape": [],
+        "type": "int"
+    },
+    "NumYears": {
+        "definition": "Number of years",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: For each year t, the total manpower used for production and capacity building across all industries, equal to sum over k of (ManpowerOne[k] * produce[k, t] + ManpowerTwo[k] * buildcapa[k, t]), must not exceed the yearly manpower limit
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is clearly a required constraint.
+
+The problem statement explicitly says:
+
+> “There is a limited yearly manpower capacity of `manpower_limit`.”
+
+We are also told:
+
+- Each unit produced by industry \( k \) requires `manpowerone_k` units of manpower.
+- Each unit of capacity built for industry \( k \) requires `manpowertwo_k` units of manpower.
+
+Since both production and capacity building consume manpower in the same year, and manpower is limited **per year**, the total manpower used in year \( t \) must satisfy:
+
+\[
+\sum_{k=1}^{K} \left( \text{ManpowerOne}[k] \cdot \text{produce}_{k,t} 
++ \text{ManpowerTwo}[k] \cdot \text{buildcapa}_{k,t} \right)
+\le \text{ManpowerLimit}
+\quad \forall t
+\]
+
+This is a direct and unavoidable modeling implication of the description. Without it, the manpower limit would not be enforced.
+
+**Conclusion:**  
+This is definitely a required constraint and should be explicitly included in the LP formulation.
+
+**Confidence:** 5 OUT OF 5
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+PROBLEM INFO:
+
+- An economy consists of several industries. 
+- Each unit produced by one of the industries (a unit will be taken as £1’s worth of value of production) requires inputs from possibly its own industry as well as other industries. 
+- Industry \var{k} requires \var{inputone_{k, j}} input from industy \var{j}.
+- Industry \var{k} requires \var{manpowerone_{k}} units of manpower.
+- There is a time lag in the economy so that the output in year t + 1 requires an input in year t.
+- Output from an industry may also be used to build productive capacity for itself or other industries in future years.
+- To give unit increases (capacity for £1’s worth of extra production) in productive capacity of industry \var{k}, \var{j} units of industry \var{inputtwo_{k, j}} and \var{manpowertwo{k}} units of manpower are needed.
+- Input from an industry in year t results in a (permanent) increase in productive capacity in year t + 2.
+- Stocks of goods may be held from year to year. 
+- At present (year 0), the stocks of industry \var{k} is \var{stock_{k}}, and the capacity of industry \var{k} is \var{capacity_{k}}.
+- There is a limited yearly manpower capacity of \var{manpower_limit}.
+
+
+INPUT FORMAT:
+
+{
+    "inputone": [[inputone_{k, j} for j in 1,...,K] for k in 1,...,K],
+    "manpowerone": [manpowerone_{k} for k in 1,...,K],
+    "inputtwo": [[inputtwo_{k, j} for j in 1,...,K] for k in 1,...,K],
+    "manpowertwo": [manpowertwo_{k} for k in 1,...,K],
+    "stock": [stock_{k} for k in 1,...,K],
+    "capacity": [capacity_{k} for k in 1,...,K],
+    "manpower_limit": manpower_limit,
+}
+
+
+OBJECTIVE: Maximize total production in the last two years.
+
+OUTPUT INFO:
+
+- \var{produce} represents the amount of units produced by each industry in each year
+- \var{buildcapa} represents the amount of units used to build productive capacity for each industry in each year
+- \var{stockhold} represents the amount of stock of each industry held in each year
+
+OUTPUT FORMAT:
+
+{
+    "produce": [[produce_{k, t} for t in 1,...,T] for k in 1,...,K],
+    "buildcapa": [[buildcapa_{k, t} for t in 1,...,T] for k in 1,...,K],
+    "stockhold": [[stock_{k, t} for t in 1,...,T] for for k in 1,...,K]
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "InputOne": {
+        "definition": "The production inputs from resource type one to product k in year j",
+        "shape": [
+            "NumIndustries",
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "ManpowerOne": {
+        "definition": "The manpower allocated to resource type one for product k",
+        "shape": [
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "InputTwo": {
+        "definition": "The production inputs from resource type two to product k in year j",
+        "shape": [
+            "NumIndustries",
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "ManpowerTwo": {
+        "definition": "The manpower allocated to resource type two for product k",
+        "shape": [
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "Stock": {
+        "definition": "Stock levels of product k at the start of the planning horizon",
+        "shape": [
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "Capacity": {
+        "definition": "Production capacity for product k",
+        "shape": [
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "ManpowerLimit": {
+        "definition": "The upper limit of manpower",
+        "shape": [],
+        "type": "float"
+    },
+    "NumIndustries": {
+        "definition": "Number of industries",
+        "shape": [],
+        "type": "int"
+    },
+    "NumYears": {
+        "definition": "Number of years",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: For each industry j and year t, the stock at the end of year t equals stock at the end of year t-1 plus production in year t minus the sum over k of InputOne[k, j] multiplied by produce[k, t+1] minus the sum over k of InputTwo[k, j] multiplied by buildcapa[k, t]
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is indeed a constraint, and it is a fundamental one.
+
+### Why this is a constraint
+
+This equation represents a **material balance (inventory balance) constraint** for each industry \( j \) and year \( t \). It ensures conservation of goods over time, accounting for:
+
+- **Incoming flow**:
+  - Production of industry \( j \) in year \( t \)
+
+- **Outgoing flows**:
+  - Inputs used in year \( t \) to produce goods in year \( t+1 \)  
+    (due to the one-year production lag)
+  - Inputs used in year \( t \) to build productive capacity  
+    (which becomes effective in year \( t+2 \))
+
+- **State transition**:
+  - Stock carried over from year \( t-1 \)
+
+Without this constraint, the model would not properly track how goods flow through time, and it could:
+- Use inputs that do not exist,
+- Ignore the time-lag structure,
+- Violate conservation of material.
+
+### Structural consistency with the problem statement
+
+The problem explicitly states:
+
+- Production in year \( t+1 \) requires inputs in year \( t \).
+- Capacity building in year \( t \) consumes inputs in year \( t \).
+- Stocks may be held from year to year.
+- Initial stocks are given.
+
+All of this directly implies a dynamic stock balance equation like the one proposed.
+
+The only caveat is that boundary handling (e.g., what happens in the final year when \( t+1 \) may exceed the horizon) must be carefully implemented — but that does not invalidate the constraint itself.
+
+### Conclusion
+
+This is absolutely a core modeling constraint and must be explicitly included in the LP formulation.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+PROBLEM INFO:
+
+- An economy consists of several industries. 
+- Each unit produced by one of the industries (a unit will be taken as £1’s worth of value of production) requires inputs from possibly its own industry as well as other industries. 
+- Industry \var{k} requires \var{inputone_{k, j}} input from industy \var{j}.
+- Industry \var{k} requires \var{manpowerone_{k}} units of manpower.
+- There is a time lag in the economy so that the output in year t + 1 requires an input in year t.
+- Output from an industry may also be used to build productive capacity for itself or other industries in future years.
+- To give unit increases (capacity for £1’s worth of extra production) in productive capacity of industry \var{k}, \var{j} units of industry \var{inputtwo_{k, j}} and \var{manpowertwo{k}} units of manpower are needed.
+- Input from an industry in year t results in a (permanent) increase in productive capacity in year t + 2.
+- Stocks of goods may be held from year to year. 
+- At present (year 0), the stocks of industry \var{k} is \var{stock_{k}}, and the capacity of industry \var{k} is \var{capacity_{k}}.
+- There is a limited yearly manpower capacity of \var{manpower_limit}.
+
+
+INPUT FORMAT:
+
+{
+    "inputone": [[inputone_{k, j} for j in 1,...,K] for k in 1,...,K],
+    "manpowerone": [manpowerone_{k} for k in 1,...,K],
+    "inputtwo": [[inputtwo_{k, j} for j in 1,...,K] for k in 1,...,K],
+    "manpowertwo": [manpowertwo_{k} for k in 1,...,K],
+    "stock": [stock_{k} for k in 1,...,K],
+    "capacity": [capacity_{k} for k in 1,...,K],
+    "manpower_limit": manpower_limit,
+}
+
+
+OBJECTIVE: Maximize total production in the last two years.
+
+OUTPUT INFO:
+
+- \var{produce} represents the amount of units produced by each industry in each year
+- \var{buildcapa} represents the amount of units used to build productive capacity for each industry in each year
+- \var{stockhold} represents the amount of stock of each industry held in each year
+
+OUTPUT FORMAT:
+
+{
+    "produce": [[produce_{k, t} for t in 1,...,T] for k in 1,...,K],
+    "buildcapa": [[buildcapa_{k, t} for t in 1,...,T] for k in 1,...,K],
+    "stockhold": [[stock_{k, t} for t in 1,...,T] for for k in 1,...,K]
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "InputOne": {
+        "definition": "The production inputs from resource type one to product k in year j",
+        "shape": [
+            "NumIndustries",
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "ManpowerOne": {
+        "definition": "The manpower allocated to resource type one for product k",
+        "shape": [
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "InputTwo": {
+        "definition": "The production inputs from resource type two to product k in year j",
+        "shape": [
+            "NumIndustries",
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "ManpowerTwo": {
+        "definition": "The manpower allocated to resource type two for product k",
+        "shape": [
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "Stock": {
+        "definition": "Stock levels of product k at the start of the planning horizon",
+        "shape": [
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "Capacity": {
+        "definition": "Production capacity for product k",
+        "shape": [
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "ManpowerLimit": {
+        "definition": "The upper limit of manpower",
+        "shape": [],
+        "type": "float"
+    },
+    "NumIndustries": {
+        "definition": "Number of industries",
+        "shape": [],
+        "type": "int"
+    },
+    "NumYears": {
+        "definition": "Number of years",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: Stock of each industry k in year 0 equals the given initial Stock[k]
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is** a constraint — specifically, an **initial condition constraint**.
+
+The problem explicitly states:
+
+> “At present (year 0), the stocks of industry \( k \) is \( \text{stock}_k \).”
+
+Since the model includes intertemporal stock decisions (`stockhold_{k,t}`), we must anchor the dynamic system with an initial value. Otherwise, the stock balance equations would be underdetermined.
+
+In practice, this is modeled in one of two equivalent ways:
+
+1. **Explicitly define**
+   \[
+   \text{stockhold}_{k,0} = \text{Stock}[k]
+   \]
+   for all industries \( k \),  
+
+or
+
+2. Do not define a decision variable for \( t=0 \), and instead directly use the parameter `Stock[k]` in the first-year stock balance equation.
+
+Either way, this initial stock condition **must be enforced in the model formulation**, so it is indeed a modeling constraint (an equality constraint fixing the initial state).
+
+Therefore:
+
+✅ It **is** a constraint.  
+✅ It **should** be explicitly accounted for in the LP formulation (either directly or implicitly through the first balance equation).
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+PROBLEM INFO:
+
+- An economy consists of several industries. 
+- Each unit produced by one of the industries (a unit will be taken as £1’s worth of value of production) requires inputs from possibly its own industry as well as other industries. 
+- Industry \var{k} requires \var{inputone_{k, j}} input from industy \var{j}.
+- Industry \var{k} requires \var{manpowerone_{k}} units of manpower.
+- There is a time lag in the economy so that the output in year t + 1 requires an input in year t.
+- Output from an industry may also be used to build productive capacity for itself or other industries in future years.
+- To give unit increases (capacity for £1’s worth of extra production) in productive capacity of industry \var{k}, \var{j} units of industry \var{inputtwo_{k, j}} and \var{manpowertwo{k}} units of manpower are needed.
+- Input from an industry in year t results in a (permanent) increase in productive capacity in year t + 2.
+- Stocks of goods may be held from year to year. 
+- At present (year 0), the stocks of industry \var{k} is \var{stock_{k}}, and the capacity of industry \var{k} is \var{capacity_{k}}.
+- There is a limited yearly manpower capacity of \var{manpower_limit}.
+
+
+INPUT FORMAT:
+
+{
+    "inputone": [[inputone_{k, j} for j in 1,...,K] for k in 1,...,K],
+    "manpowerone": [manpowerone_{k} for k in 1,...,K],
+    "inputtwo": [[inputtwo_{k, j} for j in 1,...,K] for k in 1,...,K],
+    "manpowertwo": [manpowertwo_{k} for k in 1,...,K],
+    "stock": [stock_{k} for k in 1,...,K],
+    "capacity": [capacity_{k} for k in 1,...,K],
+    "manpower_limit": manpower_limit,
+}
+
+
+OBJECTIVE: Maximize total production in the last two years.
+
+OUTPUT INFO:
+
+- \var{produce} represents the amount of units produced by each industry in each year
+- \var{buildcapa} represents the amount of units used to build productive capacity for each industry in each year
+- \var{stockhold} represents the amount of stock of each industry held in each year
+
+OUTPUT FORMAT:
+
+{
+    "produce": [[produce_{k, t} for t in 1,...,T] for k in 1,...,K],
+    "buildcapa": [[buildcapa_{k, t} for t in 1,...,T] for k in 1,...,K],
+    "stockhold": [[stock_{k, t} for t in 1,...,T] for for k in 1,...,K]
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "InputOne": {
+        "definition": "The production inputs from resource type one to product k in year j",
+        "shape": [
+            "NumIndustries",
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "ManpowerOne": {
+        "definition": "The manpower allocated to resource type one for product k",
+        "shape": [
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "InputTwo": {
+        "definition": "The production inputs from resource type two to product k in year j",
+        "shape": [
+            "NumIndustries",
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "ManpowerTwo": {
+        "definition": "The manpower allocated to resource type two for product k",
+        "shape": [
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "Stock": {
+        "definition": "Stock levels of product k at the start of the planning horizon",
+        "shape": [
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "Capacity": {
+        "definition": "Production capacity for product k",
+        "shape": [
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "ManpowerLimit": {
+        "definition": "The upper limit of manpower",
+        "shape": [],
+        "type": "float"
+    },
+    "NumIndustries": {
+        "definition": "Number of industries",
+        "shape": [],
+        "type": "int"
+    },
+    "NumYears": {
+        "definition": "Number of years",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: Productive capacity of industry k in year t equals initial Capacity[k] plus the sum of buildcapa[k, τ] for all τ such that τ ≤ t-2 (capacity building has a two-year lag and is permanent)
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is indeed a necessary constraint.
+
+### Why this is a constraint
+
+The problem explicitly states:
+
+- Capacity increases are **permanent**.
+- There is a **two-year lag**: inputs used in year \( t \) increase productive capacity in year \( t+2 \).
+- Initial capacities are given.
+
+This directly implies that productive capacity is a **state variable** evolving over time according to past investment decisions (`buildcapa`). Therefore, we must model how capacity accumulates.
+
+The correct dynamic relationship is:
+
+\[
+\text{Capacity}_{k,t}
+=
+\text{Capacity}_k
++
+\sum_{\tau \le t-2} \text{buildcapa}_{k,\tau}
+\]
+
+This constraint is essential because:
+
+1. Production in each year must be limited by available capacity.
+2. Capacity depends on past build decisions.
+3. The two-year lag must be explicitly enforced in the model.
+4. The increase is permanent, so it accumulates over time.
+
+Without this constraint, the model would not correctly represent the time-lagged investment-to-capacity mechanism described in the problem.
+
+This is not optional modeling detail — it is a **core structural constraint** defining the system dynamics.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+PROBLEM INFO:
+
+- An economy consists of several industries. 
+- Each unit produced by one of the industries (a unit will be taken as £1’s worth of value of production) requires inputs from possibly its own industry as well as other industries. 
+- Industry \var{k} requires \var{inputone_{k, j}} input from industy \var{j}.
+- Industry \var{k} requires \var{manpowerone_{k}} units of manpower.
+- There is a time lag in the economy so that the output in year t + 1 requires an input in year t.
+- Output from an industry may also be used to build productive capacity for itself or other industries in future years.
+- To give unit increases (capacity for £1’s worth of extra production) in productive capacity of industry \var{k}, \var{j} units of industry \var{inputtwo_{k, j}} and \var{manpowertwo{k}} units of manpower are needed.
+- Input from an industry in year t results in a (permanent) increase in productive capacity in year t + 2.
+- Stocks of goods may be held from year to year. 
+- At present (year 0), the stocks of industry \var{k} is \var{stock_{k}}, and the capacity of industry \var{k} is \var{capacity_{k}}.
+- There is a limited yearly manpower capacity of \var{manpower_limit}.
+
+
+INPUT FORMAT:
+
+{
+    "inputone": [[inputone_{k, j} for j in 1,...,K] for k in 1,...,K],
+    "manpowerone": [manpowerone_{k} for k in 1,...,K],
+    "inputtwo": [[inputtwo_{k, j} for j in 1,...,K] for k in 1,...,K],
+    "manpowertwo": [manpowertwo_{k} for k in 1,...,K],
+    "stock": [stock_{k} for k in 1,...,K],
+    "capacity": [capacity_{k} for k in 1,...,K],
+    "manpower_limit": manpower_limit,
+}
+
+
+OBJECTIVE: Maximize total production in the last two years.
+
+OUTPUT INFO:
+
+- \var{produce} represents the amount of units produced by each industry in each year
+- \var{buildcapa} represents the amount of units used to build productive capacity for each industry in each year
+- \var{stockhold} represents the amount of stock of each industry held in each year
+
+OUTPUT FORMAT:
+
+{
+    "produce": [[produce_{k, t} for t in 1,...,T] for k in 1,...,K],
+    "buildcapa": [[buildcapa_{k, t} for t in 1,...,T] for k in 1,...,K],
+    "stockhold": [[stock_{k, t} for t in 1,...,T] for for k in 1,...,K]
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "InputOne": {
+        "definition": "The production inputs from resource type one to product k in year j",
+        "shape": [
+            "NumIndustries",
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "ManpowerOne": {
+        "definition": "The manpower allocated to resource type one for product k",
+        "shape": [
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "InputTwo": {
+        "definition": "The production inputs from resource type two to product k in year j",
+        "shape": [
+            "NumIndustries",
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "ManpowerTwo": {
+        "definition": "The manpower allocated to resource type two for product k",
+        "shape": [
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "Stock": {
+        "definition": "Stock levels of product k at the start of the planning horizon",
+        "shape": [
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "Capacity": {
+        "definition": "Production capacity for product k",
+        "shape": [
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "ManpowerLimit": {
+        "definition": "The upper limit of manpower",
+        "shape": [],
+        "type": "float"
+    },
+    "NumIndustries": {
+        "definition": "Number of industries",
+        "shape": [],
+        "type": "int"
+    },
+    "NumYears": {
+        "definition": "Number of years",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: Stocks of each industry k in each year must be non-negative
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is a real and necessary constraint.
+
+### Reasoning
+
+- The problem states that **stocks of goods may be held from year to year**, and defines:
+  - Initial stock levels,
+  - Decision variable `stockhold_{k,t}` for each industry and year.
+
+- There is **no mention of backlogging, borrowing stock, or allowing negative inventory**.
+
+- In standard production–inventory models:
+  - Stock represents a physical quantity of goods.
+  - Physical goods cannot be negative unless explicitly allowing shortages/backorders.
+  - Since shortages are not mentioned, negative stock would be economically and physically meaningless.
+
+- Additionally, without a non-negativity constraint:
+  - The model could artificially create material by allowing negative inventory,
+  - Which would distort feasibility and inflate the objective (especially since the goal is maximizing production in later years).
+
+Therefore, this constraint is:
+\[
+stockhold_{k,t} \ge 0 \quad \forall k, t
+\]
+
+This should be explicitly included in the LP formulation.
+
+### Confidence
+
+Very high — this is a standard and structurally necessary constraint in inventory-based production models.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+PROBLEM INFO:
+
+- An economy consists of several industries. 
+- Each unit produced by one of the industries (a unit will be taken as £1’s worth of value of production) requires inputs from possibly its own industry as well as other industries. 
+- Industry \var{k} requires \var{inputone_{k, j}} input from industy \var{j}.
+- Industry \var{k} requires \var{manpowerone_{k}} units of manpower.
+- There is a time lag in the economy so that the output in year t + 1 requires an input in year t.
+- Output from an industry may also be used to build productive capacity for itself or other industries in future years.
+- To give unit increases (capacity for £1’s worth of extra production) in productive capacity of industry \var{k}, \var{j} units of industry \var{inputtwo_{k, j}} and \var{manpowertwo{k}} units of manpower are needed.
+- Input from an industry in year t results in a (permanent) increase in productive capacity in year t + 2.
+- Stocks of goods may be held from year to year. 
+- At present (year 0), the stocks of industry \var{k} is \var{stock_{k}}, and the capacity of industry \var{k} is \var{capacity_{k}}.
+- There is a limited yearly manpower capacity of \var{manpower_limit}.
+
+
+INPUT FORMAT:
+
+{
+    "inputone": [[inputone_{k, j} for j in 1,...,K] for k in 1,...,K],
+    "manpowerone": [manpowerone_{k} for k in 1,...,K],
+    "inputtwo": [[inputtwo_{k, j} for j in 1,...,K] for k in 1,...,K],
+    "manpowertwo": [manpowertwo_{k} for k in 1,...,K],
+    "stock": [stock_{k} for k in 1,...,K],
+    "capacity": [capacity_{k} for k in 1,...,K],
+    "manpower_limit": manpower_limit,
+}
+
+
+OBJECTIVE: Maximize total production in the last two years.
+
+OUTPUT INFO:
+
+- \var{produce} represents the amount of units produced by each industry in each year
+- \var{buildcapa} represents the amount of units used to build productive capacity for each industry in each year
+- \var{stockhold} represents the amount of stock of each industry held in each year
+
+OUTPUT FORMAT:
+
+{
+    "produce": [[produce_{k, t} for t in 1,...,T] for k in 1,...,K],
+    "buildcapa": [[buildcapa_{k, t} for t in 1,...,T] for k in 1,...,K],
+    "stockhold": [[stock_{k, t} for t in 1,...,T] for for k in 1,...,K]
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "InputOne": {
+        "definition": "The production inputs from resource type one to product k in year j",
+        "shape": [
+            "NumIndustries",
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "ManpowerOne": {
+        "definition": "The manpower allocated to resource type one for product k",
+        "shape": [
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "InputTwo": {
+        "definition": "The production inputs from resource type two to product k in year j",
+        "shape": [
+            "NumIndustries",
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "ManpowerTwo": {
+        "definition": "The manpower allocated to resource type two for product k",
+        "shape": [
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "Stock": {
+        "definition": "Stock levels of product k at the start of the planning horizon",
+        "shape": [
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "Capacity": {
+        "definition": "Production capacity for product k",
+        "shape": [
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "ManpowerLimit": {
+        "definition": "The upper limit of manpower",
+        "shape": [],
+        "type": "float"
+    },
+    "NumIndustries": {
+        "definition": "Number of industries",
+        "shape": [],
+        "type": "int"
+    },
+    "NumYears": {
+        "definition": "Number of years",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: Production levels produce[k, t] must be non-negative for all industries and years
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is** a real constraint and it should be explicitly included in the LP formulation.
+
+### Reasoning
+
+- `produce[k, t]` represents the quantity produced by industry *k* in year *t*.
+- Production quantities cannot be negative in any meaningful economic interpretation.
+- If non-negativity is not explicitly enforced, the LP solver may assign negative values to production variables to:
+  - Artificially relax resource balance constraints,
+  - Offset input requirements,
+  - Increase the objective value indirectly (especially since production appears in stock balance and capacity constraints).
+
+Even if many modeling frameworks assume non-negativity by default, this must be explicitly stated in the mathematical formulation:
+
+\[
+\text{produce}_{k,t} \ge 0 \quad \forall k,t
+\]
+
+This is a **standard structural constraint** in production planning models and absolutely necessary for correctness.
+
+### Conclusion
+
+Yes — this is definitely a constraint and should be included explicitly.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+PROBLEM INFO:
+
+- An economy consists of several industries. 
+- Each unit produced by one of the industries (a unit will be taken as £1’s worth of value of production) requires inputs from possibly its own industry as well as other industries. 
+- Industry \var{k} requires \var{inputone_{k, j}} input from industy \var{j}.
+- Industry \var{k} requires \var{manpowerone_{k}} units of manpower.
+- There is a time lag in the economy so that the output in year t + 1 requires an input in year t.
+- Output from an industry may also be used to build productive capacity for itself or other industries in future years.
+- To give unit increases (capacity for £1’s worth of extra production) in productive capacity of industry \var{k}, \var{j} units of industry \var{inputtwo_{k, j}} and \var{manpowertwo{k}} units of manpower are needed.
+- Input from an industry in year t results in a (permanent) increase in productive capacity in year t + 2.
+- Stocks of goods may be held from year to year. 
+- At present (year 0), the stocks of industry \var{k} is \var{stock_{k}}, and the capacity of industry \var{k} is \var{capacity_{k}}.
+- There is a limited yearly manpower capacity of \var{manpower_limit}.
+
+
+INPUT FORMAT:
+
+{
+    "inputone": [[inputone_{k, j} for j in 1,...,K] for k in 1,...,K],
+    "manpowerone": [manpowerone_{k} for k in 1,...,K],
+    "inputtwo": [[inputtwo_{k, j} for j in 1,...,K] for k in 1,...,K],
+    "manpowertwo": [manpowertwo_{k} for k in 1,...,K],
+    "stock": [stock_{k} for k in 1,...,K],
+    "capacity": [capacity_{k} for k in 1,...,K],
+    "manpower_limit": manpower_limit,
+}
+
+
+OBJECTIVE: Maximize total production in the last two years.
+
+OUTPUT INFO:
+
+- \var{produce} represents the amount of units produced by each industry in each year
+- \var{buildcapa} represents the amount of units used to build productive capacity for each industry in each year
+- \var{stockhold} represents the amount of stock of each industry held in each year
+
+OUTPUT FORMAT:
+
+{
+    "produce": [[produce_{k, t} for t in 1,...,T] for k in 1,...,K],
+    "buildcapa": [[buildcapa_{k, t} for t in 1,...,T] for k in 1,...,K],
+    "stockhold": [[stock_{k, t} for t in 1,...,T] for for k in 1,...,K]
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "InputOne": {
+        "definition": "The production inputs from resource type one to product k in year j",
+        "shape": [
+            "NumIndustries",
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "ManpowerOne": {
+        "definition": "The manpower allocated to resource type one for product k",
+        "shape": [
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "InputTwo": {
+        "definition": "The production inputs from resource type two to product k in year j",
+        "shape": [
+            "NumIndustries",
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "ManpowerTwo": {
+        "definition": "The manpower allocated to resource type two for product k",
+        "shape": [
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "Stock": {
+        "definition": "Stock levels of product k at the start of the planning horizon",
+        "shape": [
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "Capacity": {
+        "definition": "Production capacity for product k",
+        "shape": [
+            "NumIndustries"
+        ],
+        "type": "string"
+    },
+    "ManpowerLimit": {
+        "definition": "The upper limit of manpower",
+        "shape": [],
+        "type": "float"
+    },
+    "NumIndustries": {
+        "definition": "Number of industries",
+        "shape": [],
+        "type": "int"
+    },
+    "NumYears": {
+        "definition": "Number of years",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: Capacity building levels buildcapa[k, t] must be non-negative for all industries and years
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is** a constraint that should be explicitly modeled.
+
+### Reasoning
+
+- `buildcapa[k,t]` represents the **amount of output used to build additional productive capacity**.
+- It corresponds to a **physical quantity of goods allocated for investment**.
+- Negative capacity building would imply *removing* capacity by “un‑using” goods, which is not described in the problem and has no economic interpretation here.
+- The problem statement never allows capacity to be dismantled or reduced.
+- Therefore, the variable must be constrained as:
+
+\[
+\text{buildcapa}_{k,t} \ge 0 \quad \forall k,t
+\]
+
+This is a standard **non-negativity domain constraint** for decision variables representing quantities of resources.
+
+Even if not stated explicitly in the text, such non-negativity is structurally required by the problem semantics and must be included in the LP formulation.
+
+### Conclusion
+
+✅ This is indeed a required constraint (as a variable lower bound).
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
+
+
+
+++++++++++++++++++++++++++++++
+Extracting constraint formulations
+++++++++++++++++++++++++++++++
+
+
+
+----
+{
+    "FORMULATION": "$\\forall k = 1,\\dots,\\text{NumIndustries},\\; \\forall t = 1,\\dots,\\text{NumYears}: \\; produce[k,t] \\leq capacityAvail[k,t]$",
+    "NEW VARIABLES": {
+        "produce": {
+            "shape": "[NumIndustries, NumYears]",
+            "type": "continuous",
+            "definition": "Amount of units produced by each industry k in each year t"
+        },
+        "capacityAvail": {
+            "shape": "[NumIndustries, NumYears]",
+            "type": "continuous",
+            "definition": "Available productive capacity of each industry k in each year t"
+        }
+    },
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\forall k = 1,\\dots,\\text{NumIndustries},\\; \\forall t = 1,\\dots,\\text{NumYears}: \\; produce[k,t] \\leq capacityAvail[k,t]$
+{'produce': {'shape': '[NumIndustries, NumYears]', 'type': 'continuous', 'definition': 'Amount of units produced by each industry k in each year t'}, 'capacityAvail': {'shape': '[NumIndustries, NumYears]', 'type': 'continuous', 'definition': 'Available productive capacity of each industry k in each year t'}}
+[]
+----
+----
+{
+    "FORMULATION": "$\\forall t = 1, \\ldots, \\text{NumYears}: \\sum_{k=1}^{\\text{NumIndustries}} \\left( \\text{ManpowerOne}[k] \\cdot \\text{produce}[k,t] + \\text{ManpowerTwo}[k] \\cdot \\text{buildcapa}[k,t] \\right) \\leq \\text{ManpowerLimit}$",
+    "NEW VARIABLES": {
+        "buildcapa": {
+            "shape": "[NumIndustries, NumYears]",
+            "type": "continuous",
+            "definition": "Amount of units used to build productive capacity for each industry k in each year t"
+        }
+    },
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\forall t = 1, \\ldots, \\text{NumYears}: \\sum_{k=1}^{\\text{NumIndustries}} \\left( \\text{ManpowerOne}[k] \\cdot \\text{produce}[k,t] + \\text{ManpowerTwo}[k] \\cdot \\text{buildcapa}[k,t] \\right) \\leq \\text{ManpowerLimit}$
+{'buildcapa': {'shape': '[NumIndustries, NumYears]', 'type': 'continuous', 'definition': 'Amount of units used to build productive capacity for each industry k in each year t'}}
+[]
+----
+----
+{
+    "FORMULATION": "$\\forall j = 1,\\dots,\\text{NumIndustries},\\; \\forall t = 2,\\dots,\\text{NumYears}-1:\\\\\n\\text{stockhold}[j,t] = \\text{stockhold}[j,t-1] + \\text{produce}[j,t] - \\sum_{k=1}^{\\text{NumIndustries}} \\text{InputOne}[k,j] \\cdot \\text{produce}[k,t+1] - \\sum_{k=1}^{\\text{NumIndustries}} \\text{InputTwo}[k,j] \\cdot \\text{buildcapa}[k,t]$",
+    "NEW VARIABLES": {
+        "stockhold": {
+            "shape": "[NumIndustries, NumYears]",
+            "type": "continuous",
+            "definition": "Amount of stock of each industry j held at the end of each year t"
+        }
+    },
+    "AUXILIARY CONSTRAINTS": [
+        "$\\forall j = 1,\\dots,\\text{NumIndustries}:\\\\\n\\text{stockhold}[j,1] = \\text{Stock}[j] + \\text{produce}[j,1] - \\sum_{k=1}^{\\text{NumIndustries}} \\text{InputOne}[k,j] \\cdot \\text{produce}[k,2] - \\sum_{k=1}^{\\text{NumIndustries}} \\text{InputTwo}[k,j] \\cdot \\text{buildcapa}[k,1]$"
+    ]
+}
+----

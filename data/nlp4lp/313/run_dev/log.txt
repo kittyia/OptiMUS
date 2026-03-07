@@ -1,0 +1,727 @@
+----
+[
+    "For each year i, the number of mines operated cannot exceed MaxWork: sum over k of isoperated_{k,i} <= MaxWork",
+    "For each mine k and year i, production is bounded by operation status and capacity: 0 <= amount_{k,i} <= Limit_k * isoperated_{k,i}",
+    "For each mine k and year i, isoperated_{k,i} is a binary variable (0 or 1)",
+    "For each year i, the blended quality constraint must hold: sum over k of (Quality_k * amount_{k,i}) = RequiredQuality_i * sum over k of amount_{k,i}"
+]
+----
++++++++++++++++++++
+++ Constraint Qs ++
++++++++++++++++++++
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: MIP
+PROBLEM INFO:
+
+- A mining company is going to continue operating in a certain area for the next years. 
+- There are \var{n_mines} mines in this area, but it can operate at most \var{n_maxwork} in any one year. 
+- Although a mine may not operate in a certain year, it is still necessary to keep it ‘open’, in the sense that royalties are payable, if it be operated in a future year. 
+- Clearly, if a mine is not going to be worked again, it can be permanently closed down and no more royalties need be paid. 
+- The yearly royalties payable on each mine kept ‘open’ is \var{royalty_{k}} for mine \var{k}.
+- There is an upper limit to the amount of ore, which can be extracted from each mine in a year. 
+- The upper limit for mine \var{k} is \var{limit_{k}}.
+- The ore from the different mines is of varying quality.
+- This quality is measured on a scale so that blending ores together results in a linear combination of the quality measurements, for example, if equal quantities of two ores were combined, the resultant ore would have a quality measurement half way between
+that of the ingredient ores. 
+- The quality of ore from mine \var{k} is \var{quality_{k}}.
+- In each year, it is necessary to combine the total outputs from each mine to produce a blended ore of exactly some stipulated quality.
+- In year \var{i}, the required quality is \var{requiredquality_{i}}.
+- The final blended ore sells for \var{price} ton each year. 
+- Revenue and expenditure for future years must be discounted at a rate of \var{discount} per annum.
+
+INPUT FORMAT:
+
+{
+    "n_mines": n_mines,
+    "n_maxwork": n_maxwork,
+    "royalty": [royalty_{k} for k in 1,...,K],
+    "limit": [limit_{k} for k in 1,...,K],
+    "quality": [quality_{k} for k in 1,...,K],
+    "requiredquality": [requiredquality_{i} for i in 1,...,I],
+    "price": price,
+    "discount": discount
+}
+
+
+OBJECTIVE: To maximize profit, which mines should be operated each year and how much should they produce?
+
+OUTPUT INFO:
+
+- \var{isoperated} represents whether each mine is operated in each year
+- \var{amount} represents the amount of ore produced by each mine in each year
+
+OUTPUT FORMAT:
+
+{
+    "isoperated": [[isoperated_{k, i} for i in 1,...,I] for k in 1,...K]
+    "amount": [[amount_{k, i} for i in 1,...,I] for k in 1,...K]
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "K": {
+        "definition": "Number of mines",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxWork": {
+        "definition": "Maximum number of mines that can be operated in a year",
+        "shape": [],
+        "type": "int"
+    },
+    "NumYears": {
+        "definition": "Number of years the company will be operating",
+        "shape": [],
+        "type": "int"
+    },
+    "Royalty": {
+        "definition": "Royalty cost for operating mine k",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "Limit": {
+        "definition": "Production limit for mine k",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "Quality": {
+        "definition": "Quality of the material from mine k",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "RequiredQuality": {
+        "definition": "Required quality of the material for each year",
+        "shape": [
+            "NumYears"
+        ],
+        "type": "string"
+    },
+    "Price": {
+        "definition": "Price per unit of material sold",
+        "shape": [],
+        "type": "int"
+    },
+    "Discount": {
+        "definition": "Discount rate on the royalty cost per unit of material sold",
+        "shape": [],
+        "type": "float"
+    }
+}
+
+
+Consider this potential constraint: For each year i, the number of mines operated cannot exceed MaxWork: sum over k of isoperated_{k,i} <= MaxWork
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is clearly a constraint and must be explicitly included in the MIP formulation.
+
+The problem statement explicitly says:
+
+> “There are \( n_{\text{mines}} \) mines in this area, but it can operate at most \( n_{\text{maxwork}} \) in any one year.”
+
+This directly translates into the constraint:
+
+\[
+\sum_{k=1}^{K} \text{isoperated}_{k,i} \le \text{MaxWork} \quad \forall i = 1,\dots,\text{NumYears}
+\]
+
+This is a structural feasibility restriction, not something that would naturally emerge from the objective function or other constraints. Without it, the model could operate more than the allowed number of mines in a year, violating the problem description.
+
+Therefore, this constraint is necessary and should definitely be included.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: MIP
+PROBLEM INFO:
+
+- A mining company is going to continue operating in a certain area for the next years. 
+- There are \var{n_mines} mines in this area, but it can operate at most \var{n_maxwork} in any one year. 
+- Although a mine may not operate in a certain year, it is still necessary to keep it ‘open’, in the sense that royalties are payable, if it be operated in a future year. 
+- Clearly, if a mine is not going to be worked again, it can be permanently closed down and no more royalties need be paid. 
+- The yearly royalties payable on each mine kept ‘open’ is \var{royalty_{k}} for mine \var{k}.
+- There is an upper limit to the amount of ore, which can be extracted from each mine in a year. 
+- The upper limit for mine \var{k} is \var{limit_{k}}.
+- The ore from the different mines is of varying quality.
+- This quality is measured on a scale so that blending ores together results in a linear combination of the quality measurements, for example, if equal quantities of two ores were combined, the resultant ore would have a quality measurement half way between
+that of the ingredient ores. 
+- The quality of ore from mine \var{k} is \var{quality_{k}}.
+- In each year, it is necessary to combine the total outputs from each mine to produce a blended ore of exactly some stipulated quality.
+- In year \var{i}, the required quality is \var{requiredquality_{i}}.
+- The final blended ore sells for \var{price} ton each year. 
+- Revenue and expenditure for future years must be discounted at a rate of \var{discount} per annum.
+
+INPUT FORMAT:
+
+{
+    "n_mines": n_mines,
+    "n_maxwork": n_maxwork,
+    "royalty": [royalty_{k} for k in 1,...,K],
+    "limit": [limit_{k} for k in 1,...,K],
+    "quality": [quality_{k} for k in 1,...,K],
+    "requiredquality": [requiredquality_{i} for i in 1,...,I],
+    "price": price,
+    "discount": discount
+}
+
+
+OBJECTIVE: To maximize profit, which mines should be operated each year and how much should they produce?
+
+OUTPUT INFO:
+
+- \var{isoperated} represents whether each mine is operated in each year
+- \var{amount} represents the amount of ore produced by each mine in each year
+
+OUTPUT FORMAT:
+
+{
+    "isoperated": [[isoperated_{k, i} for i in 1,...,I] for k in 1,...K]
+    "amount": [[amount_{k, i} for i in 1,...,I] for k in 1,...K]
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "K": {
+        "definition": "Number of mines",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxWork": {
+        "definition": "Maximum number of mines that can be operated in a year",
+        "shape": [],
+        "type": "int"
+    },
+    "NumYears": {
+        "definition": "Number of years the company will be operating",
+        "shape": [],
+        "type": "int"
+    },
+    "Royalty": {
+        "definition": "Royalty cost for operating mine k",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "Limit": {
+        "definition": "Production limit for mine k",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "Quality": {
+        "definition": "Quality of the material from mine k",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "RequiredQuality": {
+        "definition": "Required quality of the material for each year",
+        "shape": [
+            "NumYears"
+        ],
+        "type": "string"
+    },
+    "Price": {
+        "definition": "Price per unit of material sold",
+        "shape": [],
+        "type": "int"
+    },
+    "Discount": {
+        "definition": "Discount rate on the royalty cost per unit of material sold",
+        "shape": [],
+        "type": "float"
+    }
+}
+
+
+Consider this potential constraint: For each mine k and year i, production is bounded by operation status and capacity: 0 <= amount_{k,i} <= Limit_k * isoperated_{k,i}
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is definitely a required constraint.
+
+Step by step:
+
+- The problem explicitly states that there is an **upper limit to the amount of ore that can be extracted from each mine in a year**, given by `Limit_k`. So production must be capped by this value.
+- It also states that at most `n_maxwork` mines can be **operated** in any year. Therefore, production should only occur if a mine is operated in that year.
+- The variable `isoperated_{k,i}` is clearly intended to model whether mine \(k\) is operated in year \(i\), and `amount_{k,i}` is the production decision.
+
+The constraint  
+\[
+0 \le amount_{k,i} \le Limit_k \cdot isoperated_{k,i}
+\]  
+correctly enforces two critical modeling requirements:
+
+1. **Capacity enforcement**: If a mine is operated (`isoperated_{k,i} = 1`), production cannot exceed `Limit_k`.
+2. **Logical linking**: If a mine is not operated (`isoperated_{k,i} = 0`), then production must be zero.
+
+Without this constraint:
+- A mine could produce ore even when not operated.
+- A mine could exceed its annual capacity.
+- The `isoperated` variable would not be properly linked to production.
+
+This is a standard and essential big‑M linking constraint in MIP models.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: MIP
+PROBLEM INFO:
+
+- A mining company is going to continue operating in a certain area for the next years. 
+- There are \var{n_mines} mines in this area, but it can operate at most \var{n_maxwork} in any one year. 
+- Although a mine may not operate in a certain year, it is still necessary to keep it ‘open’, in the sense that royalties are payable, if it be operated in a future year. 
+- Clearly, if a mine is not going to be worked again, it can be permanently closed down and no more royalties need be paid. 
+- The yearly royalties payable on each mine kept ‘open’ is \var{royalty_{k}} for mine \var{k}.
+- There is an upper limit to the amount of ore, which can be extracted from each mine in a year. 
+- The upper limit for mine \var{k} is \var{limit_{k}}.
+- The ore from the different mines is of varying quality.
+- This quality is measured on a scale so that blending ores together results in a linear combination of the quality measurements, for example, if equal quantities of two ores were combined, the resultant ore would have a quality measurement half way between
+that of the ingredient ores. 
+- The quality of ore from mine \var{k} is \var{quality_{k}}.
+- In each year, it is necessary to combine the total outputs from each mine to produce a blended ore of exactly some stipulated quality.
+- In year \var{i}, the required quality is \var{requiredquality_{i}}.
+- The final blended ore sells for \var{price} ton each year. 
+- Revenue and expenditure for future years must be discounted at a rate of \var{discount} per annum.
+
+INPUT FORMAT:
+
+{
+    "n_mines": n_mines,
+    "n_maxwork": n_maxwork,
+    "royalty": [royalty_{k} for k in 1,...,K],
+    "limit": [limit_{k} for k in 1,...,K],
+    "quality": [quality_{k} for k in 1,...,K],
+    "requiredquality": [requiredquality_{i} for i in 1,...,I],
+    "price": price,
+    "discount": discount
+}
+
+
+OBJECTIVE: To maximize profit, which mines should be operated each year and how much should they produce?
+
+OUTPUT INFO:
+
+- \var{isoperated} represents whether each mine is operated in each year
+- \var{amount} represents the amount of ore produced by each mine in each year
+
+OUTPUT FORMAT:
+
+{
+    "isoperated": [[isoperated_{k, i} for i in 1,...,I] for k in 1,...K]
+    "amount": [[amount_{k, i} for i in 1,...,I] for k in 1,...K]
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "K": {
+        "definition": "Number of mines",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxWork": {
+        "definition": "Maximum number of mines that can be operated in a year",
+        "shape": [],
+        "type": "int"
+    },
+    "NumYears": {
+        "definition": "Number of years the company will be operating",
+        "shape": [],
+        "type": "int"
+    },
+    "Royalty": {
+        "definition": "Royalty cost for operating mine k",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "Limit": {
+        "definition": "Production limit for mine k",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "Quality": {
+        "definition": "Quality of the material from mine k",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "RequiredQuality": {
+        "definition": "Required quality of the material for each year",
+        "shape": [
+            "NumYears"
+        ],
+        "type": "string"
+    },
+    "Price": {
+        "definition": "Price per unit of material sold",
+        "shape": [],
+        "type": "int"
+    },
+    "Discount": {
+        "definition": "Discount rate on the royalty cost per unit of material sold",
+        "shape": [],
+        "type": "float"
+    }
+}
+
+
+Consider this potential constraint: For each mine k and year i, isoperated_{k,i} is a binary variable (0 or 1)
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+This statement is **not a functional constraint** (like a capacity or balance constraint), but it **is a necessary integrality/domain restriction** in a MIP formulation.
+
+In a mixed-integer programming model, declaring  
+\[
+\text{isoperated}_{k,i} \in \{0,1\}
+\]  
+is an essential part of the formulation. It ensures:
+
+- Logical consistency with the limit on the number of operating mines per year.
+- Correct linking with production variables (e.g., forcing production to zero if a mine is not operated).
+- Proper modeling of operational decisions as discrete yes/no choices.
+
+Without explicitly declaring this binary restriction, the model would become a linear program and allow fractional operation decisions, which would not reflect the real-world problem.
+
+So while it is technically a **variable domain specification**, it absolutely **must** be included in the MIP formulation.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: MIP
+PROBLEM INFO:
+
+- A mining company is going to continue operating in a certain area for the next years. 
+- There are \var{n_mines} mines in this area, but it can operate at most \var{n_maxwork} in any one year. 
+- Although a mine may not operate in a certain year, it is still necessary to keep it ‘open’, in the sense that royalties are payable, if it be operated in a future year. 
+- Clearly, if a mine is not going to be worked again, it can be permanently closed down and no more royalties need be paid. 
+- The yearly royalties payable on each mine kept ‘open’ is \var{royalty_{k}} for mine \var{k}.
+- There is an upper limit to the amount of ore, which can be extracted from each mine in a year. 
+- The upper limit for mine \var{k} is \var{limit_{k}}.
+- The ore from the different mines is of varying quality.
+- This quality is measured on a scale so that blending ores together results in a linear combination of the quality measurements, for example, if equal quantities of two ores were combined, the resultant ore would have a quality measurement half way between
+that of the ingredient ores. 
+- The quality of ore from mine \var{k} is \var{quality_{k}}.
+- In each year, it is necessary to combine the total outputs from each mine to produce a blended ore of exactly some stipulated quality.
+- In year \var{i}, the required quality is \var{requiredquality_{i}}.
+- The final blended ore sells for \var{price} ton each year. 
+- Revenue and expenditure for future years must be discounted at a rate of \var{discount} per annum.
+
+INPUT FORMAT:
+
+{
+    "n_mines": n_mines,
+    "n_maxwork": n_maxwork,
+    "royalty": [royalty_{k} for k in 1,...,K],
+    "limit": [limit_{k} for k in 1,...,K],
+    "quality": [quality_{k} for k in 1,...,K],
+    "requiredquality": [requiredquality_{i} for i in 1,...,I],
+    "price": price,
+    "discount": discount
+}
+
+
+OBJECTIVE: To maximize profit, which mines should be operated each year and how much should they produce?
+
+OUTPUT INFO:
+
+- \var{isoperated} represents whether each mine is operated in each year
+- \var{amount} represents the amount of ore produced by each mine in each year
+
+OUTPUT FORMAT:
+
+{
+    "isoperated": [[isoperated_{k, i} for i in 1,...,I] for k in 1,...K]
+    "amount": [[amount_{k, i} for i in 1,...,I] for k in 1,...K]
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "K": {
+        "definition": "Number of mines",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxWork": {
+        "definition": "Maximum number of mines that can be operated in a year",
+        "shape": [],
+        "type": "int"
+    },
+    "NumYears": {
+        "definition": "Number of years the company will be operating",
+        "shape": [],
+        "type": "int"
+    },
+    "Royalty": {
+        "definition": "Royalty cost for operating mine k",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "Limit": {
+        "definition": "Production limit for mine k",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "Quality": {
+        "definition": "Quality of the material from mine k",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "RequiredQuality": {
+        "definition": "Required quality of the material for each year",
+        "shape": [
+            "NumYears"
+        ],
+        "type": "string"
+    },
+    "Price": {
+        "definition": "Price per unit of material sold",
+        "shape": [],
+        "type": "int"
+    },
+    "Discount": {
+        "definition": "Discount rate on the royalty cost per unit of material sold",
+        "shape": [],
+        "type": "float"
+    }
+}
+
+
+Consider this potential constraint: For each year i, the blended quality constraint must hold: sum over k of (Quality_k * amount_{k,i}) = RequiredQuality_i * sum over k of amount_{k,i}
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is absolutely a necessary constraint.
+
+### Why this is a constraint
+
+The problem explicitly states:
+
+> “In each year, it is necessary to combine the total outputs from each mine to produce a blended ore of exactly some stipulated quality.”
+
+It also explains that blending is linear in quality. Therefore, the blended quality in year \( i \) must satisfy:
+
+\[
+\frac{\sum_k \text{Quality}_k \cdot \text{amount}_{k,i}}{\sum_k \text{amount}_{k,i}} = \text{RequiredQuality}_i
+\]
+
+Multiplying both sides by total production gives:
+
+\[
+\sum_k \text{Quality}_k \cdot \text{amount}_{k,i}
+=
+\text{RequiredQuality}_i \cdot \sum_k \text{amount}_{k,i}
+\]
+
+This is exactly the proposed constraint.
+
+### Is it linear?
+
+Yes. Since `RequiredQuality_i` is a parameter (constant), the right-hand side is a constant times a sum of decision variables. Therefore, the entire constraint is linear and fully compatible with an MILP formulation.
+
+### Conclusion
+
+This is a **core structural constraint** of the problem. Without it, the blending requirement would not be enforced, and the model would not reflect the problem description.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
+
+
+
+++++++++++++++++++++++++++++++
+Extracting constraint formulations
+++++++++++++++++++++++++++++++
+
+
+
+----
+{
+    "FORMULATION": "$\\forall i = 1, \\dots, NumYears:\\; \\sum_{k=1}^{K} isOperated_{k,i} \\leq MaxWork$",
+    "NEW VARIABLES": {
+        "isOperated": {
+            "shape": "[K, NumYears]",
+            "type": "binary",
+            "definition": "Binary variable equal to 1 if mine k is operated in year i, and 0 otherwise"
+        }
+    },
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\forall i = 1, \\dots, NumYears:\\; \\sum_{k=1}^{K} isOperated_{k,i} \\leq MaxWork$
+{'isOperated': {'shape': '[K, NumYears]', 'type': 'binary', 'definition': 'Binary variable equal to 1 if mine k is operated in year i, and 0 otherwise'}}
+[]
+----
+----
+{
+    "FORMULATION": "$\\forall k = 1,\\dots,K,\\; \\forall i = 1,\\dots,NumYears:\\; 0 \\leq amount_{k,i} \\leq Limit_k \\cdot isOperated_{k,i}$",
+    "NEW VARIABLES": {
+        "amount": {
+            "shape": ["K", "NumYears"],
+            "type": "continuous",
+            "definition": "Amount of ore produced by mine k in year i"
+        }
+    },
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\forall k = 1,\\dots,K,\\; \\forall i = 1,\\dots,NumYears:\\; 0 \\leq amount_{k,i} \\leq Limit_k \\cdot isOperated_{k,i}$
+{'amount': {'shape': ['K', 'NumYears'], 'type': 'continuous', 'definition': 'Amount of ore produced by mine k in year i'}}
+[]
+----
+----
+{
+    "FORMULATION": "$\\forall k = 1,\\dots,K,\\; \\forall i = 1,\\dots,\\text{NumYears}: \\; isOperated_{k,i} \\in \\{0,1\\}$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\forall k = 1,\\dots,K,\\; \\forall i = 1,\\dots,\\text{NumYears}: \\; isOperated_{k,i} \\in \\{0,1\\}$
+{}
+[]
+----
+----
+{
+    "FORMULATION": "$\\forall i = 1, \\dots, \\text{NumYears}: \\sum_{k=1}^{K} Quality_k \\cdot amount_{k,i} = RequiredQuality_i \\cdot \\sum_{k=1}^{K} amount_{k,i}$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\forall i = 1, \\dots, \\text{NumYears}: \\sum_{k=1}^{K} Quality_k \\cdot amount_{k,i} = RequiredQuality_i \\cdot \\sum_{k=1}^{K} amount_{k,i}$
+{}
+[]
+----
+Code executed successfully. Output:
+Restricted license - for non-production use only - expires 2027-11-29
+Gurobi Optimizer version 13.0.1 build v13.0.1rc0 (linux64 - "Alibaba Cloud Linux 3.2104 U12.3 (OpenAnolis Edition)")
+
+CPU model: Intel(R) Xeon(R) Platinum, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 1 physical cores, 2 logical processors, using up to 2 threads
+
+Optimize a model with 90 rows, 40 columns and 139 nonzeros (Max)
+Model fingerprint: 0x9945f636
+Model has 40 linear objective coefficients
+Variable types: 20 continuous, 20 integer (20 binary)
+Coefficient statistics:
+  Matrix range     [1e-01, 3e+06]
+  Objective range  [7e+00, 5e+06]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [1e+00, 3e+00]
+
+Found heuristic solution: objective -0.0000000
+Presolve removed 84 rows and 32 columns
+Presolve time: 0.00s
+Presolved: 6 rows, 8 columns, 16 nonzeros
+Found heuristic solution: objective 1.225803e+08
+Variable types: 4 continuous, 4 integer (4 binary)
+
+Root relaxation: objective 1.704439e+08, 2 iterations, 0.00 seconds (0.00 work units)
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 1.7044e+08    0    2 1.2258e+08 1.7044e+08  39.0%     -    0s
+H    0     0                    1.595803e+08 1.7044e+08  6.81%     -    0s
+     0     0 1.6941e+08    0    2 1.5958e+08 1.6941e+08  6.16%     -    0s
+*    0     0               0    1.660803e+08 1.6608e+08  0.00%     -    0s
+
+Cutting planes:
+  RLT: 1
+
+Explored 1 nodes (3 simplex iterations) in 0.01 seconds (0.00 work units)
+Thread count was 2 (of 2 available processors)
+
+Solution count 4: 1.6608e+08 1.5958e+08 1.2258e+08 -0 
+
+Optimal solution found (tolerance 1.00e-04)
+Best objective 1.660802730536e+08, best bound 1.660802730536e+08, gap 0.0000%
+Optimal Objective Value:  166080273.05360135
+Optimal Objective Value:  166080273.05360135
+

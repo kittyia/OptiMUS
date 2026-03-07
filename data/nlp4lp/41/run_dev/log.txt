@@ -1,0 +1,766 @@
+----
+Yes, there are two improvements that can be made:
+
+1. **Simplify the fraction constraint**  
+   The constraint  
+   ```
+   HighDrills <= MaxHighFraction * (HighDrills + LowDrills)
+   ```  
+   with `MaxHighFraction = 0.4` can be rewritten algebraically:
+
+   \[
+   H \le 0.4(H + L)
+   \]
+   \[
+   H \le 0.4H + 0.4L
+   \]
+   \[
+   0.6H \le 0.4L
+   \]
+   \[
+   3H \le 2L
+   \]
+
+   This linear form is simpler and avoids multiplication by a variable expression.
+
+2. **Remove redundant nonnegativity constraint for LowDrills**  
+   Since we already have:
+   ```
+   LowDrills >= MinLowDrills
+   ```
+   and `MinLowDrills = 10`, this automatically implies `LowDrills >= 0`.  
+   Therefore, the constraint  
+   ```
+   LowDrills >= 0
+   ```  
+   is redundant and can be removed.
+
+No other constraints are redundant or combinable.
+
+Updated constraint list:
+
+[
+    "50 * HighDrills + 30 * LowDrills >= TotalGems",
+    "50 * HighDrills + 20 * LowDrills <= AvailableWater",
+    "3 * HighDrills <= 2 * LowDrills",
+    "LowDrills >= MinLowDrills",
+    "HighDrills >= 0",
+    "HighDrills and LowDrills are integers"
+]
+----
++++++++++++++++++++
+++ Constraint Qs ++
++++++++++++++++++++
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+A gem factory has two drills, a high intensity one and a low intensity one. Each day, the high intensity drill can process 50 gems and requires 50 units of water to dissipate heat. Each day, the low intensity drill can process 30 gems and requires 20 units of water to dissipate heat. Each day the factory must process 800 gems and they have available 700 units of water. Since the high intensity drill produces a lot of noise pollution, at most 40% of the drills can be high intensity ones. Further, at least 10 should be low intensity drills. How many of each drill should be used to minimize the total number of drills needed?
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "GemsPerHigh": {
+        "definition": "Number of gems processed per day by a high intensity drill.",
+        "shape": [],
+        "type": "int"
+    },
+    "WaterPerHigh": {
+        "definition": "Units of water required per day to dissipate heat by a high intensity drill.",
+        "shape": [],
+        "type": "int"
+    },
+    "GemsPerLow": {
+        "definition": "Number of gems processed per day by a low intensity drill.",
+        "shape": [],
+        "type": "int"
+    },
+    "WaterPerLow": {
+        "definition": "Units of water required per day to dissipate heat by a low intensity drill.",
+        "shape": [],
+        "type": "int"
+    },
+    "TotalGems": {
+        "definition": "Total number of gems that must be processed per day by the factory.",
+        "shape": [],
+        "type": "int"
+    },
+    "AvailableWater": {
+        "definition": "Total units of water available per day for dissipating heat.",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxHighFraction": {
+        "definition": "Maximum fraction of drills that can be high intensity to limit noise pollution.",
+        "shape": [],
+        "type": "float"
+    },
+    "MinLowDrills": {
+        "definition": "Minimum number of low intensity drills that must be used.",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: 50 * HighDrills + 30 * LowDrills >= TotalGems
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is definitely a constraint and it should be explicitly included in the (MI)LP formulation.
+
+### Why?
+
+- Each **high intensity drill** processes **50 gems per day**.
+- Each **low intensity drill** processes **30 gems per day**.
+- The factory must process **800 gems per day**.
+
+Therefore, the total daily processing capacity from all drills must be **at least** the required number of gems:
+
+\[
+50 \cdot \text{HighDrills} + 30 \cdot \text{LowDrills} \ge \text{TotalGems}
+\]
+
+This directly models the production requirement described in the problem statement. Without this constraint, the solution could minimize the number of drills by selecting too few drills to meet demand, which would violate the factory’s operational requirement.
+
+This is a **core feasibility constraint**, not optional or redundant.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+A gem factory has two drills, a high intensity one and a low intensity one. Each day, the high intensity drill can process 50 gems and requires 50 units of water to dissipate heat. Each day, the low intensity drill can process 30 gems and requires 20 units of water to dissipate heat. Each day the factory must process 800 gems and they have available 700 units of water. Since the high intensity drill produces a lot of noise pollution, at most 40% of the drills can be high intensity ones. Further, at least 10 should be low intensity drills. How many of each drill should be used to minimize the total number of drills needed?
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "GemsPerHigh": {
+        "definition": "Number of gems processed per day by a high intensity drill.",
+        "shape": [],
+        "type": "int"
+    },
+    "WaterPerHigh": {
+        "definition": "Units of water required per day to dissipate heat by a high intensity drill.",
+        "shape": [],
+        "type": "int"
+    },
+    "GemsPerLow": {
+        "definition": "Number of gems processed per day by a low intensity drill.",
+        "shape": [],
+        "type": "int"
+    },
+    "WaterPerLow": {
+        "definition": "Units of water required per day to dissipate heat by a low intensity drill.",
+        "shape": [],
+        "type": "int"
+    },
+    "TotalGems": {
+        "definition": "Total number of gems that must be processed per day by the factory.",
+        "shape": [],
+        "type": "int"
+    },
+    "AvailableWater": {
+        "definition": "Total units of water available per day for dissipating heat.",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxHighFraction": {
+        "definition": "Maximum fraction of drills that can be high intensity to limit noise pollution.",
+        "shape": [],
+        "type": "float"
+    },
+    "MinLowDrills": {
+        "definition": "Minimum number of low intensity drills that must be used.",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: 50 * HighDrills + 20 * LowDrills <= AvailableWater
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is **definitely a valid constraint** and should be explicitly included in the (MI)LP formulation.
+
+### Why?
+
+From the problem description:
+
+- Each **high intensity drill** requires **50 units of water per day**.
+- Each **low intensity drill** requires **20 units of water per day**.
+- The factory has **700 units of water available per day**.
+
+If:
+- `HighDrills` = number of high intensity drills  
+- `LowDrills` = number of low intensity drills  
+
+Then total daily water consumption is:
+
+\[
+50 \cdot HighDrills + 20 \cdot LowDrills
+\]
+
+Since water availability is limited to 700 units, we must enforce:
+
+\[
+50 \cdot HighDrills + 20 \cdot LowDrills \le 700
+\]
+
+This directly models the resource limitation described in the problem.
+
+There is no ambiguity here — this is a classic resource capacity constraint and is essential to the correctness of the model.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+A gem factory has two drills, a high intensity one and a low intensity one. Each day, the high intensity drill can process 50 gems and requires 50 units of water to dissipate heat. Each day, the low intensity drill can process 30 gems and requires 20 units of water to dissipate heat. Each day the factory must process 800 gems and they have available 700 units of water. Since the high intensity drill produces a lot of noise pollution, at most 40% of the drills can be high intensity ones. Further, at least 10 should be low intensity drills. How many of each drill should be used to minimize the total number of drills needed?
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "GemsPerHigh": {
+        "definition": "Number of gems processed per day by a high intensity drill.",
+        "shape": [],
+        "type": "int"
+    },
+    "WaterPerHigh": {
+        "definition": "Units of water required per day to dissipate heat by a high intensity drill.",
+        "shape": [],
+        "type": "int"
+    },
+    "GemsPerLow": {
+        "definition": "Number of gems processed per day by a low intensity drill.",
+        "shape": [],
+        "type": "int"
+    },
+    "WaterPerLow": {
+        "definition": "Units of water required per day to dissipate heat by a low intensity drill.",
+        "shape": [],
+        "type": "int"
+    },
+    "TotalGems": {
+        "definition": "Total number of gems that must be processed per day by the factory.",
+        "shape": [],
+        "type": "int"
+    },
+    "AvailableWater": {
+        "definition": "Total units of water available per day for dissipating heat.",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxHighFraction": {
+        "definition": "Maximum fraction of drills that can be high intensity to limit noise pollution.",
+        "shape": [],
+        "type": "float"
+    },
+    "MinLowDrills": {
+        "definition": "Minimum number of low intensity drills that must be used.",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: 3 * HighDrills <= 2 * LowDrills
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is** a valid constraint and it should be explicitly modeled (or enforced in an equivalent form).
+
+From the problem statement:
+
+> “At most 40% of the drills can be high intensity ones.”
+
+Let:
+- \( H \) = number of high intensity drills  
+- \( L \) = number of low intensity drills  
+
+The fraction constraint is:
+
+\[
+\frac{H}{H + L} \le 0.4
+\]
+
+Now rearrange:
+
+\[
+H \le 0.4(H + L)
+\]
+
+\[
+H \le 0.4H + 0.4L
+\]
+
+\[
+0.6H \le 0.4L
+\]
+
+Multiply both sides by 10:
+
+\[
+6H \le 4L
+\]
+
+Divide by 2:
+
+\[
+3H \le 2L
+\]
+
+This matches exactly the proposed constraint:
+
+\[
+3 \cdot \text{HighDrills} \le 2 \cdot \text{LowDrills}
+\]
+
+So this is not an extra or artificial restriction — it is **precisely the linearized form** of the 40% maximum high-intensity drill requirement.
+
+It should absolutely be included in the (MI)LP formulation (unless the original fractional form is used instead, which would be nonlinear).
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+A gem factory has two drills, a high intensity one and a low intensity one. Each day, the high intensity drill can process 50 gems and requires 50 units of water to dissipate heat. Each day, the low intensity drill can process 30 gems and requires 20 units of water to dissipate heat. Each day the factory must process 800 gems and they have available 700 units of water. Since the high intensity drill produces a lot of noise pollution, at most 40% of the drills can be high intensity ones. Further, at least 10 should be low intensity drills. How many of each drill should be used to minimize the total number of drills needed?
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "GemsPerHigh": {
+        "definition": "Number of gems processed per day by a high intensity drill.",
+        "shape": [],
+        "type": "int"
+    },
+    "WaterPerHigh": {
+        "definition": "Units of water required per day to dissipate heat by a high intensity drill.",
+        "shape": [],
+        "type": "int"
+    },
+    "GemsPerLow": {
+        "definition": "Number of gems processed per day by a low intensity drill.",
+        "shape": [],
+        "type": "int"
+    },
+    "WaterPerLow": {
+        "definition": "Units of water required per day to dissipate heat by a low intensity drill.",
+        "shape": [],
+        "type": "int"
+    },
+    "TotalGems": {
+        "definition": "Total number of gems that must be processed per day by the factory.",
+        "shape": [],
+        "type": "int"
+    },
+    "AvailableWater": {
+        "definition": "Total units of water available per day for dissipating heat.",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxHighFraction": {
+        "definition": "Maximum fraction of drills that can be high intensity to limit noise pollution.",
+        "shape": [],
+        "type": "float"
+    },
+    "MinLowDrills": {
+        "definition": "Minimum number of low intensity drills that must be used.",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: LowDrills >= MinLowDrills
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is clearly a constraint and should be explicitly included in the (MI)LP formulation.
+
+The problem statement explicitly says:
+
+> “Further, at least 10 should be low intensity drills.”
+
+This directly translates to the inequality:
+
+\[
+\text{LowDrills} \ge \text{MinLowDrills}
+\]
+
+Since:
+- “At least 10” is a hard requirement,
+- It restricts the feasible region,
+- It is independent of the objective (minimizing total drills),
+
+it must be modeled as a constraint.
+
+There is no ambiguity here — this is a binding structural requirement of the system.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+A gem factory has two drills, a high intensity one and a low intensity one. Each day, the high intensity drill can process 50 gems and requires 50 units of water to dissipate heat. Each day, the low intensity drill can process 30 gems and requires 20 units of water to dissipate heat. Each day the factory must process 800 gems and they have available 700 units of water. Since the high intensity drill produces a lot of noise pollution, at most 40% of the drills can be high intensity ones. Further, at least 10 should be low intensity drills. How many of each drill should be used to minimize the total number of drills needed?
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "GemsPerHigh": {
+        "definition": "Number of gems processed per day by a high intensity drill.",
+        "shape": [],
+        "type": "int"
+    },
+    "WaterPerHigh": {
+        "definition": "Units of water required per day to dissipate heat by a high intensity drill.",
+        "shape": [],
+        "type": "int"
+    },
+    "GemsPerLow": {
+        "definition": "Number of gems processed per day by a low intensity drill.",
+        "shape": [],
+        "type": "int"
+    },
+    "WaterPerLow": {
+        "definition": "Units of water required per day to dissipate heat by a low intensity drill.",
+        "shape": [],
+        "type": "int"
+    },
+    "TotalGems": {
+        "definition": "Total number of gems that must be processed per day by the factory.",
+        "shape": [],
+        "type": "int"
+    },
+    "AvailableWater": {
+        "definition": "Total units of water available per day for dissipating heat.",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxHighFraction": {
+        "definition": "Maximum fraction of drills that can be high intensity to limit noise pollution.",
+        "shape": [],
+        "type": "float"
+    },
+    "MinLowDrills": {
+        "definition": "Minimum number of low intensity drills that must be used.",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: HighDrills >= 0
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, **HighDrills ≥ 0** is indeed a valid constraint.
+
+### Reasoning
+
+- **HighDrills** represents the number of high intensity drills used.
+- A number of drills cannot be negative in any real-world interpretation.
+- Therefore, nonnegativity is a **necessary domain constraint**.
+- In an (MI)LP formulation, this would typically be modeled as:
+  - `HighDrills ≥ 0`
+  - and additionally as an **integer variable** (since you cannot use fractional drills).
+
+Even though nonnegativity constraints are often treated as *standard variable bounds*, they are still part of the formal mathematical model and must be included explicitly (or implicitly via variable declaration).
+
+So yes — this is absolutely a constraint that should appear in the formulation.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+A gem factory has two drills, a high intensity one and a low intensity one. Each day, the high intensity drill can process 50 gems and requires 50 units of water to dissipate heat. Each day, the low intensity drill can process 30 gems and requires 20 units of water to dissipate heat. Each day the factory must process 800 gems and they have available 700 units of water. Since the high intensity drill produces a lot of noise pollution, at most 40% of the drills can be high intensity ones. Further, at least 10 should be low intensity drills. How many of each drill should be used to minimize the total number of drills needed?
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "GemsPerHigh": {
+        "definition": "Number of gems processed per day by a high intensity drill.",
+        "shape": [],
+        "type": "int"
+    },
+    "WaterPerHigh": {
+        "definition": "Units of water required per day to dissipate heat by a high intensity drill.",
+        "shape": [],
+        "type": "int"
+    },
+    "GemsPerLow": {
+        "definition": "Number of gems processed per day by a low intensity drill.",
+        "shape": [],
+        "type": "int"
+    },
+    "WaterPerLow": {
+        "definition": "Units of water required per day to dissipate heat by a low intensity drill.",
+        "shape": [],
+        "type": "int"
+    },
+    "TotalGems": {
+        "definition": "Total number of gems that must be processed per day by the factory.",
+        "shape": [],
+        "type": "int"
+    },
+    "AvailableWater": {
+        "definition": "Total units of water available per day for dissipating heat.",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxHighFraction": {
+        "definition": "Maximum fraction of drills that can be high intensity to limit noise pollution.",
+        "shape": [],
+        "type": "float"
+    },
+    "MinLowDrills": {
+        "definition": "Minimum number of low intensity drills that must be used.",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: HighDrills and LowDrills are integers
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is** a constraint, and it **must** be explicitly modeled in the (MI)LP formulation.
+
+### Why?
+
+The decision variables:
+- `HighDrills`
+- `LowDrills`
+
+represent the **number of drills used**. Since drills are discrete physical units, fractional values (e.g., 12.7 drills) are not meaningful in reality.
+
+If we do **not** explicitly enforce integrality:
+- A linear program (LP) relaxation could return fractional solutions.
+- That solution would be infeasible in practice.
+- The model would not correctly represent the real-world problem.
+
+Therefore, this is a **domain constraint**:
+\[
+HighDrills, LowDrills \in \mathbb{Z}_{\ge 0}
+\]
+
+This makes the model a **Mixed-Integer Linear Program (MILP)** rather than a pure LP.
+
+### Conclusion
+
+✅ Yes, this is a necessary modeling constraint.  
+✅ It should absolutely be included explicitly in the formulation.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
+
+
+
+++++++++++++++++++++++++++++++
+Extracting constraint formulations
+++++++++++++++++++++++++++++++
+
+
+
+----
+{
+    "FORMULATION": "$GemsPerHigh \\cdot HighDrills + GemsPerLow \\cdot LowDrills \\ge TotalGems$",
+    "NEW VARIABLES": {
+        "HighDrills": {
+            "shape": [],
+            "type": "integer",
+            "definition": "Number of high intensity drills used per day"
+        },
+        "LowDrills": {
+            "shape": [],
+            "type": "integer",
+            "definition": "Number of low intensity drills used per day"
+        }
+    },
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$GemsPerHigh \\cdot HighDrills + GemsPerLow \\cdot LowDrills \\ge TotalGems$
+{'HighDrills': {'shape': [], 'type': 'integer', 'definition': 'Number of high intensity drills used per day'}, 'LowDrills': {'shape': [], 'type': 'integer', 'definition': 'Number of low intensity drills used per day'}}
+[]
+----
+----
+{
+    "FORMULATION": "$WaterPerHigh \\cdot HighDrills + WaterPerLow \\cdot LowDrills \\leq AvailableWater$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$WaterPerHigh \\cdot HighDrills + WaterPerLow \\cdot LowDrills \\leq AvailableWater$
+{}
+[]
+----
+----
+{
+    "FORMULATION": "$3 \\cdot HighDrills \\leq 2 \\cdot LowDrills$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$3 \\cdot HighDrills \\leq 2 \\cdot LowDrills$
+{}
+[]
+----
+----
+{
+    "FORMULATION": "$LowDrills \\geq MinLowDrills$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$LowDrills \\geq MinLowDrills$
+{}
+[]
+----
+----
+{
+    "FORMULATION": "$HighDrills \\geq 0$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$HighDrills \\geq 0$
+{}
+[]
+----
+----
+{
+    "FORMULATION": "$HighDrills \\in \\mathbb{Z}_{\\geq 0}, \\; LowDrills \\in \\mathbb{Z}_{\\geq 0}$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$HighDrills \\in \\mathbb{Z}_{\\geq 0}, \\; LowDrills \\in \\mathbb{Z}_{\\geq 0}$
+{}
+[]
+----
+Code executed successfully. Output:
+Restricted license - for non-production use only - expires 2027-11-29
+Gurobi Optimizer version 13.0.1 build v13.0.1rc0 (linux64 - "Alibaba Cloud Linux 3.2104 U12.3 (OpenAnolis Edition)")
+
+CPU model: Intel(R) Xeon(R) Platinum, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 1 physical cores, 2 logical processors, using up to 2 threads
+
+Optimize a model with 7 rows, 2 columns and 10 nonzeros (Min)
+Model fingerprint: 0x39f3d6ad
+Model has 2 linear objective coefficients
+Variable types: 0 continuous, 2 integer (0 binary)
+Coefficient statistics:
+  Matrix range     [1e+00, 5e+01]
+  Objective range  [1e+00, 1e+00]
+  Bounds range     [0e+00, 0e+00]
+  RHS range        [1e+01, 8e+02]
+
+Presolve removed 4 rows and 0 columns
+Presolve time: 0.00s
+Presolved: 3 rows, 2 columns, 6 nonzeros
+Variable types: 0 continuous, 2 integer (0 binary)
+Found heuristic solution: objective 27.0000000
+Found heuristic solution: objective 26.0000000
+Found heuristic solution: objective 25.0000000
+Found heuristic solution: objective 22.0000000
+
+Root relaxation: cutoff, 0 iterations, 0.00 seconds (0.00 work units)
+
+Explored 1 nodes (0 simplex iterations) in 0.00 seconds (0.00 work units)
+Thread count was 2 (of 2 available processors)
+
+Solution count 4: 22 25 26 27 
+
+Optimal solution found (tolerance 1.00e-04)
+Best objective 2.200000000000e+01, best bound 2.200000000000e+01, gap 0.0000%
+Optimal Objective Value:  22.0
+Optimal Objective Value:  22.0
+

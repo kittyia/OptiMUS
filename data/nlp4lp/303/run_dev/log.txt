@@ -1,0 +1,754 @@
+----
+There is **no redundancy** in the given constraint list. Each constraint plays a distinct and necessary role in the model:
+
+1. **Non-negativity of production** ensures feasibility and prevents meaningless negative production values. This cannot be removed.
+2. **Binary upgrade variable** is necessary to correctly model the discrete decision of whether to upgrade machine capacity.
+3. **Machine capacity constraint** limits total production hours and properly incorporates the upgrade option.
+4. **Cash constraint** ensures financial feasibility, accounting for production costs, upgrade cost, and reinvested revenue.
+
+None of these constraints imply another, none can be removed without changing the model’s meaning, and no pair can be combined into a single constraint because they govern different resources (machine hours vs. cash) and different structural requirements (non-negativity and integrality).
+
+Updated list of constraints:
+
+[
+    "For each product i, production_i >= 0",
+    "upgrade is a binary variable (upgrade ∈ {0,1})",
+    "Sum over i of (Hour[i] * production_i) <= AvailableHours + UpgradeHours * upgrade",
+    "Sum over i of (Cost[i] * production_i) + UpgradeCost * upgrade <= Cash + Sum over i of (InvestPercentage[i] * Price[i] * production_i)"
+]
+----
++++++++++++++++++++
+++ Constraint Qs ++
++++++++++++++++++++
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+
+PROBLEM INFO: 
+
+- A company produces and sells \var{P} different products. 
+- The demand for each product is unlimited, but the company is constrained by cash availability and machine capacity.
+- Each unit of the \var{i}-th product requires \var{hour_i} machine hours.
+- There are \var{availableHours} machine hours available in the current production period.
+- The production costs are \var{cost_i} per unit of the \var{i}-th product.
+- The selling prices of the \var{i}-th product is \var{price_i} per unit.
+- The available cash is \var{cash}.
+- Furthermore, \var{investRate_i} of the sales revenues from the \var{i}-th product will be made available to finance operations during the current period.
+- \var{investPercentage_i} is a number between 0 and 1
+- The company could increase its available machine hours by \var{upgradeHours}, after spending \var{upgradeCost} for certain repairs. 
+- The net income from each product is the revenue we get from selling it minus the production cost and the investment cost.
+
+INPUT FORMAT:
+
+{
+    "cash": cash,
+    "hour": [hour_i for i in 1, ..., P],
+    "cost": [cost_i for i in 1, ..., P],
+    "price": [price_i for i in 1, ..., P],
+    "investPercentage": [investPercentage_i for i in 1, ..., P],
+    "upgradeHours": upgradeHours,   
+    "upgradeCost": upgradeCost,
+    "availableHours": availableHours,
+}
+
+OBJECTIVE: We are aiming at maximizing total net income subject to the cash availability and machine capacity limitations
+
+OUTPUT INFO:
+
+- \var{net_income} shows the net income of the company
+- \var{production_i} shows the production quantity of the \var{i}-th product
+- \var{upgrade} is a boolean variable that shows whether the company should upgrade its machine capacity or not
+
+OUTPUT FORMAT:
+
+{
+    "net_income": net_income,
+    "production": [production_i for i in 1, ..., P],
+    "upgrade": true/false,
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "P": {
+        "definition": "Number of products",
+        "shape": [],
+        "type": "int"
+    },
+    "Cash": {
+        "definition": "Initial cash available for investment",
+        "shape": [],
+        "type": "int"
+    },
+    "Hour": {
+        "definition": "Hours required to produce one unit of product i",
+        "shape": [
+            "P"
+        ],
+        "type": "string"
+    },
+    "Cost": {
+        "definition": "Cost to produce one unit of product i",
+        "shape": [
+            "P"
+        ],
+        "type": "string"
+    },
+    "Price": {
+        "definition": "Selling price for one unit of product i",
+        "shape": [
+            "P"
+        ],
+        "type": "string"
+    },
+    "InvestPercentage": {
+        "definition": "Percentage of income to reinvest for product i",
+        "shape": [
+            "P"
+        ],
+        "type": "string"
+    },
+    "UpgradeHours": {
+        "definition": "Hours required for upgrading the machinery",
+        "shape": [],
+        "type": "int"
+    },
+    "UpgradeCost": {
+        "definition": "Cost associated with upgrading the machinery",
+        "shape": [],
+        "type": "int"
+    },
+    "AvailableHours": {
+        "definition": "Total available machine hours",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: For each product i, production_i >= 0
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, **this is indeed a constraint**, and it should be explicitly included in the LP/MILP formulation.
+
+### Why?
+
+- The decision variable `production_i` represents the quantity produced of product *i*.
+- Negative production has no physical or economic meaning.
+- In linear programming, non-negativity constraints are standard and must be explicitly stated unless the modeling framework assumes non-negativity by default.
+- The problem description does not allow backorders, disposal credits, or reverse production, so negative values would be infeasible and economically meaningless.
+
+Therefore, the constraint:
+
+\[
+production_i \ge 0 \quad \forall i = 1, \dots, P
+\]
+
+is **necessary and correct**.
+
+### Conclusion
+
+✅ This is a valid and required constraint in the model.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+
+PROBLEM INFO: 
+
+- A company produces and sells \var{P} different products. 
+- The demand for each product is unlimited, but the company is constrained by cash availability and machine capacity.
+- Each unit of the \var{i}-th product requires \var{hour_i} machine hours.
+- There are \var{availableHours} machine hours available in the current production period.
+- The production costs are \var{cost_i} per unit of the \var{i}-th product.
+- The selling prices of the \var{i}-th product is \var{price_i} per unit.
+- The available cash is \var{cash}.
+- Furthermore, \var{investRate_i} of the sales revenues from the \var{i}-th product will be made available to finance operations during the current period.
+- \var{investPercentage_i} is a number between 0 and 1
+- The company could increase its available machine hours by \var{upgradeHours}, after spending \var{upgradeCost} for certain repairs. 
+- The net income from each product is the revenue we get from selling it minus the production cost and the investment cost.
+
+INPUT FORMAT:
+
+{
+    "cash": cash,
+    "hour": [hour_i for i in 1, ..., P],
+    "cost": [cost_i for i in 1, ..., P],
+    "price": [price_i for i in 1, ..., P],
+    "investPercentage": [investPercentage_i for i in 1, ..., P],
+    "upgradeHours": upgradeHours,   
+    "upgradeCost": upgradeCost,
+    "availableHours": availableHours,
+}
+
+OBJECTIVE: We are aiming at maximizing total net income subject to the cash availability and machine capacity limitations
+
+OUTPUT INFO:
+
+- \var{net_income} shows the net income of the company
+- \var{production_i} shows the production quantity of the \var{i}-th product
+- \var{upgrade} is a boolean variable that shows whether the company should upgrade its machine capacity or not
+
+OUTPUT FORMAT:
+
+{
+    "net_income": net_income,
+    "production": [production_i for i in 1, ..., P],
+    "upgrade": true/false,
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "P": {
+        "definition": "Number of products",
+        "shape": [],
+        "type": "int"
+    },
+    "Cash": {
+        "definition": "Initial cash available for investment",
+        "shape": [],
+        "type": "int"
+    },
+    "Hour": {
+        "definition": "Hours required to produce one unit of product i",
+        "shape": [
+            "P"
+        ],
+        "type": "string"
+    },
+    "Cost": {
+        "definition": "Cost to produce one unit of product i",
+        "shape": [
+            "P"
+        ],
+        "type": "string"
+    },
+    "Price": {
+        "definition": "Selling price for one unit of product i",
+        "shape": [
+            "P"
+        ],
+        "type": "string"
+    },
+    "InvestPercentage": {
+        "definition": "Percentage of income to reinvest for product i",
+        "shape": [
+            "P"
+        ],
+        "type": "string"
+    },
+    "UpgradeHours": {
+        "definition": "Hours required for upgrading the machinery",
+        "shape": [],
+        "type": "int"
+    },
+    "UpgradeCost": {
+        "definition": "Cost associated with upgrading the machinery",
+        "shape": [],
+        "type": "int"
+    },
+    "AvailableHours": {
+        "definition": "Total available machine hours",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: upgrade is a binary variable (upgrade ∈ {0,1})
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is indeed a constraint**, and it must be explicitly modeled in the (MI)LP formulation.
+
+### Why?
+
+- The problem states that `upgrade` is a **boolean variable** indicating whether the company upgrades its machine capacity.
+- The upgrade decision:
+  - Adds `upgradeHours` to available machine hours.
+  - Costs `upgradeCost`.
+- This is a **discrete decision** — the company either upgrades or it does not.
+- If we do not explicitly enforce  
+  \[
+  \text{upgrade} \in \{0,1\},
+  \]
+  the solver could choose fractional values (e.g., 0.37), which would:
+  - Add fractional machine hours
+  - Charge fractional upgrade cost  
+  — which is not physically meaningful.
+
+Therefore, this is not just a modeling detail — it is essential for correctness and turns the problem from an LP into a MILP.
+
+### Conclusion
+✅ Yes, it is a necessary constraint.  
+✅ It must be explicitly modeled.  
+✅ Without it, the model would be incorrect.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+
+PROBLEM INFO: 
+
+- A company produces and sells \var{P} different products. 
+- The demand for each product is unlimited, but the company is constrained by cash availability and machine capacity.
+- Each unit of the \var{i}-th product requires \var{hour_i} machine hours.
+- There are \var{availableHours} machine hours available in the current production period.
+- The production costs are \var{cost_i} per unit of the \var{i}-th product.
+- The selling prices of the \var{i}-th product is \var{price_i} per unit.
+- The available cash is \var{cash}.
+- Furthermore, \var{investRate_i} of the sales revenues from the \var{i}-th product will be made available to finance operations during the current period.
+- \var{investPercentage_i} is a number between 0 and 1
+- The company could increase its available machine hours by \var{upgradeHours}, after spending \var{upgradeCost} for certain repairs. 
+- The net income from each product is the revenue we get from selling it minus the production cost and the investment cost.
+
+INPUT FORMAT:
+
+{
+    "cash": cash,
+    "hour": [hour_i for i in 1, ..., P],
+    "cost": [cost_i for i in 1, ..., P],
+    "price": [price_i for i in 1, ..., P],
+    "investPercentage": [investPercentage_i for i in 1, ..., P],
+    "upgradeHours": upgradeHours,   
+    "upgradeCost": upgradeCost,
+    "availableHours": availableHours,
+}
+
+OBJECTIVE: We are aiming at maximizing total net income subject to the cash availability and machine capacity limitations
+
+OUTPUT INFO:
+
+- \var{net_income} shows the net income of the company
+- \var{production_i} shows the production quantity of the \var{i}-th product
+- \var{upgrade} is a boolean variable that shows whether the company should upgrade its machine capacity or not
+
+OUTPUT FORMAT:
+
+{
+    "net_income": net_income,
+    "production": [production_i for i in 1, ..., P],
+    "upgrade": true/false,
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "P": {
+        "definition": "Number of products",
+        "shape": [],
+        "type": "int"
+    },
+    "Cash": {
+        "definition": "Initial cash available for investment",
+        "shape": [],
+        "type": "int"
+    },
+    "Hour": {
+        "definition": "Hours required to produce one unit of product i",
+        "shape": [
+            "P"
+        ],
+        "type": "string"
+    },
+    "Cost": {
+        "definition": "Cost to produce one unit of product i",
+        "shape": [
+            "P"
+        ],
+        "type": "string"
+    },
+    "Price": {
+        "definition": "Selling price for one unit of product i",
+        "shape": [
+            "P"
+        ],
+        "type": "string"
+    },
+    "InvestPercentage": {
+        "definition": "Percentage of income to reinvest for product i",
+        "shape": [
+            "P"
+        ],
+        "type": "string"
+    },
+    "UpgradeHours": {
+        "definition": "Hours required for upgrading the machinery",
+        "shape": [],
+        "type": "int"
+    },
+    "UpgradeCost": {
+        "definition": "Cost associated with upgrading the machinery",
+        "shape": [],
+        "type": "int"
+    },
+    "AvailableHours": {
+        "definition": "Total available machine hours",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: Sum over i of (Hour[i] * production_i) <= AvailableHours + UpgradeHours * upgrade
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is clearly a necessary constraint.
+
+### Reasoning
+
+- The company has a base machine capacity of **AvailableHours**.
+- If it decides to upgrade (i.e., `upgrade = 1`), it gains an additional **UpgradeHours** of capacity.
+- Therefore, total usable machine hours become:
+
+\[
+\text{AvailableHours} + \text{UpgradeHours} \cdot \text{upgrade}
+\]
+
+- Total machine time consumed by production is:
+
+\[
+\sum_i \text{Hour}[i] \cdot \text{production}_i
+\]
+
+Since production cannot exceed available machine capacity, we must enforce:
+
+\[
+\sum_i \text{Hour}[i] \cdot \text{production}_i 
+\;\le\;
+\text{AvailableHours} + \text{UpgradeHours} \cdot \text{upgrade}
+\]
+
+### Why This Must Be Explicitly Modeled
+
+- Machine capacity is explicitly stated as a binding limitation.
+- The upgrade decision directly modifies this capacity.
+- Without this constraint, production could grow unbounded (since demand is unlimited).
+- The structure correctly integrates the binary upgrade decision into the capacity limit.
+- This is a standard capacity-expansion modeling pattern in MILP.
+
+There is no ambiguity here — this constraint is essential and correctly formulated.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+
+PROBLEM INFO: 
+
+- A company produces and sells \var{P} different products. 
+- The demand for each product is unlimited, but the company is constrained by cash availability and machine capacity.
+- Each unit of the \var{i}-th product requires \var{hour_i} machine hours.
+- There are \var{availableHours} machine hours available in the current production period.
+- The production costs are \var{cost_i} per unit of the \var{i}-th product.
+- The selling prices of the \var{i}-th product is \var{price_i} per unit.
+- The available cash is \var{cash}.
+- Furthermore, \var{investRate_i} of the sales revenues from the \var{i}-th product will be made available to finance operations during the current period.
+- \var{investPercentage_i} is a number between 0 and 1
+- The company could increase its available machine hours by \var{upgradeHours}, after spending \var{upgradeCost} for certain repairs. 
+- The net income from each product is the revenue we get from selling it minus the production cost and the investment cost.
+
+INPUT FORMAT:
+
+{
+    "cash": cash,
+    "hour": [hour_i for i in 1, ..., P],
+    "cost": [cost_i for i in 1, ..., P],
+    "price": [price_i for i in 1, ..., P],
+    "investPercentage": [investPercentage_i for i in 1, ..., P],
+    "upgradeHours": upgradeHours,   
+    "upgradeCost": upgradeCost,
+    "availableHours": availableHours,
+}
+
+OBJECTIVE: We are aiming at maximizing total net income subject to the cash availability and machine capacity limitations
+
+OUTPUT INFO:
+
+- \var{net_income} shows the net income of the company
+- \var{production_i} shows the production quantity of the \var{i}-th product
+- \var{upgrade} is a boolean variable that shows whether the company should upgrade its machine capacity or not
+
+OUTPUT FORMAT:
+
+{
+    "net_income": net_income,
+    "production": [production_i for i in 1, ..., P],
+    "upgrade": true/false,
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "P": {
+        "definition": "Number of products",
+        "shape": [],
+        "type": "int"
+    },
+    "Cash": {
+        "definition": "Initial cash available for investment",
+        "shape": [],
+        "type": "int"
+    },
+    "Hour": {
+        "definition": "Hours required to produce one unit of product i",
+        "shape": [
+            "P"
+        ],
+        "type": "string"
+    },
+    "Cost": {
+        "definition": "Cost to produce one unit of product i",
+        "shape": [
+            "P"
+        ],
+        "type": "string"
+    },
+    "Price": {
+        "definition": "Selling price for one unit of product i",
+        "shape": [
+            "P"
+        ],
+        "type": "string"
+    },
+    "InvestPercentage": {
+        "definition": "Percentage of income to reinvest for product i",
+        "shape": [
+            "P"
+        ],
+        "type": "string"
+    },
+    "UpgradeHours": {
+        "definition": "Hours required for upgrading the machinery",
+        "shape": [],
+        "type": "int"
+    },
+    "UpgradeCost": {
+        "definition": "Cost associated with upgrading the machinery",
+        "shape": [],
+        "type": "int"
+    },
+    "AvailableHours": {
+        "definition": "Total available machine hours",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: Sum over i of (Cost[i] * production_i) + UpgradeCost * upgrade <= Cash + Sum over i of (InvestPercentage[i] * Price[i] * production_i)
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is indeed a constraint**, and it should be explicitly modeled in the (MI)LP formulation.
+
+### Why this is a valid constraint
+
+The problem states that:
+
+- The company is constrained by **cash availability**.
+- Initial available cash is `Cash`.
+- A fraction `InvestPercentage[i]` of sales revenue from product *i* becomes available **during the same period** to finance operations.
+- Production costs and upgrade cost must be financed.
+
+Therefore, total funds available during the period are:
+
+\[
+\text{Cash} + \sum_i \text{InvestPercentage}[i] \cdot \text{Price}[i] \cdot x_i
+\]
+
+Total expenditures that must be financed are:
+
+\[
+\sum_i \text{Cost}[i] \cdot x_i + \text{UpgradeCost} \cdot \text{upgrade}
+\]
+
+Thus, the financing (cash flow) constraint is:
+
+\[
+\sum_i \text{Cost}[i] \cdot x_i + \text{UpgradeCost} \cdot \text{upgrade}
+\;\le\;
+\text{Cash}
++
+\sum_i \text{InvestPercentage}[i] \cdot \text{Price}[i] \cdot x_i
+\]
+
+This directly models the **cash availability limitation** described in the problem statement.
+
+### Additional remarks
+
+- It is linear.
+- It correctly incorporates reinvested revenue.
+- It connects production decisions and upgrade decisions to liquidity.
+- Without it, the “cash constraint” mentioned in the problem would not be enforced.
+
+This is a fundamental constraint in the model.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
+
+
+
+++++++++++++++++++++++++++++++
+Extracting constraint formulations
+++++++++++++++++++++++++++++++
+
+
+
+----
+{
+    "FORMULATION": "$\\forall i = 1, \\dots, P,\\; production[i] \\ge 0$",
+    "NEW VARIABLES": {
+        "production": {
+            "shape": "[P]",
+            "type": "continuous",
+            "definition": "Production quantity of product i"
+        }
+    },
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\forall i = 1, \\dots, P,\\; production[i] \\ge 0$
+{'production': {'shape': '[P]', 'type': 'continuous', 'definition': 'Production quantity of product i'}}
+[]
+----
+----
+{
+    "FORMULATION": "$upgrade \\in \\{0,1\\}$",
+    "NEW VARIABLES": {
+        "upgrade": {
+            "shape": [],
+            "type": "binary",
+            "definition": "Binary variable equal to 1 if the company upgrades its machine capacity, and 0 otherwise"
+        }
+    },
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$upgrade \\in \\{0,1\\}$
+{'upgrade': {'shape': [], 'type': 'binary', 'definition': 'Binary variable equal to 1 if the company upgrades its machine capacity, and 0 otherwise'}}
+[]
+----
+----
+{
+    "FORMULATION": "$\\sum_{i=1}^{P} Hour[i] \\cdot production[i] \\leq AvailableHours + UpgradeHours \\cdot upgrade$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\sum_{i=1}^{P} Hour[i] \\cdot production[i] \\leq AvailableHours + UpgradeHours \\cdot upgrade$
+{}
+[]
+----
+----
+{
+    "FORMULATION": "$\\sum_{i=1}^{P} Cost[i] \\cdot production[i] + UpgradeCost \\cdot upgrade \\leq Cash + \\sum_{i=1}^{P} InvestPercentage[i] \\cdot Price[i] \\cdot production[i]$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\sum_{i=1}^{P} Cost[i] \\cdot production[i] + UpgradeCost \\cdot upgrade \\leq Cash + \\sum_{i=1}^{P} InvestPercentage[i] \\cdot Price[i] \\cdot production[i]$
+{}
+[]
+----
+Code executed successfully. Output:
+Restricted license - for non-production use only - expires 2027-11-29
+Gurobi Optimizer version 13.0.1 build v13.0.1rc0 (linux64 - "Alibaba Cloud Linux 3.2104 U12.3 (OpenAnolis Edition)")
+
+CPU model: Intel(R) Xeon(R) Platinum, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 1 physical cores, 2 logical processors, using up to 2 threads
+
+Optimize a model with 6 rows, 3 columns and 10 nonzeros (Max)
+Model fingerprint: 0xea9f8c0c
+Model has 3 linear objective coefficients
+Variable types: 2 continuous, 1 integer (1 binary)
+Coefficient statistics:
+  Matrix range     [5e-01, 2e+03]
+  Objective range  [6e-01, 4e+02]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [1e+00, 3e+03]
+
+Found heuristic solution: objective 600.0000000
+Found heuristic solution: objective 800.0000000
+Presolve removed 6 rows and 3 columns
+Presolve time: 0.00s
+Presolve: All rows and columns removed
+
+Explored 0 nodes (0 simplex iterations) in 0.00 seconds (0.00 work units)
+Thread count was 1 (of 2 available processors)
+
+Solution count 2: 800 600 
+
+Optimal solution found (tolerance 1.00e-04)
+Best objective 8.000000000000e+02, best bound 8.000000000000e+02, gap 0.0000%
+Optimal Objective Value:  799.9999999999993
+Optimal Objective Value:  799.9999999999993
+

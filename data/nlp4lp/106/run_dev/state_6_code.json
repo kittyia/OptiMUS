@@ -1,0 +1,83 @@
+{
+    "description": "A pharmacy has two factories, factory 1 and factory 2, where they make acne cream and anti-bacterial cream. Factory 1 produces 12 units of acne cream and 15 units of anti-bacterial cream per hour. Factory 2 produces 20 units of acne cream and 10 units of anti-bacterial cream per hour. Factory 1 requires 30 units of base gel per hour while factory 2 requires 45 units of base gel per hour. The pharmacy has available 5000 units of base gel. Further, they must make at least 800 units of acne cream and 1000 units of anti-bacterial cream. How many hours should each factory be run to minimize the total time needed?",
+    "parameters": {
+        "NumFactories": {
+            "definition": "Number of factories",
+            "shape": [],
+            "type": "int"
+        },
+        "NumProducts": {
+            "definition": "Number of products",
+            "shape": [],
+            "type": "int"
+        },
+        "ProductionRate": {
+            "definition": "Production rate of a product by a factory in units per hour",
+            "shape": [
+                "NumFactories",
+                "NumProducts"
+            ],
+            "type": "string"
+        },
+        "BaseGelRequirement": {
+            "definition": "Base gel required per hour by a factory",
+            "shape": [
+                "NumFactories"
+            ],
+            "type": "string"
+        },
+        "AvailableBaseGel": {
+            "definition": "Total available units of base gel",
+            "shape": [],
+            "type": "int"
+        },
+        "MinimumDemand": {
+            "definition": "Minimum required units of each product",
+            "shape": [
+                "NumProducts"
+            ],
+            "type": "string"
+        }
+    },
+    "objective": {
+        "description": "\"Minimize the total number of hours that the two factories are operated\"",
+        "formulation": "$\\min \\sum_{f=1}^{NumFactories} HoursFactory_f$",
+        "code": "model.setObjective(quicksum(HoursFactory[f] for f in range(NumFactories)), GRB.MINIMIZE)"
+    },
+    "constraints": [
+        {
+            "description": "12 * HoursFactory1 + 20 * HoursFactory2 >= 800",
+            "formulation": "$12 \\\\cdot HoursFactory[1] + 20 \\\\cdot HoursFactory[2] \\\\geq 800$",
+            "code": "model.addConstr(12 * HoursFactory[0] + 20 * HoursFactory[1] >= 800)"
+        },
+        {
+            "description": "15 * HoursFactory1 + 10 * HoursFactory2 >= 1000",
+            "formulation": "$15 \\\\cdot HoursFactory[1] + 10 \\\\cdot HoursFactory[2] \\\\geq 1000$",
+            "code": "model.addConstr(15 * HoursFactory[0] + 10 * HoursFactory[1] >= 1000)"
+        },
+        {
+            "description": "30 * HoursFactory1 + 45 * HoursFactory2 <= 5000",
+            "formulation": "$30 \\\\, HoursFactory[1] + 45 \\\\, HoursFactory[2] \\\\le 5000$",
+            "code": "model.addConstr(\n    sum(BaseGelRequirement[i] * HoursFactory[i] for i in range(NumFactories))\n    <= AvailableBaseGel\n)"
+        },
+        {
+            "description": "HoursFactory1 >= 0",
+            "formulation": "$HoursFactory[1] \\\\geq 0$",
+            "code": "model.addConstr(HoursFactory[0] >= 0)"
+        },
+        {
+            "description": "HoursFactory2 >= 0",
+            "formulation": "$HoursFactory[2] \\\\geq 0$",
+            "code": "model.addConstr(HoursFactory[1] >= 0)"
+        }
+    ],
+    "variables": {
+        "HoursFactory": {
+            "shape": [
+                "NumFactories"
+            ],
+            "type": "continuous",
+            "definition": "Number of hours each factory is operated"
+        }
+    }
+}

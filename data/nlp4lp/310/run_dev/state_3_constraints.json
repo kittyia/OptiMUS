@@ -1,0 +1,134 @@
+{
+    "description": "PROBLEM TYPE: MILP\nPROBLEM INFO:\n\n- An engineering factory makes several products on the machines, and the number of machine \\var{m} the factory has is \\var{num_{m}}.\n- Each product \\var{k} yields \\var{profit_{k}} to profit (defined as \u00a3/unit selling price minus cost of raw materials).\n- The unit production times (hours) product \\var{k} requires on machine \\var{m} is \\var{time_{k, m}}\n- In the present month (January) and several subsequent months, certain machines will be down for maintenance.\n- Each machine \\var{m} has to be down for \\var{down_{m}} months for maintenance.\n- There are marketing limitations on each product in each month. \n- The limitation of product \\var{k} in month \\var{i} is \\var{limit_{k, i}}.\n- It is possible to store up to 100 of each product at a time at a cost of \\var{store_price} per unit per month. \n- There are no stocks at present, but it is desired to have a stock of \\var{keep_quantity} of each type of product at the end of subsequent months.\n- The factory works a six days a week with two shifts of \\var{n_workhours} hours each day. \n- No sequencing problems need to be considered.\n- We can assume that a month has 24 days for convenience.\n\n\nINPUT FORMAT:\n\n{\n    \"num_machines\": [num_{m} for m in 1,...,M],\n    \"profit\": [profit_{k} for k in 1,...K],\n    \"time\": [[time_{k, m} for m in 1,...,M] for k in 1,...,K],\n    \"down\": [down_{m} for m in 1,...,M]\n    \"limit\": [[limit_{k, i} for i in 1,...,I] for k in 1,...,K],\n    \"store_price\": store_price,\n    \"keep_quantity\": keep_quantity,\n    \"n_workhours\": n_workhours\n}\n\nOBJECTIVE: What maintaining, selling, storing and manufacturing policy should the company pursue in order to maximize profit?\n\nOUTPUT INFO:\n\n- \\var{sell} represents the amount of selling quantity of each product in each month\n- \\var{manufacture} represents the amount of manufactured products in each month\n- \\var{storage} represents the storage of each product in each month\n- \\var{maintain} represents the number of machines in each type that are under maintenance in each month\n\nOUTPUT FORMAT:\n\n{\n    \"sell\": [[sell_{k, i} for k in 1,...,K] for i in 1,...I],\n    \"manufacture\": [[manufacture_{k, i} for k in 1,...,K] for i in 1,...I],\n    \"storage\": [[storage_{k, i} for k in 1,...,K] for i in 1,...,I],\n    \"maintain\": [[maintain_{m, k} for m in 1,...,M] for k in 1,...,K]\n}\n",
+    "parameters": {
+        "M": {
+            "definition": "Number of machines",
+            "shape": [],
+            "type": "int"
+        },
+        "P": {
+            "definition": "Number of products",
+            "shape": [],
+            "type": "int"
+        },
+        "T": {
+            "definition": "Number of months",
+            "shape": [],
+            "type": "int"
+        },
+        "Profit": {
+            "definition": "Profit for each product",
+            "shape": [
+                "P"
+            ],
+            "type": "string"
+        },
+        "Time": {
+            "definition": "Time required to produce each product on each machine",
+            "shape": [
+                "P",
+                "M"
+            ],
+            "type": "string"
+        },
+        "Downtime": {
+            "definition": "Downtime for each machine",
+            "shape": [
+                "M"
+            ],
+            "type": "string"
+        },
+        "Limit": {
+            "definition": "Limit for each product on constraints",
+            "shape": [
+                "T",
+                "P"
+            ],
+            "type": "string"
+        },
+        "StorePrice": {
+            "definition": "Price for storing products",
+            "shape": [],
+            "type": "float"
+        },
+        "KeepQuantity": {
+            "definition": "Quantity of products to keep in store",
+            "shape": [],
+            "type": "int"
+        },
+        "WorkHours": {
+            "definition": "Number of work hours available",
+            "shape": [],
+            "type": "float"
+        },
+        "NumMachines": {
+            "definition": "Number of each type of machine",
+            "shape": [
+                "M"
+            ],
+            "type": "string"
+        }
+    },
+    "objective": {
+        "description": "Maximize the total profit over the planning horizon, calculated as the total profit from selling all products minus the total storage costs incurred for holding inventory.",
+        "formulation": null,
+        "code": null
+    },
+    "constraints": [
+        {
+            "description": "Manufacturing capacity constraint: For each month t and each machine m, the total processing time of all products on machine m cannot exceed the available working hours of the operational machines, i.e., sum over products p of (Time[p,m] * manufacture[t,p]) \u2264 (NumMachines[m] \u2212 maintain[t,m]) * 24 * 6 * 2 * WorkHours",
+            "formulation": null,
+            "code": null
+        },
+        {
+            "description": "Maintenance duration constraint: For each machine type m, the total number of months in which machines are under maintenance must equal Downtime[m], i.e., sum over months t of maintain[t,m] = Downtime[m]",
+            "formulation": null,
+            "code": null
+        },
+        {
+            "description": "Maintenance capacity and integrality constraint: For each machine type m and month t, maintain[t,m] is an integer and 0 \u2264 maintain[t,m] \u2264 NumMachines[m]",
+            "formulation": null,
+            "code": null
+        },
+        {
+            "description": "Inventory balance constraint: For each product p and month t, storage[t,p] = storage[t-1,p] + manufacture[t,p] \u2212 sell[t,p]",
+            "formulation": null,
+            "code": null
+        },
+        {
+            "description": "Initial inventory constraint: For each product p, storage[0,p] = 0",
+            "formulation": null,
+            "code": null
+        },
+        {
+            "description": "Final inventory requirement: For each product p, storage[T,p] = KeepQuantity",
+            "formulation": null,
+            "code": null
+        },
+        {
+            "description": "Storage capacity constraint: For each product p and month t, storage[t,p] \u2264 100",
+            "formulation": null,
+            "code": null
+        },
+        {
+            "description": "Demand limitation constraint: For each product p and month t, sell[t,p] \u2264 Limit[t,p]",
+            "formulation": null,
+            "code": null
+        },
+        {
+            "description": "Non-negativity constraint on production: manufacture[t,p] \u2265 0 for all products p and months t",
+            "formulation": null,
+            "code": null
+        },
+        {
+            "description": "Non-negativity constraint on sales: sell[t,p] \u2265 0 for all products p and months t",
+            "formulation": null,
+            "code": null
+        },
+        {
+            "description": "Non-negativity constraint on storage: storage[t,p] \u2265 0 for all products p and months t",
+            "formulation": null,
+            "code": null
+        }
+    ]
+}

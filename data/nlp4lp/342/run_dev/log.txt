@@ -1,0 +1,1183 @@
+----
+The only possible simplification is combining the two bound constraints for each ad type into a single double-sided bound constraint. None of the other constraints are redundant because:
+
+- The budget constraint is independent of audience composition constraints.
+- The young and old click goals involve different coefficients and right-hand sides.
+- The unique young and unique old constraints involve additional multiplicative structure (`YoungClicks[a] * UniqueClicks[a]` and `OldClicks[a] * UniqueClicks[a]`) and cannot be derived from the total click constraints.
+- No goal constraint is implied by another.
+
+Thus, the only improvement is merging the nonnegativity and upper-bound constraints.
+
+Updated constraint list:
+
+[
+    "For each ad type a, 0 <= clicks_a <= MaxClicks[a]",
+    "Sum over all ad types a of (Costs[a] * clicks_a) <= Budget",
+    "Sum over all ad types a of (YoungClicks[a] * clicks_a) >= GoalYoung",
+    "Sum over all ad types a of (OldClicks[a] * clicks_a) >= GoalOld",
+    "Sum over all ad types a of (YoungClicks[a] * UniqueClicks[a] * clicks_a) >= GoalUniqueYoung",
+    "Sum over all ad types a of (OldClicks[a] * UniqueClicks[a] * clicks_a) >= GoalUniqueOld"
+]
+----
++++++++++++++++++++
+++ Constraint Qs ++
++++++++++++++++++++
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+
+PROBLEM INFO:
+
+- Custom Tees is planning an online advertising campaign with \var{A} different ad types across two web companies.
+- The company has set a goal of \var{goal_young} thousand clicks from visitors aged 18-25 and \var{goal_old} thousand clicks from visitors older than 25.
+- The company has set a goal of \var{goal_unique_young} thousand unique clicks from visitors aged 18-25 and \var{goal_unique_old} thousand unique clicks from visitors older than 25.
+- Ad type \var{a} has an estimated percentage of \var{young_click_{a}} clicks from the 18-25 age range.
+- Ad type \var{a} has an estimated percentage of \var{old_click_{a}} clicks from older visitors.
+- Ad type \var{a} has a cost of \var{cost_{a}} per 1000 clicks.
+- Ad type \var{a} has a maximum allowable clicks of \var{max_click_{a}} in thousands.
+- The estimated percentage of unique visitors for each ad type \var{a} is \var{unique_click_{a}}.
+- The company has an advertising budget of $\var{budget}
+
+INPUT FORMAT: 
+
+{
+    "goal_young": goal_young,
+    "goal_old": goal_old,
+    "goal_unique_young": goal_unique_young,
+    "goal_unique_old": goal_unique_old,
+    "young_clicks": [young_click_{a} for a in 1,...,A],
+    "old_clicks": [old_click_{a} for a in 1,...,A],
+    "costs": [cost_{a} for a in 1,...,A],
+    "max_clicks": [max_click_{a} for a in 1,...,A],
+    "unique_clicks": [unique_click_{a} for a in 1,...,A],
+    "budget": budget
+}
+
+OBJECTIVE: How many clicks from each ad type should Custom Tees purchase to maximize the number of unique clicks within the budget?
+
+OUTPUT INFO:
+
+- the number of clicks purchased for each ad type is \var{clicks_{a}} in thousands.
+- \var{total_unique_clicks} represents the total number of unique clicks.
+
+OUTPUT FORMAT:
+
+{
+    "clicks": [click_{a} for a in 1, ..., A],
+    "total_unique_clicks": total_unique_clicks
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "A": {
+        "definition": "Number of advertisement types",
+        "shape": [],
+        "type": "int"
+    },
+    "Budget": {
+        "definition": "Total budget for purchasing clicks",
+        "shape": [],
+        "type": "int"
+    },
+    "Costs": {
+        "definition": "Cost of purchasing a click from advertisement type a",
+        "shape": [
+            "A"
+        ],
+        "type": "string"
+    },
+    "MaxClicks": {
+        "definition": "Number of maximum clicks that can be purchased from advertisement type a",
+        "shape": [
+            "A"
+        ],
+        "type": "string"
+    },
+    "YoungClicks": {
+        "definition": "Number of young audience clicks from advertisement type a",
+        "shape": [
+            "A"
+        ],
+        "type": "string"
+    },
+    "OldClicks": {
+        "definition": "Number of old audience clicks from advertisement type a",
+        "shape": [
+            "A"
+        ],
+        "type": "string"
+    },
+    "UniqueClicks": {
+        "definition": "Number of unique clicks from advertisement type a",
+        "shape": [
+            "A"
+        ],
+        "type": "string"
+    },
+    "GoalYoung": {
+        "definition": "Goal for number of clicks from young audience",
+        "shape": [],
+        "type": "int"
+    },
+    "GoalOld": {
+        "definition": "Goal for number of clicks from old audience",
+        "shape": [],
+        "type": "int"
+    },
+    "GoalUniqueYoung": {
+        "definition": "Goal for number of unique clicks from young audience",
+        "shape": [],
+        "type": "int"
+    },
+    "GoalUniqueOld": {
+        "definition": "Goal for number of unique clicks from old audience",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: For each ad type a, 0 <= clicks_a <= MaxClicks[a]
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is absolutely a real constraint** and it should be explicitly included in the LP formulation.
+
+### Why?
+
+The problem statement clearly says:
+
+> *“Ad type a has a maximum allowable clicks of max_clickₐ in thousands.”*
+
+This directly implies a **hard upper bound** on the decision variable:
+
+\[
+\text{clicks}_a \le \text{MaxClicks}[a]
+\]
+
+Additionally:
+
+- Since clicks represent purchased quantities, they **cannot be negative**, so:
+  \[
+  \text{clicks}_a \ge 0
+  \]
+
+Together, this forms the bound constraint:
+
+\[
+0 \le \text{clicks}_a \le \text{MaxClicks}[a] \quad \forall a
+\]
+
+### Why it must be modeled explicitly
+
+- Without the upper bound, the optimizer might allocate more clicks to a highly efficient ad type than is actually available.
+- The budget constraint alone does **not** enforce availability limits.
+- The problem explicitly states a *maximum allowable* amount — this is a classic LP variable upper bound.
+
+This is a **standard structural constraint** in resource allocation models.
+
+### Confidence Level
+
+✅ This is clearly a required constraint derived directly from the problem description.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+
+PROBLEM INFO:
+
+- Custom Tees is planning an online advertising campaign with \var{A} different ad types across two web companies.
+- The company has set a goal of \var{goal_young} thousand clicks from visitors aged 18-25 and \var{goal_old} thousand clicks from visitors older than 25.
+- The company has set a goal of \var{goal_unique_young} thousand unique clicks from visitors aged 18-25 and \var{goal_unique_old} thousand unique clicks from visitors older than 25.
+- Ad type \var{a} has an estimated percentage of \var{young_click_{a}} clicks from the 18-25 age range.
+- Ad type \var{a} has an estimated percentage of \var{old_click_{a}} clicks from older visitors.
+- Ad type \var{a} has a cost of \var{cost_{a}} per 1000 clicks.
+- Ad type \var{a} has a maximum allowable clicks of \var{max_click_{a}} in thousands.
+- The estimated percentage of unique visitors for each ad type \var{a} is \var{unique_click_{a}}.
+- The company has an advertising budget of $\var{budget}
+
+INPUT FORMAT: 
+
+{
+    "goal_young": goal_young,
+    "goal_old": goal_old,
+    "goal_unique_young": goal_unique_young,
+    "goal_unique_old": goal_unique_old,
+    "young_clicks": [young_click_{a} for a in 1,...,A],
+    "old_clicks": [old_click_{a} for a in 1,...,A],
+    "costs": [cost_{a} for a in 1,...,A],
+    "max_clicks": [max_click_{a} for a in 1,...,A],
+    "unique_clicks": [unique_click_{a} for a in 1,...,A],
+    "budget": budget
+}
+
+OBJECTIVE: How many clicks from each ad type should Custom Tees purchase to maximize the number of unique clicks within the budget?
+
+OUTPUT INFO:
+
+- the number of clicks purchased for each ad type is \var{clicks_{a}} in thousands.
+- \var{total_unique_clicks} represents the total number of unique clicks.
+
+OUTPUT FORMAT:
+
+{
+    "clicks": [click_{a} for a in 1, ..., A],
+    "total_unique_clicks": total_unique_clicks
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "A": {
+        "definition": "Number of advertisement types",
+        "shape": [],
+        "type": "int"
+    },
+    "Budget": {
+        "definition": "Total budget for purchasing clicks",
+        "shape": [],
+        "type": "int"
+    },
+    "Costs": {
+        "definition": "Cost of purchasing a click from advertisement type a",
+        "shape": [
+            "A"
+        ],
+        "type": "string"
+    },
+    "MaxClicks": {
+        "definition": "Number of maximum clicks that can be purchased from advertisement type a",
+        "shape": [
+            "A"
+        ],
+        "type": "string"
+    },
+    "YoungClicks": {
+        "definition": "Number of young audience clicks from advertisement type a",
+        "shape": [
+            "A"
+        ],
+        "type": "string"
+    },
+    "OldClicks": {
+        "definition": "Number of old audience clicks from advertisement type a",
+        "shape": [
+            "A"
+        ],
+        "type": "string"
+    },
+    "UniqueClicks": {
+        "definition": "Number of unique clicks from advertisement type a",
+        "shape": [
+            "A"
+        ],
+        "type": "string"
+    },
+    "GoalYoung": {
+        "definition": "Goal for number of clicks from young audience",
+        "shape": [],
+        "type": "int"
+    },
+    "GoalOld": {
+        "definition": "Goal for number of clicks from old audience",
+        "shape": [],
+        "type": "int"
+    },
+    "GoalUniqueYoung": {
+        "definition": "Goal for number of unique clicks from young audience",
+        "shape": [],
+        "type": "int"
+    },
+    "GoalUniqueOld": {
+        "definition": "Goal for number of unique clicks from old audience",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: Sum over all ad types a of (Costs[a] * clicks_a) <= Budget
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is **definitely a constraint**, and it must be explicitly included in the LP formulation.
+
+### Why?
+
+- The problem states: *“The company has an advertising budget of \$budget.”*
+- The objective is to **maximize total unique clicks within the budget**.
+- Therefore, total spending cannot exceed the available budget.
+
+Since:
+- `clicks_a` is measured in **thousands of clicks**, and  
+- `cost_a` is the **cost per 1000 clicks**,  
+
+the total spending is correctly modeled as:
+
+\[
+\sum_{a=1}^{A} \text{Costs}[a] \cdot \text{clicks}_a \le \text{Budget}
+\]
+
+This is a **standard and essential budget constraint** in advertising allocation models. Without it, the optimization problem would allow unlimited purchases and would be incorrectly formulated.
+
+### Conclusion
+
+✅ This is absolutely a required constraint.  
+✅ It directly follows from the problem statement.  
+✅ It must be included in the LP formulation.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+
+PROBLEM INFO:
+
+- Custom Tees is planning an online advertising campaign with \var{A} different ad types across two web companies.
+- The company has set a goal of \var{goal_young} thousand clicks from visitors aged 18-25 and \var{goal_old} thousand clicks from visitors older than 25.
+- The company has set a goal of \var{goal_unique_young} thousand unique clicks from visitors aged 18-25 and \var{goal_unique_old} thousand unique clicks from visitors older than 25.
+- Ad type \var{a} has an estimated percentage of \var{young_click_{a}} clicks from the 18-25 age range.
+- Ad type \var{a} has an estimated percentage of \var{old_click_{a}} clicks from older visitors.
+- Ad type \var{a} has a cost of \var{cost_{a}} per 1000 clicks.
+- Ad type \var{a} has a maximum allowable clicks of \var{max_click_{a}} in thousands.
+- The estimated percentage of unique visitors for each ad type \var{a} is \var{unique_click_{a}}.
+- The company has an advertising budget of $\var{budget}
+
+INPUT FORMAT: 
+
+{
+    "goal_young": goal_young,
+    "goal_old": goal_old,
+    "goal_unique_young": goal_unique_young,
+    "goal_unique_old": goal_unique_old,
+    "young_clicks": [young_click_{a} for a in 1,...,A],
+    "old_clicks": [old_click_{a} for a in 1,...,A],
+    "costs": [cost_{a} for a in 1,...,A],
+    "max_clicks": [max_click_{a} for a in 1,...,A],
+    "unique_clicks": [unique_click_{a} for a in 1,...,A],
+    "budget": budget
+}
+
+OBJECTIVE: How many clicks from each ad type should Custom Tees purchase to maximize the number of unique clicks within the budget?
+
+OUTPUT INFO:
+
+- the number of clicks purchased for each ad type is \var{clicks_{a}} in thousands.
+- \var{total_unique_clicks} represents the total number of unique clicks.
+
+OUTPUT FORMAT:
+
+{
+    "clicks": [click_{a} for a in 1, ..., A],
+    "total_unique_clicks": total_unique_clicks
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "A": {
+        "definition": "Number of advertisement types",
+        "shape": [],
+        "type": "int"
+    },
+    "Budget": {
+        "definition": "Total budget for purchasing clicks",
+        "shape": [],
+        "type": "int"
+    },
+    "Costs": {
+        "definition": "Cost of purchasing a click from advertisement type a",
+        "shape": [
+            "A"
+        ],
+        "type": "string"
+    },
+    "MaxClicks": {
+        "definition": "Number of maximum clicks that can be purchased from advertisement type a",
+        "shape": [
+            "A"
+        ],
+        "type": "string"
+    },
+    "YoungClicks": {
+        "definition": "Number of young audience clicks from advertisement type a",
+        "shape": [
+            "A"
+        ],
+        "type": "string"
+    },
+    "OldClicks": {
+        "definition": "Number of old audience clicks from advertisement type a",
+        "shape": [
+            "A"
+        ],
+        "type": "string"
+    },
+    "UniqueClicks": {
+        "definition": "Number of unique clicks from advertisement type a",
+        "shape": [
+            "A"
+        ],
+        "type": "string"
+    },
+    "GoalYoung": {
+        "definition": "Goal for number of clicks from young audience",
+        "shape": [],
+        "type": "int"
+    },
+    "GoalOld": {
+        "definition": "Goal for number of clicks from old audience",
+        "shape": [],
+        "type": "int"
+    },
+    "GoalUniqueYoung": {
+        "definition": "Goal for number of unique clicks from young audience",
+        "shape": [],
+        "type": "int"
+    },
+    "GoalUniqueOld": {
+        "definition": "Goal for number of unique clicks from old audience",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: Sum over all ad types a of (YoungClicks[a] * clicks_a) >= GoalYoung
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is** a constraint and it should be explicitly included in the LP formulation.
+
+### Why?
+
+The problem states:
+
+> *The company has set a goal of* `goal_young` *thousand clicks from visitors aged 18–25.*
+
+This is clearly a **minimum requirement**, not part of the objective. Therefore it must be enforced as a constraint.
+
+If:
+- `clicks_a` = thousands of clicks purchased for ad type \(a\)
+- `YoungClicks[a]` = proportion (percentage) of clicks from young visitors
+
+Then total young clicks (in thousands) is:
+
+\[
+\sum_a \text{YoungClicks}[a] \cdot \text{clicks}_a
+\]
+
+To satisfy the stated goal:
+
+\[
+\sum_a \text{YoungClicks}[a] \cdot \text{clicks}_a \;\ge\; \text{GoalYoung}
+\]
+
+This is a **standard linear constraint**, fully consistent with the LP structure.
+
+There is no ambiguity in the wording — it explicitly says the company has set a goal for young clicks. Therefore it must be modeled.
+
+**Confidence:**  
+5 OUT OF 5
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+
+PROBLEM INFO:
+
+- Custom Tees is planning an online advertising campaign with \var{A} different ad types across two web companies.
+- The company has set a goal of \var{goal_young} thousand clicks from visitors aged 18-25 and \var{goal_old} thousand clicks from visitors older than 25.
+- The company has set a goal of \var{goal_unique_young} thousand unique clicks from visitors aged 18-25 and \var{goal_unique_old} thousand unique clicks from visitors older than 25.
+- Ad type \var{a} has an estimated percentage of \var{young_click_{a}} clicks from the 18-25 age range.
+- Ad type \var{a} has an estimated percentage of \var{old_click_{a}} clicks from older visitors.
+- Ad type \var{a} has a cost of \var{cost_{a}} per 1000 clicks.
+- Ad type \var{a} has a maximum allowable clicks of \var{max_click_{a}} in thousands.
+- The estimated percentage of unique visitors for each ad type \var{a} is \var{unique_click_{a}}.
+- The company has an advertising budget of $\var{budget}
+
+INPUT FORMAT: 
+
+{
+    "goal_young": goal_young,
+    "goal_old": goal_old,
+    "goal_unique_young": goal_unique_young,
+    "goal_unique_old": goal_unique_old,
+    "young_clicks": [young_click_{a} for a in 1,...,A],
+    "old_clicks": [old_click_{a} for a in 1,...,A],
+    "costs": [cost_{a} for a in 1,...,A],
+    "max_clicks": [max_click_{a} for a in 1,...,A],
+    "unique_clicks": [unique_click_{a} for a in 1,...,A],
+    "budget": budget
+}
+
+OBJECTIVE: How many clicks from each ad type should Custom Tees purchase to maximize the number of unique clicks within the budget?
+
+OUTPUT INFO:
+
+- the number of clicks purchased for each ad type is \var{clicks_{a}} in thousands.
+- \var{total_unique_clicks} represents the total number of unique clicks.
+
+OUTPUT FORMAT:
+
+{
+    "clicks": [click_{a} for a in 1, ..., A],
+    "total_unique_clicks": total_unique_clicks
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "A": {
+        "definition": "Number of advertisement types",
+        "shape": [],
+        "type": "int"
+    },
+    "Budget": {
+        "definition": "Total budget for purchasing clicks",
+        "shape": [],
+        "type": "int"
+    },
+    "Costs": {
+        "definition": "Cost of purchasing a click from advertisement type a",
+        "shape": [
+            "A"
+        ],
+        "type": "string"
+    },
+    "MaxClicks": {
+        "definition": "Number of maximum clicks that can be purchased from advertisement type a",
+        "shape": [
+            "A"
+        ],
+        "type": "string"
+    },
+    "YoungClicks": {
+        "definition": "Number of young audience clicks from advertisement type a",
+        "shape": [
+            "A"
+        ],
+        "type": "string"
+    },
+    "OldClicks": {
+        "definition": "Number of old audience clicks from advertisement type a",
+        "shape": [
+            "A"
+        ],
+        "type": "string"
+    },
+    "UniqueClicks": {
+        "definition": "Number of unique clicks from advertisement type a",
+        "shape": [
+            "A"
+        ],
+        "type": "string"
+    },
+    "GoalYoung": {
+        "definition": "Goal for number of clicks from young audience",
+        "shape": [],
+        "type": "int"
+    },
+    "GoalOld": {
+        "definition": "Goal for number of clicks from old audience",
+        "shape": [],
+        "type": "int"
+    },
+    "GoalUniqueYoung": {
+        "definition": "Goal for number of unique clicks from young audience",
+        "shape": [],
+        "type": "int"
+    },
+    "GoalUniqueOld": {
+        "definition": "Goal for number of unique clicks from old audience",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: Sum over all ad types a of (OldClicks[a] * clicks_a) >= GoalOld
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is a constraint** and it should be explicitly included in the LP formulation.
+
+### Why?
+
+The problem states:
+
+> *The company has set a goal of* `goal_old` *thousand clicks from visitors older than 25.*
+
+This clearly implies a **minimum requirement** on the number of clicks coming from the older age group.
+
+If:
+- `clicks_a` = thousands of clicks purchased for ad type \( a \),
+- `OldClicks[a]` = estimated **percentage** of clicks from older visitors for ad type \( a \),
+
+then:
+
+\[
+\sum_{a=1}^{A} \text{OldClicks}[a] \cdot \text{clicks}_a
+\]
+
+represents the total number of (thousands of) clicks from older visitors.
+
+Since the company has a stated goal, this must be modeled as:
+
+\[
+\sum_{a=1}^{A} \text{OldClicks}[a] \cdot \text{clicks}_a \;\ge\; \text{GoalOld}
+\]
+
+This is a standard minimum target constraint and is fully consistent with the problem description.
+
+### Conclusion
+
+✅ This is definitely a required constraint in the LP formulation.  
+✅ It directly enforces a stated business requirement.  
+✅ There is no ambiguity suggesting it should be omitted.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+
+PROBLEM INFO:
+
+- Custom Tees is planning an online advertising campaign with \var{A} different ad types across two web companies.
+- The company has set a goal of \var{goal_young} thousand clicks from visitors aged 18-25 and \var{goal_old} thousand clicks from visitors older than 25.
+- The company has set a goal of \var{goal_unique_young} thousand unique clicks from visitors aged 18-25 and \var{goal_unique_old} thousand unique clicks from visitors older than 25.
+- Ad type \var{a} has an estimated percentage of \var{young_click_{a}} clicks from the 18-25 age range.
+- Ad type \var{a} has an estimated percentage of \var{old_click_{a}} clicks from older visitors.
+- Ad type \var{a} has a cost of \var{cost_{a}} per 1000 clicks.
+- Ad type \var{a} has a maximum allowable clicks of \var{max_click_{a}} in thousands.
+- The estimated percentage of unique visitors for each ad type \var{a} is \var{unique_click_{a}}.
+- The company has an advertising budget of $\var{budget}
+
+INPUT FORMAT: 
+
+{
+    "goal_young": goal_young,
+    "goal_old": goal_old,
+    "goal_unique_young": goal_unique_young,
+    "goal_unique_old": goal_unique_old,
+    "young_clicks": [young_click_{a} for a in 1,...,A],
+    "old_clicks": [old_click_{a} for a in 1,...,A],
+    "costs": [cost_{a} for a in 1,...,A],
+    "max_clicks": [max_click_{a} for a in 1,...,A],
+    "unique_clicks": [unique_click_{a} for a in 1,...,A],
+    "budget": budget
+}
+
+OBJECTIVE: How many clicks from each ad type should Custom Tees purchase to maximize the number of unique clicks within the budget?
+
+OUTPUT INFO:
+
+- the number of clicks purchased for each ad type is \var{clicks_{a}} in thousands.
+- \var{total_unique_clicks} represents the total number of unique clicks.
+
+OUTPUT FORMAT:
+
+{
+    "clicks": [click_{a} for a in 1, ..., A],
+    "total_unique_clicks": total_unique_clicks
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "A": {
+        "definition": "Number of advertisement types",
+        "shape": [],
+        "type": "int"
+    },
+    "Budget": {
+        "definition": "Total budget for purchasing clicks",
+        "shape": [],
+        "type": "int"
+    },
+    "Costs": {
+        "definition": "Cost of purchasing a click from advertisement type a",
+        "shape": [
+            "A"
+        ],
+        "type": "string"
+    },
+    "MaxClicks": {
+        "definition": "Number of maximum clicks that can be purchased from advertisement type a",
+        "shape": [
+            "A"
+        ],
+        "type": "string"
+    },
+    "YoungClicks": {
+        "definition": "Number of young audience clicks from advertisement type a",
+        "shape": [
+            "A"
+        ],
+        "type": "string"
+    },
+    "OldClicks": {
+        "definition": "Number of old audience clicks from advertisement type a",
+        "shape": [
+            "A"
+        ],
+        "type": "string"
+    },
+    "UniqueClicks": {
+        "definition": "Number of unique clicks from advertisement type a",
+        "shape": [
+            "A"
+        ],
+        "type": "string"
+    },
+    "GoalYoung": {
+        "definition": "Goal for number of clicks from young audience",
+        "shape": [],
+        "type": "int"
+    },
+    "GoalOld": {
+        "definition": "Goal for number of clicks from old audience",
+        "shape": [],
+        "type": "int"
+    },
+    "GoalUniqueYoung": {
+        "definition": "Goal for number of unique clicks from young audience",
+        "shape": [],
+        "type": "int"
+    },
+    "GoalUniqueOld": {
+        "definition": "Goal for number of unique clicks from old audience",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: Sum over all ad types a of (YoungClicks[a] * UniqueClicks[a] * clicks_a) >= GoalUniqueYoung
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is** a valid constraint and it should be explicitly included in the LP formulation.
+
+### Step-by-step reasoning:
+
+- \( \text{clicks}_a \) = thousands of clicks purchased from ad type \( a \)
+- \( \text{YoungClicks}[a] \) = percentage of clicks from young visitors
+- \( \text{UniqueClicks}[a] \) = percentage of clicks that are unique
+
+From ad type \( a \):
+
+- Total clicks purchased:  
+  \[
+  \text{clicks}_a
+  \]
+- Young clicks:  
+  \[
+  \text{YoungClicks}[a] \cdot \text{clicks}_a
+  \]
+- Unique clicks:  
+  \[
+  \text{UniqueClicks}[a] \cdot \text{clicks}_a
+  \]
+
+Assuming independence (which is standard in these LP formulations unless otherwise stated), the number of **unique young clicks** from ad \( a \) is:
+
+\[
+\text{YoungClicks}[a] \cdot \text{UniqueClicks}[a] \cdot \text{clicks}_a
+\]
+
+Therefore, to meet the goal of at least `GoalUniqueYoung` thousand unique young clicks, the correct constraint is:
+
+\[
+\sum_a \text{YoungClicks}[a] \cdot \text{UniqueClicks}[a] \cdot \text{clicks}_a \;\ge\; \text{GoalUniqueYoung}
+\]
+
+This matches the proposed constraint exactly.
+
+There is nothing in the problem statement suggesting this requirement should be relaxed or omitted. Since the problem explicitly states a goal for **unique clicks from visitors aged 18–25**, this constraint is necessary.
+
+### Conclusion
+
+✅ This is indeed a required constraint.  
+✅ It is correctly formulated.  
+✅ It should be included in the LP.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+
+PROBLEM INFO:
+
+- Custom Tees is planning an online advertising campaign with \var{A} different ad types across two web companies.
+- The company has set a goal of \var{goal_young} thousand clicks from visitors aged 18-25 and \var{goal_old} thousand clicks from visitors older than 25.
+- The company has set a goal of \var{goal_unique_young} thousand unique clicks from visitors aged 18-25 and \var{goal_unique_old} thousand unique clicks from visitors older than 25.
+- Ad type \var{a} has an estimated percentage of \var{young_click_{a}} clicks from the 18-25 age range.
+- Ad type \var{a} has an estimated percentage of \var{old_click_{a}} clicks from older visitors.
+- Ad type \var{a} has a cost of \var{cost_{a}} per 1000 clicks.
+- Ad type \var{a} has a maximum allowable clicks of \var{max_click_{a}} in thousands.
+- The estimated percentage of unique visitors for each ad type \var{a} is \var{unique_click_{a}}.
+- The company has an advertising budget of $\var{budget}
+
+INPUT FORMAT: 
+
+{
+    "goal_young": goal_young,
+    "goal_old": goal_old,
+    "goal_unique_young": goal_unique_young,
+    "goal_unique_old": goal_unique_old,
+    "young_clicks": [young_click_{a} for a in 1,...,A],
+    "old_clicks": [old_click_{a} for a in 1,...,A],
+    "costs": [cost_{a} for a in 1,...,A],
+    "max_clicks": [max_click_{a} for a in 1,...,A],
+    "unique_clicks": [unique_click_{a} for a in 1,...,A],
+    "budget": budget
+}
+
+OBJECTIVE: How many clicks from each ad type should Custom Tees purchase to maximize the number of unique clicks within the budget?
+
+OUTPUT INFO:
+
+- the number of clicks purchased for each ad type is \var{clicks_{a}} in thousands.
+- \var{total_unique_clicks} represents the total number of unique clicks.
+
+OUTPUT FORMAT:
+
+{
+    "clicks": [click_{a} for a in 1, ..., A],
+    "total_unique_clicks": total_unique_clicks
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "A": {
+        "definition": "Number of advertisement types",
+        "shape": [],
+        "type": "int"
+    },
+    "Budget": {
+        "definition": "Total budget for purchasing clicks",
+        "shape": [],
+        "type": "int"
+    },
+    "Costs": {
+        "definition": "Cost of purchasing a click from advertisement type a",
+        "shape": [
+            "A"
+        ],
+        "type": "string"
+    },
+    "MaxClicks": {
+        "definition": "Number of maximum clicks that can be purchased from advertisement type a",
+        "shape": [
+            "A"
+        ],
+        "type": "string"
+    },
+    "YoungClicks": {
+        "definition": "Number of young audience clicks from advertisement type a",
+        "shape": [
+            "A"
+        ],
+        "type": "string"
+    },
+    "OldClicks": {
+        "definition": "Number of old audience clicks from advertisement type a",
+        "shape": [
+            "A"
+        ],
+        "type": "string"
+    },
+    "UniqueClicks": {
+        "definition": "Number of unique clicks from advertisement type a",
+        "shape": [
+            "A"
+        ],
+        "type": "string"
+    },
+    "GoalYoung": {
+        "definition": "Goal for number of clicks from young audience",
+        "shape": [],
+        "type": "int"
+    },
+    "GoalOld": {
+        "definition": "Goal for number of clicks from old audience",
+        "shape": [],
+        "type": "int"
+    },
+    "GoalUniqueYoung": {
+        "definition": "Goal for number of unique clicks from young audience",
+        "shape": [],
+        "type": "int"
+    },
+    "GoalUniqueOld": {
+        "definition": "Goal for number of unique clicks from old audience",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: Sum over all ad types a of (OldClicks[a] * UniqueClicks[a] * clicks_a) >= GoalUniqueOld
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is** a valid constraint and it should be explicitly modeled.
+
+### Step-by-step reasoning:
+
+- \( \text{clicks}_a \) = thousands of clicks purchased for ad type \( a \).
+- \( \text{OldClicks}[a] \) = percentage of clicks from visitors older than 25.
+- \( \text{UniqueClicks}[a] \) = percentage of clicks that are unique visitors.
+
+Total clicks from ad \( a \):  
+\[
+\text{clicks}_a
+\]
+
+Old clicks from ad \( a \):  
+\[
+\text{OldClicks}[a] \cdot \text{clicks}_a
+\]
+
+Unique clicks from ad \( a \):  
+\[
+\text{UniqueClicks}[a] \cdot \text{clicks}_a
+\]
+
+Unique **old** clicks from ad \( a \):  
+\[
+\text{OldClicks}[a] \cdot \text{UniqueClicks}[a] \cdot \text{clicks}_a
+\]
+
+Summing over all ad types gives:
+
+\[
+\sum_a \text{OldClicks}[a] \cdot \text{UniqueClicks}[a] \cdot \text{clicks}_a
+\]
+
+Since the company has a goal of **GoalUniqueOld thousand unique clicks from older visitors**, the correct constraint is:
+
+\[
+\sum_a \text{OldClicks}[a] \cdot \text{UniqueClicks}[a] \cdot \text{clicks}_a
+\;\ge\;
+\text{GoalUniqueOld}
+\]
+
+This is:
+
+- ✅ Linear (parameters × decision variable)
+- ✅ Directly implied by the problem statement
+- ✅ Necessary to enforce the unique-old audience goal
+
+There is no ambiguity in the modeling logic given the description.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
+
+
+
+++++++++++++++++++++++++++++++
+Extracting constraint formulations
+++++++++++++++++++++++++++++++
+
+
+
+----
+{
+    "FORMULATION": "$\\forall a = 1, \\dots, A, \\; 0 \\leq clicks[a] \\leq MaxClicks[a]$",
+    "NEW VARIABLES": {
+        "clicks": {
+            "shape": "[A]",
+            "type": "continuous",
+            "definition": "Number of clicks purchased (in thousands) from advertisement type a"
+        }
+    },
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\forall a = 1, \\dots, A, \\; 0 \\leq clicks[a] \\leq MaxClicks[a]$
+{'clicks': {'shape': '[A]', 'type': 'continuous', 'definition': 'Number of clicks purchased (in thousands) from advertisement type a'}}
+[]
+----
+----
+{
+    "FORMULATION": "$\\sum_{a=1}^{A} Costs[a] \\cdot clicks_a \\leq Budget$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\sum_{a=1}^{A} Costs[a] \\cdot clicks_a \\leq Budget$
+{}
+[]
+----
+----
+{
+    "FORMULATION": "$\\sum_{a=1}^{A} YoungClicks[a] \\cdot clicks[a] \\geq GoalYoung$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\sum_{a=1}^{A} YoungClicks[a] \\cdot clicks[a] \\geq GoalYoung$
+{}
+[]
+----
+----
+{
+    "FORMULATION": "$\\sum_{a=1}^{A} OldClicks[a] \\cdot clicks[a] \\geq GoalOld$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\sum_{a=1}^{A} OldClicks[a] \\cdot clicks[a] \\geq GoalOld$
+{}
+[]
+----
+----
+{
+    "FORMULATION": "$\\sum_{a=1}^{A} YoungClicks[a] \\cdot UniqueClicks[a] \\cdot clicks[a] \\geq GoalUniqueYoung$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\sum_{a=1}^{A} YoungClicks[a] \\cdot UniqueClicks[a] \\cdot clicks[a] \\geq GoalUniqueYoung$
+{}
+[]
+----
+----
+{
+    "FORMULATION": "$\\sum_{a=1}^{A} OldClicks[a] \\cdot UniqueClicks[a] \\cdot clicks[a] \\geq GoalUniqueOld$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\sum_{a=1}^{A} OldClicks[a] \\cdot UniqueClicks[a] \\cdot clicks[a] \\geq GoalUniqueOld$
+{}
+[]
+----
+Code executed successfully. Output:
+Restricted license - for non-production use only - expires 2027-11-29
+Gurobi Optimizer version 13.0.1 build v13.0.1rc0 (linux64 - "Alibaba Cloud Linux 3.2104 U12.3 (OpenAnolis Edition)")
+
+CPU model: Intel(R) Xeon(R) Platinum, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 1 physical cores, 2 logical processors, using up to 2 threads
+
+Optimize a model with 11 rows, 3 columns and 21 nonzeros (Max)
+Model fingerprint: 0x4bc61b48
+Model has 3 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [1e+00, 6e+03]
+  Objective range  [4e+01, 9e+01]
+  Bounds range     [0e+00, 0e+00]
+  RHS range        [2e+02, 1e+05]
+
+Presolve removed 6 rows and 0 columns
+Presolve time: 0.00s
+Presolved: 5 rows, 3 columns, 15 nonzeros
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0    7.8750000e+04   9.600000e+04   0.000000e+00      0s
+       1    7.0300000e+04   0.000000e+00   0.000000e+00      0s
+
+Solved in 1 iterations and 0.00 seconds (0.00 work units)
+Optimal objective  7.030000000e+04
+Optimal Objective Value:  70300.0
+Optimal Objective Value:  70300.0
+

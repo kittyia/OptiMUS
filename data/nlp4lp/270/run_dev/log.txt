@@ -1,0 +1,673 @@
+----
+Step-by-step reasoning:
+
+1. **New price non-negativity**  
+   This is not strictly redundant. Although the deviation constraint may imply non-negativity if `MaxPriceDeviation ≤ 1` and initial prices are positive, this is not explicitly guaranteed. Therefore, the non-negativity constraint should remain.
+
+2. **Integer multiple of 1 euro**  
+   This is a distinct integrality requirement and cannot be merged with the range constraint without losing clarity. It must remain separate.
+
+3. **Deviation range constraint**  
+   This defines the allowable interval for prices and is not redundant with non-negativity or integrality. It should remain.
+
+4. **Limit on number of price changes**  
+   This is a structural constraint on how many prices may differ from initial values. It is unique and must remain.
+
+5 & 6. **Sales quantity non-negativity and production upper bound**  
+   These two constraints can be combined into a single bound constraint:
+   \[
+   0 \le \text{SalesQuantity[i]} \le \text{MaxProductionVolume[i]}
+   \]
+   Combining them improves clarity without changing meaning.
+
+7. **Consistency with elasticity-based demand**  
+   This links sales quantity to price decisions via the demand function. It is essential and not redundant.
+
+---
+
+### Updated list of constraints:
+
+```python
+[
+    "The new price of each article must be non-negative",
+    "The new price of each article must differ from its initial price by an integer multiple of 1 euro",
+    "For each article, the new price must lie within the allowed deviation range: InitialPrice[i] * (1 - MaxPriceDeviation) ≤ NewPrice[i] ≤ InitialPrice[i] * (1 + MaxPriceDeviation)",
+    "The number of articles whose price is changed (i.e., NewPrice[i] ≠ InitialPrice[i]) must not exceed MaxPriceChange × NumberOfArticles",
+    "For each article, the sales quantity must satisfy 0 ≤ SalesQuantity[i] ≤ MaxProductionVolume[i]",
+    "The sales quantity for each article must be consistent with the demand implied by the price elasticity and the chosen new price"
+]
+```
+----
++++++++++++++++++++
+++ Constraint Qs ++
++++++++++++++++++++
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+ A global fashion brand sells articles of clothing in several markets. We have an estimate of how price changes affect sales for each article, assuming constant price elasticity. Price changes must be in multiples of 1 euro. Initial prices for each article are given, and no more than a certain fraction of the prices can change. The new price for each article must be within an allowed range of the initial price. Each article has a maximum production volume; we cannot sell more than that. Given the sales forecast per article for the next twelve months and past elasticities, the goal is to choose new prices for each article to maximize expected revenue. 
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "NumberOfArticles": {
+        "definition": "Number of articles in the assortment",
+        "shape": [],
+        "type": "int"
+    },
+    "InitialPrices": {
+        "definition": "Initial prices of the articles",
+        "shape": [
+            "NumberOfArticles"
+        ],
+        "type": "string"
+    },
+    "Elasticities": {
+        "definition": "Price elasticity for each article",
+        "shape": [
+            "NumberOfArticles"
+        ],
+        "type": "string"
+    },
+    "MaxPriceChange": {
+        "definition": "Maximum fraction of prices that can be changed",
+        "shape": [],
+        "type": "float"
+    },
+    "MaxPriceDeviation": {
+        "definition": "Maximum allowed deviation of each new price from the initial price as a fraction",
+        "shape": [],
+        "type": "float"
+    },
+    "MaxProductionVolume": {
+        "definition": "Maximum production volume for each article",
+        "shape": [
+            "NumberOfArticles"
+        ],
+        "type": "string"
+    },
+    "SalesForecast": {
+        "definition": "Sales forecast for each article",
+        "shape": [
+            "NumberOfArticles"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: The new price of each article must be non-negative
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is indeed a constraint.
+
+Even though prices are described as being adjusted within a fraction of their initial values, the problem statement does **not** explicitly guarantee that the lower bound implied by `MaxPriceDeviation` will always keep prices non‑negative. For example:
+
+- If the deviation fraction were allowed to be 1 (or greater), the lower bound could reach zero (or become negative if >1).
+- The formulation does not explicitly state that `MaxPriceDeviation ≤ 1`.
+- In optimization modeling, price variables are typically constrained to be non-negative unless explicitly stated otherwise.
+
+Additionally, negative prices would be economically meaningless in this context, so non-negativity is a structurally valid modeling requirement.
+
+That said, it is possible this constraint could be redundant if the allowed price deviation is strictly bounded such that prices can never become negative. Since that guarantee is not explicitly provided, it is safer and more correct to include the constraint explicitly.
+
+**Confidence level: 4 OUT OF 5**
++--+
+---
+The confidence score is 4, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+ A global fashion brand sells articles of clothing in several markets. We have an estimate of how price changes affect sales for each article, assuming constant price elasticity. Price changes must be in multiples of 1 euro. Initial prices for each article are given, and no more than a certain fraction of the prices can change. The new price for each article must be within an allowed range of the initial price. Each article has a maximum production volume; we cannot sell more than that. Given the sales forecast per article for the next twelve months and past elasticities, the goal is to choose new prices for each article to maximize expected revenue. 
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "NumberOfArticles": {
+        "definition": "Number of articles in the assortment",
+        "shape": [],
+        "type": "int"
+    },
+    "InitialPrices": {
+        "definition": "Initial prices of the articles",
+        "shape": [
+            "NumberOfArticles"
+        ],
+        "type": "string"
+    },
+    "Elasticities": {
+        "definition": "Price elasticity for each article",
+        "shape": [
+            "NumberOfArticles"
+        ],
+        "type": "string"
+    },
+    "MaxPriceChange": {
+        "definition": "Maximum fraction of prices that can be changed",
+        "shape": [],
+        "type": "float"
+    },
+    "MaxPriceDeviation": {
+        "definition": "Maximum allowed deviation of each new price from the initial price as a fraction",
+        "shape": [],
+        "type": "float"
+    },
+    "MaxProductionVolume": {
+        "definition": "Maximum production volume for each article",
+        "shape": [
+            "NumberOfArticles"
+        ],
+        "type": "string"
+    },
+    "SalesForecast": {
+        "definition": "Sales forecast for each article",
+        "shape": [
+            "NumberOfArticles"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: The new price of each article must differ from its initial price by an integer multiple of 1 euro
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is **explicitly stated in the problem description**:
+
+> “Price changes must be in multiples of 1 euro.”
+
+This clearly implies that the difference between the new price and the initial price must be an integer (in euros). Therefore, this is indeed a modeling constraint and must be enforced in the (MI)LP formulation.
+
+In practice, this means:
+- Either modeling price differences as integer variables, or  
+- Modeling prices themselves as integer-valued (if prices are in euros and no cents are allowed), or  
+- Introducing integer auxiliary variables to represent the price change in euros.
+
+This is not optional or implied — it is a direct requirement from the problem statement. Therefore, it should **definitely** be included in the formulation.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+ A global fashion brand sells articles of clothing in several markets. We have an estimate of how price changes affect sales for each article, assuming constant price elasticity. Price changes must be in multiples of 1 euro. Initial prices for each article are given, and no more than a certain fraction of the prices can change. The new price for each article must be within an allowed range of the initial price. Each article has a maximum production volume; we cannot sell more than that. Given the sales forecast per article for the next twelve months and past elasticities, the goal is to choose new prices for each article to maximize expected revenue. 
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "NumberOfArticles": {
+        "definition": "Number of articles in the assortment",
+        "shape": [],
+        "type": "int"
+    },
+    "InitialPrices": {
+        "definition": "Initial prices of the articles",
+        "shape": [
+            "NumberOfArticles"
+        ],
+        "type": "string"
+    },
+    "Elasticities": {
+        "definition": "Price elasticity for each article",
+        "shape": [
+            "NumberOfArticles"
+        ],
+        "type": "string"
+    },
+    "MaxPriceChange": {
+        "definition": "Maximum fraction of prices that can be changed",
+        "shape": [],
+        "type": "float"
+    },
+    "MaxPriceDeviation": {
+        "definition": "Maximum allowed deviation of each new price from the initial price as a fraction",
+        "shape": [],
+        "type": "float"
+    },
+    "MaxProductionVolume": {
+        "definition": "Maximum production volume for each article",
+        "shape": [
+            "NumberOfArticles"
+        ],
+        "type": "string"
+    },
+    "SalesForecast": {
+        "definition": "Sales forecast for each article",
+        "shape": [
+            "NumberOfArticles"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: For each article, the new price must lie within the allowed deviation range: InitialPrice[i] * (1 - MaxPriceDeviation) ≤ NewPrice[i] ≤ InitialPrice[i] * (1 + MaxPriceDeviation)
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is clearly a constraint and should be explicitly modeled.
+
+The problem statement explicitly says:  
+> “The new price for each article must be within an allowed range of the initial price.”
+
+The parameter **MaxPriceDeviation** is defined as a fraction limiting how far the new price can deviate from the initial price. Therefore, for each article \( i \), the constraint
+
+\[
+\text{InitialPrice}[i] \cdot (1 - \text{MaxPriceDeviation}) 
+\;\le\; \text{NewPrice}[i] \;\le\; 
+\text{InitialPrice}[i] \cdot (1 + \text{MaxPriceDeviation})
+\]
+
+is a direct mathematical translation of the problem statement.
+
+This is a structural feasibility constraint (not optional, not implied by the objective), and it must be included explicitly in the (MI)LP formulation.
+
+**Confidence: 5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+ A global fashion brand sells articles of clothing in several markets. We have an estimate of how price changes affect sales for each article, assuming constant price elasticity. Price changes must be in multiples of 1 euro. Initial prices for each article are given, and no more than a certain fraction of the prices can change. The new price for each article must be within an allowed range of the initial price. Each article has a maximum production volume; we cannot sell more than that. Given the sales forecast per article for the next twelve months and past elasticities, the goal is to choose new prices for each article to maximize expected revenue. 
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "NumberOfArticles": {
+        "definition": "Number of articles in the assortment",
+        "shape": [],
+        "type": "int"
+    },
+    "InitialPrices": {
+        "definition": "Initial prices of the articles",
+        "shape": [
+            "NumberOfArticles"
+        ],
+        "type": "string"
+    },
+    "Elasticities": {
+        "definition": "Price elasticity for each article",
+        "shape": [
+            "NumberOfArticles"
+        ],
+        "type": "string"
+    },
+    "MaxPriceChange": {
+        "definition": "Maximum fraction of prices that can be changed",
+        "shape": [],
+        "type": "float"
+    },
+    "MaxPriceDeviation": {
+        "definition": "Maximum allowed deviation of each new price from the initial price as a fraction",
+        "shape": [],
+        "type": "float"
+    },
+    "MaxProductionVolume": {
+        "definition": "Maximum production volume for each article",
+        "shape": [
+            "NumberOfArticles"
+        ],
+        "type": "string"
+    },
+    "SalesForecast": {
+        "definition": "Sales forecast for each article",
+        "shape": [
+            "NumberOfArticles"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: The number of articles whose price is changed (i.e., NewPrice[i] ≠ InitialPrice[i]) must not exceed MaxPriceChange × NumberOfArticles
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is clearly a constraint and should be explicitly modeled.
+
+The problem statement explicitly says:
+
+> “no more than a certain fraction of the prices can change.”
+
+This directly translates into a combinatorial restriction on how many articles are allowed to have a new price different from their initial price. That is not something that will be implicitly enforced by bounds or by the objective function — it must be explicitly modeled.
+
+To capture  
+\[
+\#\{i : \text{NewPrice}_i \ne \text{InitialPrice}_i\} \le \text{MaxPriceChange} \times \text{NumberOfArticles},
+\]
+you would typically introduce binary variables indicating whether a price was changed and link them to the price decision variables using standard big‑M or indicator constraints.
+
+Because this requirement is directly and unambiguously stated in the description, and because it is not redundant with any other modeling element, it should definitely be included in the (MI)LP formulation.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+ A global fashion brand sells articles of clothing in several markets. We have an estimate of how price changes affect sales for each article, assuming constant price elasticity. Price changes must be in multiples of 1 euro. Initial prices for each article are given, and no more than a certain fraction of the prices can change. The new price for each article must be within an allowed range of the initial price. Each article has a maximum production volume; we cannot sell more than that. Given the sales forecast per article for the next twelve months and past elasticities, the goal is to choose new prices for each article to maximize expected revenue. 
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "NumberOfArticles": {
+        "definition": "Number of articles in the assortment",
+        "shape": [],
+        "type": "int"
+    },
+    "InitialPrices": {
+        "definition": "Initial prices of the articles",
+        "shape": [
+            "NumberOfArticles"
+        ],
+        "type": "string"
+    },
+    "Elasticities": {
+        "definition": "Price elasticity for each article",
+        "shape": [
+            "NumberOfArticles"
+        ],
+        "type": "string"
+    },
+    "MaxPriceChange": {
+        "definition": "Maximum fraction of prices that can be changed",
+        "shape": [],
+        "type": "float"
+    },
+    "MaxPriceDeviation": {
+        "definition": "Maximum allowed deviation of each new price from the initial price as a fraction",
+        "shape": [],
+        "type": "float"
+    },
+    "MaxProductionVolume": {
+        "definition": "Maximum production volume for each article",
+        "shape": [
+            "NumberOfArticles"
+        ],
+        "type": "string"
+    },
+    "SalesForecast": {
+        "definition": "Sales forecast for each article",
+        "shape": [
+            "NumberOfArticles"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: For each article, the sales quantity must satisfy 0 ≤ SalesQuantity[i] ≤ MaxProductionVolume[i]
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is indeed a constraint, and it should be explicitly modeled in the (MI)LP formulation.
+
+**Reasoning:**
+
+1. The problem statement clearly says:  
+   > “Each article has a maximum production volume; we cannot sell more than that.”  
+   This directly implies a hard upper bound on the sales quantity for each article.
+
+2. Even if sales are modeled as a function of price (via constant elasticity and forecast), the resulting demand must still be capped by the maximum production volume. Therefore, we need an explicit constraint:
+   \[
+   \text{SalesQuantity}_i \le \text{MaxProductionVolume}_i \quad \forall i
+   \]
+
+3. The lower bound:
+   \[
+   \text{SalesQuantity}_i \ge 0
+   \]
+   is also necessary for physical feasibility (negative sales are impossible). While nonnegativity is often implicit in variable definitions, it still formally represents a constraint in the model.
+
+4. Since production capacity is explicitly stated in the problem description as a limitation, omitting this constraint would contradict the problem requirements.
+
+Therefore, this is clearly a real and necessary modeling constraint.
+
+**Confidence:** 5 OUT OF 5
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+ A global fashion brand sells articles of clothing in several markets. We have an estimate of how price changes affect sales for each article, assuming constant price elasticity. Price changes must be in multiples of 1 euro. Initial prices for each article are given, and no more than a certain fraction of the prices can change. The new price for each article must be within an allowed range of the initial price. Each article has a maximum production volume; we cannot sell more than that. Given the sales forecast per article for the next twelve months and past elasticities, the goal is to choose new prices for each article to maximize expected revenue. 
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "NumberOfArticles": {
+        "definition": "Number of articles in the assortment",
+        "shape": [],
+        "type": "int"
+    },
+    "InitialPrices": {
+        "definition": "Initial prices of the articles",
+        "shape": [
+            "NumberOfArticles"
+        ],
+        "type": "string"
+    },
+    "Elasticities": {
+        "definition": "Price elasticity for each article",
+        "shape": [
+            "NumberOfArticles"
+        ],
+        "type": "string"
+    },
+    "MaxPriceChange": {
+        "definition": "Maximum fraction of prices that can be changed",
+        "shape": [],
+        "type": "float"
+    },
+    "MaxPriceDeviation": {
+        "definition": "Maximum allowed deviation of each new price from the initial price as a fraction",
+        "shape": [],
+        "type": "float"
+    },
+    "MaxProductionVolume": {
+        "definition": "Maximum production volume for each article",
+        "shape": [
+            "NumberOfArticles"
+        ],
+        "type": "string"
+    },
+    "SalesForecast": {
+        "definition": "Sales forecast for each article",
+        "shape": [
+            "NumberOfArticles"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: The sales quantity for each article must be consistent with the demand implied by the price elasticity and the chosen new price
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is** a constraint and it should be explicitly modeled.
+
+### Why?
+
+The problem states that:
+
+- We have **price elasticities** for each article.
+- We have a **sales forecast**.
+- Revenue depends on the **chosen new price**.
+- We cannot sell more than production capacity.
+
+Under constant elasticity demand, the expected sales quantity is a function of price, typically of the form:
+
+\[
+Q_i = \text{SalesForecast}_i \cdot \left(\frac{P_i}{P_i^0}\right)^{\text{Elasticity}_i}
+\]
+
+This relationship is **not optional** — it defines how price affects demand. Without enforcing this relationship, the model could:
+
+- Choose arbitrary sales quantities unrelated to price, or  
+- Compute revenue incorrectly.
+
+Therefore, the sales quantity must be constrained to equal (or be upper-bounded by, depending on modeling choice) the demand implied by elasticity and price.
+
+In practice, this becomes:
+
+- A nonlinear equality constraint (if modeled exactly), or  
+- A linearized / approximated constraint in an MILP formulation.
+
+Additionally, production capacity introduces:
+
+\[
+Q_i \le \text{MaxProductionVolume}_i
+\]
+
+So the elasticity-based demand relationship is a **core structural modeling constraint**, not an optional condition.
+
+### Conclusion
+
+This is absolutely a constraint that must be modeled explicitly.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
+
+
+
+++++++++++++++++++++++++++++++
+Extracting constraint formulations
+++++++++++++++++++++++++++++++
+
+
+
+----
+{
+    "FORMULATION": "$\\forall i \\in \\{1, \\dots, \\text{NumberOfArticles}\\}, \\; NewPrices[i] \\geq 0$",
+    "NEW VARIABLES": {
+        "NewPrices": {
+            "shape": "[NumberOfArticles]",
+            "type": "integer",
+            "definition": "The new price chosen for each article"
+        }
+    },
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\forall i \\in \\{1, \\dots, \\text{NumberOfArticles}\\}, \\; NewPrices[i] \\geq 0$
+{'NewPrices': {'shape': '[NumberOfArticles]', 'type': 'integer', 'definition': 'The new price chosen for each article'}}
+[]
+----
+----
+{
+    "FORMULATION": "$\\forall i \\in \\{1, \\dots, \\text{NumberOfArticles}\\}, \\; NewPrices[i] = InitialPrices[i] + IntegerPriceChange[i]$",
+    "NEW VARIABLES": {
+        "IntegerPriceChange": {
+            "shape": "[NumberOfArticles]",
+            "type": "integer",
+            "definition": "Integer change in price (in euros) applied to each article relative to its initial price"
+        }
+    },
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\forall i \\in \\{1, \\dots, \\text{NumberOfArticles}\\}, \\; NewPrices[i] = InitialPrices[i] + IntegerPriceChange[i]$
+{'IntegerPriceChange': {'shape': '[NumberOfArticles]', 'type': 'integer', 'definition': 'Integer change in price (in euros) applied to each article relative to its initial price'}}
+[]
+----
+----
+{
+    "FORMULATION": "$\\forall i = 1, \\dots, NumberOfArticles:\\; InitialPrices[i] \\cdot (1 - MaxPriceDeviation) \\leq NewPrices[i] \\leq InitialPrices[i] \\cdot (1 + MaxPriceDeviation)$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\forall i = 1, \\dots, NumberOfArticles:\\; InitialPrices[i] \\cdot (1 - MaxPriceDeviation) \\leq NewPrices[i] \\leq InitialPrices[i] \\cdot (1 + MaxPriceDeviation)$
+{}
+[]
+----
+----
+{
+    "FORMULATION": "$\\sum_{i=1}^{NumberOfArticles} PriceChanged[i] \\leq MaxPriceChange \\cdot NumberOfArticles$",
+    "NEW VARIABLES": {
+        "PriceChanged": {
+            "shape": "[NumberOfArticles]",
+            "type": "binary",
+            "definition": "Binary variable equal to 1 if the price of article i is changed (i.e., NewPrices[i] \\neq InitialPrices[i]), and 0 otherwise"
+        }
+    },
+    "AUXILIARY CONSTRAINTS": [
+        "$\\forall i, \\ IntegerPriceChange[i] \\leq MaxPriceDeviation \\cdot InitialPrices[i] \\cdot PriceChanged[i]$",
+        "$\\forall i, \\ IntegerPriceChange[i] \\geq - MaxPriceDeviation \\cdot InitialPrices[i] \\cdot PriceChanged[i]$"
+    ]
+}
+----

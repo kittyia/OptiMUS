@@ -1,0 +1,2002 @@
+----
+[
+    "Manufacturing capacity constraint: For each month t and each machine m, the total processing time of all products on machine m cannot exceed the available working hours of the operational machines, i.e., sum over products p of (Time[p,m] * manufacture[t,p]) ≤ (NumMachines[m] − maintain[t,m]) * 24 * 6 * 2 * WorkHours",
+    "Maintenance duration constraint: For each machine type m, the total number of months in which machines are under maintenance must equal Downtime[m], i.e., sum over months t of maintain[t,m] = Downtime[m]",
+    "Maintenance capacity and integrality constraint: For each machine type m and month t, maintain[t,m] is an integer and 0 ≤ maintain[t,m] ≤ NumMachines[m]",
+    "Inventory balance constraint: For each product p and month t, storage[t,p] = storage[t-1,p] + manufacture[t,p] − sell[t,p]",
+    "Initial inventory constraint: For each product p, storage[0,p] = 0",
+    "Final inventory requirement: For each product p, storage[T,p] = KeepQuantity",
+    "Storage capacity constraint: For each product p and month t, storage[t,p] ≤ 100",
+    "Demand limitation constraint: For each product p and month t, sell[t,p] ≤ Limit[t,p]",
+    "Non-negativity constraint on production: manufacture[t,p] ≥ 0 for all products p and months t",
+    "Non-negativity constraint on sales: sell[t,p] ≥ 0 for all products p and months t",
+    "Non-negativity constraint on storage: storage[t,p] ≥ 0 for all products p and months t"
+]
+----
++++++++++++++++++++
+++ Constraint Qs ++
++++++++++++++++++++
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: MILP
+PROBLEM INFO:
+
+- An engineering factory makes several products on the machines, and the number of machine \var{m} the factory has is \var{num_{m}}.
+- Each product \var{k} yields \var{profit_{k}} to profit (defined as £/unit selling price minus cost of raw materials).
+- The unit production times (hours) product \var{k} requires on machine \var{m} is \var{time_{k, m}}
+- In the present month (January) and several subsequent months, certain machines will be down for maintenance.
+- Each machine \var{m} has to be down for \var{down_{m}} months for maintenance.
+- There are marketing limitations on each product in each month. 
+- The limitation of product \var{k} in month \var{i} is \var{limit_{k, i}}.
+- It is possible to store up to 100 of each product at a time at a cost of \var{store_price} per unit per month. 
+- There are no stocks at present, but it is desired to have a stock of \var{keep_quantity} of each type of product at the end of subsequent months.
+- The factory works a six days a week with two shifts of \var{n_workhours} hours each day. 
+- No sequencing problems need to be considered.
+- We can assume that a month has 24 days for convenience.
+
+
+INPUT FORMAT:
+
+{
+    "num_machines": [num_{m} for m in 1,...,M],
+    "profit": [profit_{k} for k in 1,...K],
+    "time": [[time_{k, m} for m in 1,...,M] for k in 1,...,K],
+    "down": [down_{m} for m in 1,...,M]
+    "limit": [[limit_{k, i} for i in 1,...,I] for k in 1,...,K],
+    "store_price": store_price,
+    "keep_quantity": keep_quantity,
+    "n_workhours": n_workhours
+}
+
+OBJECTIVE: What maintaining, selling, storing and manufacturing policy should the company pursue in order to maximize profit?
+
+OUTPUT INFO:
+
+- \var{sell} represents the amount of selling quantity of each product in each month
+- \var{manufacture} represents the amount of manufactured products in each month
+- \var{storage} represents the storage of each product in each month
+- \var{maintain} represents the number of machines in each type that are under maintenance in each month
+
+OUTPUT FORMAT:
+
+{
+    "sell": [[sell_{k, i} for k in 1,...,K] for i in 1,...I],
+    "manufacture": [[manufacture_{k, i} for k in 1,...,K] for i in 1,...I],
+    "storage": [[storage_{k, i} for k in 1,...,K] for i in 1,...,I],
+    "maintain": [[maintain_{m, k} for m in 1,...,M] for k in 1,...,K]
+}
+
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "M": {
+        "definition": "Number of machines",
+        "shape": [],
+        "type": "int"
+    },
+    "P": {
+        "definition": "Number of products",
+        "shape": [],
+        "type": "int"
+    },
+    "T": {
+        "definition": "Number of months",
+        "shape": [],
+        "type": "int"
+    },
+    "Profit": {
+        "definition": "Profit for each product",
+        "shape": [
+            "P"
+        ],
+        "type": "string"
+    },
+    "Time": {
+        "definition": "Time required to produce each product on each machine",
+        "shape": [
+            "P",
+            "M"
+        ],
+        "type": "string"
+    },
+    "Downtime": {
+        "definition": "Downtime for each machine",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    },
+    "Limit": {
+        "definition": "Limit for each product on constraints",
+        "shape": [
+            "T",
+            "P"
+        ],
+        "type": "string"
+    },
+    "StorePrice": {
+        "definition": "Price for storing products",
+        "shape": [],
+        "type": "float"
+    },
+    "KeepQuantity": {
+        "definition": "Quantity of products to keep in store",
+        "shape": [],
+        "type": "int"
+    },
+    "WorkHours": {
+        "definition": "Number of work hours available",
+        "shape": [],
+        "type": "float"
+    },
+    "NumMachines": {
+        "definition": "Number of each type of machine",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: Manufacturing capacity constraint: For each month t and each machine m, the total processing time of all products on machine m cannot exceed the available working hours of the operational machines, i.e., sum over products p of (Time[p,m] * manufacture[t,p]) ≤ (NumMachines[m] − maintain[t,m]) * 24 * 6 * 2 * WorkHours
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is absolutely a constraint and it must be explicitly modeled in the MILP.
+
+### Why this is a required constraint
+
+The problem states:
+
+- Each product requires a certain processing time on each machine.
+- The factory has a limited number of machines.
+- Some machines are down for maintenance in certain months.
+- The factory operates a fixed number of hours per month.
+
+This directly implies that production is limited by available machine-hours. Without this constraint:
+
+- The model could produce unlimited quantities.
+- Maintenance decisions would have no operational impact.
+- The number of machines would be irrelevant.
+- The working schedule (24 days × 6 days/week × 2 shifts × WorkHours) would be meaningless.
+
+That would fundamentally contradict the problem description.
+
+### Structure of the constraint
+
+For each month \( t \) and each machine \( m \):
+
+\[
+\sum_{p=1}^{P} \text{Time}[p,m] \cdot \text{manufacture}[t,p]
+\;\le\;
+(\text{NumMachines}[m] - \text{maintain}[t,m])
+\cdot 24 \cdot 6 \cdot 2 \cdot \text{WorkHours}
+\]
+
+This correctly enforces:
+
+- Total required processing time on machine \( m \)
+- Cannot exceed available machine-hours
+- Available machines are reduced by maintenance
+- Monthly working time is properly incorporated
+
+This is a **core structural constraint** of the model.
+
+### Conclusion
+
+✅ This is absolutely a necessary constraint.  
+✅ It is central to the production planning model.  
+✅ It must be explicitly included in the MILP formulation.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: MILP
+PROBLEM INFO:
+
+- An engineering factory makes several products on the machines, and the number of machine \var{m} the factory has is \var{num_{m}}.
+- Each product \var{k} yields \var{profit_{k}} to profit (defined as £/unit selling price minus cost of raw materials).
+- The unit production times (hours) product \var{k} requires on machine \var{m} is \var{time_{k, m}}
+- In the present month (January) and several subsequent months, certain machines will be down for maintenance.
+- Each machine \var{m} has to be down for \var{down_{m}} months for maintenance.
+- There are marketing limitations on each product in each month. 
+- The limitation of product \var{k} in month \var{i} is \var{limit_{k, i}}.
+- It is possible to store up to 100 of each product at a time at a cost of \var{store_price} per unit per month. 
+- There are no stocks at present, but it is desired to have a stock of \var{keep_quantity} of each type of product at the end of subsequent months.
+- The factory works a six days a week with two shifts of \var{n_workhours} hours each day. 
+- No sequencing problems need to be considered.
+- We can assume that a month has 24 days for convenience.
+
+
+INPUT FORMAT:
+
+{
+    "num_machines": [num_{m} for m in 1,...,M],
+    "profit": [profit_{k} for k in 1,...K],
+    "time": [[time_{k, m} for m in 1,...,M] for k in 1,...,K],
+    "down": [down_{m} for m in 1,...,M]
+    "limit": [[limit_{k, i} for i in 1,...,I] for k in 1,...,K],
+    "store_price": store_price,
+    "keep_quantity": keep_quantity,
+    "n_workhours": n_workhours
+}
+
+OBJECTIVE: What maintaining, selling, storing and manufacturing policy should the company pursue in order to maximize profit?
+
+OUTPUT INFO:
+
+- \var{sell} represents the amount of selling quantity of each product in each month
+- \var{manufacture} represents the amount of manufactured products in each month
+- \var{storage} represents the storage of each product in each month
+- \var{maintain} represents the number of machines in each type that are under maintenance in each month
+
+OUTPUT FORMAT:
+
+{
+    "sell": [[sell_{k, i} for k in 1,...,K] for i in 1,...I],
+    "manufacture": [[manufacture_{k, i} for k in 1,...,K] for i in 1,...I],
+    "storage": [[storage_{k, i} for k in 1,...,K] for i in 1,...,I],
+    "maintain": [[maintain_{m, k} for m in 1,...,M] for k in 1,...,K]
+}
+
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "M": {
+        "definition": "Number of machines",
+        "shape": [],
+        "type": "int"
+    },
+    "P": {
+        "definition": "Number of products",
+        "shape": [],
+        "type": "int"
+    },
+    "T": {
+        "definition": "Number of months",
+        "shape": [],
+        "type": "int"
+    },
+    "Profit": {
+        "definition": "Profit for each product",
+        "shape": [
+            "P"
+        ],
+        "type": "string"
+    },
+    "Time": {
+        "definition": "Time required to produce each product on each machine",
+        "shape": [
+            "P",
+            "M"
+        ],
+        "type": "string"
+    },
+    "Downtime": {
+        "definition": "Downtime for each machine",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    },
+    "Limit": {
+        "definition": "Limit for each product on constraints",
+        "shape": [
+            "T",
+            "P"
+        ],
+        "type": "string"
+    },
+    "StorePrice": {
+        "definition": "Price for storing products",
+        "shape": [],
+        "type": "float"
+    },
+    "KeepQuantity": {
+        "definition": "Quantity of products to keep in store",
+        "shape": [],
+        "type": "int"
+    },
+    "WorkHours": {
+        "definition": "Number of work hours available",
+        "shape": [],
+        "type": "float"
+    },
+    "NumMachines": {
+        "definition": "Number of each type of machine",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: Maintenance duration constraint: For each machine type m, the total number of months in which machines are under maintenance must equal Downtime[m], i.e., sum over months t of maintain[t,m] = Downtime[m]
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is indeed a real modeling requirement — but the proposed formulation is **not quite correct as written**.
+
+From the description:
+
+> “Each machine \( m \) has to be down for \( down_m \) months for maintenance.”
+
+This means that **each individual machine of type \( m \)** must undergo maintenance for \( down_m \) months over the planning horizon.
+
+If there are \( num_m \) machines of type \( m \), then the total number of maintenance machine-months required is:
+
+\[
+num_m \times down_m
+\]
+
+Now look at the decision variable:
+
+- `maintain[t,m]` = number of machines of type \( m \) under maintenance in month \( t \)
+
+Therefore, the correct constraint should be:
+
+\[
+\sum_{t=1}^{T} maintain_{t,m} = num_m \cdot down_m \quad \forall m
+\]
+
+The proposed constraint:
+
+\[
+\sum_{t} maintain_{t,m} = Downtime[m]
+\]
+
+would only be correct **if there were exactly one machine of each type**.
+
+---
+
+### Conclusion
+
+✅ Yes, this is definitely a necessary constraint in the MILP formulation.  
+❌ However, it must include the number of machines as a multiplier.
+
+So the idea is correct, but the exact mathematical form given is incomplete.
+
+**Confidence level:**  
+4 OUT OF 5
++--+
+---
+The confidence score is 4, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: MILP
+PROBLEM INFO:
+
+- An engineering factory makes several products on the machines, and the number of machine \var{m} the factory has is \var{num_{m}}.
+- Each product \var{k} yields \var{profit_{k}} to profit (defined as £/unit selling price minus cost of raw materials).
+- The unit production times (hours) product \var{k} requires on machine \var{m} is \var{time_{k, m}}
+- In the present month (January) and several subsequent months, certain machines will be down for maintenance.
+- Each machine \var{m} has to be down for \var{down_{m}} months for maintenance.
+- There are marketing limitations on each product in each month. 
+- The limitation of product \var{k} in month \var{i} is \var{limit_{k, i}}.
+- It is possible to store up to 100 of each product at a time at a cost of \var{store_price} per unit per month. 
+- There are no stocks at present, but it is desired to have a stock of \var{keep_quantity} of each type of product at the end of subsequent months.
+- The factory works a six days a week with two shifts of \var{n_workhours} hours each day. 
+- No sequencing problems need to be considered.
+- We can assume that a month has 24 days for convenience.
+
+
+INPUT FORMAT:
+
+{
+    "num_machines": [num_{m} for m in 1,...,M],
+    "profit": [profit_{k} for k in 1,...K],
+    "time": [[time_{k, m} for m in 1,...,M] for k in 1,...,K],
+    "down": [down_{m} for m in 1,...,M]
+    "limit": [[limit_{k, i} for i in 1,...,I] for k in 1,...,K],
+    "store_price": store_price,
+    "keep_quantity": keep_quantity,
+    "n_workhours": n_workhours
+}
+
+OBJECTIVE: What maintaining, selling, storing and manufacturing policy should the company pursue in order to maximize profit?
+
+OUTPUT INFO:
+
+- \var{sell} represents the amount of selling quantity of each product in each month
+- \var{manufacture} represents the amount of manufactured products in each month
+- \var{storage} represents the storage of each product in each month
+- \var{maintain} represents the number of machines in each type that are under maintenance in each month
+
+OUTPUT FORMAT:
+
+{
+    "sell": [[sell_{k, i} for k in 1,...,K] for i in 1,...I],
+    "manufacture": [[manufacture_{k, i} for k in 1,...,K] for i in 1,...I],
+    "storage": [[storage_{k, i} for k in 1,...,K] for i in 1,...,I],
+    "maintain": [[maintain_{m, k} for m in 1,...,M] for k in 1,...,K]
+}
+
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "M": {
+        "definition": "Number of machines",
+        "shape": [],
+        "type": "int"
+    },
+    "P": {
+        "definition": "Number of products",
+        "shape": [],
+        "type": "int"
+    },
+    "T": {
+        "definition": "Number of months",
+        "shape": [],
+        "type": "int"
+    },
+    "Profit": {
+        "definition": "Profit for each product",
+        "shape": [
+            "P"
+        ],
+        "type": "string"
+    },
+    "Time": {
+        "definition": "Time required to produce each product on each machine",
+        "shape": [
+            "P",
+            "M"
+        ],
+        "type": "string"
+    },
+    "Downtime": {
+        "definition": "Downtime for each machine",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    },
+    "Limit": {
+        "definition": "Limit for each product on constraints",
+        "shape": [
+            "T",
+            "P"
+        ],
+        "type": "string"
+    },
+    "StorePrice": {
+        "definition": "Price for storing products",
+        "shape": [],
+        "type": "float"
+    },
+    "KeepQuantity": {
+        "definition": "Quantity of products to keep in store",
+        "shape": [],
+        "type": "int"
+    },
+    "WorkHours": {
+        "definition": "Number of work hours available",
+        "shape": [],
+        "type": "float"
+    },
+    "NumMachines": {
+        "definition": "Number of each type of machine",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: Maintenance capacity and integrality constraint: For each machine type m and month t, maintain[t,m] is an integer and 0 ≤ maintain[t,m] ≤ NumMachines[m]
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is **definitely a constraint**, and it must be explicitly modeled.
+
+### Why it is a constraint
+
+1. **Physical feasibility**  
+   The number of machines under maintenance in month \( t \) for machine type \( m \), i.e.,  
+   \[
+   maintain_{t,m},
+   \]
+   cannot exceed the number of machines of that type:
+   \[
+   0 \le maintain_{t,m} \le NumMachines_m.
+   \]
+
+2. **Integrality requirement**  
+   Machines are indivisible resources. You cannot maintain 2.7 machines. Therefore:
+   \[
+   maintain_{t,m} \in \mathbb{Z}.
+   \]
+   This is essential and is what makes the model a MILP.
+
+3. **Model consistency**  
+   The available production capacity in month \( t \) depends on:
+   \[
+   NumMachines_m - maintain_{t,m}.
+   \]
+   Without bounding maintain properly, the model could:
+   - Put more machines into maintenance than exist.
+   - Use fractional maintenance values.
+   - Create infeasible or artificially inflated production capacity.
+
+4. **Logical linkage to downtime requirement**  
+   Since each machine type must be down for \( down_m \) months total, we will also need:
+   \[
+   \sum_{t=1}^{T} maintain_{t,m} = down_m.
+   \]
+   That only makes sense if maintain is properly bounded and integral.
+
+### Conclusion
+
+This is a **necessary structural constraint** in the model, both for correctness and realism.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: MILP
+PROBLEM INFO:
+
+- An engineering factory makes several products on the machines, and the number of machine \var{m} the factory has is \var{num_{m}}.
+- Each product \var{k} yields \var{profit_{k}} to profit (defined as £/unit selling price minus cost of raw materials).
+- The unit production times (hours) product \var{k} requires on machine \var{m} is \var{time_{k, m}}
+- In the present month (January) and several subsequent months, certain machines will be down for maintenance.
+- Each machine \var{m} has to be down for \var{down_{m}} months for maintenance.
+- There are marketing limitations on each product in each month. 
+- The limitation of product \var{k} in month \var{i} is \var{limit_{k, i}}.
+- It is possible to store up to 100 of each product at a time at a cost of \var{store_price} per unit per month. 
+- There are no stocks at present, but it is desired to have a stock of \var{keep_quantity} of each type of product at the end of subsequent months.
+- The factory works a six days a week with two shifts of \var{n_workhours} hours each day. 
+- No sequencing problems need to be considered.
+- We can assume that a month has 24 days for convenience.
+
+
+INPUT FORMAT:
+
+{
+    "num_machines": [num_{m} for m in 1,...,M],
+    "profit": [profit_{k} for k in 1,...K],
+    "time": [[time_{k, m} for m in 1,...,M] for k in 1,...,K],
+    "down": [down_{m} for m in 1,...,M]
+    "limit": [[limit_{k, i} for i in 1,...,I] for k in 1,...,K],
+    "store_price": store_price,
+    "keep_quantity": keep_quantity,
+    "n_workhours": n_workhours
+}
+
+OBJECTIVE: What maintaining, selling, storing and manufacturing policy should the company pursue in order to maximize profit?
+
+OUTPUT INFO:
+
+- \var{sell} represents the amount of selling quantity of each product in each month
+- \var{manufacture} represents the amount of manufactured products in each month
+- \var{storage} represents the storage of each product in each month
+- \var{maintain} represents the number of machines in each type that are under maintenance in each month
+
+OUTPUT FORMAT:
+
+{
+    "sell": [[sell_{k, i} for k in 1,...,K] for i in 1,...I],
+    "manufacture": [[manufacture_{k, i} for k in 1,...,K] for i in 1,...I],
+    "storage": [[storage_{k, i} for k in 1,...,K] for i in 1,...,I],
+    "maintain": [[maintain_{m, k} for m in 1,...,M] for k in 1,...,K]
+}
+
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "M": {
+        "definition": "Number of machines",
+        "shape": [],
+        "type": "int"
+    },
+    "P": {
+        "definition": "Number of products",
+        "shape": [],
+        "type": "int"
+    },
+    "T": {
+        "definition": "Number of months",
+        "shape": [],
+        "type": "int"
+    },
+    "Profit": {
+        "definition": "Profit for each product",
+        "shape": [
+            "P"
+        ],
+        "type": "string"
+    },
+    "Time": {
+        "definition": "Time required to produce each product on each machine",
+        "shape": [
+            "P",
+            "M"
+        ],
+        "type": "string"
+    },
+    "Downtime": {
+        "definition": "Downtime for each machine",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    },
+    "Limit": {
+        "definition": "Limit for each product on constraints",
+        "shape": [
+            "T",
+            "P"
+        ],
+        "type": "string"
+    },
+    "StorePrice": {
+        "definition": "Price for storing products",
+        "shape": [],
+        "type": "float"
+    },
+    "KeepQuantity": {
+        "definition": "Quantity of products to keep in store",
+        "shape": [],
+        "type": "int"
+    },
+    "WorkHours": {
+        "definition": "Number of work hours available",
+        "shape": [],
+        "type": "float"
+    },
+    "NumMachines": {
+        "definition": "Number of each type of machine",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: Inventory balance constraint: For each product p and month t, storage[t,p] = storage[t-1,p] + manufacture[t,p] − sell[t,p]
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is absolutely a necessary constraint**, and it must be explicitly modeled.
+
+### Why this is required
+
+The problem includes:
+- Manufacturing decisions
+- Selling decisions
+- Storage decisions
+- Initial inventory = 0
+- Required ending inventory = `keep_quantity`
+- Storage costs per unit per month
+
+Because products can be stored and carried across months, we need a **material balance (flow conservation) constraint** to ensure logical consistency between:
+- What was previously stored  
+- What is manufactured  
+- What is sold  
+- What remains in storage  
+
+Without this constraint:
+- The model could sell products that were never produced.
+- Storage levels could be arbitrary and disconnected from production.
+- The ending inventory requirement would have no physical meaning.
+
+### Correct modeling form
+
+For each product \( p \) and month \( t \):
+
+For \( t = 1 \):
+\[
+\text{storage}_{1,p} = 0 + \text{manufacture}_{1,p} - \text{sell}_{1,p}
+\]
+
+For \( t > 1 \):
+\[
+\text{storage}_{t,p} = \text{storage}_{t-1,p} + \text{manufacture}_{t,p} - \text{sell}_{t,p}
+\]
+
+Additionally:
+- Initial inventory must be set to zero.
+- Final month storage must equal `KeepQuantity`.
+- Storage capacity (≤ 100 units per product per month) must also be enforced separately.
+
+### Conclusion
+
+This is a **core structural constraint** in multi-period production planning with inventory.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: MILP
+PROBLEM INFO:
+
+- An engineering factory makes several products on the machines, and the number of machine \var{m} the factory has is \var{num_{m}}.
+- Each product \var{k} yields \var{profit_{k}} to profit (defined as £/unit selling price minus cost of raw materials).
+- The unit production times (hours) product \var{k} requires on machine \var{m} is \var{time_{k, m}}
+- In the present month (January) and several subsequent months, certain machines will be down for maintenance.
+- Each machine \var{m} has to be down for \var{down_{m}} months for maintenance.
+- There are marketing limitations on each product in each month. 
+- The limitation of product \var{k} in month \var{i} is \var{limit_{k, i}}.
+- It is possible to store up to 100 of each product at a time at a cost of \var{store_price} per unit per month. 
+- There are no stocks at present, but it is desired to have a stock of \var{keep_quantity} of each type of product at the end of subsequent months.
+- The factory works a six days a week with two shifts of \var{n_workhours} hours each day. 
+- No sequencing problems need to be considered.
+- We can assume that a month has 24 days for convenience.
+
+
+INPUT FORMAT:
+
+{
+    "num_machines": [num_{m} for m in 1,...,M],
+    "profit": [profit_{k} for k in 1,...K],
+    "time": [[time_{k, m} for m in 1,...,M] for k in 1,...,K],
+    "down": [down_{m} for m in 1,...,M]
+    "limit": [[limit_{k, i} for i in 1,...,I] for k in 1,...,K],
+    "store_price": store_price,
+    "keep_quantity": keep_quantity,
+    "n_workhours": n_workhours
+}
+
+OBJECTIVE: What maintaining, selling, storing and manufacturing policy should the company pursue in order to maximize profit?
+
+OUTPUT INFO:
+
+- \var{sell} represents the amount of selling quantity of each product in each month
+- \var{manufacture} represents the amount of manufactured products in each month
+- \var{storage} represents the storage of each product in each month
+- \var{maintain} represents the number of machines in each type that are under maintenance in each month
+
+OUTPUT FORMAT:
+
+{
+    "sell": [[sell_{k, i} for k in 1,...,K] for i in 1,...I],
+    "manufacture": [[manufacture_{k, i} for k in 1,...,K] for i in 1,...I],
+    "storage": [[storage_{k, i} for k in 1,...,K] for i in 1,...,I],
+    "maintain": [[maintain_{m, k} for m in 1,...,M] for k in 1,...,K]
+}
+
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "M": {
+        "definition": "Number of machines",
+        "shape": [],
+        "type": "int"
+    },
+    "P": {
+        "definition": "Number of products",
+        "shape": [],
+        "type": "int"
+    },
+    "T": {
+        "definition": "Number of months",
+        "shape": [],
+        "type": "int"
+    },
+    "Profit": {
+        "definition": "Profit for each product",
+        "shape": [
+            "P"
+        ],
+        "type": "string"
+    },
+    "Time": {
+        "definition": "Time required to produce each product on each machine",
+        "shape": [
+            "P",
+            "M"
+        ],
+        "type": "string"
+    },
+    "Downtime": {
+        "definition": "Downtime for each machine",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    },
+    "Limit": {
+        "definition": "Limit for each product on constraints",
+        "shape": [
+            "T",
+            "P"
+        ],
+        "type": "string"
+    },
+    "StorePrice": {
+        "definition": "Price for storing products",
+        "shape": [],
+        "type": "float"
+    },
+    "KeepQuantity": {
+        "definition": "Quantity of products to keep in store",
+        "shape": [],
+        "type": "int"
+    },
+    "WorkHours": {
+        "definition": "Number of work hours available",
+        "shape": [],
+        "type": "float"
+    },
+    "NumMachines": {
+        "definition": "Number of each type of machine",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: Initial inventory constraint: For each product p, storage[0,p] = 0
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is indeed a constraint**, specifically a boundary (initial condition) constraint.
+
+The problem explicitly states:
+
+> “There are no stocks at present”
+
+This directly implies that the initial inventory level for every product must be zero.
+
+In a time-indexed inventory balance model, inventory evolves according to something like:
+
+\[
+\text{storage}_{k,i} = \text{storage}_{k,i-1} + \text{manufacture}_{k,i} - \text{sell}_{k,i}
+\]
+
+To make this work correctly, we must define:
+
+\[
+\text{storage}_{k,0} = 0 \quad \forall k
+\]
+
+Even if the model only defines storage for months \( i = 1, \dots, T \), this initial condition must still be enforced implicitly (e.g., by setting the initial inventory parameter to 0 in the balance equation for month 1). Otherwise, the model could artificially assume positive starting inventory and inflate profits.
+
+So yes — this is a necessary modeling constraint (or boundary condition), and it should be explicitly represented in the MILP formulation.
+
+**Confidence level:**  
+5 OUT OF 5
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: MILP
+PROBLEM INFO:
+
+- An engineering factory makes several products on the machines, and the number of machine \var{m} the factory has is \var{num_{m}}.
+- Each product \var{k} yields \var{profit_{k}} to profit (defined as £/unit selling price minus cost of raw materials).
+- The unit production times (hours) product \var{k} requires on machine \var{m} is \var{time_{k, m}}
+- In the present month (January) and several subsequent months, certain machines will be down for maintenance.
+- Each machine \var{m} has to be down for \var{down_{m}} months for maintenance.
+- There are marketing limitations on each product in each month. 
+- The limitation of product \var{k} in month \var{i} is \var{limit_{k, i}}.
+- It is possible to store up to 100 of each product at a time at a cost of \var{store_price} per unit per month. 
+- There are no stocks at present, but it is desired to have a stock of \var{keep_quantity} of each type of product at the end of subsequent months.
+- The factory works a six days a week with two shifts of \var{n_workhours} hours each day. 
+- No sequencing problems need to be considered.
+- We can assume that a month has 24 days for convenience.
+
+
+INPUT FORMAT:
+
+{
+    "num_machines": [num_{m} for m in 1,...,M],
+    "profit": [profit_{k} for k in 1,...K],
+    "time": [[time_{k, m} for m in 1,...,M] for k in 1,...,K],
+    "down": [down_{m} for m in 1,...,M]
+    "limit": [[limit_{k, i} for i in 1,...,I] for k in 1,...,K],
+    "store_price": store_price,
+    "keep_quantity": keep_quantity,
+    "n_workhours": n_workhours
+}
+
+OBJECTIVE: What maintaining, selling, storing and manufacturing policy should the company pursue in order to maximize profit?
+
+OUTPUT INFO:
+
+- \var{sell} represents the amount of selling quantity of each product in each month
+- \var{manufacture} represents the amount of manufactured products in each month
+- \var{storage} represents the storage of each product in each month
+- \var{maintain} represents the number of machines in each type that are under maintenance in each month
+
+OUTPUT FORMAT:
+
+{
+    "sell": [[sell_{k, i} for k in 1,...,K] for i in 1,...I],
+    "manufacture": [[manufacture_{k, i} for k in 1,...,K] for i in 1,...I],
+    "storage": [[storage_{k, i} for k in 1,...,K] for i in 1,...,I],
+    "maintain": [[maintain_{m, k} for m in 1,...,M] for k in 1,...,K]
+}
+
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "M": {
+        "definition": "Number of machines",
+        "shape": [],
+        "type": "int"
+    },
+    "P": {
+        "definition": "Number of products",
+        "shape": [],
+        "type": "int"
+    },
+    "T": {
+        "definition": "Number of months",
+        "shape": [],
+        "type": "int"
+    },
+    "Profit": {
+        "definition": "Profit for each product",
+        "shape": [
+            "P"
+        ],
+        "type": "string"
+    },
+    "Time": {
+        "definition": "Time required to produce each product on each machine",
+        "shape": [
+            "P",
+            "M"
+        ],
+        "type": "string"
+    },
+    "Downtime": {
+        "definition": "Downtime for each machine",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    },
+    "Limit": {
+        "definition": "Limit for each product on constraints",
+        "shape": [
+            "T",
+            "P"
+        ],
+        "type": "string"
+    },
+    "StorePrice": {
+        "definition": "Price for storing products",
+        "shape": [],
+        "type": "float"
+    },
+    "KeepQuantity": {
+        "definition": "Quantity of products to keep in store",
+        "shape": [],
+        "type": "int"
+    },
+    "WorkHours": {
+        "definition": "Number of work hours available",
+        "shape": [],
+        "type": "float"
+    },
+    "NumMachines": {
+        "definition": "Number of each type of machine",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: Final inventory requirement: For each product p, storage[T,p] = KeepQuantity
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is indeed a constraint and it should be explicitly modeled.
+
+The problem statement clearly says:
+
+> “There are no stocks at present, but it is desired to have a stock of keep_quantity of each type of product at the end of subsequent months.”
+
+This implies a required ending inventory level for each product at the end of the planning horizon. In standard production-inventory planning models, such a statement translates directly into a terminal inventory constraint:
+
+\[
+\text{storage}_{T,p} = \text{KeepQuantity} \quad \forall p
+\]
+
+This is not optional or soft — the wording “it is desired to have” in optimization modeling contexts typically implies a hard requirement unless a penalty formulation is explicitly described (which it is not here). Therefore, it should be enforced as a strict equality constraint in the MILP.
+
+Without this constraint, the model would likely drive final inventory to zero (to avoid storage costs), which would violate the stated requirement.
+
+✅ This is a real and necessary modeling constraint.  
+✅ It must be explicitly included.  
+✅ It is a standard terminal inventory constraint.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: MILP
+PROBLEM INFO:
+
+- An engineering factory makes several products on the machines, and the number of machine \var{m} the factory has is \var{num_{m}}.
+- Each product \var{k} yields \var{profit_{k}} to profit (defined as £/unit selling price minus cost of raw materials).
+- The unit production times (hours) product \var{k} requires on machine \var{m} is \var{time_{k, m}}
+- In the present month (January) and several subsequent months, certain machines will be down for maintenance.
+- Each machine \var{m} has to be down for \var{down_{m}} months for maintenance.
+- There are marketing limitations on each product in each month. 
+- The limitation of product \var{k} in month \var{i} is \var{limit_{k, i}}.
+- It is possible to store up to 100 of each product at a time at a cost of \var{store_price} per unit per month. 
+- There are no stocks at present, but it is desired to have a stock of \var{keep_quantity} of each type of product at the end of subsequent months.
+- The factory works a six days a week with two shifts of \var{n_workhours} hours each day. 
+- No sequencing problems need to be considered.
+- We can assume that a month has 24 days for convenience.
+
+
+INPUT FORMAT:
+
+{
+    "num_machines": [num_{m} for m in 1,...,M],
+    "profit": [profit_{k} for k in 1,...K],
+    "time": [[time_{k, m} for m in 1,...,M] for k in 1,...,K],
+    "down": [down_{m} for m in 1,...,M]
+    "limit": [[limit_{k, i} for i in 1,...,I] for k in 1,...,K],
+    "store_price": store_price,
+    "keep_quantity": keep_quantity,
+    "n_workhours": n_workhours
+}
+
+OBJECTIVE: What maintaining, selling, storing and manufacturing policy should the company pursue in order to maximize profit?
+
+OUTPUT INFO:
+
+- \var{sell} represents the amount of selling quantity of each product in each month
+- \var{manufacture} represents the amount of manufactured products in each month
+- \var{storage} represents the storage of each product in each month
+- \var{maintain} represents the number of machines in each type that are under maintenance in each month
+
+OUTPUT FORMAT:
+
+{
+    "sell": [[sell_{k, i} for k in 1,...,K] for i in 1,...I],
+    "manufacture": [[manufacture_{k, i} for k in 1,...,K] for i in 1,...I],
+    "storage": [[storage_{k, i} for k in 1,...,K] for i in 1,...,I],
+    "maintain": [[maintain_{m, k} for m in 1,...,M] for k in 1,...,K]
+}
+
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "M": {
+        "definition": "Number of machines",
+        "shape": [],
+        "type": "int"
+    },
+    "P": {
+        "definition": "Number of products",
+        "shape": [],
+        "type": "int"
+    },
+    "T": {
+        "definition": "Number of months",
+        "shape": [],
+        "type": "int"
+    },
+    "Profit": {
+        "definition": "Profit for each product",
+        "shape": [
+            "P"
+        ],
+        "type": "string"
+    },
+    "Time": {
+        "definition": "Time required to produce each product on each machine",
+        "shape": [
+            "P",
+            "M"
+        ],
+        "type": "string"
+    },
+    "Downtime": {
+        "definition": "Downtime for each machine",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    },
+    "Limit": {
+        "definition": "Limit for each product on constraints",
+        "shape": [
+            "T",
+            "P"
+        ],
+        "type": "string"
+    },
+    "StorePrice": {
+        "definition": "Price for storing products",
+        "shape": [],
+        "type": "float"
+    },
+    "KeepQuantity": {
+        "definition": "Quantity of products to keep in store",
+        "shape": [],
+        "type": "int"
+    },
+    "WorkHours": {
+        "definition": "Number of work hours available",
+        "shape": [],
+        "type": "float"
+    },
+    "NumMachines": {
+        "definition": "Number of each type of machine",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: Storage capacity constraint: For each product p and month t, storage[t,p] ≤ 100
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is **definitely a constraint** and it should be explicitly modeled.
+
+The statement:
+
+> "It is possible to store up to 100 of each product at a time at a cost of store_price per unit per month."
+
+clearly imposes a **hard upper bound** on inventory for each product in each month. The phrase “up to 100” unambiguously defines a capacity limit.
+
+Therefore, for every product \( p \) and month \( t \), the model must include:
+
+\[
+\text{storage}_{t,p} \le 100
+\]
+
+This is a structural capacity restriction, not a soft preference or cost-based implication. Even though storage incurs a cost, the cost does **not** replace the capacity limit — both must be modeled.
+
+### Conclusion
+✅ This is absolutely a constraint.  
+✅ It must be explicitly included in the MILP formulation.  
+✅ It directly follows from the problem statement.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: MILP
+PROBLEM INFO:
+
+- An engineering factory makes several products on the machines, and the number of machine \var{m} the factory has is \var{num_{m}}.
+- Each product \var{k} yields \var{profit_{k}} to profit (defined as £/unit selling price minus cost of raw materials).
+- The unit production times (hours) product \var{k} requires on machine \var{m} is \var{time_{k, m}}
+- In the present month (January) and several subsequent months, certain machines will be down for maintenance.
+- Each machine \var{m} has to be down for \var{down_{m}} months for maintenance.
+- There are marketing limitations on each product in each month. 
+- The limitation of product \var{k} in month \var{i} is \var{limit_{k, i}}.
+- It is possible to store up to 100 of each product at a time at a cost of \var{store_price} per unit per month. 
+- There are no stocks at present, but it is desired to have a stock of \var{keep_quantity} of each type of product at the end of subsequent months.
+- The factory works a six days a week with two shifts of \var{n_workhours} hours each day. 
+- No sequencing problems need to be considered.
+- We can assume that a month has 24 days for convenience.
+
+
+INPUT FORMAT:
+
+{
+    "num_machines": [num_{m} for m in 1,...,M],
+    "profit": [profit_{k} for k in 1,...K],
+    "time": [[time_{k, m} for m in 1,...,M] for k in 1,...,K],
+    "down": [down_{m} for m in 1,...,M]
+    "limit": [[limit_{k, i} for i in 1,...,I] for k in 1,...,K],
+    "store_price": store_price,
+    "keep_quantity": keep_quantity,
+    "n_workhours": n_workhours
+}
+
+OBJECTIVE: What maintaining, selling, storing and manufacturing policy should the company pursue in order to maximize profit?
+
+OUTPUT INFO:
+
+- \var{sell} represents the amount of selling quantity of each product in each month
+- \var{manufacture} represents the amount of manufactured products in each month
+- \var{storage} represents the storage of each product in each month
+- \var{maintain} represents the number of machines in each type that are under maintenance in each month
+
+OUTPUT FORMAT:
+
+{
+    "sell": [[sell_{k, i} for k in 1,...,K] for i in 1,...I],
+    "manufacture": [[manufacture_{k, i} for k in 1,...,K] for i in 1,...I],
+    "storage": [[storage_{k, i} for k in 1,...,K] for i in 1,...,I],
+    "maintain": [[maintain_{m, k} for m in 1,...,M] for k in 1,...,K]
+}
+
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "M": {
+        "definition": "Number of machines",
+        "shape": [],
+        "type": "int"
+    },
+    "P": {
+        "definition": "Number of products",
+        "shape": [],
+        "type": "int"
+    },
+    "T": {
+        "definition": "Number of months",
+        "shape": [],
+        "type": "int"
+    },
+    "Profit": {
+        "definition": "Profit for each product",
+        "shape": [
+            "P"
+        ],
+        "type": "string"
+    },
+    "Time": {
+        "definition": "Time required to produce each product on each machine",
+        "shape": [
+            "P",
+            "M"
+        ],
+        "type": "string"
+    },
+    "Downtime": {
+        "definition": "Downtime for each machine",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    },
+    "Limit": {
+        "definition": "Limit for each product on constraints",
+        "shape": [
+            "T",
+            "P"
+        ],
+        "type": "string"
+    },
+    "StorePrice": {
+        "definition": "Price for storing products",
+        "shape": [],
+        "type": "float"
+    },
+    "KeepQuantity": {
+        "definition": "Quantity of products to keep in store",
+        "shape": [],
+        "type": "int"
+    },
+    "WorkHours": {
+        "definition": "Number of work hours available",
+        "shape": [],
+        "type": "float"
+    },
+    "NumMachines": {
+        "definition": "Number of each type of machine",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: Demand limitation constraint: For each product p and month t, sell[t,p] ≤ Limit[t,p]
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is clearly a necessary constraint.
+
+The problem statement explicitly says:
+
+> “There are marketing limitations on each product in each month. The limitation of product \( k \) in month \( i \) is \( \text{limit}_{k,i} \).”
+
+This directly implies that the quantity sold of product \( p \) in month \( t \) cannot exceed the corresponding marketing limit. Therefore, the constraint
+
+\[
+\text{sell}_{t,p} \le \text{Limit}_{t,p}
+\]
+
+is a direct mathematical translation of the problem description.
+
+Without this constraint, the model could sell arbitrarily large quantities (subject only to production and storage), which would violate the stated marketing restrictions.
+
+So yes — this is absolutely a real and required constraint in the MILP formulation.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: MILP
+PROBLEM INFO:
+
+- An engineering factory makes several products on the machines, and the number of machine \var{m} the factory has is \var{num_{m}}.
+- Each product \var{k} yields \var{profit_{k}} to profit (defined as £/unit selling price minus cost of raw materials).
+- The unit production times (hours) product \var{k} requires on machine \var{m} is \var{time_{k, m}}
+- In the present month (January) and several subsequent months, certain machines will be down for maintenance.
+- Each machine \var{m} has to be down for \var{down_{m}} months for maintenance.
+- There are marketing limitations on each product in each month. 
+- The limitation of product \var{k} in month \var{i} is \var{limit_{k, i}}.
+- It is possible to store up to 100 of each product at a time at a cost of \var{store_price} per unit per month. 
+- There are no stocks at present, but it is desired to have a stock of \var{keep_quantity} of each type of product at the end of subsequent months.
+- The factory works a six days a week with two shifts of \var{n_workhours} hours each day. 
+- No sequencing problems need to be considered.
+- We can assume that a month has 24 days for convenience.
+
+
+INPUT FORMAT:
+
+{
+    "num_machines": [num_{m} for m in 1,...,M],
+    "profit": [profit_{k} for k in 1,...K],
+    "time": [[time_{k, m} for m in 1,...,M] for k in 1,...,K],
+    "down": [down_{m} for m in 1,...,M]
+    "limit": [[limit_{k, i} for i in 1,...,I] for k in 1,...,K],
+    "store_price": store_price,
+    "keep_quantity": keep_quantity,
+    "n_workhours": n_workhours
+}
+
+OBJECTIVE: What maintaining, selling, storing and manufacturing policy should the company pursue in order to maximize profit?
+
+OUTPUT INFO:
+
+- \var{sell} represents the amount of selling quantity of each product in each month
+- \var{manufacture} represents the amount of manufactured products in each month
+- \var{storage} represents the storage of each product in each month
+- \var{maintain} represents the number of machines in each type that are under maintenance in each month
+
+OUTPUT FORMAT:
+
+{
+    "sell": [[sell_{k, i} for k in 1,...,K] for i in 1,...I],
+    "manufacture": [[manufacture_{k, i} for k in 1,...,K] for i in 1,...I],
+    "storage": [[storage_{k, i} for k in 1,...,K] for i in 1,...,I],
+    "maintain": [[maintain_{m, k} for m in 1,...,M] for k in 1,...,K]
+}
+
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "M": {
+        "definition": "Number of machines",
+        "shape": [],
+        "type": "int"
+    },
+    "P": {
+        "definition": "Number of products",
+        "shape": [],
+        "type": "int"
+    },
+    "T": {
+        "definition": "Number of months",
+        "shape": [],
+        "type": "int"
+    },
+    "Profit": {
+        "definition": "Profit for each product",
+        "shape": [
+            "P"
+        ],
+        "type": "string"
+    },
+    "Time": {
+        "definition": "Time required to produce each product on each machine",
+        "shape": [
+            "P",
+            "M"
+        ],
+        "type": "string"
+    },
+    "Downtime": {
+        "definition": "Downtime for each machine",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    },
+    "Limit": {
+        "definition": "Limit for each product on constraints",
+        "shape": [
+            "T",
+            "P"
+        ],
+        "type": "string"
+    },
+    "StorePrice": {
+        "definition": "Price for storing products",
+        "shape": [],
+        "type": "float"
+    },
+    "KeepQuantity": {
+        "definition": "Quantity of products to keep in store",
+        "shape": [],
+        "type": "int"
+    },
+    "WorkHours": {
+        "definition": "Number of work hours available",
+        "shape": [],
+        "type": "float"
+    },
+    "NumMachines": {
+        "definition": "Number of each type of machine",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: Non-negativity constraint on production: manufacture[t,p] ≥ 0 for all products p and months t
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is** a constraint.
+
+### Why?
+
+- The variable `manufacture[t,p]` represents the quantity of product *p* produced in month *t*.
+- Negative production has no physical meaning in this context.
+- Therefore, production must be constrained to be **greater than or equal to zero**.
+
+In linear and mixed-integer programming models, non-negativity constraints are typically imposed explicitly unless the modeling framework assumes non-negativity by default. Even if a solver defaults variables to be nonnegative, this is still conceptually a constraint and should be part of the mathematical formulation.
+
+Mathematically:
+
+\[
+\text{manufacture}_{t,p} \ge 0 \quad \forall t,p
+\]
+
+This is a standard variable bound and absolutely necessary for correctness.
+
+### Conclusion
+
+✅ It **is** a valid and necessary constraint.  
+✅ It should be explicitly included in the MILP formulation (at least as a lower bound).
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: MILP
+PROBLEM INFO:
+
+- An engineering factory makes several products on the machines, and the number of machine \var{m} the factory has is \var{num_{m}}.
+- Each product \var{k} yields \var{profit_{k}} to profit (defined as £/unit selling price minus cost of raw materials).
+- The unit production times (hours) product \var{k} requires on machine \var{m} is \var{time_{k, m}}
+- In the present month (January) and several subsequent months, certain machines will be down for maintenance.
+- Each machine \var{m} has to be down for \var{down_{m}} months for maintenance.
+- There are marketing limitations on each product in each month. 
+- The limitation of product \var{k} in month \var{i} is \var{limit_{k, i}}.
+- It is possible to store up to 100 of each product at a time at a cost of \var{store_price} per unit per month. 
+- There are no stocks at present, but it is desired to have a stock of \var{keep_quantity} of each type of product at the end of subsequent months.
+- The factory works a six days a week with two shifts of \var{n_workhours} hours each day. 
+- No sequencing problems need to be considered.
+- We can assume that a month has 24 days for convenience.
+
+
+INPUT FORMAT:
+
+{
+    "num_machines": [num_{m} for m in 1,...,M],
+    "profit": [profit_{k} for k in 1,...K],
+    "time": [[time_{k, m} for m in 1,...,M] for k in 1,...,K],
+    "down": [down_{m} for m in 1,...,M]
+    "limit": [[limit_{k, i} for i in 1,...,I] for k in 1,...,K],
+    "store_price": store_price,
+    "keep_quantity": keep_quantity,
+    "n_workhours": n_workhours
+}
+
+OBJECTIVE: What maintaining, selling, storing and manufacturing policy should the company pursue in order to maximize profit?
+
+OUTPUT INFO:
+
+- \var{sell} represents the amount of selling quantity of each product in each month
+- \var{manufacture} represents the amount of manufactured products in each month
+- \var{storage} represents the storage of each product in each month
+- \var{maintain} represents the number of machines in each type that are under maintenance in each month
+
+OUTPUT FORMAT:
+
+{
+    "sell": [[sell_{k, i} for k in 1,...,K] for i in 1,...I],
+    "manufacture": [[manufacture_{k, i} for k in 1,...,K] for i in 1,...I],
+    "storage": [[storage_{k, i} for k in 1,...,K] for i in 1,...,I],
+    "maintain": [[maintain_{m, k} for m in 1,...,M] for k in 1,...,K]
+}
+
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "M": {
+        "definition": "Number of machines",
+        "shape": [],
+        "type": "int"
+    },
+    "P": {
+        "definition": "Number of products",
+        "shape": [],
+        "type": "int"
+    },
+    "T": {
+        "definition": "Number of months",
+        "shape": [],
+        "type": "int"
+    },
+    "Profit": {
+        "definition": "Profit for each product",
+        "shape": [
+            "P"
+        ],
+        "type": "string"
+    },
+    "Time": {
+        "definition": "Time required to produce each product on each machine",
+        "shape": [
+            "P",
+            "M"
+        ],
+        "type": "string"
+    },
+    "Downtime": {
+        "definition": "Downtime for each machine",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    },
+    "Limit": {
+        "definition": "Limit for each product on constraints",
+        "shape": [
+            "T",
+            "P"
+        ],
+        "type": "string"
+    },
+    "StorePrice": {
+        "definition": "Price for storing products",
+        "shape": [],
+        "type": "float"
+    },
+    "KeepQuantity": {
+        "definition": "Quantity of products to keep in store",
+        "shape": [],
+        "type": "int"
+    },
+    "WorkHours": {
+        "definition": "Number of work hours available",
+        "shape": [],
+        "type": "float"
+    },
+    "NumMachines": {
+        "definition": "Number of each type of machine",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: Non-negativity constraint on sales: sell[t,p] ≥ 0 for all products p and months t
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is** a constraint.
+
+### Why?
+
+- The decision variable `sell[t,p]` represents the quantity of product *p* sold in month *t*.
+- A negative sales quantity would have no physical or economic meaning in this context.
+- Therefore, sales must be constrained to be **non-negative**.
+
+### Modeling perspective
+
+In an MILP formulation, decision variables must have well-defined domains. Unless otherwise stated, variables are not automatically restricted to be non-negative. So we must explicitly include:
+
+\[
+\text{sell}_{t,p} \ge 0 \quad \forall t,p
+\]
+
+(or define the variable as non-negative in its declaration).
+
+This is a standard **domain constraint** and is essential for model correctness.
+
+### Confidence level
+
+This is a fundamental and necessary modeling constraint.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: MILP
+PROBLEM INFO:
+
+- An engineering factory makes several products on the machines, and the number of machine \var{m} the factory has is \var{num_{m}}.
+- Each product \var{k} yields \var{profit_{k}} to profit (defined as £/unit selling price minus cost of raw materials).
+- The unit production times (hours) product \var{k} requires on machine \var{m} is \var{time_{k, m}}
+- In the present month (January) and several subsequent months, certain machines will be down for maintenance.
+- Each machine \var{m} has to be down for \var{down_{m}} months for maintenance.
+- There are marketing limitations on each product in each month. 
+- The limitation of product \var{k} in month \var{i} is \var{limit_{k, i}}.
+- It is possible to store up to 100 of each product at a time at a cost of \var{store_price} per unit per month. 
+- There are no stocks at present, but it is desired to have a stock of \var{keep_quantity} of each type of product at the end of subsequent months.
+- The factory works a six days a week with two shifts of \var{n_workhours} hours each day. 
+- No sequencing problems need to be considered.
+- We can assume that a month has 24 days for convenience.
+
+
+INPUT FORMAT:
+
+{
+    "num_machines": [num_{m} for m in 1,...,M],
+    "profit": [profit_{k} for k in 1,...K],
+    "time": [[time_{k, m} for m in 1,...,M] for k in 1,...,K],
+    "down": [down_{m} for m in 1,...,M]
+    "limit": [[limit_{k, i} for i in 1,...,I] for k in 1,...,K],
+    "store_price": store_price,
+    "keep_quantity": keep_quantity,
+    "n_workhours": n_workhours
+}
+
+OBJECTIVE: What maintaining, selling, storing and manufacturing policy should the company pursue in order to maximize profit?
+
+OUTPUT INFO:
+
+- \var{sell} represents the amount of selling quantity of each product in each month
+- \var{manufacture} represents the amount of manufactured products in each month
+- \var{storage} represents the storage of each product in each month
+- \var{maintain} represents the number of machines in each type that are under maintenance in each month
+
+OUTPUT FORMAT:
+
+{
+    "sell": [[sell_{k, i} for k in 1,...,K] for i in 1,...I],
+    "manufacture": [[manufacture_{k, i} for k in 1,...,K] for i in 1,...I],
+    "storage": [[storage_{k, i} for k in 1,...,K] for i in 1,...,I],
+    "maintain": [[maintain_{m, k} for m in 1,...,M] for k in 1,...,K]
+}
+
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "M": {
+        "definition": "Number of machines",
+        "shape": [],
+        "type": "int"
+    },
+    "P": {
+        "definition": "Number of products",
+        "shape": [],
+        "type": "int"
+    },
+    "T": {
+        "definition": "Number of months",
+        "shape": [],
+        "type": "int"
+    },
+    "Profit": {
+        "definition": "Profit for each product",
+        "shape": [
+            "P"
+        ],
+        "type": "string"
+    },
+    "Time": {
+        "definition": "Time required to produce each product on each machine",
+        "shape": [
+            "P",
+            "M"
+        ],
+        "type": "string"
+    },
+    "Downtime": {
+        "definition": "Downtime for each machine",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    },
+    "Limit": {
+        "definition": "Limit for each product on constraints",
+        "shape": [
+            "T",
+            "P"
+        ],
+        "type": "string"
+    },
+    "StorePrice": {
+        "definition": "Price for storing products",
+        "shape": [],
+        "type": "float"
+    },
+    "KeepQuantity": {
+        "definition": "Quantity of products to keep in store",
+        "shape": [],
+        "type": "int"
+    },
+    "WorkHours": {
+        "definition": "Number of work hours available",
+        "shape": [],
+        "type": "float"
+    },
+    "NumMachines": {
+        "definition": "Number of each type of machine",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: Non-negativity constraint on storage: storage[t,p] ≥ 0 for all products p and months t
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is** a constraint.
+
+### Why?
+
+- The variable `storage[t,p]` represents the quantity of product *p* held in inventory at the end of month *t*.
+- A negative storage level would imply negative inventory, which is not physically meaningful in this context (no backlogging was described in the problem).
+- Since the problem does not mention backorders or allowing negative inventory, storage must be **non‑negative**.
+
+### Modeling Perspective
+
+In an (MI)LP formulation, this is typically handled as:
+\[
+storage_{t,p} \ge 0 \quad \forall t,p
+\]
+
+Even if many solvers assume non-negativity by default for decision variables, it is still part of the formal mathematical model and must be specified either:
+- explicitly as a constraint, or  
+- implicitly through variable domain declaration.
+
+So this constraint is **necessary and correct**.
+
+### Confidence
+
+There is no indication in the problem statement that negative storage is allowed. Therefore, this constraint should absolutely be included.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
+
+
+
+++++++++++++++++++++++++++++++
+Extracting constraint formulations
+++++++++++++++++++++++++++++++
+
+
+
+----
+{
+    "FORMULATION": "$\\forall t \\in \\{1,\\dots,T\\},\\; \\forall m \\in \\{1,\\dots,M\\}: \\sum_{p=1}^{P} Time[p,m] \\cdot manufacture[t,p] \\leq \\left( NumMachines[m] - maintain[t,m] \\right) \\cdot 24 \\cdot 6 \\cdot 2 \\cdot WorkHours$",
+    "NEW VARIABLES": {
+        "manufacture": {
+            "shape": "[T, P]",
+            "type": "continuous",
+            "definition": "Quantity of product p manufactured in month t"
+        },
+        "maintain": {
+            "shape": "[T, M]",
+            "type": "integer",
+            "definition": "Number of machines of type m under maintenance in month t"
+        }
+    },
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\forall t \\in \\{1,\\dots,T\\},\\; \\forall m \\in \\{1,\\dots,M\\}: \\sum_{p=1}^{P} Time[p,m] \\cdot manufacture[t,p] \\leq \\left( NumMachines[m] - maintain[t,m] \\right) \\cdot 24 \\cdot 6 \\cdot 2 \\cdot WorkHours$
+{'manufacture': {'shape': '[T, P]', 'type': 'continuous', 'definition': 'Quantity of product p manufactured in month t'}, 'maintain': {'shape': '[T, M]', 'type': 'integer', 'definition': 'Number of machines of type m under maintenance in month t'}}
+[]
+----
+----
+{
+    "FORMULATION": "$\\forall m = 1, \\dots, M, \\; \\sum_{t=1}^{T} maintain[t,m] = Downtime[m]$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\forall m = 1, \\dots, M, \\; \\sum_{t=1}^{T} maintain[t,m] = Downtime[m]$
+{}
+[]
+----
+----
+{
+    "FORMULATION": "$\\forall t = 1, \\dots, T,\\; \\forall m = 1, \\dots, M:\\; 0 \\leq maintain_{t,m} \\leq NumMachines_{m}, \\; maintain_{t,m} \\in \\mathbb{Z}$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\forall t = 1, \\dots, T,\\; \\forall m = 1, \\dots, M:\\; 0 \\leq maintain_{t,m} \\leq NumMachines_{m}, \\; maintain_{t,m} \\in \\mathbb{Z}$
+{}
+[]
+----
+----
+{
+    "FORMULATION": "$\\forall t = 2,\\dots,T,\\; \\forall p = 1,\\dots,P:\\; storage[t,p] = storage[t-1,p] + manufacture[t,p] - sell[t,p]$",
+    "NEW VARIABLES": {
+        "storage": {
+            "shape": "[T, P]",
+            "type": "continuous",
+            "definition": "Inventory level of product p at the end of month t"
+        },
+        "sell": {
+            "shape": "[T, P]",
+            "type": "continuous",
+            "definition": "Quantity of product p sold in month t"
+        }
+    },
+    "AUXILIARY CONSTRAINTS": [
+        "$\\forall p = 1,\\dots,P:\\; storage[1,p] = manufacture[1,p] - sell[1,p]$"
+    ]
+}
+----

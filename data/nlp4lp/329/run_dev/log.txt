@@ -1,0 +1,824 @@
+----
+The constraints are all necessary for a correct and complete LP formulation. Here is the reasoning:
+
+1. **Regular production upper bound**  
+   “For each month n, regular production reg_quant_n must not exceed MaxRegularAmount”  
+   ✅ Necessary to enforce the production capacity limit. Cannot be removed.
+
+2. **Nonnegativity of regular production**  
+   “For each month n, reg_quant_n must be greater than or equal to 0”  
+   ✅ Necessary since negative production is infeasible. Cannot be removed.
+
+3. **Nonnegativity of overtime production**  
+   “For each month n, over_quant_n must be greater than or equal to 0”  
+   ✅ Necessary for the same reason as above. Cannot be removed.
+
+   These two nonnegativity constraints apply to different variables, so they cannot be merged into a single constraint without losing clarity or correctness.
+
+4. **Inventory balance equation**  
+   “For each month n, inventory_n = inventory_{n-1} + reg_quant_n + over_quant_n - Demand_n”  
+   ✅ Essential system flow constraint. Cannot be removed or merged with other constraints.
+
+5. **Nonnegativity of inventory**  
+   “For each month n, inventory_n must be greater than or equal to 0 (no shortages allowed)”  
+   ✅ Necessary to enforce the no-shortage requirement. Cannot be removed.
+
+6. **Initial inventory condition**  
+   “Initial inventory inventory_0 is equal to 0”  
+   ✅ Required to properly anchor the inventory balance recursion. Cannot be removed.
+
+There is no redundancy in the list. No constraint can be removed without changing the meaning of the model. No pair can be meaningfully combined without reducing clarity or correctness.
+
+Updated constraint list:
+
+[
+    "For each month n, regular production reg_quant_n must not exceed MaxRegularAmount",
+    "For each month n, reg_quant_n must be greater than or equal to 0",
+    "For each month n, over_quant_n must be greater than or equal to 0",
+    "For each month n, inventory_n = inventory_{n-1} + reg_quant_n + over_quant_n - Demand_n",
+    "For each month n, inventory_n must be greater than or equal to 0 (no shortages allowed)",
+    "Initial inventory inventory_0 is equal to 0"
+]
+----
++++++++++++++++++++
+++ Constraint Qs ++
++++++++++++++++++++
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+PROBLEM INFO:
+
+- A small computer manufacturing company forecasts the demand over the next \var{n}-th month to be \var{demand_{n}}.
+- These demands must be satisfied and can not be shorted.
+- In any month it can produce at most \var{max_regular_amount} units, using regular production, at a cost of \var{cost_regular} dollars per unit. 
+- By using overtime, it can produce additional units at \var{cost_overtime} dollars per unit. 
+- The firm can store units from month to month at a cost of \var{store_cost} dollars per unit per month. 
+
+INPUT FORMAT:
+
+{
+	"demand": [demand_{n} for n in 1,...,N],
+	"max_regular_amount": max_regular_amount,
+	"cost_regular": cost_regular,
+	"cost_overtime": cost_overtime,
+	"store_cost": store_cost
+}
+
+
+OBJECTIVE: Formulate the problem of determining the production schedule that minimizes the cost.
+
+OUTPUT INFO:
+
+- \var{reg_quant} represents the quantity of products produced using regular production in each future month
+- \var{over_quant} represents the quantity of products produced using overtime production in each future month
+
+OUTPUT FORMAT:
+
+{
+	"reg_quant": [reg_quant_{n} for n in 1,...,N]
+	"over_quant": [over_quant_{n} for n in 1,...,N]
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "Demand": {
+        "definition": "Demand of product n",
+        "shape": [
+            "NumMonths"
+        ],
+        "type": "string"
+    },
+    "MaxRegularAmount": {
+        "definition": "Maximum production amount under regular conditions",
+        "shape": [],
+        "type": "float"
+    },
+    "CostRegular": {
+        "definition": "Cost of production under regular conditions per unit",
+        "shape": [],
+        "type": "float"
+    },
+    "CostOvertime": {
+        "definition": "Cost of production under overtime conditions per unit",
+        "shape": [],
+        "type": "float"
+    },
+    "StoreCost": {
+        "definition": "Cost to store one unit of product",
+        "shape": [],
+        "type": "float"
+    },
+    "NumMonths": {
+        "definition": "Number of months in the planning horizon",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: For each month n, regular production reg_quant_n must not exceed MaxRegularAmount
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is definitely a constraint and must be explicitly modeled.
+
+The problem statement clearly says:
+
+> “In any month it can produce at most `max_regular_amount` units, using regular production.”
+
+This directly translates into the constraint:
+
+\[
+\text{reg\_quant}_n \le \text{MaxRegularAmount} \quad \forall n = 1,\dots,N
+\]
+
+Without this constraint, the model could produce unlimited units via regular production (which is cheaper than overtime in most realistic cases), making the problem formulation incorrect.
+
+This is a standard capacity constraint and is essential for the correctness of the LP formulation.
+
+**Confidence level:** 5 OUT OF 5
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+PROBLEM INFO:
+
+- A small computer manufacturing company forecasts the demand over the next \var{n}-th month to be \var{demand_{n}}.
+- These demands must be satisfied and can not be shorted.
+- In any month it can produce at most \var{max_regular_amount} units, using regular production, at a cost of \var{cost_regular} dollars per unit. 
+- By using overtime, it can produce additional units at \var{cost_overtime} dollars per unit. 
+- The firm can store units from month to month at a cost of \var{store_cost} dollars per unit per month. 
+
+INPUT FORMAT:
+
+{
+	"demand": [demand_{n} for n in 1,...,N],
+	"max_regular_amount": max_regular_amount,
+	"cost_regular": cost_regular,
+	"cost_overtime": cost_overtime,
+	"store_cost": store_cost
+}
+
+
+OBJECTIVE: Formulate the problem of determining the production schedule that minimizes the cost.
+
+OUTPUT INFO:
+
+- \var{reg_quant} represents the quantity of products produced using regular production in each future month
+- \var{over_quant} represents the quantity of products produced using overtime production in each future month
+
+OUTPUT FORMAT:
+
+{
+	"reg_quant": [reg_quant_{n} for n in 1,...,N]
+	"over_quant": [over_quant_{n} for n in 1,...,N]
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "Demand": {
+        "definition": "Demand of product n",
+        "shape": [
+            "NumMonths"
+        ],
+        "type": "string"
+    },
+    "MaxRegularAmount": {
+        "definition": "Maximum production amount under regular conditions",
+        "shape": [],
+        "type": "float"
+    },
+    "CostRegular": {
+        "definition": "Cost of production under regular conditions per unit",
+        "shape": [],
+        "type": "float"
+    },
+    "CostOvertime": {
+        "definition": "Cost of production under overtime conditions per unit",
+        "shape": [],
+        "type": "float"
+    },
+    "StoreCost": {
+        "definition": "Cost to store one unit of product",
+        "shape": [],
+        "type": "float"
+    },
+    "NumMonths": {
+        "definition": "Number of months in the planning horizon",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: For each month n, reg_quant_n must be greater than or equal to 0
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is indeed a constraint and it should be explicitly modeled.
+
+### Reasoning
+
+- **reg_quantₙ** represents the quantity of products produced using regular production in month *n*.
+- Production quantities cannot be negative in any realistic setting.
+- If we do **not** explicitly impose  
+  \[
+  \text{reg\_quant}_n \ge 0
+  \]
+  then the LP solver could assign negative values to reduce cost artificially (since production has positive unit cost).
+- In linear programming, non-negativity constraints are **not automatically implied** unless explicitly stated or enforced through variable domain definitions.
+
+Therefore, this is a standard **non-negativity constraint on decision variables**, and it must be included in the model.
+
+### Conclusion  
+Yes, this is a necessary and proper constraint in the LP formulation.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+PROBLEM INFO:
+
+- A small computer manufacturing company forecasts the demand over the next \var{n}-th month to be \var{demand_{n}}.
+- These demands must be satisfied and can not be shorted.
+- In any month it can produce at most \var{max_regular_amount} units, using regular production, at a cost of \var{cost_regular} dollars per unit. 
+- By using overtime, it can produce additional units at \var{cost_overtime} dollars per unit. 
+- The firm can store units from month to month at a cost of \var{store_cost} dollars per unit per month. 
+
+INPUT FORMAT:
+
+{
+	"demand": [demand_{n} for n in 1,...,N],
+	"max_regular_amount": max_regular_amount,
+	"cost_regular": cost_regular,
+	"cost_overtime": cost_overtime,
+	"store_cost": store_cost
+}
+
+
+OBJECTIVE: Formulate the problem of determining the production schedule that minimizes the cost.
+
+OUTPUT INFO:
+
+- \var{reg_quant} represents the quantity of products produced using regular production in each future month
+- \var{over_quant} represents the quantity of products produced using overtime production in each future month
+
+OUTPUT FORMAT:
+
+{
+	"reg_quant": [reg_quant_{n} for n in 1,...,N]
+	"over_quant": [over_quant_{n} for n in 1,...,N]
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "Demand": {
+        "definition": "Demand of product n",
+        "shape": [
+            "NumMonths"
+        ],
+        "type": "string"
+    },
+    "MaxRegularAmount": {
+        "definition": "Maximum production amount under regular conditions",
+        "shape": [],
+        "type": "float"
+    },
+    "CostRegular": {
+        "definition": "Cost of production under regular conditions per unit",
+        "shape": [],
+        "type": "float"
+    },
+    "CostOvertime": {
+        "definition": "Cost of production under overtime conditions per unit",
+        "shape": [],
+        "type": "float"
+    },
+    "StoreCost": {
+        "definition": "Cost to store one unit of product",
+        "shape": [],
+        "type": "float"
+    },
+    "NumMonths": {
+        "definition": "Number of months in the planning horizon",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: For each month n, over_quant_n must be greater than or equal to 0
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is** a constraint and it should be explicitly modeled.
+
+### Reasoning
+
+- \( \text{over\_quant}_n \) represents the quantity of units produced using overtime in month \( n \).
+- Production quantities cannot be negative in reality.
+- In a linear programming formulation, decision variables are not automatically constrained to be nonnegative unless explicitly stated.
+- If we fail to impose \( \text{over\_quant}_n \ge 0 \), the model could assign negative overtime production, which would:
+  - Artificially reduce costs (since overtime has a positive unit cost),
+  - Potentially distort inventory balance equations,
+  - Lead to an infeasible or meaningless physical interpretation.
+
+Therefore, for each month \( n \), we must include:
+
+\[
+\text{over\_quant}_n \ge 0
+\]
+
+This is a standard nonnegativity constraint for production quantities and is essential for a correct LP formulation.
+
+**Confidence:** 5 OUT OF 5
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+PROBLEM INFO:
+
+- A small computer manufacturing company forecasts the demand over the next \var{n}-th month to be \var{demand_{n}}.
+- These demands must be satisfied and can not be shorted.
+- In any month it can produce at most \var{max_regular_amount} units, using regular production, at a cost of \var{cost_regular} dollars per unit. 
+- By using overtime, it can produce additional units at \var{cost_overtime} dollars per unit. 
+- The firm can store units from month to month at a cost of \var{store_cost} dollars per unit per month. 
+
+INPUT FORMAT:
+
+{
+	"demand": [demand_{n} for n in 1,...,N],
+	"max_regular_amount": max_regular_amount,
+	"cost_regular": cost_regular,
+	"cost_overtime": cost_overtime,
+	"store_cost": store_cost
+}
+
+
+OBJECTIVE: Formulate the problem of determining the production schedule that minimizes the cost.
+
+OUTPUT INFO:
+
+- \var{reg_quant} represents the quantity of products produced using regular production in each future month
+- \var{over_quant} represents the quantity of products produced using overtime production in each future month
+
+OUTPUT FORMAT:
+
+{
+	"reg_quant": [reg_quant_{n} for n in 1,...,N]
+	"over_quant": [over_quant_{n} for n in 1,...,N]
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "Demand": {
+        "definition": "Demand of product n",
+        "shape": [
+            "NumMonths"
+        ],
+        "type": "string"
+    },
+    "MaxRegularAmount": {
+        "definition": "Maximum production amount under regular conditions",
+        "shape": [],
+        "type": "float"
+    },
+    "CostRegular": {
+        "definition": "Cost of production under regular conditions per unit",
+        "shape": [],
+        "type": "float"
+    },
+    "CostOvertime": {
+        "definition": "Cost of production under overtime conditions per unit",
+        "shape": [],
+        "type": "float"
+    },
+    "StoreCost": {
+        "definition": "Cost to store one unit of product",
+        "shape": [],
+        "type": "float"
+    },
+    "NumMonths": {
+        "definition": "Number of months in the planning horizon",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: For each month n, inventory_n = inventory_{n-1} + reg_quant_n + over_quant_n - Demand_n
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is **definitely a required constraint**, and it must be explicitly modeled in the LP formulation.
+
+### Why?
+
+The equation
+
+\[
+\text{inventory}_n = \text{inventory}_{n-1} + \text{reg\_quant}_n + \text{over\_quant}_n - \text{Demand}_n
+\]
+
+is the **inventory balance (flow conservation) constraint**. It ensures:
+
+- Production (regular + overtime),
+- Plus previous inventory,
+- Minus demand,
+- Equals ending inventory.
+
+Without this constraint:
+- There would be no link between production decisions and demand satisfaction.
+- Storage costs would not be properly connected to production timing.
+- The model could produce arbitrarily without respecting demand flow.
+
+Since:
+- Demand must be satisfied (no shortages allowed),
+- Storage is allowed with a per-unit cost,
+- Production decisions affect future inventory,
+
+this balance equation is absolutely central to the LP formulation.
+
+It must be included for every month \( n = 1, \dots, N \), along with:
+- An initial inventory condition (often inventory₀ = 0 unless specified otherwise),
+- A nonnegativity constraint on inventory.
+
+This is a **core structural constraint** of production planning models.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+PROBLEM INFO:
+
+- A small computer manufacturing company forecasts the demand over the next \var{n}-th month to be \var{demand_{n}}.
+- These demands must be satisfied and can not be shorted.
+- In any month it can produce at most \var{max_regular_amount} units, using regular production, at a cost of \var{cost_regular} dollars per unit. 
+- By using overtime, it can produce additional units at \var{cost_overtime} dollars per unit. 
+- The firm can store units from month to month at a cost of \var{store_cost} dollars per unit per month. 
+
+INPUT FORMAT:
+
+{
+	"demand": [demand_{n} for n in 1,...,N],
+	"max_regular_amount": max_regular_amount,
+	"cost_regular": cost_regular,
+	"cost_overtime": cost_overtime,
+	"store_cost": store_cost
+}
+
+
+OBJECTIVE: Formulate the problem of determining the production schedule that minimizes the cost.
+
+OUTPUT INFO:
+
+- \var{reg_quant} represents the quantity of products produced using regular production in each future month
+- \var{over_quant} represents the quantity of products produced using overtime production in each future month
+
+OUTPUT FORMAT:
+
+{
+	"reg_quant": [reg_quant_{n} for n in 1,...,N]
+	"over_quant": [over_quant_{n} for n in 1,...,N]
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "Demand": {
+        "definition": "Demand of product n",
+        "shape": [
+            "NumMonths"
+        ],
+        "type": "string"
+    },
+    "MaxRegularAmount": {
+        "definition": "Maximum production amount under regular conditions",
+        "shape": [],
+        "type": "float"
+    },
+    "CostRegular": {
+        "definition": "Cost of production under regular conditions per unit",
+        "shape": [],
+        "type": "float"
+    },
+    "CostOvertime": {
+        "definition": "Cost of production under overtime conditions per unit",
+        "shape": [],
+        "type": "float"
+    },
+    "StoreCost": {
+        "definition": "Cost to store one unit of product",
+        "shape": [],
+        "type": "float"
+    },
+    "NumMonths": {
+        "definition": "Number of months in the planning horizon",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: For each month n, inventory_n must be greater than or equal to 0 (no shortages allowed)
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is indeed a necessary constraint**, and it should be explicitly modeled.
+
+### Step-by-step reasoning:
+
+- The problem states:  
+  > “These demands must be satisfied and can not be shorted.”
+
+- “Cannot be shorted” means **no backlogging is allowed**.
+- In a standard inventory balance equation:
+
+\[
+inventory_n = inventory_{n-1} + reg\_quant_n + over\_quant_n - demand_n
+\]
+
+- If we do **not** enforce  
+  \[
+  inventory_n \ge 0
+  \]
+  then the model could allow negative inventory, which would represent unmet demand (i.e., shortages or backorders).
+
+- Since shortages are explicitly forbidden, we must enforce:
+
+\[
+inventory_n \ge 0 \quad \forall n
+\]
+
+This is a standard and essential constraint in production planning LP models with no backlogging allowed.
+
+### Conclusion:
+✅ It **is** a constraint.  
+✅ It must be explicitly included in the LP formulation.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+PROBLEM INFO:
+
+- A small computer manufacturing company forecasts the demand over the next \var{n}-th month to be \var{demand_{n}}.
+- These demands must be satisfied and can not be shorted.
+- In any month it can produce at most \var{max_regular_amount} units, using regular production, at a cost of \var{cost_regular} dollars per unit. 
+- By using overtime, it can produce additional units at \var{cost_overtime} dollars per unit. 
+- The firm can store units from month to month at a cost of \var{store_cost} dollars per unit per month. 
+
+INPUT FORMAT:
+
+{
+	"demand": [demand_{n} for n in 1,...,N],
+	"max_regular_amount": max_regular_amount,
+	"cost_regular": cost_regular,
+	"cost_overtime": cost_overtime,
+	"store_cost": store_cost
+}
+
+
+OBJECTIVE: Formulate the problem of determining the production schedule that minimizes the cost.
+
+OUTPUT INFO:
+
+- \var{reg_quant} represents the quantity of products produced using regular production in each future month
+- \var{over_quant} represents the quantity of products produced using overtime production in each future month
+
+OUTPUT FORMAT:
+
+{
+	"reg_quant": [reg_quant_{n} for n in 1,...,N]
+	"over_quant": [over_quant_{n} for n in 1,...,N]
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "Demand": {
+        "definition": "Demand of product n",
+        "shape": [
+            "NumMonths"
+        ],
+        "type": "string"
+    },
+    "MaxRegularAmount": {
+        "definition": "Maximum production amount under regular conditions",
+        "shape": [],
+        "type": "float"
+    },
+    "CostRegular": {
+        "definition": "Cost of production under regular conditions per unit",
+        "shape": [],
+        "type": "float"
+    },
+    "CostOvertime": {
+        "definition": "Cost of production under overtime conditions per unit",
+        "shape": [],
+        "type": "float"
+    },
+    "StoreCost": {
+        "definition": "Cost to store one unit of product",
+        "shape": [],
+        "type": "float"
+    },
+    "NumMonths": {
+        "definition": "Number of months in the planning horizon",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: Initial inventory inventory_0 is equal to 0
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+The original problem description does **not explicitly mention** any initial inventory.
+
+However, in order to correctly model the inventory balance constraints over time, an initial inventory level must be specified. Without it, the inventory flow equations for month 1 are incomplete.
+
+In production-inventory LP models, if the initial inventory is not stated, the standard and most reasonable assumption is:
+
+\[
+\text{inventory}_0 = 0
+\]
+
+This is not a decision variable constraint but rather a **boundary condition (initial condition)** required for the inventory balance equations to function properly.
+
+So:
+
+- ✅ It *is* something that should be explicitly modeled.
+- ✅ It is necessary for mathematical completeness.
+- ✅ It is a standard assumption when not otherwise specified.
+
+Therefore, we **should include**:
+
+\[
+\text{inventory}_0 = 0
+\]
+
+### Confidence Level:
+4 OUT OF 5
++--+
+---
+The confidence score is 4, which is high enough.
+---
+
+
+
+++++++++++++++++++++++++++++++
+Extracting constraint formulations
+++++++++++++++++++++++++++++++
+
+
+
+----
+{
+    "FORMULATION": "$\\forall n = 1, \\dots, \\text{NumMonths}, \\; regQuant_n \\leq MaxRegularAmount$",
+    "NEW VARIABLES": {
+        "regQuant": {
+            "shape": "[NumMonths]",
+            "type": "continuous",
+            "definition": "Quantity of products produced using regular production in each month"
+        }
+    },
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\forall n = 1, \\dots, \\text{NumMonths}, \\; regQuant_n \\leq MaxRegularAmount$
+{'regQuant': {'shape': '[NumMonths]', 'type': 'continuous', 'definition': 'Quantity of products produced using regular production in each month'}}
+[]
+----
+----
+{
+    "FORMULATION": "$\\forall n = 1, \\dots, \\text{NumMonths},\\; regQuant[n] \\geq 0$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\forall n = 1, \\dots, \\text{NumMonths},\\; regQuant[n] \\geq 0$
+{}
+[]
+----
+----
+{
+    "FORMULATION": "$\\forall n = 1, \\dots, \\text{NumMonths},\\; overQuant[n] \\geq 0$",
+    "NEW VARIABLES": {
+        "overQuant": {
+            "shape": ["NumMonths"],
+            "type": "continuous",
+            "definition": "Quantity of products produced using overtime production in each month"
+        }
+    },
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\forall n = 1, \\dots, \\text{NumMonths},\\; overQuant[n] \\geq 0$
+{'overQuant': {'shape': ['NumMonths'], 'type': 'continuous', 'definition': 'Quantity of products produced using overtime production in each month'}}
+[]
+----
+----
+{
+    "FORMULATION": "$\\forall n = 2, \\dots, \\text{NumMonths}: \\; inventory_n = inventory_{n-1} + regQuant_n + overQuant_n - Demand_n$",
+    "NEW VARIABLES": {
+        "inventory": {
+            "shape": "[NumMonths]",
+            "type": "continuous",
+            "definition": "Inventory level at the end of each month"
+        }
+    },
+    "AUXILIARY CONSTRAINTS": [
+        "$inventory_1 = regQuant_1 + overQuant_1 - Demand_1$"
+    ]
+}
+----

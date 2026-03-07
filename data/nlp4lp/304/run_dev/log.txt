@@ -1,0 +1,1464 @@
+----
+[
+    "Units produced of each product i must be non-negative integers",
+    "0 <= Overtime assembly hours <= MaxOvertimeAssembly",
+    "Total assembly hours used (sum over i of AssemblyHour_i multiplied by unitsProduced_i) must not exceed MaxAssembly plus overtimeAssembly",
+    "Total testing hours used (sum over i of TestingHour_i multiplied by unitsProduced_i) must not exceed MaxTesting",
+    "MaterialBought must equal the total material cost before discount (sum over i of MaterialCost_i multiplied by unitsProduced_i)",
+    "A binary variable must indicate whether the material purchase exceeds DiscountThreshold to activate the discount",
+    "If the binary discount variable is 1, then MaterialBought must be greater than or equal to DiscountThreshold",
+    "If the binary discount variable is 0, then MaterialBought must be less than or equal to DiscountThreshold (using a big-M formulation)"
+]
+----
++++++++++++++++++++
+++ Constraint Qs ++
++++++++++++++++++++
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: MILP
+
+PROBLEM INFO: 
+- A company produces \var{N} kinds of products. 
+- A product of the \var{i}-th type requires \var{assemblyHour_i} hours of assembly labor, \var{testingHour_i} hours of testing, and \var{materialCost_i} worth of raw materials (in $).
+- Given the current personnel of the company, there can be at most \var{maxAssembly} hours of assembly labor and \var{maxTesting} hours of testing, each day.
+- Product of the \var{i}-th type has a price of \var{price_i} dollars.
+- The company can schedule up tp \var{maxOvertimeAssembly} hours of overtime assembly labor can be sched­uled, at a cost of \var{overtimeAssemblyCost} per hour.
+- Suppose that the raw material supplier provides a \var{materialDiscount}% discount if the daily bill is above \var{discountThreshold} dollars (\var{materialDiscount} is a number between 0 and 100).
+
+INPUT FORMAT: 
+
+{
+    "assemblyHour": [assemblyHour_i for i in 1, ..., N]
+    "testingHour": [testingHour_i for i in 1, ..., N],
+    "materialCost": [materialCost_i for i in 1, ..., N],
+    "maxAssembly": maxAssembly
+    "maxTesting": maxTesting,
+    "price": [price_i for i in 1, ..., N],
+    "maxOvertimeAssembly": maxOvertimeAssembly,
+    "overtimeAssemblyCost": overtimeAssemblyCost,
+    "materialDiscount": materialDiscount,
+    "discountThreshold": discountThreshold
+}
+
+OBJECTIVE: We want to maximize the daily profit of the company, which is the total revenue minus the total cost.
+
+OUTPUT INFO: 
+
+- \var{dailyProfit} shows the daily profit of the company 
+- \var{unitsProduced_i} shows the number of units of the \var{i}-th product produced
+- \var{overtimeAssembly} shows the number of hours of overtime assembly labor scheduled
+- \var{materialBought} shows the amount of raw materials bought
+
+OUTPUT FORMAT:
+
+{
+    "dailyProfit": dailyProfit,
+    "unitsProduced": [unitsProduced_i for i in 1, ..., N],
+    "overtimeAssembly": overtimeAssembly,
+    "materialBought": materialBought
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "N": {
+        "definition": "Number of different products",
+        "shape": [],
+        "type": "int"
+    },
+    "AssemblyHour": {
+        "definition": "Hours required to assemble product i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "TestingHour": {
+        "definition": "Hours required to test product i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MaterialCost": {
+        "definition": "Material cost for product i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MaxAssembly": {
+        "definition": "Maximum total hours available for assembly",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxTesting": {
+        "definition": "Maximum total hours available for testing",
+        "shape": [],
+        "type": "int"
+    },
+    "Price": {
+        "definition": "Selling price for product i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MaxOvertimeAssembly": {
+        "definition": "Maximum overtime hours available for assembly",
+        "shape": [],
+        "type": "int"
+    },
+    "OvertimeAssemblyCost": {
+        "definition": "Overtime cost for assembly per hour",
+        "shape": [],
+        "type": "int"
+    },
+    "MaterialDiscount": {
+        "definition": "Discount on material cost when a certain threshold is reached",
+        "shape": [],
+        "type": "int"
+    },
+    "DiscountThreshold": {
+        "definition": "Threshold for the quantity to reach to obtain the material discount",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: Units produced of each product i must be non-negative integers
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is indeed a constraint and it should be explicitly modeled.
+
+### Step-by-step reasoning:
+
+1. **Decision Variable Nature**  
+   The number of units produced of each product \( i \), denoted as \( \text{unitsProduced}_i \), is a decision variable. It is not given as input — it is something the model must determine.
+
+2. **Non-negativity Requirement**  
+   Producing a negative number of units is physically impossible. Therefore, we must explicitly enforce:
+   \[
+   \text{unitsProduced}_i \ge 0 \quad \forall i
+   \]
+
+3. **Integrality Requirement**  
+   The problem is explicitly labeled as a **MILP** (Mixed-Integer Linear Program).  
+   Units of products are discrete items — fractional production (e.g., 3.7 units) would not make sense unless explicitly allowed (which it is not here). Therefore:
+   \[
+   \text{unitsProduced}_i \in \mathbb{Z}
+   \]
+
+4. **Why it must be explicit**
+   - Non-negativity is not automatically implied unless declared.
+   - Integrality must always be explicitly enforced in MILP formulations.
+   - If omitted, the solver could return fractional production levels.
+
+Therefore, this is absolutely a required modeling constraint:
+\[
+\text{unitsProduced}_i \in \mathbb{Z}_{\ge 0} \quad \forall i
+\]
+
+### Confidence Level:
+5 OUT OF 5
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: MILP
+
+PROBLEM INFO: 
+- A company produces \var{N} kinds of products. 
+- A product of the \var{i}-th type requires \var{assemblyHour_i} hours of assembly labor, \var{testingHour_i} hours of testing, and \var{materialCost_i} worth of raw materials (in $).
+- Given the current personnel of the company, there can be at most \var{maxAssembly} hours of assembly labor and \var{maxTesting} hours of testing, each day.
+- Product of the \var{i}-th type has a price of \var{price_i} dollars.
+- The company can schedule up tp \var{maxOvertimeAssembly} hours of overtime assembly labor can be sched­uled, at a cost of \var{overtimeAssemblyCost} per hour.
+- Suppose that the raw material supplier provides a \var{materialDiscount}% discount if the daily bill is above \var{discountThreshold} dollars (\var{materialDiscount} is a number between 0 and 100).
+
+INPUT FORMAT: 
+
+{
+    "assemblyHour": [assemblyHour_i for i in 1, ..., N]
+    "testingHour": [testingHour_i for i in 1, ..., N],
+    "materialCost": [materialCost_i for i in 1, ..., N],
+    "maxAssembly": maxAssembly
+    "maxTesting": maxTesting,
+    "price": [price_i for i in 1, ..., N],
+    "maxOvertimeAssembly": maxOvertimeAssembly,
+    "overtimeAssemblyCost": overtimeAssemblyCost,
+    "materialDiscount": materialDiscount,
+    "discountThreshold": discountThreshold
+}
+
+OBJECTIVE: We want to maximize the daily profit of the company, which is the total revenue minus the total cost.
+
+OUTPUT INFO: 
+
+- \var{dailyProfit} shows the daily profit of the company 
+- \var{unitsProduced_i} shows the number of units of the \var{i}-th product produced
+- \var{overtimeAssembly} shows the number of hours of overtime assembly labor scheduled
+- \var{materialBought} shows the amount of raw materials bought
+
+OUTPUT FORMAT:
+
+{
+    "dailyProfit": dailyProfit,
+    "unitsProduced": [unitsProduced_i for i in 1, ..., N],
+    "overtimeAssembly": overtimeAssembly,
+    "materialBought": materialBought
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "N": {
+        "definition": "Number of different products",
+        "shape": [],
+        "type": "int"
+    },
+    "AssemblyHour": {
+        "definition": "Hours required to assemble product i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "TestingHour": {
+        "definition": "Hours required to test product i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MaterialCost": {
+        "definition": "Material cost for product i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MaxAssembly": {
+        "definition": "Maximum total hours available for assembly",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxTesting": {
+        "definition": "Maximum total hours available for testing",
+        "shape": [],
+        "type": "int"
+    },
+    "Price": {
+        "definition": "Selling price for product i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MaxOvertimeAssembly": {
+        "definition": "Maximum overtime hours available for assembly",
+        "shape": [],
+        "type": "int"
+    },
+    "OvertimeAssemblyCost": {
+        "definition": "Overtime cost for assembly per hour",
+        "shape": [],
+        "type": "int"
+    },
+    "MaterialDiscount": {
+        "definition": "Discount on material cost when a certain threshold is reached",
+        "shape": [],
+        "type": "int"
+    },
+    "DiscountThreshold": {
+        "definition": "Threshold for the quantity to reach to obtain the material discount",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: 0 <= Overtime assembly hours <= MaxOvertimeAssembly
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is **definitely a constraint** and it must be explicitly modeled.
+
+### Why?
+
+From the problem statement:
+
+> "The company can schedule up to `maxOvertimeAssembly` hours of overtime assembly labor..."
+
+This clearly implies a **capacity limit** on overtime assembly hours. Therefore:
+
+- Overtime assembly hours **cannot be negative** → lower bound 0  
+- Overtime assembly hours **cannot exceed** `MaxOvertimeAssembly` → upper bound  
+
+So the decision variable:
+
+\[
+\text{overtimeAssembly}
+\]
+
+must satisfy:
+
+\[
+0 \le \text{overtimeAssembly} \le \text{MaxOvertimeAssembly}
+\]
+
+This is a **standard bounded continuous decision variable constraint** and is essential to correctly model the problem.
+
+If we omit it:
+- The solver could schedule unlimited overtime.
+- Profit could become artificially large.
+- The model would not reflect the real-world limitation stated in the description.
+
+This constraint is **clearly required** and directly supported by the problem description.
+
+### Confidence Level:
+✅ Absolutely necessary constraint.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: MILP
+
+PROBLEM INFO: 
+- A company produces \var{N} kinds of products. 
+- A product of the \var{i}-th type requires \var{assemblyHour_i} hours of assembly labor, \var{testingHour_i} hours of testing, and \var{materialCost_i} worth of raw materials (in $).
+- Given the current personnel of the company, there can be at most \var{maxAssembly} hours of assembly labor and \var{maxTesting} hours of testing, each day.
+- Product of the \var{i}-th type has a price of \var{price_i} dollars.
+- The company can schedule up tp \var{maxOvertimeAssembly} hours of overtime assembly labor can be sched­uled, at a cost of \var{overtimeAssemblyCost} per hour.
+- Suppose that the raw material supplier provides a \var{materialDiscount}% discount if the daily bill is above \var{discountThreshold} dollars (\var{materialDiscount} is a number between 0 and 100).
+
+INPUT FORMAT: 
+
+{
+    "assemblyHour": [assemblyHour_i for i in 1, ..., N]
+    "testingHour": [testingHour_i for i in 1, ..., N],
+    "materialCost": [materialCost_i for i in 1, ..., N],
+    "maxAssembly": maxAssembly
+    "maxTesting": maxTesting,
+    "price": [price_i for i in 1, ..., N],
+    "maxOvertimeAssembly": maxOvertimeAssembly,
+    "overtimeAssemblyCost": overtimeAssemblyCost,
+    "materialDiscount": materialDiscount,
+    "discountThreshold": discountThreshold
+}
+
+OBJECTIVE: We want to maximize the daily profit of the company, which is the total revenue minus the total cost.
+
+OUTPUT INFO: 
+
+- \var{dailyProfit} shows the daily profit of the company 
+- \var{unitsProduced_i} shows the number of units of the \var{i}-th product produced
+- \var{overtimeAssembly} shows the number of hours of overtime assembly labor scheduled
+- \var{materialBought} shows the amount of raw materials bought
+
+OUTPUT FORMAT:
+
+{
+    "dailyProfit": dailyProfit,
+    "unitsProduced": [unitsProduced_i for i in 1, ..., N],
+    "overtimeAssembly": overtimeAssembly,
+    "materialBought": materialBought
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "N": {
+        "definition": "Number of different products",
+        "shape": [],
+        "type": "int"
+    },
+    "AssemblyHour": {
+        "definition": "Hours required to assemble product i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "TestingHour": {
+        "definition": "Hours required to test product i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MaterialCost": {
+        "definition": "Material cost for product i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MaxAssembly": {
+        "definition": "Maximum total hours available for assembly",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxTesting": {
+        "definition": "Maximum total hours available for testing",
+        "shape": [],
+        "type": "int"
+    },
+    "Price": {
+        "definition": "Selling price for product i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MaxOvertimeAssembly": {
+        "definition": "Maximum overtime hours available for assembly",
+        "shape": [],
+        "type": "int"
+    },
+    "OvertimeAssemblyCost": {
+        "definition": "Overtime cost for assembly per hour",
+        "shape": [],
+        "type": "int"
+    },
+    "MaterialDiscount": {
+        "definition": "Discount on material cost when a certain threshold is reached",
+        "shape": [],
+        "type": "int"
+    },
+    "DiscountThreshold": {
+        "definition": "Threshold for the quantity to reach to obtain the material discount",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: Total assembly hours used (sum over i of AssemblyHour_i multiplied by unitsProduced_i) must not exceed MaxAssembly plus overtimeAssembly
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is definitely a constraint and it should be explicitly modeled in the MILP.
+
+### Reasoning Step-by-Step:
+
+1. **Base Assembly Capacity**  
+   The problem states that there can be at most `maxAssembly` hours of regular assembly labor per day.
+
+2. **Overtime Assembly**  
+   The company may schedule up to `maxOvertimeAssembly` hours of overtime assembly labor, at a cost per hour.
+
+3. **Total Available Assembly Time**  
+   Therefore, the total assembly time available in a day is:
+
+   \[
+   \text{maxAssembly} + \text{overtimeAssembly}
+   \]
+
+   where:
+   \[
+   0 \le \text{overtimeAssembly} \le \text{maxOvertimeAssembly}
+   \]
+
+4. **Assembly Usage**  
+   The total assembly time required by production is:
+
+   \[
+   \sum_{i=1}^{N} \text{AssemblyHour}_i \cdot \text{unitsProduced}_i
+   \]
+
+5. **Capacity Constraint**  
+   This must not exceed the total available assembly hours. So the constraint is:
+
+   \[
+   \sum_{i=1}^{N} \text{AssemblyHour}_i \cdot \text{unitsProduced}_i 
+   \le 
+   \text{MaxAssembly} + \text{overtimeAssembly}
+   \]
+
+This is a fundamental production capacity constraint and is absolutely required for a correct MILP formulation.
+
+### Confidence Level  
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: MILP
+
+PROBLEM INFO: 
+- A company produces \var{N} kinds of products. 
+- A product of the \var{i}-th type requires \var{assemblyHour_i} hours of assembly labor, \var{testingHour_i} hours of testing, and \var{materialCost_i} worth of raw materials (in $).
+- Given the current personnel of the company, there can be at most \var{maxAssembly} hours of assembly labor and \var{maxTesting} hours of testing, each day.
+- Product of the \var{i}-th type has a price of \var{price_i} dollars.
+- The company can schedule up tp \var{maxOvertimeAssembly} hours of overtime assembly labor can be sched­uled, at a cost of \var{overtimeAssemblyCost} per hour.
+- Suppose that the raw material supplier provides a \var{materialDiscount}% discount if the daily bill is above \var{discountThreshold} dollars (\var{materialDiscount} is a number between 0 and 100).
+
+INPUT FORMAT: 
+
+{
+    "assemblyHour": [assemblyHour_i for i in 1, ..., N]
+    "testingHour": [testingHour_i for i in 1, ..., N],
+    "materialCost": [materialCost_i for i in 1, ..., N],
+    "maxAssembly": maxAssembly
+    "maxTesting": maxTesting,
+    "price": [price_i for i in 1, ..., N],
+    "maxOvertimeAssembly": maxOvertimeAssembly,
+    "overtimeAssemblyCost": overtimeAssemblyCost,
+    "materialDiscount": materialDiscount,
+    "discountThreshold": discountThreshold
+}
+
+OBJECTIVE: We want to maximize the daily profit of the company, which is the total revenue minus the total cost.
+
+OUTPUT INFO: 
+
+- \var{dailyProfit} shows the daily profit of the company 
+- \var{unitsProduced_i} shows the number of units of the \var{i}-th product produced
+- \var{overtimeAssembly} shows the number of hours of overtime assembly labor scheduled
+- \var{materialBought} shows the amount of raw materials bought
+
+OUTPUT FORMAT:
+
+{
+    "dailyProfit": dailyProfit,
+    "unitsProduced": [unitsProduced_i for i in 1, ..., N],
+    "overtimeAssembly": overtimeAssembly,
+    "materialBought": materialBought
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "N": {
+        "definition": "Number of different products",
+        "shape": [],
+        "type": "int"
+    },
+    "AssemblyHour": {
+        "definition": "Hours required to assemble product i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "TestingHour": {
+        "definition": "Hours required to test product i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MaterialCost": {
+        "definition": "Material cost for product i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MaxAssembly": {
+        "definition": "Maximum total hours available for assembly",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxTesting": {
+        "definition": "Maximum total hours available for testing",
+        "shape": [],
+        "type": "int"
+    },
+    "Price": {
+        "definition": "Selling price for product i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MaxOvertimeAssembly": {
+        "definition": "Maximum overtime hours available for assembly",
+        "shape": [],
+        "type": "int"
+    },
+    "OvertimeAssemblyCost": {
+        "definition": "Overtime cost for assembly per hour",
+        "shape": [],
+        "type": "int"
+    },
+    "MaterialDiscount": {
+        "definition": "Discount on material cost when a certain threshold is reached",
+        "shape": [],
+        "type": "int"
+    },
+    "DiscountThreshold": {
+        "definition": "Threshold for the quantity to reach to obtain the material discount",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: Total testing hours used (sum over i of TestingHour_i multiplied by unitsProduced_i) must not exceed MaxTesting
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is **definitely a constraint**, and it should explicitly appear in the MILP formulation.
+
+### Why?
+
+The problem statement clearly says:
+
+> “Given the current personnel of the company, there can be at most **maxAssembly** hours of assembly labor and **maxTesting** hours of testing, each day.”
+
+This directly imposes a **capacity constraint** on testing hours. Since each unit of product \( i \) requires \( \text{TestingHour}_i \) hours, the total testing time used is:
+
+\[
+\sum_{i=1}^{N} \text{TestingHour}_i \cdot \text{unitsProduced}_i
+\]
+
+And this must satisfy:
+
+\[
+\sum_{i=1}^{N} \text{TestingHour}_i \cdot \text{unitsProduced}_i \le \text{MaxTesting}
+\]
+
+This is a classic **resource capacity constraint**, and it is essential to correctly model the operational limits of the system.
+
+There is no ambiguity in the problem description regarding this limit, so it must be included in the MILP.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: MILP
+
+PROBLEM INFO: 
+- A company produces \var{N} kinds of products. 
+- A product of the \var{i}-th type requires \var{assemblyHour_i} hours of assembly labor, \var{testingHour_i} hours of testing, and \var{materialCost_i} worth of raw materials (in $).
+- Given the current personnel of the company, there can be at most \var{maxAssembly} hours of assembly labor and \var{maxTesting} hours of testing, each day.
+- Product of the \var{i}-th type has a price of \var{price_i} dollars.
+- The company can schedule up tp \var{maxOvertimeAssembly} hours of overtime assembly labor can be sched­uled, at a cost of \var{overtimeAssemblyCost} per hour.
+- Suppose that the raw material supplier provides a \var{materialDiscount}% discount if the daily bill is above \var{discountThreshold} dollars (\var{materialDiscount} is a number between 0 and 100).
+
+INPUT FORMAT: 
+
+{
+    "assemblyHour": [assemblyHour_i for i in 1, ..., N]
+    "testingHour": [testingHour_i for i in 1, ..., N],
+    "materialCost": [materialCost_i for i in 1, ..., N],
+    "maxAssembly": maxAssembly
+    "maxTesting": maxTesting,
+    "price": [price_i for i in 1, ..., N],
+    "maxOvertimeAssembly": maxOvertimeAssembly,
+    "overtimeAssemblyCost": overtimeAssemblyCost,
+    "materialDiscount": materialDiscount,
+    "discountThreshold": discountThreshold
+}
+
+OBJECTIVE: We want to maximize the daily profit of the company, which is the total revenue minus the total cost.
+
+OUTPUT INFO: 
+
+- \var{dailyProfit} shows the daily profit of the company 
+- \var{unitsProduced_i} shows the number of units of the \var{i}-th product produced
+- \var{overtimeAssembly} shows the number of hours of overtime assembly labor scheduled
+- \var{materialBought} shows the amount of raw materials bought
+
+OUTPUT FORMAT:
+
+{
+    "dailyProfit": dailyProfit,
+    "unitsProduced": [unitsProduced_i for i in 1, ..., N],
+    "overtimeAssembly": overtimeAssembly,
+    "materialBought": materialBought
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "N": {
+        "definition": "Number of different products",
+        "shape": [],
+        "type": "int"
+    },
+    "AssemblyHour": {
+        "definition": "Hours required to assemble product i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "TestingHour": {
+        "definition": "Hours required to test product i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MaterialCost": {
+        "definition": "Material cost for product i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MaxAssembly": {
+        "definition": "Maximum total hours available for assembly",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxTesting": {
+        "definition": "Maximum total hours available for testing",
+        "shape": [],
+        "type": "int"
+    },
+    "Price": {
+        "definition": "Selling price for product i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MaxOvertimeAssembly": {
+        "definition": "Maximum overtime hours available for assembly",
+        "shape": [],
+        "type": "int"
+    },
+    "OvertimeAssemblyCost": {
+        "definition": "Overtime cost for assembly per hour",
+        "shape": [],
+        "type": "int"
+    },
+    "MaterialDiscount": {
+        "definition": "Discount on material cost when a certain threshold is reached",
+        "shape": [],
+        "type": "int"
+    },
+    "DiscountThreshold": {
+        "definition": "Threshold for the quantity to reach to obtain the material discount",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: MaterialBought must equal the total material cost before discount (sum over i of MaterialCost_i multiplied by unitsProduced_i)
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is** a constraint and it should be explicitly modeled.
+
+### Reasoning Step-by-Step
+
+- The raw material cost per unit of product \(i\) is given as `MaterialCost_i`.
+- If \( \text{unitsProduced}_i \) units are produced, then the total raw material spending **before any discount** is:
+
+\[
+\sum_{i=1}^{N} \text{MaterialCost}_i \cdot \text{unitsProduced}_i
+\]
+
+- The problem states that:
+  > "materialBought shows the amount of raw materials bought"
+
+- The discount rule applies to the **daily bill**, which must refer to the **total material cost before discount**.
+
+Therefore:
+- `materialBought` must represent the total raw material spending **before discount**
+- This quantity is fully determined by production decisions
+- It is not an independent decision variable
+- It must be explicitly linked through an equality constraint
+
+### Required Constraint
+
+\[
+\text{materialBought} = \sum_{i=1}^{N} \text{MaterialCost}_i \cdot \text{unitsProduced}_i
+\]
+
+Without this constraint:
+- The discount logic cannot be modeled correctly
+- `materialBought` could take arbitrary values
+- The objective could become incorrect
+
+Thus, this is a **structural linking constraint**, not optional.
+
+### Confidence Level
+
+✅ This should definitely be modeled explicitly.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: MILP
+
+PROBLEM INFO: 
+- A company produces \var{N} kinds of products. 
+- A product of the \var{i}-th type requires \var{assemblyHour_i} hours of assembly labor, \var{testingHour_i} hours of testing, and \var{materialCost_i} worth of raw materials (in $).
+- Given the current personnel of the company, there can be at most \var{maxAssembly} hours of assembly labor and \var{maxTesting} hours of testing, each day.
+- Product of the \var{i}-th type has a price of \var{price_i} dollars.
+- The company can schedule up tp \var{maxOvertimeAssembly} hours of overtime assembly labor can be sched­uled, at a cost of \var{overtimeAssemblyCost} per hour.
+- Suppose that the raw material supplier provides a \var{materialDiscount}% discount if the daily bill is above \var{discountThreshold} dollars (\var{materialDiscount} is a number between 0 and 100).
+
+INPUT FORMAT: 
+
+{
+    "assemblyHour": [assemblyHour_i for i in 1, ..., N]
+    "testingHour": [testingHour_i for i in 1, ..., N],
+    "materialCost": [materialCost_i for i in 1, ..., N],
+    "maxAssembly": maxAssembly
+    "maxTesting": maxTesting,
+    "price": [price_i for i in 1, ..., N],
+    "maxOvertimeAssembly": maxOvertimeAssembly,
+    "overtimeAssemblyCost": overtimeAssemblyCost,
+    "materialDiscount": materialDiscount,
+    "discountThreshold": discountThreshold
+}
+
+OBJECTIVE: We want to maximize the daily profit of the company, which is the total revenue minus the total cost.
+
+OUTPUT INFO: 
+
+- \var{dailyProfit} shows the daily profit of the company 
+- \var{unitsProduced_i} shows the number of units of the \var{i}-th product produced
+- \var{overtimeAssembly} shows the number of hours of overtime assembly labor scheduled
+- \var{materialBought} shows the amount of raw materials bought
+
+OUTPUT FORMAT:
+
+{
+    "dailyProfit": dailyProfit,
+    "unitsProduced": [unitsProduced_i for i in 1, ..., N],
+    "overtimeAssembly": overtimeAssembly,
+    "materialBought": materialBought
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "N": {
+        "definition": "Number of different products",
+        "shape": [],
+        "type": "int"
+    },
+    "AssemblyHour": {
+        "definition": "Hours required to assemble product i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "TestingHour": {
+        "definition": "Hours required to test product i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MaterialCost": {
+        "definition": "Material cost for product i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MaxAssembly": {
+        "definition": "Maximum total hours available for assembly",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxTesting": {
+        "definition": "Maximum total hours available for testing",
+        "shape": [],
+        "type": "int"
+    },
+    "Price": {
+        "definition": "Selling price for product i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MaxOvertimeAssembly": {
+        "definition": "Maximum overtime hours available for assembly",
+        "shape": [],
+        "type": "int"
+    },
+    "OvertimeAssemblyCost": {
+        "definition": "Overtime cost for assembly per hour",
+        "shape": [],
+        "type": "int"
+    },
+    "MaterialDiscount": {
+        "definition": "Discount on material cost when a certain threshold is reached",
+        "shape": [],
+        "type": "int"
+    },
+    "DiscountThreshold": {
+        "definition": "Threshold for the quantity to reach to obtain the material discount",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: A binary variable must indicate whether the material purchase exceeds DiscountThreshold to activate the discount
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is** a constraint that must be explicitly modeled in the MILP formulation.
+
+Reasoning step by step:
+
+- The material supplier offers a **percentage discount only if the total daily material bill exceeds a threshold**.
+- This creates a **logical condition**:
+  
+  > If materialBought ≥ DiscountThreshold → apply discount  
+  > Otherwise → no discount
+
+- This is a **nonlinear, conditional pricing rule**.
+- To model this properly in a MILP, we must:
+  - Introduce a **binary variable** (say, \( y \)) indicating whether the threshold is reached.
+  - Add **linking constraints** (typically Big‑M constraints) to ensure:
+    - \( y = 1 \) only if materialBought ≥ DiscountThreshold.
+    - The discounted cost applies only when \( y = 1 \).
+
+Without this binary variable and linking constraints, the solver could:
+- Incorrectly apply the discount when the threshold is not met, or
+- Avoid the intended logical structure of the pricing rule.
+
+This is not just a modeling convenience — it is **necessary** to correctly represent the discount policy in a linear framework.
+
+Therefore, this is indeed a constraint that must be explicitly modeled.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: MILP
+
+PROBLEM INFO: 
+- A company produces \var{N} kinds of products. 
+- A product of the \var{i}-th type requires \var{assemblyHour_i} hours of assembly labor, \var{testingHour_i} hours of testing, and \var{materialCost_i} worth of raw materials (in $).
+- Given the current personnel of the company, there can be at most \var{maxAssembly} hours of assembly labor and \var{maxTesting} hours of testing, each day.
+- Product of the \var{i}-th type has a price of \var{price_i} dollars.
+- The company can schedule up tp \var{maxOvertimeAssembly} hours of overtime assembly labor can be sched­uled, at a cost of \var{overtimeAssemblyCost} per hour.
+- Suppose that the raw material supplier provides a \var{materialDiscount}% discount if the daily bill is above \var{discountThreshold} dollars (\var{materialDiscount} is a number between 0 and 100).
+
+INPUT FORMAT: 
+
+{
+    "assemblyHour": [assemblyHour_i for i in 1, ..., N]
+    "testingHour": [testingHour_i for i in 1, ..., N],
+    "materialCost": [materialCost_i for i in 1, ..., N],
+    "maxAssembly": maxAssembly
+    "maxTesting": maxTesting,
+    "price": [price_i for i in 1, ..., N],
+    "maxOvertimeAssembly": maxOvertimeAssembly,
+    "overtimeAssemblyCost": overtimeAssemblyCost,
+    "materialDiscount": materialDiscount,
+    "discountThreshold": discountThreshold
+}
+
+OBJECTIVE: We want to maximize the daily profit of the company, which is the total revenue minus the total cost.
+
+OUTPUT INFO: 
+
+- \var{dailyProfit} shows the daily profit of the company 
+- \var{unitsProduced_i} shows the number of units of the \var{i}-th product produced
+- \var{overtimeAssembly} shows the number of hours of overtime assembly labor scheduled
+- \var{materialBought} shows the amount of raw materials bought
+
+OUTPUT FORMAT:
+
+{
+    "dailyProfit": dailyProfit,
+    "unitsProduced": [unitsProduced_i for i in 1, ..., N],
+    "overtimeAssembly": overtimeAssembly,
+    "materialBought": materialBought
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "N": {
+        "definition": "Number of different products",
+        "shape": [],
+        "type": "int"
+    },
+    "AssemblyHour": {
+        "definition": "Hours required to assemble product i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "TestingHour": {
+        "definition": "Hours required to test product i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MaterialCost": {
+        "definition": "Material cost for product i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MaxAssembly": {
+        "definition": "Maximum total hours available for assembly",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxTesting": {
+        "definition": "Maximum total hours available for testing",
+        "shape": [],
+        "type": "int"
+    },
+    "Price": {
+        "definition": "Selling price for product i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MaxOvertimeAssembly": {
+        "definition": "Maximum overtime hours available for assembly",
+        "shape": [],
+        "type": "int"
+    },
+    "OvertimeAssemblyCost": {
+        "definition": "Overtime cost for assembly per hour",
+        "shape": [],
+        "type": "int"
+    },
+    "MaterialDiscount": {
+        "definition": "Discount on material cost when a certain threshold is reached",
+        "shape": [],
+        "type": "int"
+    },
+    "DiscountThreshold": {
+        "definition": "Threshold for the quantity to reach to obtain the material discount",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: If the binary discount variable is 1, then MaterialBought must be greater than or equal to DiscountThreshold
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is** a valid and necessary constraint.
+
+### Why?
+
+The problem states:
+
+> The raw material supplier provides a materialDiscount% discount **if the daily bill is above discountThreshold**.
+
+To model this in a MILP, we typically introduce a binary variable:
+
+- \( y = 1 \) if the discount is applied  
+- \( y = 0 \) otherwise  
+
+If we allow the model to freely choose \( y = 1 \) without enforcing eligibility, it could incorrectly apply the discount even when the material purchase does not reach the threshold.
+
+Therefore, we must enforce the logical implication:
+
+\[
+y = 1 \;\Rightarrow\; \text{MaterialBought} \ge \text{DiscountThreshold}
+\]
+
+This is commonly modeled as:
+
+\[
+\text{MaterialBought} \ge \text{DiscountThreshold} \cdot y
+\]
+
+This ensures:
+- If \( y = 1 \), then MaterialBought ≥ DiscountThreshold  
+- If \( y = 0 \), no restriction is imposed by this constraint  
+
+Without this constraint, the discount mechanism would be modeled incorrectly.
+
+Note: In a fully rigorous formulation, we may also need the reverse-direction logic (to force \( y=1 \) when the threshold is exceeded), depending on how the discount is implemented in the objective. But **at minimum**, this implication constraint is necessary.
+
+### Conclusion
+
+✅ This is indeed a real and necessary modeling constraint.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: MILP
+
+PROBLEM INFO: 
+- A company produces \var{N} kinds of products. 
+- A product of the \var{i}-th type requires \var{assemblyHour_i} hours of assembly labor, \var{testingHour_i} hours of testing, and \var{materialCost_i} worth of raw materials (in $).
+- Given the current personnel of the company, there can be at most \var{maxAssembly} hours of assembly labor and \var{maxTesting} hours of testing, each day.
+- Product of the \var{i}-th type has a price of \var{price_i} dollars.
+- The company can schedule up tp \var{maxOvertimeAssembly} hours of overtime assembly labor can be sched­uled, at a cost of \var{overtimeAssemblyCost} per hour.
+- Suppose that the raw material supplier provides a \var{materialDiscount}% discount if the daily bill is above \var{discountThreshold} dollars (\var{materialDiscount} is a number between 0 and 100).
+
+INPUT FORMAT: 
+
+{
+    "assemblyHour": [assemblyHour_i for i in 1, ..., N]
+    "testingHour": [testingHour_i for i in 1, ..., N],
+    "materialCost": [materialCost_i for i in 1, ..., N],
+    "maxAssembly": maxAssembly
+    "maxTesting": maxTesting,
+    "price": [price_i for i in 1, ..., N],
+    "maxOvertimeAssembly": maxOvertimeAssembly,
+    "overtimeAssemblyCost": overtimeAssemblyCost,
+    "materialDiscount": materialDiscount,
+    "discountThreshold": discountThreshold
+}
+
+OBJECTIVE: We want to maximize the daily profit of the company, which is the total revenue minus the total cost.
+
+OUTPUT INFO: 
+
+- \var{dailyProfit} shows the daily profit of the company 
+- \var{unitsProduced_i} shows the number of units of the \var{i}-th product produced
+- \var{overtimeAssembly} shows the number of hours of overtime assembly labor scheduled
+- \var{materialBought} shows the amount of raw materials bought
+
+OUTPUT FORMAT:
+
+{
+    "dailyProfit": dailyProfit,
+    "unitsProduced": [unitsProduced_i for i in 1, ..., N],
+    "overtimeAssembly": overtimeAssembly,
+    "materialBought": materialBought
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "N": {
+        "definition": "Number of different products",
+        "shape": [],
+        "type": "int"
+    },
+    "AssemblyHour": {
+        "definition": "Hours required to assemble product i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "TestingHour": {
+        "definition": "Hours required to test product i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MaterialCost": {
+        "definition": "Material cost for product i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MaxAssembly": {
+        "definition": "Maximum total hours available for assembly",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxTesting": {
+        "definition": "Maximum total hours available for testing",
+        "shape": [],
+        "type": "int"
+    },
+    "Price": {
+        "definition": "Selling price for product i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MaxOvertimeAssembly": {
+        "definition": "Maximum overtime hours available for assembly",
+        "shape": [],
+        "type": "int"
+    },
+    "OvertimeAssemblyCost": {
+        "definition": "Overtime cost for assembly per hour",
+        "shape": [],
+        "type": "int"
+    },
+    "MaterialDiscount": {
+        "definition": "Discount on material cost when a certain threshold is reached",
+        "shape": [],
+        "type": "int"
+    },
+    "DiscountThreshold": {
+        "definition": "Threshold for the quantity to reach to obtain the material discount",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: If the binary discount variable is 0, then MaterialBought must be less than or equal to DiscountThreshold (using a big-M formulation)
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is indeed a necessary constraint** in a correct MILP formulation of the discount logic.
+
+### Why?
+
+The problem states:
+
+> The supplier provides a `materialDiscount%` discount **if the daily bill is above `discountThreshold` dollars**.
+
+This introduces a **logical condition**, which requires a binary variable (say \( y \)) to model whether the discount is activated.
+
+If:
+- \( y = 1 \) → discount applies  
+- \( y = 0 \) → discount does not apply  
+
+Then we must ensure:
+- The discount **cannot be taken unless** the material purchase exceeds the threshold.
+- If the discount is **not** taken (\( y = 0 \)), then the material bill must remain at or below the threshold.
+
+The proposed constraint:
+
+\[
+\text{MaterialBought} \le \text{DiscountThreshold} + M y
+\]
+
+or equivalently,
+
+\[
+\text{If } y = 0 \Rightarrow \text{MaterialBought} \le \text{DiscountThreshold}
+\]
+
+is exactly what enforces that logic.
+
+Without this constraint:
+- The model could set \( y = 0 \) even when the threshold is exceeded.
+- Or worse, take advantage of the discount logic incorrectly.
+
+So yes — this constraint is **structurally required** to properly encode the conditional discount rule in a MILP.
+
+### Confidence Level
+
+This is a standard and necessary big‑M linking constraint for modeling threshold‑activated discounts.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
+
+
+
+++++++++++++++++++++++++++++++
+Extracting constraint formulations
+++++++++++++++++++++++++++++++
+
+
+
+----
+{
+    "FORMULATION": "$\\forall i = 1, \\dots, N, \\; unitsProduced[i] \\in \\mathbb{Z}_{\\ge 0}$",
+    "NEW VARIABLES": {
+        "unitsProduced": {
+            "shape": ["N"],
+            "type": "integer",
+            "definition": "Number of units produced of product i"
+        }
+    },
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\forall i = 1, \\dots, N, \\; unitsProduced[i] \\in \\mathbb{Z}_{\\ge 0}$
+{'unitsProduced': {'shape': ['N'], 'type': 'integer', 'definition': 'Number of units produced of product i'}}
+[]
+----
+----
+{
+    "FORMULATION": "$0 \\leq overtimeAssembly \\leq MaxOvertimeAssembly$",
+    "NEW VARIABLES": {
+        "overtimeAssembly": {
+            "shape": [],
+            "type": "continuous",
+            "definition": "Number of overtime assembly labor hours scheduled per day"
+        }
+    },
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$0 \\leq overtimeAssembly \\leq MaxOvertimeAssembly$
+{'overtimeAssembly': {'shape': [], 'type': 'continuous', 'definition': 'Number of overtime assembly labor hours scheduled per day'}}
+[]
+----
+----
+{
+    "FORMULATION": "$\\sum_{i=1}^{N} AssemblyHour_i \\cdot unitsProduced_i \\leq MaxAssembly + overtimeAssembly$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\sum_{i=1}^{N} AssemblyHour_i \\cdot unitsProduced_i \\leq MaxAssembly + overtimeAssembly$
+{}
+[]
+----
+----
+{
+    "FORMULATION": "$\\sum_{i=1}^{N} TestingHour_i \\cdot unitsProduced_i \\leq MaxTesting$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\sum_{i=1}^{N} TestingHour_i \\cdot unitsProduced_i \\leq MaxTesting$
+{}
+[]
+----
+----
+{
+    "FORMULATION": "$materialBought = \\sum_{i=1}^{N} MaterialCost_i \\cdot unitsProduced_i$",
+    "NEW VARIABLES": {
+        "materialBought": {
+            "shape": [],
+            "type": "continuous",
+            "definition": "Total cost of raw materials purchased before applying any discount"
+        }
+    },
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$materialBought = \\sum_{i=1}^{N} MaterialCost_i \\cdot unitsProduced_i$
+{'materialBought': {'shape': [], 'type': 'continuous', 'definition': 'Total cost of raw materials purchased before applying any discount'}}
+[]
+----
+----
+{
+    "FORMULATION": "$materialBought \\geq DiscountThreshold - M(1 - discountActive)$",
+    "NEW VARIABLES": {
+        "discountActive": {
+            "shape": [],
+            "type": "binary",
+            "definition": "Binary variable equal to 1 if the material purchase exceeds DiscountThreshold and the discount is activated, 0 otherwise"
+        }
+    },
+    "AUXILIARY CONSTRAINTS": [
+        "$materialBought \\leq DiscountThreshold + M \\cdot discountActive$"
+    ]
+}
+----

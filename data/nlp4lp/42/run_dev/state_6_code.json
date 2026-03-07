@@ -1,0 +1,65 @@
+{
+    "description": "A sandwich company can open two types of stores, a dine-in place and a food-truck. A dine-in place can make 100 sandwiches per day and requires 8 employees to operate. A food-truck can make 50 sandwiches per day and requires 3 employees to operate. The company must make at least 500 sandwiches per day but they only have available 35 employees. How many of each type of store should the company open to minimize the total number of stores?",
+    "parameters": {
+        "NumStoreTypes": {
+            "definition": "Number of types of stores available",
+            "shape": [],
+            "type": "int"
+        },
+        "SandwichesPerStoreType": {
+            "definition": "Number of sandwiches produced per store type per day",
+            "shape": [
+                "NumStoreTypes"
+            ],
+            "type": "string"
+        },
+        "EmployeesPerStoreType": {
+            "definition": "Number of employees required per store type",
+            "shape": [
+                "NumStoreTypes"
+            ],
+            "type": "string"
+        },
+        "MinimumSandwiches": {
+            "definition": "Minimum number of sandwiches to be produced per day",
+            "shape": [],
+            "type": "int"
+        },
+        "MaximumEmployees": {
+            "definition": "Maximum number of employees available",
+            "shape": [],
+            "type": "int"
+        }
+    },
+    "objective": {
+        "description": "\"Minimize the total number of stores opened (dine-in places and food-trucks)\"",
+        "formulation": "$\\min \\sum_{i=1}^{NumStoreTypes} NumStores_i$",
+        "code": "model.setObjective(quicksum(NumStores[i] for i in range(NumStoreTypes)), GRB.MINIMIZE)"
+    },
+    "constraints": [
+        {
+            "description": "The total number of sandwiches produced by all store types must be at least the minimum required sandwiches per day",
+            "formulation": "$\\\\sum_{i=1}^{NumStoreTypes} SandwichesPerStoreType[i] \\\\cdot NumStores[i] \\\\geq MinimumSandwiches$",
+            "code": "model.addConstr(\n    sum(SandwichesPerStoreType[i] * NumStores[i] for i in range(NumStoreTypes)) \n    >= MinimumSandwiches\n)"
+        },
+        {
+            "description": "The total number of employees required by all opened stores must not exceed the maximum number of available employees",
+            "formulation": "$\\\\sum_{i=1}^{NumStoreTypes} EmployeesPerStoreType[i] \\\\cdot NumStores[i] \\\\leq MaximumEmployees$",
+            "code": "model.addConstr(\n    sum(EmployeesPerStoreType[i] * NumStores[i] for i in range(NumStoreTypes))\n    <= MaximumEmployees\n)"
+        },
+        {
+            "description": "The number of stores opened for each store type must be a non-negative integer",
+            "formulation": "$\\\\forall i = 1, \\\\dots, NumStoreTypes,\\\\; NumStores[i] \\\\in \\\\mathbb{Z}_{\\\\geq 0}$",
+            "code": "for i in range(NumStoreTypes):\n    model.addConstr(NumStores[i] >= 0)"
+        }
+    ],
+    "variables": {
+        "NumStores": {
+            "shape": [
+                "NumStoreTypes"
+            ],
+            "type": "integer",
+            "definition": "Number of stores opened for each store type"
+        }
+    }
+}

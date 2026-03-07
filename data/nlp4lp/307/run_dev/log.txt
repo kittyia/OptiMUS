@@ -1,0 +1,1898 @@
+----
+[
+    "Non-negativity: buy_{i,m} >= 0 for all items i and months m",
+    "Non-negativity: refine_{i,m} >= 0 for all items i and months m",
+    "Non-negativity: storage_{i,m} >= 0 for all items i and months m",
+    "Inventory balance: storage_{i,m-1} + buy_{i,m} - refine_{i,m} = storage_{i,m} for all items i and months m = 1,...,M",
+    "Initial storage condition: storage_{i,0} = InitialAmount for all items i",
+    "Final storage requirement: storage_{i,M} = InitialAmount for all items i",
+    "Storage capacity limit: storage_{i,m} <= StorageSize for all items i and months m",
+    "Vegetable refining capacity per month: sum of refine_{i,m} over all vegetable oils i <= MaxVegetableRefiningPerMonth for all months m",
+    "Non-vegetable refining capacity per month: sum of refine_{i,m} over all non-vegetable oils i <= MaxNonVegetableRefiningPerMonth for all months m",
+    "Hardness bounds: MinHardness * (sum over i of refine_{i,m}) <= sum over i of (Hardness_i * refine_{i,m}) <= MaxHardness * (sum over i of refine_{i,m}) for all months m"
+]
+----
++++++++++++++++++++
+++ Constraint Qs ++
++++++++++++++++++++
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+PROBLEM INFO:
+
+- A food is manufactured by refining raw oils and blending them together. 
+- The raw oils are either vegetable oils or non-vegetable oils. 
+- Each oil \var{i} may be purchased in month \var{m} for price \var{price_{i,m}}.
+- The final product sells at \var{sell_price} per ton.
+- Vegetable oils and non-vegetable oils require different production lines for refining. 
+- In any month, it is not possible to refine more than \var{max_vegetable_refining_per_month} tons of vegetable oils and more than \var{max_non_vegetable_refining_per_month} tons of non-vegetable oils. 
+- There is no loss of weight in the refining process, and the cost of refining may be ignored.
+- It is possible to store up to \var{storage_size} tons of each raw oil for use later. 
+- The cost of storage for both vegetable and non-vegetable oil is \var{storage_cost} per ton per month.
+- The final product cannot be stored, nor can refined oils be stored.
+- There is a technological restriction of hardness on the final product. 
+- In the units in which hardness is measured, this must lie between \var{max_hardness} and \var{min_hardness}.
+- The hardness product is computed by the weighted average of hardness of each oil.
+- The hardness of oil \var{i} is \var{hardness_{i}}.
+- At present, there are \var{init_amount} tons of each type of raw oil in storage. 
+- We can assume that there is a month "0" to model the inital amount.
+- It is required that at the end of the last month, we still have the same amout of storage as \var{init_amount}.
+- This means directly adding the constraint that the storage in the last month must be equal to \var{init_amount}.
+
+
+INPUT FORMAT:
+
+{
+    "buy_price":[[price_{i, m} for i in 1,...,I] for m in 1,...,M],
+    "sell_price": sell_price,
+    "is_vegetable": [is_vegetable_{i} for i in 1,...,I],
+    "max_vegetable_refining_per_month": max_veg,
+    "max_non_vegetable_refining_per_month": max_non_veg,
+    "storage_size": storage_size,
+    "storage_cost": storage_cost,
+    "max_hardness": max_hardness,
+    "min_hardness": min_hardness,
+    "hardness": [hardness_{i} for i in 1,...,I],
+    "init_amount": init_amount
+}
+
+
+OBJECTIVE: What buying, storing and manufacturing policy should the company pursue in order to maximize profit?
+
+OUTPUT INFO: 
+
+- \var{buyquantity} represents the amount of buying quantity of each oil in each month
+- \var{refine} represents the amount of refined quantity of each oil in each month
+- \var{storage} represents the storage of each oil in each month
+ 
+OUTPUT FORMAT: 
+
+{
+    "buy": [[buyquantity_{i, m} for i in 1,...,I] for m in 1,...M],
+    "refine": [[refine_{i, m} for i in 1,...,I] for m in 1,...M],
+    "storage": [[storage_{i, m} for i in 1,...,I] for m in 1,...,M]
+} 
+
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "M": {
+        "definition": "Number of months",
+        "shape": [],
+        "type": "int"
+    },
+    "I": {
+        "definition": "Number of different items",
+        "shape": [],
+        "type": "int"
+    },
+    "BuyPrice": {
+        "definition": "Month m buy price of item i",
+        "shape": [
+            "M",
+            "I"
+        ],
+        "type": "string"
+    },
+    "SellPrice": {
+        "definition": "Sell price of the products after refining",
+        "shape": [],
+        "type": "int"
+    },
+    "IsVegetable": {
+        "definition": "Indicator whether item i is a vegetable",
+        "shape": [
+            "I"
+        ],
+        "type": "string"
+    },
+    "MaxVegetableRefiningPerMonth": {
+        "definition": "Maximum refining capability for vegetables per month",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxNonVegetableRefiningPerMonth": {
+        "definition": "Maximum refining capability for non-vegetables per month",
+        "shape": [],
+        "type": "int"
+    },
+    "StorageSize": {
+        "definition": "Size of the storage",
+        "shape": [],
+        "type": "int"
+    },
+    "StorageCost": {
+        "definition": "Cost for storing items per month",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxHardness": {
+        "definition": "The maximum hardness allowed for the products after refining",
+        "shape": [],
+        "type": "int"
+    },
+    "MinHardness": {
+        "definition": "The minimum hardness required for the products after refining",
+        "shape": [],
+        "type": "int"
+    },
+    "Hardness": {
+        "definition": "Hardness of item i",
+        "shape": [
+            "I"
+        ],
+        "type": "string"
+    },
+    "InitialAmount": {
+        "definition": "Initial amount of items in storage at the beginning of the planning horizon",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: Non-negativity: buy_{i,m} >= 0 for all items i and months m
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is** a real constraint and it should be explicitly included in the LP formulation.
+
+### Why?
+
+- The variable \( buy_{i,m} \) represents the **amount purchased** of oil \( i \) in month \( m \).
+- Purchasing a negative quantity would imply *selling* raw oil back to the supplier, which is **not described as allowed** in the problem.
+- The model only allows:
+  - Buying raw oil
+  - Storing raw oil
+  - Refining raw oil  
+  There is no mechanism for selling raw oil.
+
+Therefore, allowing negative purchases would introduce unintended behavior into the model and violate the problem description.
+
+### Modeling Perspective
+
+Even if many solvers assume non-negativity by default, in a formal LP formulation this constraint should be explicitly stated:
+
+\[
+buy_{i,m} \ge 0 \quad \forall i,m
+\]
+
+This ensures the model aligns with the physical and economic meaning of the decision variable.
+
+### Confidence
+
+✅ This is clearly a required constraint.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+PROBLEM INFO:
+
+- A food is manufactured by refining raw oils and blending them together. 
+- The raw oils are either vegetable oils or non-vegetable oils. 
+- Each oil \var{i} may be purchased in month \var{m} for price \var{price_{i,m}}.
+- The final product sells at \var{sell_price} per ton.
+- Vegetable oils and non-vegetable oils require different production lines for refining. 
+- In any month, it is not possible to refine more than \var{max_vegetable_refining_per_month} tons of vegetable oils and more than \var{max_non_vegetable_refining_per_month} tons of non-vegetable oils. 
+- There is no loss of weight in the refining process, and the cost of refining may be ignored.
+- It is possible to store up to \var{storage_size} tons of each raw oil for use later. 
+- The cost of storage for both vegetable and non-vegetable oil is \var{storage_cost} per ton per month.
+- The final product cannot be stored, nor can refined oils be stored.
+- There is a technological restriction of hardness on the final product. 
+- In the units in which hardness is measured, this must lie between \var{max_hardness} and \var{min_hardness}.
+- The hardness product is computed by the weighted average of hardness of each oil.
+- The hardness of oil \var{i} is \var{hardness_{i}}.
+- At present, there are \var{init_amount} tons of each type of raw oil in storage. 
+- We can assume that there is a month "0" to model the inital amount.
+- It is required that at the end of the last month, we still have the same amout of storage as \var{init_amount}.
+- This means directly adding the constraint that the storage in the last month must be equal to \var{init_amount}.
+
+
+INPUT FORMAT:
+
+{
+    "buy_price":[[price_{i, m} for i in 1,...,I] for m in 1,...,M],
+    "sell_price": sell_price,
+    "is_vegetable": [is_vegetable_{i} for i in 1,...,I],
+    "max_vegetable_refining_per_month": max_veg,
+    "max_non_vegetable_refining_per_month": max_non_veg,
+    "storage_size": storage_size,
+    "storage_cost": storage_cost,
+    "max_hardness": max_hardness,
+    "min_hardness": min_hardness,
+    "hardness": [hardness_{i} for i in 1,...,I],
+    "init_amount": init_amount
+}
+
+
+OBJECTIVE: What buying, storing and manufacturing policy should the company pursue in order to maximize profit?
+
+OUTPUT INFO: 
+
+- \var{buyquantity} represents the amount of buying quantity of each oil in each month
+- \var{refine} represents the amount of refined quantity of each oil in each month
+- \var{storage} represents the storage of each oil in each month
+ 
+OUTPUT FORMAT: 
+
+{
+    "buy": [[buyquantity_{i, m} for i in 1,...,I] for m in 1,...M],
+    "refine": [[refine_{i, m} for i in 1,...,I] for m in 1,...M],
+    "storage": [[storage_{i, m} for i in 1,...,I] for m in 1,...,M]
+} 
+
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "M": {
+        "definition": "Number of months",
+        "shape": [],
+        "type": "int"
+    },
+    "I": {
+        "definition": "Number of different items",
+        "shape": [],
+        "type": "int"
+    },
+    "BuyPrice": {
+        "definition": "Month m buy price of item i",
+        "shape": [
+            "M",
+            "I"
+        ],
+        "type": "string"
+    },
+    "SellPrice": {
+        "definition": "Sell price of the products after refining",
+        "shape": [],
+        "type": "int"
+    },
+    "IsVegetable": {
+        "definition": "Indicator whether item i is a vegetable",
+        "shape": [
+            "I"
+        ],
+        "type": "string"
+    },
+    "MaxVegetableRefiningPerMonth": {
+        "definition": "Maximum refining capability for vegetables per month",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxNonVegetableRefiningPerMonth": {
+        "definition": "Maximum refining capability for non-vegetables per month",
+        "shape": [],
+        "type": "int"
+    },
+    "StorageSize": {
+        "definition": "Size of the storage",
+        "shape": [],
+        "type": "int"
+    },
+    "StorageCost": {
+        "definition": "Cost for storing items per month",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxHardness": {
+        "definition": "The maximum hardness allowed for the products after refining",
+        "shape": [],
+        "type": "int"
+    },
+    "MinHardness": {
+        "definition": "The minimum hardness required for the products after refining",
+        "shape": [],
+        "type": "int"
+    },
+    "Hardness": {
+        "definition": "Hardness of item i",
+        "shape": [
+            "I"
+        ],
+        "type": "string"
+    },
+    "InitialAmount": {
+        "definition": "Initial amount of items in storage at the beginning of the planning horizon",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: Non-negativity: refine_{i,m} >= 0 for all items i and months m
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is** a constraint and it should be explicitly modeled.
+
+### Why?
+
+- \( \text{refine}_{i,m} \) represents the quantity of oil \( i \) refined in month \( m \).
+- A negative refining quantity would have no physical meaning (you cannot "un-refine" oil or produce negative output).
+- The problem description implicitly assumes physical quantities (buying, refining, storing), all of which must be nonnegative.
+- In linear programming, non-negativity is not automatically guaranteed unless explicitly declared in the model formulation.
+
+Therefore, the constraint
+
+\[
+\text{refine}_{i,m} \ge 0 \quad \forall i, m
+\]
+
+is a **necessary domain constraint**.
+
+Even if many solvers default variables to be nonnegative, from a modeling standpoint this constraint must be included (or the variable must be explicitly declared as nonnegative).
+
+### Confidence Level
+
+This is a fundamental modeling requirement for physical flow variables.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+PROBLEM INFO:
+
+- A food is manufactured by refining raw oils and blending them together. 
+- The raw oils are either vegetable oils or non-vegetable oils. 
+- Each oil \var{i} may be purchased in month \var{m} for price \var{price_{i,m}}.
+- The final product sells at \var{sell_price} per ton.
+- Vegetable oils and non-vegetable oils require different production lines for refining. 
+- In any month, it is not possible to refine more than \var{max_vegetable_refining_per_month} tons of vegetable oils and more than \var{max_non_vegetable_refining_per_month} tons of non-vegetable oils. 
+- There is no loss of weight in the refining process, and the cost of refining may be ignored.
+- It is possible to store up to \var{storage_size} tons of each raw oil for use later. 
+- The cost of storage for both vegetable and non-vegetable oil is \var{storage_cost} per ton per month.
+- The final product cannot be stored, nor can refined oils be stored.
+- There is a technological restriction of hardness on the final product. 
+- In the units in which hardness is measured, this must lie between \var{max_hardness} and \var{min_hardness}.
+- The hardness product is computed by the weighted average of hardness of each oil.
+- The hardness of oil \var{i} is \var{hardness_{i}}.
+- At present, there are \var{init_amount} tons of each type of raw oil in storage. 
+- We can assume that there is a month "0" to model the inital amount.
+- It is required that at the end of the last month, we still have the same amout of storage as \var{init_amount}.
+- This means directly adding the constraint that the storage in the last month must be equal to \var{init_amount}.
+
+
+INPUT FORMAT:
+
+{
+    "buy_price":[[price_{i, m} for i in 1,...,I] for m in 1,...,M],
+    "sell_price": sell_price,
+    "is_vegetable": [is_vegetable_{i} for i in 1,...,I],
+    "max_vegetable_refining_per_month": max_veg,
+    "max_non_vegetable_refining_per_month": max_non_veg,
+    "storage_size": storage_size,
+    "storage_cost": storage_cost,
+    "max_hardness": max_hardness,
+    "min_hardness": min_hardness,
+    "hardness": [hardness_{i} for i in 1,...,I],
+    "init_amount": init_amount
+}
+
+
+OBJECTIVE: What buying, storing and manufacturing policy should the company pursue in order to maximize profit?
+
+OUTPUT INFO: 
+
+- \var{buyquantity} represents the amount of buying quantity of each oil in each month
+- \var{refine} represents the amount of refined quantity of each oil in each month
+- \var{storage} represents the storage of each oil in each month
+ 
+OUTPUT FORMAT: 
+
+{
+    "buy": [[buyquantity_{i, m} for i in 1,...,I] for m in 1,...M],
+    "refine": [[refine_{i, m} for i in 1,...,I] for m in 1,...M],
+    "storage": [[storage_{i, m} for i in 1,...,I] for m in 1,...,M]
+} 
+
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "M": {
+        "definition": "Number of months",
+        "shape": [],
+        "type": "int"
+    },
+    "I": {
+        "definition": "Number of different items",
+        "shape": [],
+        "type": "int"
+    },
+    "BuyPrice": {
+        "definition": "Month m buy price of item i",
+        "shape": [
+            "M",
+            "I"
+        ],
+        "type": "string"
+    },
+    "SellPrice": {
+        "definition": "Sell price of the products after refining",
+        "shape": [],
+        "type": "int"
+    },
+    "IsVegetable": {
+        "definition": "Indicator whether item i is a vegetable",
+        "shape": [
+            "I"
+        ],
+        "type": "string"
+    },
+    "MaxVegetableRefiningPerMonth": {
+        "definition": "Maximum refining capability for vegetables per month",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxNonVegetableRefiningPerMonth": {
+        "definition": "Maximum refining capability for non-vegetables per month",
+        "shape": [],
+        "type": "int"
+    },
+    "StorageSize": {
+        "definition": "Size of the storage",
+        "shape": [],
+        "type": "int"
+    },
+    "StorageCost": {
+        "definition": "Cost for storing items per month",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxHardness": {
+        "definition": "The maximum hardness allowed for the products after refining",
+        "shape": [],
+        "type": "int"
+    },
+    "MinHardness": {
+        "definition": "The minimum hardness required for the products after refining",
+        "shape": [],
+        "type": "int"
+    },
+    "Hardness": {
+        "definition": "Hardness of item i",
+        "shape": [
+            "I"
+        ],
+        "type": "string"
+    },
+    "InitialAmount": {
+        "definition": "Initial amount of items in storage at the beginning of the planning horizon",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: Non-negativity: storage_{i,m} >= 0 for all items i and months m
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is** a necessary constraint.
+
+### Reasoning
+
+- **Physical interpretation**:  
+  \( \text{storage}_{i,m} \) represents the amount of oil \(i\) held in inventory at the end of month \(m\). Negative inventory would mean physically having “less than zero” oil, which is impossible in this context.
+
+- **Modeling perspective**:  
+  Even if storage balance equations exist (e.g., previous storage + purchases − refining), without explicitly enforcing non-negativity, the LP solver could assign negative values to storage to artificially increase profit (for example, by “borrowing” oil without cost).
+
+- **Standard LP practice**:  
+  In most LP formulations, non-negativity is explicitly imposed unless variables are declared nonnegative by default. Since this is a modeling decision, it should be explicitly included in the mathematical formulation.
+
+Therefore, the constraint
+
+\[
+\text{storage}_{i,m} \ge 0 \quad \forall i,m
+\]
+
+is both logically required and standard in inventory models.
+
+**Confidence:** 5 OUT OF 5
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+PROBLEM INFO:
+
+- A food is manufactured by refining raw oils and blending them together. 
+- The raw oils are either vegetable oils or non-vegetable oils. 
+- Each oil \var{i} may be purchased in month \var{m} for price \var{price_{i,m}}.
+- The final product sells at \var{sell_price} per ton.
+- Vegetable oils and non-vegetable oils require different production lines for refining. 
+- In any month, it is not possible to refine more than \var{max_vegetable_refining_per_month} tons of vegetable oils and more than \var{max_non_vegetable_refining_per_month} tons of non-vegetable oils. 
+- There is no loss of weight in the refining process, and the cost of refining may be ignored.
+- It is possible to store up to \var{storage_size} tons of each raw oil for use later. 
+- The cost of storage for both vegetable and non-vegetable oil is \var{storage_cost} per ton per month.
+- The final product cannot be stored, nor can refined oils be stored.
+- There is a technological restriction of hardness on the final product. 
+- In the units in which hardness is measured, this must lie between \var{max_hardness} and \var{min_hardness}.
+- The hardness product is computed by the weighted average of hardness of each oil.
+- The hardness of oil \var{i} is \var{hardness_{i}}.
+- At present, there are \var{init_amount} tons of each type of raw oil in storage. 
+- We can assume that there is a month "0" to model the inital amount.
+- It is required that at the end of the last month, we still have the same amout of storage as \var{init_amount}.
+- This means directly adding the constraint that the storage in the last month must be equal to \var{init_amount}.
+
+
+INPUT FORMAT:
+
+{
+    "buy_price":[[price_{i, m} for i in 1,...,I] for m in 1,...,M],
+    "sell_price": sell_price,
+    "is_vegetable": [is_vegetable_{i} for i in 1,...,I],
+    "max_vegetable_refining_per_month": max_veg,
+    "max_non_vegetable_refining_per_month": max_non_veg,
+    "storage_size": storage_size,
+    "storage_cost": storage_cost,
+    "max_hardness": max_hardness,
+    "min_hardness": min_hardness,
+    "hardness": [hardness_{i} for i in 1,...,I],
+    "init_amount": init_amount
+}
+
+
+OBJECTIVE: What buying, storing and manufacturing policy should the company pursue in order to maximize profit?
+
+OUTPUT INFO: 
+
+- \var{buyquantity} represents the amount of buying quantity of each oil in each month
+- \var{refine} represents the amount of refined quantity of each oil in each month
+- \var{storage} represents the storage of each oil in each month
+ 
+OUTPUT FORMAT: 
+
+{
+    "buy": [[buyquantity_{i, m} for i in 1,...,I] for m in 1,...M],
+    "refine": [[refine_{i, m} for i in 1,...,I] for m in 1,...M],
+    "storage": [[storage_{i, m} for i in 1,...,I] for m in 1,...,M]
+} 
+
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "M": {
+        "definition": "Number of months",
+        "shape": [],
+        "type": "int"
+    },
+    "I": {
+        "definition": "Number of different items",
+        "shape": [],
+        "type": "int"
+    },
+    "BuyPrice": {
+        "definition": "Month m buy price of item i",
+        "shape": [
+            "M",
+            "I"
+        ],
+        "type": "string"
+    },
+    "SellPrice": {
+        "definition": "Sell price of the products after refining",
+        "shape": [],
+        "type": "int"
+    },
+    "IsVegetable": {
+        "definition": "Indicator whether item i is a vegetable",
+        "shape": [
+            "I"
+        ],
+        "type": "string"
+    },
+    "MaxVegetableRefiningPerMonth": {
+        "definition": "Maximum refining capability for vegetables per month",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxNonVegetableRefiningPerMonth": {
+        "definition": "Maximum refining capability for non-vegetables per month",
+        "shape": [],
+        "type": "int"
+    },
+    "StorageSize": {
+        "definition": "Size of the storage",
+        "shape": [],
+        "type": "int"
+    },
+    "StorageCost": {
+        "definition": "Cost for storing items per month",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxHardness": {
+        "definition": "The maximum hardness allowed for the products after refining",
+        "shape": [],
+        "type": "int"
+    },
+    "MinHardness": {
+        "definition": "The minimum hardness required for the products after refining",
+        "shape": [],
+        "type": "int"
+    },
+    "Hardness": {
+        "definition": "Hardness of item i",
+        "shape": [
+            "I"
+        ],
+        "type": "string"
+    },
+    "InitialAmount": {
+        "definition": "Initial amount of items in storage at the beginning of the planning horizon",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: Inventory balance: storage_{i,m-1} + buy_{i,m} - refine_{i,m} = storage_{i,m} for all items i and months m = 1,...,M
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is absolutely a necessary constraint.
+
+### Why this must be modeled
+
+The problem involves:
+- Purchasing raw oils,
+- Refining raw oils into final product (with no loss of weight),
+- Storing raw oils over time,
+- No storage allowed for refined oil or final product.
+
+Since raw oils can be stored and used in future months, we **must** track inventory evolution over time. The only way to correctly connect:
+- Initial inventory,
+- Monthly purchases,
+- Monthly refining decisions,
+- Monthly storage levels,
+
+is through a **material balance (flow conservation) constraint**.
+
+### Interpretation of the constraint
+
+For each oil \( i \) and month \( m = 1, \dots, M \):
+
+\[
+\text{storage}_{i,m-1} + \text{buy}_{i,m} - \text{refine}_{i,m} = \text{storage}_{i,m}
+\]
+
+This ensures:
+- What you had last month
+- Plus what you buy this month
+- Minus what you refine this month
+- Equals what remains in storage at the end of this month
+
+This is completely consistent with:
+- No refining losses
+- No disposal
+- No external inflow/outflow other than buying and refining
+
+Additionally:
+- \( \text{storage}_{i,0} = \text{InitialAmount} \)
+- \( \text{storage}_{i,M} = \text{InitialAmount} \) (terminal requirement)
+
+Without this constraint, the model would not properly track inventory and would allow infeasible or illogical solutions.
+
+### Conclusion
+
+This is a fundamental inventory balance constraint and must be explicitly included in the LP formulation.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+PROBLEM INFO:
+
+- A food is manufactured by refining raw oils and blending them together. 
+- The raw oils are either vegetable oils or non-vegetable oils. 
+- Each oil \var{i} may be purchased in month \var{m} for price \var{price_{i,m}}.
+- The final product sells at \var{sell_price} per ton.
+- Vegetable oils and non-vegetable oils require different production lines for refining. 
+- In any month, it is not possible to refine more than \var{max_vegetable_refining_per_month} tons of vegetable oils and more than \var{max_non_vegetable_refining_per_month} tons of non-vegetable oils. 
+- There is no loss of weight in the refining process, and the cost of refining may be ignored.
+- It is possible to store up to \var{storage_size} tons of each raw oil for use later. 
+- The cost of storage for both vegetable and non-vegetable oil is \var{storage_cost} per ton per month.
+- The final product cannot be stored, nor can refined oils be stored.
+- There is a technological restriction of hardness on the final product. 
+- In the units in which hardness is measured, this must lie between \var{max_hardness} and \var{min_hardness}.
+- The hardness product is computed by the weighted average of hardness of each oil.
+- The hardness of oil \var{i} is \var{hardness_{i}}.
+- At present, there are \var{init_amount} tons of each type of raw oil in storage. 
+- We can assume that there is a month "0" to model the inital amount.
+- It is required that at the end of the last month, we still have the same amout of storage as \var{init_amount}.
+- This means directly adding the constraint that the storage in the last month must be equal to \var{init_amount}.
+
+
+INPUT FORMAT:
+
+{
+    "buy_price":[[price_{i, m} for i in 1,...,I] for m in 1,...,M],
+    "sell_price": sell_price,
+    "is_vegetable": [is_vegetable_{i} for i in 1,...,I],
+    "max_vegetable_refining_per_month": max_veg,
+    "max_non_vegetable_refining_per_month": max_non_veg,
+    "storage_size": storage_size,
+    "storage_cost": storage_cost,
+    "max_hardness": max_hardness,
+    "min_hardness": min_hardness,
+    "hardness": [hardness_{i} for i in 1,...,I],
+    "init_amount": init_amount
+}
+
+
+OBJECTIVE: What buying, storing and manufacturing policy should the company pursue in order to maximize profit?
+
+OUTPUT INFO: 
+
+- \var{buyquantity} represents the amount of buying quantity of each oil in each month
+- \var{refine} represents the amount of refined quantity of each oil in each month
+- \var{storage} represents the storage of each oil in each month
+ 
+OUTPUT FORMAT: 
+
+{
+    "buy": [[buyquantity_{i, m} for i in 1,...,I] for m in 1,...M],
+    "refine": [[refine_{i, m} for i in 1,...,I] for m in 1,...M],
+    "storage": [[storage_{i, m} for i in 1,...,I] for m in 1,...,M]
+} 
+
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "M": {
+        "definition": "Number of months",
+        "shape": [],
+        "type": "int"
+    },
+    "I": {
+        "definition": "Number of different items",
+        "shape": [],
+        "type": "int"
+    },
+    "BuyPrice": {
+        "definition": "Month m buy price of item i",
+        "shape": [
+            "M",
+            "I"
+        ],
+        "type": "string"
+    },
+    "SellPrice": {
+        "definition": "Sell price of the products after refining",
+        "shape": [],
+        "type": "int"
+    },
+    "IsVegetable": {
+        "definition": "Indicator whether item i is a vegetable",
+        "shape": [
+            "I"
+        ],
+        "type": "string"
+    },
+    "MaxVegetableRefiningPerMonth": {
+        "definition": "Maximum refining capability for vegetables per month",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxNonVegetableRefiningPerMonth": {
+        "definition": "Maximum refining capability for non-vegetables per month",
+        "shape": [],
+        "type": "int"
+    },
+    "StorageSize": {
+        "definition": "Size of the storage",
+        "shape": [],
+        "type": "int"
+    },
+    "StorageCost": {
+        "definition": "Cost for storing items per month",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxHardness": {
+        "definition": "The maximum hardness allowed for the products after refining",
+        "shape": [],
+        "type": "int"
+    },
+    "MinHardness": {
+        "definition": "The minimum hardness required for the products after refining",
+        "shape": [],
+        "type": "int"
+    },
+    "Hardness": {
+        "definition": "Hardness of item i",
+        "shape": [
+            "I"
+        ],
+        "type": "string"
+    },
+    "InitialAmount": {
+        "definition": "Initial amount of items in storage at the beginning of the planning horizon",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: Initial storage condition: storage_{i,0} = InitialAmount for all items i
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is indeed a constraint and it should be explicitly modeled.
+
+Reasoning step by step:
+
+- The problem states: “At present, there are init_amount tons of each type of raw oil in storage.”
+- It also says: “We can assume that there is a month ‘0’ to model the initial amount.”
+- Inventory balance constraints for month \( m \ge 1 \) will necessarily depend on storage from the previous month.
+- Therefore, without explicitly fixing \( storage_{i,0} = \text{InitialAmount} \), the model would not correctly anchor the inventory dynamics.
+- If this condition were omitted, the model could artificially choose any starting inventory, which would distort feasibility and profit.
+
+Even if month 0 is not part of the output, the initial inventory must be fixed in the formulation (either as:
+- an explicit constraint \( storage_{i,0} = \text{InitialAmount} \), or  
+- by embedding it directly into the month 1 inventory balance equation).
+
+So yes — this is a genuine and necessary modeling constraint.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+PROBLEM INFO:
+
+- A food is manufactured by refining raw oils and blending them together. 
+- The raw oils are either vegetable oils or non-vegetable oils. 
+- Each oil \var{i} may be purchased in month \var{m} for price \var{price_{i,m}}.
+- The final product sells at \var{sell_price} per ton.
+- Vegetable oils and non-vegetable oils require different production lines for refining. 
+- In any month, it is not possible to refine more than \var{max_vegetable_refining_per_month} tons of vegetable oils and more than \var{max_non_vegetable_refining_per_month} tons of non-vegetable oils. 
+- There is no loss of weight in the refining process, and the cost of refining may be ignored.
+- It is possible to store up to \var{storage_size} tons of each raw oil for use later. 
+- The cost of storage for both vegetable and non-vegetable oil is \var{storage_cost} per ton per month.
+- The final product cannot be stored, nor can refined oils be stored.
+- There is a technological restriction of hardness on the final product. 
+- In the units in which hardness is measured, this must lie between \var{max_hardness} and \var{min_hardness}.
+- The hardness product is computed by the weighted average of hardness of each oil.
+- The hardness of oil \var{i} is \var{hardness_{i}}.
+- At present, there are \var{init_amount} tons of each type of raw oil in storage. 
+- We can assume that there is a month "0" to model the inital amount.
+- It is required that at the end of the last month, we still have the same amout of storage as \var{init_amount}.
+- This means directly adding the constraint that the storage in the last month must be equal to \var{init_amount}.
+
+
+INPUT FORMAT:
+
+{
+    "buy_price":[[price_{i, m} for i in 1,...,I] for m in 1,...,M],
+    "sell_price": sell_price,
+    "is_vegetable": [is_vegetable_{i} for i in 1,...,I],
+    "max_vegetable_refining_per_month": max_veg,
+    "max_non_vegetable_refining_per_month": max_non_veg,
+    "storage_size": storage_size,
+    "storage_cost": storage_cost,
+    "max_hardness": max_hardness,
+    "min_hardness": min_hardness,
+    "hardness": [hardness_{i} for i in 1,...,I],
+    "init_amount": init_amount
+}
+
+
+OBJECTIVE: What buying, storing and manufacturing policy should the company pursue in order to maximize profit?
+
+OUTPUT INFO: 
+
+- \var{buyquantity} represents the amount of buying quantity of each oil in each month
+- \var{refine} represents the amount of refined quantity of each oil in each month
+- \var{storage} represents the storage of each oil in each month
+ 
+OUTPUT FORMAT: 
+
+{
+    "buy": [[buyquantity_{i, m} for i in 1,...,I] for m in 1,...M],
+    "refine": [[refine_{i, m} for i in 1,...,I] for m in 1,...M],
+    "storage": [[storage_{i, m} for i in 1,...,I] for m in 1,...,M]
+} 
+
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "M": {
+        "definition": "Number of months",
+        "shape": [],
+        "type": "int"
+    },
+    "I": {
+        "definition": "Number of different items",
+        "shape": [],
+        "type": "int"
+    },
+    "BuyPrice": {
+        "definition": "Month m buy price of item i",
+        "shape": [
+            "M",
+            "I"
+        ],
+        "type": "string"
+    },
+    "SellPrice": {
+        "definition": "Sell price of the products after refining",
+        "shape": [],
+        "type": "int"
+    },
+    "IsVegetable": {
+        "definition": "Indicator whether item i is a vegetable",
+        "shape": [
+            "I"
+        ],
+        "type": "string"
+    },
+    "MaxVegetableRefiningPerMonth": {
+        "definition": "Maximum refining capability for vegetables per month",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxNonVegetableRefiningPerMonth": {
+        "definition": "Maximum refining capability for non-vegetables per month",
+        "shape": [],
+        "type": "int"
+    },
+    "StorageSize": {
+        "definition": "Size of the storage",
+        "shape": [],
+        "type": "int"
+    },
+    "StorageCost": {
+        "definition": "Cost for storing items per month",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxHardness": {
+        "definition": "The maximum hardness allowed for the products after refining",
+        "shape": [],
+        "type": "int"
+    },
+    "MinHardness": {
+        "definition": "The minimum hardness required for the products after refining",
+        "shape": [],
+        "type": "int"
+    },
+    "Hardness": {
+        "definition": "Hardness of item i",
+        "shape": [
+            "I"
+        ],
+        "type": "string"
+    },
+    "InitialAmount": {
+        "definition": "Initial amount of items in storage at the beginning of the planning horizon",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: Final storage requirement: storage_{i,M} = InitialAmount for all items i
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is **explicitly a required constraint**.
+
+The problem statement clearly says:
+
+> *"It is required that at the end of the last month, we still have the same amount of storage as init_amount."*  
+> *"This means directly adding the constraint that the storage in the last month must be equal to init_amount."*
+
+This is not implied or optional — it is directly stated as a modeling requirement. Therefore, the following constraint must be included in the LP formulation:
+
+\[
+\text{storage}_{i,M} = \text{InitialAmount} \quad \forall i
+\]
+
+This ensures the model does not artificially deplete inventory at the end of the planning horizon to increase short-term profit.
+
+✅ It is definitely a constraint.  
+✅ It must be explicitly modeled.  
+✅ There is no ambiguity in the wording.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+PROBLEM INFO:
+
+- A food is manufactured by refining raw oils and blending them together. 
+- The raw oils are either vegetable oils or non-vegetable oils. 
+- Each oil \var{i} may be purchased in month \var{m} for price \var{price_{i,m}}.
+- The final product sells at \var{sell_price} per ton.
+- Vegetable oils and non-vegetable oils require different production lines for refining. 
+- In any month, it is not possible to refine more than \var{max_vegetable_refining_per_month} tons of vegetable oils and more than \var{max_non_vegetable_refining_per_month} tons of non-vegetable oils. 
+- There is no loss of weight in the refining process, and the cost of refining may be ignored.
+- It is possible to store up to \var{storage_size} tons of each raw oil for use later. 
+- The cost of storage for both vegetable and non-vegetable oil is \var{storage_cost} per ton per month.
+- The final product cannot be stored, nor can refined oils be stored.
+- There is a technological restriction of hardness on the final product. 
+- In the units in which hardness is measured, this must lie between \var{max_hardness} and \var{min_hardness}.
+- The hardness product is computed by the weighted average of hardness of each oil.
+- The hardness of oil \var{i} is \var{hardness_{i}}.
+- At present, there are \var{init_amount} tons of each type of raw oil in storage. 
+- We can assume that there is a month "0" to model the inital amount.
+- It is required that at the end of the last month, we still have the same amout of storage as \var{init_amount}.
+- This means directly adding the constraint that the storage in the last month must be equal to \var{init_amount}.
+
+
+INPUT FORMAT:
+
+{
+    "buy_price":[[price_{i, m} for i in 1,...,I] for m in 1,...,M],
+    "sell_price": sell_price,
+    "is_vegetable": [is_vegetable_{i} for i in 1,...,I],
+    "max_vegetable_refining_per_month": max_veg,
+    "max_non_vegetable_refining_per_month": max_non_veg,
+    "storage_size": storage_size,
+    "storage_cost": storage_cost,
+    "max_hardness": max_hardness,
+    "min_hardness": min_hardness,
+    "hardness": [hardness_{i} for i in 1,...,I],
+    "init_amount": init_amount
+}
+
+
+OBJECTIVE: What buying, storing and manufacturing policy should the company pursue in order to maximize profit?
+
+OUTPUT INFO: 
+
+- \var{buyquantity} represents the amount of buying quantity of each oil in each month
+- \var{refine} represents the amount of refined quantity of each oil in each month
+- \var{storage} represents the storage of each oil in each month
+ 
+OUTPUT FORMAT: 
+
+{
+    "buy": [[buyquantity_{i, m} for i in 1,...,I] for m in 1,...M],
+    "refine": [[refine_{i, m} for i in 1,...,I] for m in 1,...M],
+    "storage": [[storage_{i, m} for i in 1,...,I] for m in 1,...,M]
+} 
+
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "M": {
+        "definition": "Number of months",
+        "shape": [],
+        "type": "int"
+    },
+    "I": {
+        "definition": "Number of different items",
+        "shape": [],
+        "type": "int"
+    },
+    "BuyPrice": {
+        "definition": "Month m buy price of item i",
+        "shape": [
+            "M",
+            "I"
+        ],
+        "type": "string"
+    },
+    "SellPrice": {
+        "definition": "Sell price of the products after refining",
+        "shape": [],
+        "type": "int"
+    },
+    "IsVegetable": {
+        "definition": "Indicator whether item i is a vegetable",
+        "shape": [
+            "I"
+        ],
+        "type": "string"
+    },
+    "MaxVegetableRefiningPerMonth": {
+        "definition": "Maximum refining capability for vegetables per month",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxNonVegetableRefiningPerMonth": {
+        "definition": "Maximum refining capability for non-vegetables per month",
+        "shape": [],
+        "type": "int"
+    },
+    "StorageSize": {
+        "definition": "Size of the storage",
+        "shape": [],
+        "type": "int"
+    },
+    "StorageCost": {
+        "definition": "Cost for storing items per month",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxHardness": {
+        "definition": "The maximum hardness allowed for the products after refining",
+        "shape": [],
+        "type": "int"
+    },
+    "MinHardness": {
+        "definition": "The minimum hardness required for the products after refining",
+        "shape": [],
+        "type": "int"
+    },
+    "Hardness": {
+        "definition": "Hardness of item i",
+        "shape": [
+            "I"
+        ],
+        "type": "string"
+    },
+    "InitialAmount": {
+        "definition": "Initial amount of items in storage at the beginning of the planning horizon",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: Storage capacity limit: storage_{i,m} <= StorageSize for all items i and months m
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is definitely a real constraint** and it should be explicitly modeled.
+
+The problem statement clearly says:
+
+> *“It is possible to store up to `storage_size` tons of each raw oil for use later.”*
+
+The phrase **“of each raw oil”** unambiguously indicates that the storage limit applies **individually to every oil type**, not as a shared/global capacity.
+
+Therefore, for all oils \( i \) and months \( m \):
+
+\[
+\text{storage}_{i,m} \le \text{StorageSize}
+\]
+
+This is a standard per-item inventory capacity constraint and must be included in the LP formulation.
+
+There is no ambiguity here — omitting it would allow unlimited storage and fundamentally change the problem.
+
+**Confidence level:**  
+5 OUT OF 5
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+PROBLEM INFO:
+
+- A food is manufactured by refining raw oils and blending them together. 
+- The raw oils are either vegetable oils or non-vegetable oils. 
+- Each oil \var{i} may be purchased in month \var{m} for price \var{price_{i,m}}.
+- The final product sells at \var{sell_price} per ton.
+- Vegetable oils and non-vegetable oils require different production lines for refining. 
+- In any month, it is not possible to refine more than \var{max_vegetable_refining_per_month} tons of vegetable oils and more than \var{max_non_vegetable_refining_per_month} tons of non-vegetable oils. 
+- There is no loss of weight in the refining process, and the cost of refining may be ignored.
+- It is possible to store up to \var{storage_size} tons of each raw oil for use later. 
+- The cost of storage for both vegetable and non-vegetable oil is \var{storage_cost} per ton per month.
+- The final product cannot be stored, nor can refined oils be stored.
+- There is a technological restriction of hardness on the final product. 
+- In the units in which hardness is measured, this must lie between \var{max_hardness} and \var{min_hardness}.
+- The hardness product is computed by the weighted average of hardness of each oil.
+- The hardness of oil \var{i} is \var{hardness_{i}}.
+- At present, there are \var{init_amount} tons of each type of raw oil in storage. 
+- We can assume that there is a month "0" to model the inital amount.
+- It is required that at the end of the last month, we still have the same amout of storage as \var{init_amount}.
+- This means directly adding the constraint that the storage in the last month must be equal to \var{init_amount}.
+
+
+INPUT FORMAT:
+
+{
+    "buy_price":[[price_{i, m} for i in 1,...,I] for m in 1,...,M],
+    "sell_price": sell_price,
+    "is_vegetable": [is_vegetable_{i} for i in 1,...,I],
+    "max_vegetable_refining_per_month": max_veg,
+    "max_non_vegetable_refining_per_month": max_non_veg,
+    "storage_size": storage_size,
+    "storage_cost": storage_cost,
+    "max_hardness": max_hardness,
+    "min_hardness": min_hardness,
+    "hardness": [hardness_{i} for i in 1,...,I],
+    "init_amount": init_amount
+}
+
+
+OBJECTIVE: What buying, storing and manufacturing policy should the company pursue in order to maximize profit?
+
+OUTPUT INFO: 
+
+- \var{buyquantity} represents the amount of buying quantity of each oil in each month
+- \var{refine} represents the amount of refined quantity of each oil in each month
+- \var{storage} represents the storage of each oil in each month
+ 
+OUTPUT FORMAT: 
+
+{
+    "buy": [[buyquantity_{i, m} for i in 1,...,I] for m in 1,...M],
+    "refine": [[refine_{i, m} for i in 1,...,I] for m in 1,...M],
+    "storage": [[storage_{i, m} for i in 1,...,I] for m in 1,...,M]
+} 
+
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "M": {
+        "definition": "Number of months",
+        "shape": [],
+        "type": "int"
+    },
+    "I": {
+        "definition": "Number of different items",
+        "shape": [],
+        "type": "int"
+    },
+    "BuyPrice": {
+        "definition": "Month m buy price of item i",
+        "shape": [
+            "M",
+            "I"
+        ],
+        "type": "string"
+    },
+    "SellPrice": {
+        "definition": "Sell price of the products after refining",
+        "shape": [],
+        "type": "int"
+    },
+    "IsVegetable": {
+        "definition": "Indicator whether item i is a vegetable",
+        "shape": [
+            "I"
+        ],
+        "type": "string"
+    },
+    "MaxVegetableRefiningPerMonth": {
+        "definition": "Maximum refining capability for vegetables per month",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxNonVegetableRefiningPerMonth": {
+        "definition": "Maximum refining capability for non-vegetables per month",
+        "shape": [],
+        "type": "int"
+    },
+    "StorageSize": {
+        "definition": "Size of the storage",
+        "shape": [],
+        "type": "int"
+    },
+    "StorageCost": {
+        "definition": "Cost for storing items per month",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxHardness": {
+        "definition": "The maximum hardness allowed for the products after refining",
+        "shape": [],
+        "type": "int"
+    },
+    "MinHardness": {
+        "definition": "The minimum hardness required for the products after refining",
+        "shape": [],
+        "type": "int"
+    },
+    "Hardness": {
+        "definition": "Hardness of item i",
+        "shape": [
+            "I"
+        ],
+        "type": "string"
+    },
+    "InitialAmount": {
+        "definition": "Initial amount of items in storage at the beginning of the planning horizon",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: Vegetable refining capacity per month: sum of refine_{i,m} over all vegetable oils i <= MaxVegetableRefiningPerMonth for all months m
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is **explicitly a constraint** in the problem description.
+
+The statement:
+
+> “In any month, it is not possible to refine more than `max_vegetable_refining_per_month` tons of vegetable oils and more than `max_non_vegetable_refining_per_month` tons of non-vegetable oils.”
+
+directly imposes a **capacity limit** on refining by oil type and by month.
+
+This translates exactly into the linear constraint:
+
+\[
+\sum_{i \in \text{Vegetable}} \text{refine}_{i,m} \le \text{MaxVegetableRefiningPerMonth}
+\quad \forall m
+\]
+
+This is:
+
+- ✅ Clearly stated in the description  
+- ✅ Operationally necessary  
+- ✅ Linear  
+- ✅ Essential to feasibility  
+- ✅ Not implied elsewhere  
+
+Therefore, it must be explicitly modeled in the LP.
+
+**Confidence level:**  
+5 OUT OF 5
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+PROBLEM INFO:
+
+- A food is manufactured by refining raw oils and blending them together. 
+- The raw oils are either vegetable oils or non-vegetable oils. 
+- Each oil \var{i} may be purchased in month \var{m} for price \var{price_{i,m}}.
+- The final product sells at \var{sell_price} per ton.
+- Vegetable oils and non-vegetable oils require different production lines for refining. 
+- In any month, it is not possible to refine more than \var{max_vegetable_refining_per_month} tons of vegetable oils and more than \var{max_non_vegetable_refining_per_month} tons of non-vegetable oils. 
+- There is no loss of weight in the refining process, and the cost of refining may be ignored.
+- It is possible to store up to \var{storage_size} tons of each raw oil for use later. 
+- The cost of storage for both vegetable and non-vegetable oil is \var{storage_cost} per ton per month.
+- The final product cannot be stored, nor can refined oils be stored.
+- There is a technological restriction of hardness on the final product. 
+- In the units in which hardness is measured, this must lie between \var{max_hardness} and \var{min_hardness}.
+- The hardness product is computed by the weighted average of hardness of each oil.
+- The hardness of oil \var{i} is \var{hardness_{i}}.
+- At present, there are \var{init_amount} tons of each type of raw oil in storage. 
+- We can assume that there is a month "0" to model the inital amount.
+- It is required that at the end of the last month, we still have the same amout of storage as \var{init_amount}.
+- This means directly adding the constraint that the storage in the last month must be equal to \var{init_amount}.
+
+
+INPUT FORMAT:
+
+{
+    "buy_price":[[price_{i, m} for i in 1,...,I] for m in 1,...,M],
+    "sell_price": sell_price,
+    "is_vegetable": [is_vegetable_{i} for i in 1,...,I],
+    "max_vegetable_refining_per_month": max_veg,
+    "max_non_vegetable_refining_per_month": max_non_veg,
+    "storage_size": storage_size,
+    "storage_cost": storage_cost,
+    "max_hardness": max_hardness,
+    "min_hardness": min_hardness,
+    "hardness": [hardness_{i} for i in 1,...,I],
+    "init_amount": init_amount
+}
+
+
+OBJECTIVE: What buying, storing and manufacturing policy should the company pursue in order to maximize profit?
+
+OUTPUT INFO: 
+
+- \var{buyquantity} represents the amount of buying quantity of each oil in each month
+- \var{refine} represents the amount of refined quantity of each oil in each month
+- \var{storage} represents the storage of each oil in each month
+ 
+OUTPUT FORMAT: 
+
+{
+    "buy": [[buyquantity_{i, m} for i in 1,...,I] for m in 1,...M],
+    "refine": [[refine_{i, m} for i in 1,...,I] for m in 1,...M],
+    "storage": [[storage_{i, m} for i in 1,...,I] for m in 1,...,M]
+} 
+
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "M": {
+        "definition": "Number of months",
+        "shape": [],
+        "type": "int"
+    },
+    "I": {
+        "definition": "Number of different items",
+        "shape": [],
+        "type": "int"
+    },
+    "BuyPrice": {
+        "definition": "Month m buy price of item i",
+        "shape": [
+            "M",
+            "I"
+        ],
+        "type": "string"
+    },
+    "SellPrice": {
+        "definition": "Sell price of the products after refining",
+        "shape": [],
+        "type": "int"
+    },
+    "IsVegetable": {
+        "definition": "Indicator whether item i is a vegetable",
+        "shape": [
+            "I"
+        ],
+        "type": "string"
+    },
+    "MaxVegetableRefiningPerMonth": {
+        "definition": "Maximum refining capability for vegetables per month",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxNonVegetableRefiningPerMonth": {
+        "definition": "Maximum refining capability for non-vegetables per month",
+        "shape": [],
+        "type": "int"
+    },
+    "StorageSize": {
+        "definition": "Size of the storage",
+        "shape": [],
+        "type": "int"
+    },
+    "StorageCost": {
+        "definition": "Cost for storing items per month",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxHardness": {
+        "definition": "The maximum hardness allowed for the products after refining",
+        "shape": [],
+        "type": "int"
+    },
+    "MinHardness": {
+        "definition": "The minimum hardness required for the products after refining",
+        "shape": [],
+        "type": "int"
+    },
+    "Hardness": {
+        "definition": "Hardness of item i",
+        "shape": [
+            "I"
+        ],
+        "type": "string"
+    },
+    "InitialAmount": {
+        "definition": "Initial amount of items in storage at the beginning of the planning horizon",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: Non-vegetable refining capacity per month: sum of refine_{i,m} over all non-vegetable oils i <= MaxNonVegetableRefiningPerMonth for all months m
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is **explicitly a required constraint**.
+
+The problem statement clearly says:
+
+> "In any month, it is not possible to refine more than max_vegetable_refining_per_month tons of vegetable oils and more than max_non_vegetable_refining_per_month tons of non-vegetable oils."
+
+This directly implies **two separate refining capacity constraints**, one for vegetable oils and one for non-vegetable oils.
+
+The proposed constraint:
+
+\[
+\sum_{i \in \text{non-vegetable oils}} \text{refine}_{i,m}
+\;\le\;
+\text{MaxNonVegetableRefiningPerMonth}
+\quad \forall m
+\]
+
+is therefore:
+
+- ✅ Explicitly stated in the description  
+- ✅ Structurally correct  
+- ✅ Necessary for feasibility  
+- ✅ Essential to correctly model production line capacity  
+
+There is no ambiguity in the wording — this is a hard operational capacity limit and must be included in the LP formulation.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+PROBLEM INFO:
+
+- A food is manufactured by refining raw oils and blending them together. 
+- The raw oils are either vegetable oils or non-vegetable oils. 
+- Each oil \var{i} may be purchased in month \var{m} for price \var{price_{i,m}}.
+- The final product sells at \var{sell_price} per ton.
+- Vegetable oils and non-vegetable oils require different production lines for refining. 
+- In any month, it is not possible to refine more than \var{max_vegetable_refining_per_month} tons of vegetable oils and more than \var{max_non_vegetable_refining_per_month} tons of non-vegetable oils. 
+- There is no loss of weight in the refining process, and the cost of refining may be ignored.
+- It is possible to store up to \var{storage_size} tons of each raw oil for use later. 
+- The cost of storage for both vegetable and non-vegetable oil is \var{storage_cost} per ton per month.
+- The final product cannot be stored, nor can refined oils be stored.
+- There is a technological restriction of hardness on the final product. 
+- In the units in which hardness is measured, this must lie between \var{max_hardness} and \var{min_hardness}.
+- The hardness product is computed by the weighted average of hardness of each oil.
+- The hardness of oil \var{i} is \var{hardness_{i}}.
+- At present, there are \var{init_amount} tons of each type of raw oil in storage. 
+- We can assume that there is a month "0" to model the inital amount.
+- It is required that at the end of the last month, we still have the same amout of storage as \var{init_amount}.
+- This means directly adding the constraint that the storage in the last month must be equal to \var{init_amount}.
+
+
+INPUT FORMAT:
+
+{
+    "buy_price":[[price_{i, m} for i in 1,...,I] for m in 1,...,M],
+    "sell_price": sell_price,
+    "is_vegetable": [is_vegetable_{i} for i in 1,...,I],
+    "max_vegetable_refining_per_month": max_veg,
+    "max_non_vegetable_refining_per_month": max_non_veg,
+    "storage_size": storage_size,
+    "storage_cost": storage_cost,
+    "max_hardness": max_hardness,
+    "min_hardness": min_hardness,
+    "hardness": [hardness_{i} for i in 1,...,I],
+    "init_amount": init_amount
+}
+
+
+OBJECTIVE: What buying, storing and manufacturing policy should the company pursue in order to maximize profit?
+
+OUTPUT INFO: 
+
+- \var{buyquantity} represents the amount of buying quantity of each oil in each month
+- \var{refine} represents the amount of refined quantity of each oil in each month
+- \var{storage} represents the storage of each oil in each month
+ 
+OUTPUT FORMAT: 
+
+{
+    "buy": [[buyquantity_{i, m} for i in 1,...,I] for m in 1,...M],
+    "refine": [[refine_{i, m} for i in 1,...,I] for m in 1,...M],
+    "storage": [[storage_{i, m} for i in 1,...,I] for m in 1,...,M]
+} 
+
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "M": {
+        "definition": "Number of months",
+        "shape": [],
+        "type": "int"
+    },
+    "I": {
+        "definition": "Number of different items",
+        "shape": [],
+        "type": "int"
+    },
+    "BuyPrice": {
+        "definition": "Month m buy price of item i",
+        "shape": [
+            "M",
+            "I"
+        ],
+        "type": "string"
+    },
+    "SellPrice": {
+        "definition": "Sell price of the products after refining",
+        "shape": [],
+        "type": "int"
+    },
+    "IsVegetable": {
+        "definition": "Indicator whether item i is a vegetable",
+        "shape": [
+            "I"
+        ],
+        "type": "string"
+    },
+    "MaxVegetableRefiningPerMonth": {
+        "definition": "Maximum refining capability for vegetables per month",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxNonVegetableRefiningPerMonth": {
+        "definition": "Maximum refining capability for non-vegetables per month",
+        "shape": [],
+        "type": "int"
+    },
+    "StorageSize": {
+        "definition": "Size of the storage",
+        "shape": [],
+        "type": "int"
+    },
+    "StorageCost": {
+        "definition": "Cost for storing items per month",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxHardness": {
+        "definition": "The maximum hardness allowed for the products after refining",
+        "shape": [],
+        "type": "int"
+    },
+    "MinHardness": {
+        "definition": "The minimum hardness required for the products after refining",
+        "shape": [],
+        "type": "int"
+    },
+    "Hardness": {
+        "definition": "Hardness of item i",
+        "shape": [
+            "I"
+        ],
+        "type": "string"
+    },
+    "InitialAmount": {
+        "definition": "Initial amount of items in storage at the beginning of the planning horizon",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: Hardness bounds: MinHardness * (sum over i of refine_{i,m}) <= sum over i of (Hardness_i * refine_{i,m}) <= MaxHardness * (sum over i of refine_{i,m}) for all months m
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is **definitely a required constraint**.
+
+### Why?
+
+The problem explicitly states:
+
+- There is a *technological restriction* on hardness.
+- The hardness of the final product must lie between `MinHardness` and `MaxHardness`.
+- Hardness of the product is the **weighted average** of the hardness of the refined oils.
+- The final product cannot be stored, so this restriction must hold **in every month**.
+
+The weighted average hardness in month \( m \) is:
+
+\[
+\frac{\sum_i Hardness_i \cdot refine_{i,m}}{\sum_i refine_{i,m}}
+\]
+
+The requirement is:
+
+\[
+MinHardness \le
+\frac{\sum_i Hardness_i \cdot refine_{i,m}}{\sum_i refine_{i,m}}
+\le MaxHardness
+\]
+
+Multiplying both sides by \( \sum_i refine_{i,m} \) (which is nonnegative), we obtain the linear constraint:
+
+\[
+MinHardness \cdot \left(\sum_i refine_{i,m}\right)
+\le
+\sum_i Hardness_i \cdot refine_{i,m}
+\le
+MaxHardness \cdot \left(\sum_i refine_{i,m}\right)
+\]
+
+This is **linear** and therefore fully compatible with an LP formulation.
+
+It directly enforces the technological requirement described in the problem, so it **must** be explicitly included in the model.
+
+**Confidence: 5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
+
+
+
+++++++++++++++++++++++++++++++
+Extracting constraint formulations
+++++++++++++++++++++++++++++++
+
+
+
+----
+{
+    "FORMULATION": "$\\forall i = 1,\\dots,I,\\; \\forall m = 1,\\dots,M:\\; buy_{i,m} \\ge 0$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\forall i = 1,\\dots,I,\\; \\forall m = 1,\\dots,M:\\; buy_{i,m} \\ge 0$
+{}
+[]
+----
+----
+{
+    "FORMULATION": "$\\forall i = 1, \\dots, I,\\; \\forall m = 1, \\dots, M:\\; refine_{i,m} \\geq 0$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\forall i = 1, \\dots, I,\\; \\forall m = 1, \\dots, M:\\; refine_{i,m} \\geq 0$
+{}
+[]
+----
+----
+{
+    "FORMULATION": "$\\forall i \\in \\{1,\\dots,I\\},\\; \\forall m \\in \\{1,\\dots,M\\}:\\; storage_{i,m} \\ge 0$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\forall i \\in \\{1,\\dots,I\\},\\; \\forall m \\in \\{1,\\dots,M\\}:\\; storage_{i,m} \\ge 0$
+{}
+[]
+----
+----
+{
+    "FORMULATION": "$\\forall i = 1,\\dots,I, \\; \\forall m = 1,\\dots,M:\\; storage_{i,m-1} + buy_{i,m} - refine_{i,m} = storage_{i,m}$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": [
+        "$\\forall i = 1,\\dots,I:\\; storage_{i,0} = InitialAmount$"
+    ]
+}
+----

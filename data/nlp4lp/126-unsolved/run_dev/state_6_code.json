@@ -1,0 +1,83 @@
+{
+    "description": "A pharmaceutical company has two labs, lab 1 and lab 2, where they make heart and lung medication in pill form. At lab 1, they can produce 20 heart medication pills and 30 lung medication pills per hour. At lab 2, they can produce 30 heart medication pills and 40 lung medication pills per hour. Each session at lab 1 requires 3 hours of worker labor while each session at lab 2 requires 5 hours of worker labor. The company has 1500 worker hours available and must make at least 20000 heart medication pills and at least 30000 lung medication pills. How many hours at each lab should be run to minimize the total time needed?",
+    "parameters": {
+        "NumLabs": {
+            "definition": "NumLabs",
+            "shape": [],
+            "type": "int"
+        },
+        "NumPillTypes": {
+            "definition": "NumPillTypes",
+            "shape": [],
+            "type": "int"
+        },
+        "ProductionRate": {
+            "definition": "ProductionRate",
+            "shape": [
+                2,
+                2
+            ],
+            "type": "string"
+        },
+        "WorkerLaborPerLab": {
+            "definition": "WorkerLaborPerLab",
+            "shape": [
+                2
+            ],
+            "type": "string"
+        },
+        "TotalWorkerHours": {
+            "definition": "TotalWorkerHours",
+            "shape": [],
+            "type": "int"
+        },
+        "MinRequiredPills": {
+            "definition": "MinRequiredPills",
+            "shape": [
+                2
+            ],
+            "type": "string"
+        }
+    },
+    "objective": {
+        "description": "\"Minimize the total time (hours of operation across both labs) needed to meet the required production of heart and lung medication pills.\"",
+        "formulation": "$\\min \\sum_{l=1}^{\\text{NumLabs}} \\text{HoursRun}_l$",
+        "code": "del.setObjective(quicksum(HoursRun[l] for l in range(NumLabs)), GRB.MINIMIZE"
+    },
+    "constraints": [
+        {
+            "description": "3 times the hours run at lab 1 plus 5 times the hours run at lab 2 must be less than or equal to 1500 worker hours",
+            "formulation": "$3 \\\\cdot HoursRun[1] + 5 \\\\cdot HoursRun[2] \\\\leq TotalWorkerHours$",
+            "code": "model.addConstr(sum(WorkerLaborPerLab[i] * HoursRun[i] for i in range(NumLabs)) <= TotalWorkerHours)"
+        },
+        {
+            "description": "20 times the hours run at lab 1 plus 30 times the hours run at lab 2 must be greater than or equal to 20000 heart medication pills",
+            "formulation": "$20 \\\\cdot HoursRun[1] + 30 \\\\cdot HoursRun[2] \\\\geq 20000$",
+            "code": "model.addConstr(20 * HoursRun[0] + 30 * HoursRun[1] >= 20000)"
+        },
+        {
+            "description": "30 times the hours run at lab 1 plus 40 times the hours run at lab 2 must be greater than or equal to 30000 lung medication pills",
+            "formulation": "$30 \\\\cdot HoursRun[1] + 40 \\\\cdot HoursRun[2] \\\\ge 30000$",
+            "code": "model.addConstr(30 * HoursRun[0] + 40 * HoursRun[1] >= 30000)"
+        },
+        {
+            "description": "Hours run at lab 1 must be greater than or equal to 0",
+            "formulation": "$HoursRun[1] \\\\geq 0$",
+            "code": "model.addConstr(HoursRun[0] >= 0)"
+        },
+        {
+            "description": "Hours run at lab 2 must be greater than or equal to 0",
+            "formulation": "$HoursRun[2] \\\\geq 0$",
+            "code": "model.addConstr(HoursRun[1] >= 0)"
+        }
+    ],
+    "variables": {
+        "HoursRun": {
+            "shape": [
+                "NumLabs"
+            ],
+            "type": "continuous",
+            "definition": "The number of hours each lab is run"
+        }
+    }
+}

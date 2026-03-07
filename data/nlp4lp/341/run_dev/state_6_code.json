@@ -1,0 +1,103 @@
+{
+    "description": "PROBLEM TYPE: LP\n\nPROBLEM INFO:\n\n- A division of an auto parts manufacturer produces \\var{P} different parts using \\var{M} different machines.\n- Batch of 100 part \\var{p} requires \\var{time_{m,p}} hours on machine \\var{m}.\n- The division incurs a charge of \\var{cost_{m}} per hour for using machine \\var{m}.\n- Machine \\var{m} has an availability of up to \\var{available_{m}} hours per month.\n- The division sells part \\var{p} in batches of 100 at price of \\var{price_{p}} per batch.\n- The division must produce at least \\var{min_batches_{p}} batches of part \\var{p} each month to fulfill a contract.\n- Extra available time for machine \\var{m} can be acquired at $\\var{extra_costs_{m}}/hour. \n- Up to \\var{max_extra_{m}} hours can be purchased for each machine \\var{m}.\n\nINPUT FORMAT: \n\n{\n    \"time_required\": [[time_{m,p} for p in 1, ..., P] for m in 1, ..., M],\n    \"machine_costs\": [cost_{m} for m in 1, ..., M],\n    \"availability\": [available_{m} for m in 1, ..., M],\n    \"prices\": [price_{p} for p in 1, ..., P],\n    \"min_batches\": [min_batches_{p} for p in 1, ..., P],\n    \"extra_costs\": [extra_cost_{m} for m in 1, ..., M],\n    \"max_extra\": [max_extra_{m} for m in 1, ..., M]\n}\n\nOBJECTIVE: How many batches of each part should the manufacturer produce each month to maximize profit?\n\nOUTPUT INFO:\n\n- the number of batches of each part produced \\var{batches_{p}}.\n- \\var{extra_time} denotes the additional hours purchased for each machine \\var{m}.\n- \\var{total_profit} represents the total profit obtained for the month.\n\nOUTPUT FORMAT:\n\n{\n    \"batches\": [batches_{p} for p in 1, ..., P],\n    \"extra_time\": [extra_time_{p} for p in 1, ..., P],\n    \"total_profit\": total_profit\n}",
+    "parameters": {
+        "M": {
+            "definition": "Number of machines",
+            "shape": [],
+            "type": "int"
+        },
+        "P": {
+            "definition": "Number of parts",
+            "shape": [],
+            "type": "int"
+        },
+        "TimeRequired": {
+            "definition": "Time required to produce a batch of part p on machine m",
+            "shape": [
+                "M",
+                "P"
+            ],
+            "type": "string"
+        },
+        "MachineCosts": {
+            "definition": "Cost associated with running machine m",
+            "shape": [
+                "M"
+            ],
+            "type": "string"
+        },
+        "Availability": {
+            "definition": "Availability of machine m for production each month",
+            "shape": [
+                "M"
+            ],
+            "type": "string"
+        },
+        "Prices": {
+            "definition": "Price obtained from selling a batch of part p",
+            "shape": [
+                "P"
+            ],
+            "type": "string"
+        },
+        "MinBatches": {
+            "definition": "Minimum number of batches of part p that should be produced",
+            "shape": [
+                "P"
+            ],
+            "type": "string"
+        },
+        "ExtraCosts": {
+            "definition": "Extra cost incurred when running machine m beyond regular operation",
+            "shape": [
+                "M"
+            ],
+            "type": "string"
+        },
+        "MaxExtra": {
+            "definition": "Maximum extra hours machine m can be run",
+            "shape": [
+                "M"
+            ],
+            "type": "string"
+        }
+    },
+    "objective": {
+        "description": "\"The goal is to maximize the total monthly profit, defined as total revenue from selling batches of parts minus the operating and extra time costs of the machines.\"",
+        "formulation": "$\\max \\left( \\sum_{p=1}^{P} Prices_{p} \\, batches_{p} \\;-\\; \\sum_{m=1}^{M} \\left( MachineCosts_{m} \\sum_{p=1}^{P} TimeRequired_{m,p} \\, batches_{p} \\;+\\; ExtraCosts_{m} \\, extraTime_{m} \\right) \\right)$",
+        "code": "model.setObjective(\n    quicksum(Prices[p] * batches[p] for p in range(P))\n    - quicksum(\n        MachineCosts[m] * quicksum(TimeRequired[m][p] * batches[p] for p in range(P))\n        + ExtraCosts[m] * extraTime[m]\n        for m in range(M)\n    ),\n    GRB.MAXIMIZE\n)"
+    },
+    "constraints": [
+        {
+            "description": "For each machine m: Sum over all parts p of (TimeRequired[m][p] * batches[p]) must be less than or equal to Availability[m] + extra_time[m]",
+            "formulation": "$\\\\forall m \\\\in \\\\{1, \\\\dots, M\\\\}: \\\\sum_{p=1}^{P} TimeRequired_{m,p} \\\\cdot batches_p \\\\leq Availability_m + extraTime_m$",
+            "code": "for m in range(M):\n    model.addConstr(\n        sum(TimeRequired[m][p] * batches[p] for p in range(P))\n        <= Availability[m] + extraTime[m]\n    )"
+        },
+        {
+            "description": "For each machine m: 0 <= extra_time[m] <= MaxExtra[m]",
+            "formulation": "$\\\\forall m = 1, \\\\dots, M: \\\\; 0 \\\\leq extraTime[m] \\\\leq MaxExtra[m]$",
+            "code": "for m in range(M):\n    model.addConstr(extraTime[m] >= 0)\n    model.addConstr(extraTime[m] <= MaxExtra[m])"
+        },
+        {
+            "description": "For each part p: batches[p] must be greater than or equal to MinBatches[p]",
+            "formulation": "$\\\\forall p = 1, \\\\dots, P:\\\\; batches[p] \\\\geq MinBatches[p]$",
+            "code": "for p in range(P):\n    model.addConstr(batches[p] >= MinBatches[p])"
+        }
+    ],
+    "variables": {
+        "batches": {
+            "shape": [
+                "P"
+            ],
+            "type": "continuous",
+            "definition": "Number of batches of part p produced per month"
+        },
+        "extraTime": {
+            "shape": [
+                "M"
+            ],
+            "type": "continuous",
+            "definition": "Additional hours purchased for machine m"
+        }
+    }
+}
