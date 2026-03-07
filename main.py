@@ -148,40 +148,5 @@ if __name__ == "__main__":
     state = load_state(os.path.join(run_dir, "state_6_code.json"))
     generate_code(state, run_dir)
     execute_and_debug(state, model=MODEL, dir=run_dir, logger=logger)
-<<<<<<< Updated upstream
+    ######
 
-    return True
-
-
-def main():
-    """命令行入口函数"""
-    parser = argparse.ArgumentParser(description="Run the optimization problem")
-    parser.add_argument("--dir", type=str, required=True, help="Directory of the problem")
-    parser.add_argument("--devmode", type=int, default=1)
-    parser.add_argument("--rag-mode", type=RAGMode, choices=list(RAGMode), default=None, help="RAG mode")
-    parser.add_argument("--model", type=str, default="Qwen/Qwen3-8B", help="Model name")
-    parser.add_argument("--base_url", type=str, required=True, help="Base URL of model")
-    parser.add_argument("--api_key", type=str, required=True, help="API key of model")
-    args = parser.parse_args()
-
-    # 设置环境变量
-    os.environ["API_KEY"] = args.api_key
-    os.environ["BASE_URL"] = args.base_url
-    os.environ["MODEL"] = args.model
-
-    # 调用函数
-    run_optimization(
-        dir_path=args.dir,
-        api_key=args.api_key,
-        base_url=args.base_url,
-        model=args.model,
-        devmode=args.devmode,
-        rag_mode=args.rag_mode
-    )
-
-
-if __name__ == "__main__":
-    main()
-=======
-    #######
->>>>>>> Stashed changes
