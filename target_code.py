@@ -197,7 +197,8 @@ def get_codes(
             print("+++++")
 
             code = extract_code_from_end(res)
-            print(code)
+            print("目标函数对应的代码：", code)
+            assert 1==0, "在这里故意触发错误，来检查提取的代码是否正确"
             coded_objective["code"] = code
             break
         except Exception as e:
