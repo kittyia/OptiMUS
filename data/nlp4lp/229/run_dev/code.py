@@ -27,23 +27,24 @@ MinLimousineFraction = data["MinLimousineFraction"] # shape: [], definition: Min
 
 ### Define the variables
 
-numLimousines = model.addVar(vtype=GRB.INTEGER, name="numLimousines")
+NumberOfLimousines = model.addVar(vtype=GRB.INTEGER, name="NumberOfLimousines")
 
-numBuses = model.addVar(vtype=GRB.INTEGER, name="numBuses")
+NumberOfBuses = model.addVar(vtype=GRB.INTEGER, name="NumberOfBuses")
 
 
 
 ### Define the constraints
 
-model.addConstr(LimousineCapacity * numLimousines + BusCapacity * numBuses >= MinPeople)
-model.addConstr(3 * numLimousines >= 7 * numBuses)
-model.addConstr(numLimousines >= 0)
-model.addConstr(numBuses >= 0)
+model.addConstr(LimousineCapacity * NumberOfLimousines + BusCapacity * NumberOfBuses >= MinPeople)
+model.addConstr(3 * NumberOfLimousines >= 7 * NumberOfBuses)
+model.addConstr(NumberOfBuses >= 0)
+model.addConstr(NumberOfLimousines >= 0)
+model.addConstr(NumberOfBuses >= 0)
 
 
 ### Define the objective
 
-model.setObjective(numLimousines + numBuses, GRB.MINIMIZE)
+model.setObjective(NumberOfLimousines + NumberOfBuses, GRB.MINIMIZE)
 
 
 ### Optimize the model

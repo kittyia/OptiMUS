@@ -48,7 +48,7 @@ model.addConstr(NightPills >= MinNightPills)
 
 ### Define the objective
 
-
+model.setObjective(SleepPerDayPill * DayPills + SleepPerNightPill * NightPills, GRB.MINIMIZE)
 
 
 ### Optimize the model

@@ -44,7 +44,7 @@ model.addConstr(PillVaccines >= MinPills)
 
 ### Define the objective
 
-
+model.setObjective(PillVaccines + ShotVaccines, GRB.MAXIMIZE)
 
 
 ### Optimize the model

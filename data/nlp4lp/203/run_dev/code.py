@@ -39,7 +39,6 @@ PremiumHandbags = model.addVar(vtype=GRB.INTEGER, name="PremiumHandbags")
 
 ### Define the constraints
 
-model.addConstr(RegularHandbagCost * RegularHandbags + PremiumHandbagCost * PremiumHandbags <= TotalBudget)
 model.addConstr(RegularHandbags + PremiumHandbags <= MaxHandbagsPerMonth)
 model.addConstr(RegularHandbags >= 0)
 model.addConstr(PremiumHandbags >= 0)
@@ -47,7 +46,11 @@ model.addConstr(PremiumHandbags >= 0)
 
 ### Define the objective
 
-
+model.setObjective(
+    RegularHandbagProfit * RegularHandbags + 
+    PremiumHandbagProfit * PremiumHandbags,
+    GRB.MAXIMIZE
+)
 
 
 ### Optimize the model

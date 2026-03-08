@@ -49,8 +49,11 @@ clicks = model.addVars(A, vtype=GRB.CONTINUOUS, name="clicks")
 
 for a in range(A):
     model.addConstr(clicks[a] >= 0)
+for a in range(A):
     model.addConstr(clicks[a] <= MaxClicks[a])
-model.addConstr(sum(Costs[a] * clicks[a] for a in range(A)) <= Budget)
+model.addConstr(
+    sum(Costs[a] * clicks[a] for a in range(A)) <= Budget
+)
 model.addConstr(
     sum(YoungClicks[a] * clicks[a] for a in range(A)) >= GoalYoung
 )
@@ -58,19 +61,18 @@ model.addConstr(
     sum(OldClicks[a] * clicks[a] for a in range(A)) >= GoalOld
 )
 model.addConstr(
-    sum(YoungClicks[a] * UniqueClicks[a] * clicks[a] for a in range(A)) >= GoalUniqueYoung
+    sum(clicks[a] * YoungClicks[a] * UniqueClicks[a] for a in range(A)) 
+    >= GoalUniqueYoung
 )
 model.addConstr(
-    sum(OldClicks[a] * UniqueClicks[a] * clicks[a] for a in range(A)) >= GoalUniqueOld
+    sum(clicks[a] * UniqueClicks[a] * OldClicks[a] for a in range(A)) 
+    >= GoalUniqueOld
 )
 
 
 ### Define the objective
 
-model.setObjective(
-    quicksum(UniqueClicks[a] * clicks[a] for a in range(A)),
-    GRB.MAXIMIZE
-)
+model.setObjective(quicksum(UniqueClicks[a] * clicks[a] for a in range(A)), GRB.MAXIMIZE)
 
 
 ### Optimize the model

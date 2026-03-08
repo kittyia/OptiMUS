@@ -43,9 +43,17 @@ HighPowerUnits = model.addVar(vtype=GRB.INTEGER, name="HighPowerUnits")
 
 ### Define the constraints
 
-model.addConstr(LowPowerCoolingCapacity * LowPowerUnits + HighPowerCoolingCapacity * HighPowerUnits >= TotalCoolingRequired)
-model.addConstr(LowPowerElectricityUsage * LowPowerUnits + HighPowerElectricityUsage * HighPowerUnits <= TotalElectricityAvailable)
-model.addConstr(7 * LowPowerUnits <= 3 * HighPowerUnits)
+model.addConstr(
+    LowPowerCoolingCapacity * LowPowerUnits
+    + HighPowerCoolingCapacity * HighPowerUnits
+    >= TotalCoolingRequired
+)
+model.addConstr(
+    LowPowerElectricityUsage * LowPowerUnits +
+    HighPowerElectricityUsage * HighPowerUnits
+    <= TotalElectricityAvailable
+)
+model.addConstr(LowPowerUnits <= MaxLowPowerPercentage * (LowPowerUnits + HighPowerUnits))
 model.addConstr(HighPowerUnits >= MinHighPowerModels)
 model.addConstr(LowPowerUnits >= 0)
 model.addConstr(LowPowerUnits >= 0)

@@ -1,20 +1,20 @@
 ----
-There is no redundancy in the list of constraints.
+- **Eye cream requirement** and **foot cream requirement** are not redundant because they correspond to two different products with different production rates and right-hand sides. Neither constraint can be derived from the other.
 
-- The eye cream and foot cream requirements correspond to different products and must remain separate because satisfying one does not imply satisfying the other.
-- The water constraint is independent of the production requirements; meeting product minimums does not guarantee the water limit is respected.
-- The non-negativity constraint on machine hours is necessary for feasibility and is not implied by any other constraint.
-- While the two product constraints could be written in a more compact indexed form, they cannot be logically combined into a single constraint without changing the structure of the model.
+- **Water availability constraint** is not redundant. The production constraints define a feasible region that is unbounded above; increasing machine hours can satisfy production while exceeding water availability. Therefore, the water constraint is necessary.
 
-Therefore, no constraints can be removed or merged without altering the meaning of the problem.
+- **Non-negativity constraints** are not redundant. The production and water constraints alone allow negative values for one machine’s hours (compensated by sufficiently large hours on the other machine). Hence, both non-negativity constraints are required.
+
+- No pair of constraints can be combined into a single constraint because each represents a distinct physical limitation (two product requirements, one resource limit, and sign restrictions).
 
 Updated list of constraints:
 
 [
-    "Total eye cream produced by all machines must be at least 1300 ml",
-    "Total foot cream produced by all machines must be at least 1500 ml",
-    "Total distilled water used by all machines must not exceed 1200 ml",
-    "Number of hours each machine is used must be non-negative"
+    "30 times the hours used on machine 1 plus 45 times the hours used on machine 2 must be at least 1300 ml (eye cream requirement)",
+    "60 times the hours used on machine 1 plus 30 times the hours used on machine 2 must be at least 1500 ml (foot cream requirement)",
+    "20 times the hours used on machine 1 plus 15 times the hours used on machine 2 must not exceed 1200 ml (distilled water availability constraint)",
+    "The hours used on machine 1 must be non-negative",
+    "The hours used on machine 2 must be non-negative"
 ]
 ----
 +++++++++++++++++++
@@ -71,7 +71,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: Total eye cream produced by all machines must be at least 1300 ml
+Consider this potential constraint: 30 times the hours used on machine 1 plus 45 times the hours used on machine 2 must be at least 1300 ml (eye cream requirement)
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -81,25 +81,28 @@ Consider this potential constraint: Total eye cream produced by all machines mus
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is definitely a constraint and it must be explicitly included in the (MI)LP formulation.
+Yes, this is absolutely a required constraint.
 
-The problem statement clearly says:
+Reasoning step by step:
 
-> “If the pharmacy needs to make at least 1300 ml of eye cream and 1500 ml of foot cream…”
+- Machine 1 produces **30 ml of eye cream per hour**.
+- Machine 2 produces **45 ml of eye cream per hour**.
+- Let \( h_1 \) and \( h_2 \) be the hours used on machines 1 and 2.
+- Total eye cream produced is therefore:
+  
+  \[
+  30h_1 + 45h_2
+  \]
 
-This directly translates into minimum production requirements. Therefore, the total eye cream produced by all machines must satisfy:
+- The pharmacy must produce **at least 1300 ml of eye cream**.
+
+This directly translates into the constraint:
 
 \[
-30x_1 + 45x_2 \ge 1300
+30h_1 + 45h_2 \ge 1300
 \]
 
-(where \(x_1, x_2\) are the hours used for machine 1 and 2, respectively).
-
-This is a core feasibility constraint. Without it, the model could minimize time by producing less than the required amount, which would violate the problem statement.
-
-✅ It is explicitly stated.  
-✅ It is necessary for feasibility.  
-✅ It must be modeled.
+This is a fundamental production requirement constraint and must be explicitly included in the LP formulation.
 
 **5 OUT OF 5**
 +--+
@@ -157,7 +160,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: Total foot cream produced by all machines must be at least 1500 ml
+Consider this potential constraint: 60 times the hours used on machine 1 plus 30 times the hours used on machine 2 must be at least 1500 ml (foot cream requirement)
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -167,194 +170,292 @@ Consider this potential constraint: Total foot cream produced by all machines mu
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is definitely a constraint.
+Yes, this is **definitely a valid constraint** and it must be included in the LP formulation.
 
-The problem statement explicitly says:
+### Step-by-step reasoning
 
-> “the pharmacy needs to make **at least 1300 ml of eye cream and 1500 ml of foot cream**”
+- Machine 1 produces **60 ml of foot cream per hour**.
+- Machine 2 produces **30 ml of foot cream per hour**.
+- Let:
+  - \( h_1 \) = hours machine 1 is used  
+  - \( h_2 \) = hours machine 2 is used  
 
-The phrase **“at least 1500 ml of foot cream”** directly translates into a lower-bound production requirement. In an LP/MILP formulation, this must be modeled as:
+Total foot cream produced is:
 
 \[
-\sum_{m} \text{ProductionRate}_{m,\text{foot}} \cdot x_m \ge 1500
+60h_1 + 30h_2
 \]
 
-where \( x_m \) is the number of hours machine \( m \) is used.
+The problem explicitly states that the pharmacy must produce **at least 1500 ml of foot cream**.
 
-This is a core feasibility constraint, not optional or implied — without it, the solution could produce less foot cream and still minimize total time, which would violate the problem requirement.
+Therefore, we must enforce:
+
+\[
+60h_1 + 30h_2 \ge 1500
+\]
+
+This directly encodes the minimum production requirement for foot cream.
+
+There is no ambiguity here — this is a core feasibility constraint and absolutely necessary in the model.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+A pharmacy makes eye cream and foot cream using two different machines, machine 1 and machine 2. Machine 1 can  make 30 ml of eye cream and 60 ml of foot cream per hour. Machine 2 can make 45 ml of eye cream and 30 ml of foot cream per hour. Furthermore, machine 1 requires 20 ml of distilled water per hour while machine 2 requires 15 ml of distilled water per hour. The pharmacy has available 1200 ml of distilled water. If the pharmacy needs to make at least 1300 ml of eye cream and 1500 ml of foot cream, how many hours should each machine be used to minimize the total time needed?
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "NumMachines": {
+        "definition": "Number of machines",
+        "shape": [],
+        "type": "int"
+    },
+    "NumProducts": {
+        "definition": "Number of products",
+        "shape": [],
+        "type": "int"
+    },
+    "ProductionRate": {
+        "definition": "Amount of product p produced per hour by machine m",
+        "shape": [
+            "NumMachines",
+            "NumProducts"
+        ],
+        "type": "string"
+    },
+    "WaterUsage": {
+        "definition": "Amount of distilled water consumed per hour by machine m",
+        "shape": [
+            "NumMachines"
+        ],
+        "type": "string"
+    },
+    "TotalWaterAvailable": {
+        "definition": "Total amount of distilled water available",
+        "shape": [],
+        "type": "int"
+    },
+    "RequiredProduct": {
+        "definition": "Minimum required amount of product p",
+        "shape": [
+            "NumProducts"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: 20 times the hours used on machine 1 plus 15 times the hours used on machine 2 must not exceed 1200 ml (distilled water availability constraint)
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is definitely a real constraint and should be explicitly included in the (MI)LP formulation.
+
+### Why?
+
+- Machine 1 consumes **20 ml of distilled water per hour**.
+- Machine 2 consumes **15 ml of distilled water per hour**.
+- The pharmacy has **at most 1200 ml** of distilled water available.
+
+If:
+- \( h_1 \) = hours machine 1 is used  
+- \( h_2 \) = hours machine 2 is used  
+
+Then total water usage is:
+
+\[
+20h_1 + 15h_2
+\]
+
+Since water availability is limited to 1200 ml, we must enforce:
+
+\[
+20h_1 + 15h_2 \le 1200
+\]
+
+This is a **classic resource capacity constraint**, which is essential in production planning problems. Omitting it would allow infeasible solutions that exceed available distilled water.
+
+There is no ambiguity in the description — the water limit is explicitly stated and clearly binds total machine operating time.
+
+✅ This constraint absolutely belongs in the model.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+A pharmacy makes eye cream and foot cream using two different machines, machine 1 and machine 2. Machine 1 can  make 30 ml of eye cream and 60 ml of foot cream per hour. Machine 2 can make 45 ml of eye cream and 30 ml of foot cream per hour. Furthermore, machine 1 requires 20 ml of distilled water per hour while machine 2 requires 15 ml of distilled water per hour. The pharmacy has available 1200 ml of distilled water. If the pharmacy needs to make at least 1300 ml of eye cream and 1500 ml of foot cream, how many hours should each machine be used to minimize the total time needed?
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "NumMachines": {
+        "definition": "Number of machines",
+        "shape": [],
+        "type": "int"
+    },
+    "NumProducts": {
+        "definition": "Number of products",
+        "shape": [],
+        "type": "int"
+    },
+    "ProductionRate": {
+        "definition": "Amount of product p produced per hour by machine m",
+        "shape": [
+            "NumMachines",
+            "NumProducts"
+        ],
+        "type": "string"
+    },
+    "WaterUsage": {
+        "definition": "Amount of distilled water consumed per hour by machine m",
+        "shape": [
+            "NumMachines"
+        ],
+        "type": "string"
+    },
+    "TotalWaterAvailable": {
+        "definition": "Total amount of distilled water available",
+        "shape": [],
+        "type": "int"
+    },
+    "RequiredProduct": {
+        "definition": "Minimum required amount of product p",
+        "shape": [
+            "NumProducts"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: The hours used on machine 1 must be non-negative
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is indeed a constraint.
+
+The number of hours a machine is used is a decision variable. In any realistic setting, time usage cannot be negative — using a machine for a negative number of hours is physically impossible. Therefore, this is a **feasibility constraint** that must be included in the model.
+
+In linear programming formulations, non-negativity constraints on decision variables (e.g., \( x_1 \ge 0 \), \( x_2 \ge 0 \)) are standard and essential unless otherwise specified.
+
+So this should absolutely be explicitly modeled.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+A pharmacy makes eye cream and foot cream using two different machines, machine 1 and machine 2. Machine 1 can  make 30 ml of eye cream and 60 ml of foot cream per hour. Machine 2 can make 45 ml of eye cream and 30 ml of foot cream per hour. Furthermore, machine 1 requires 20 ml of distilled water per hour while machine 2 requires 15 ml of distilled water per hour. The pharmacy has available 1200 ml of distilled water. If the pharmacy needs to make at least 1300 ml of eye cream and 1500 ml of foot cream, how many hours should each machine be used to minimize the total time needed?
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "NumMachines": {
+        "definition": "Number of machines",
+        "shape": [],
+        "type": "int"
+    },
+    "NumProducts": {
+        "definition": "Number of products",
+        "shape": [],
+        "type": "int"
+    },
+    "ProductionRate": {
+        "definition": "Amount of product p produced per hour by machine m",
+        "shape": [
+            "NumMachines",
+            "NumProducts"
+        ],
+        "type": "string"
+    },
+    "WaterUsage": {
+        "definition": "Amount of distilled water consumed per hour by machine m",
+        "shape": [
+            "NumMachines"
+        ],
+        "type": "string"
+    },
+    "TotalWaterAvailable": {
+        "definition": "Total amount of distilled water available",
+        "shape": [],
+        "type": "int"
+    },
+    "RequiredProduct": {
+        "definition": "Minimum required amount of product p",
+        "shape": [
+            "NumProducts"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: The hours used on machine 2 must be non-negative
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is** a constraint and it should be explicitly modeled.
+
+### Step-by-step reasoning
+
+The decision variables in this problem are:
+
+- \( x_1 \): hours machine 1 is used  
+- \( x_2 \): hours machine 2 is used  
+
+Since these represent **time**, negative values would be physically meaningless. A machine cannot operate for a negative number of hours.
+
+Therefore, we must impose:
+
+\[
+x_2 \ge 0
+\]
+
+This is a **non-negativity constraint**, which is standard in linear programming formulations. Even if many solvers assume non-negativity by default, from a modeling perspective it **must be explicitly defined** (either as a bound or as a constraint).
+
+So yes — this is a legitimate and necessary constraint.
 
 **Confidence level:** 5 OUT OF 5
-+--+
----
-The confidence score is 5, which is high enough.
----
-+--+
-
-You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
-
------
-A pharmacy makes eye cream and foot cream using two different machines, machine 1 and machine 2. Machine 1 can  make 30 ml of eye cream and 60 ml of foot cream per hour. Machine 2 can make 45 ml of eye cream and 30 ml of foot cream per hour. Furthermore, machine 1 requires 20 ml of distilled water per hour while machine 2 requires 15 ml of distilled water per hour. The pharmacy has available 1200 ml of distilled water. If the pharmacy needs to make at least 1300 ml of eye cream and 1500 ml of foot cream, how many hours should each machine be used to minimize the total time needed?
------
-
-Here is a list of parameters that someone has extracted from the description:
-
-{
-    "NumMachines": {
-        "definition": "Number of machines",
-        "shape": [],
-        "type": "int"
-    },
-    "NumProducts": {
-        "definition": "Number of products",
-        "shape": [],
-        "type": "int"
-    },
-    "ProductionRate": {
-        "definition": "Amount of product p produced per hour by machine m",
-        "shape": [
-            "NumMachines",
-            "NumProducts"
-        ],
-        "type": "string"
-    },
-    "WaterUsage": {
-        "definition": "Amount of distilled water consumed per hour by machine m",
-        "shape": [
-            "NumMachines"
-        ],
-        "type": "string"
-    },
-    "TotalWaterAvailable": {
-        "definition": "Total amount of distilled water available",
-        "shape": [],
-        "type": "int"
-    },
-    "RequiredProduct": {
-        "definition": "Minimum required amount of product p",
-        "shape": [
-            "NumProducts"
-        ],
-        "type": "string"
-    }
-}
-
-
-Consider this potential constraint: Total distilled water used by all machines must not exceed 1200 ml
-
-
-- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
-- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
-    
-
-Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
-
-----
-Yes, this is definitely a constraint and must be explicitly modeled.
-
-The problem clearly states:
-
-- Machine 1 consumes **20 ml of distilled water per hour**
-- Machine 2 consumes **15 ml of distilled water per hour**
-- The pharmacy has **1200 ml total distilled water available**
-
-Since the decision variables are the number of hours each machine operates, total water consumption depends on those decision variables. Therefore, we must impose the constraint:
-
-\[
-20x_1 + 15x_2 \le 1200
-\]
-
-where:
-- \(x_1\) = hours machine 1 operates  
-- \(x_2\) = hours machine 2 operates  
-
-This is a classic resource capacity constraint and is absolutely necessary in the LP formulation. Without it, the solution could violate the water limitation.
-
-**Confidence: 5 OUT OF 5**
-+--+
----
-The confidence score is 5, which is high enough.
----
-+--+
-
-You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
-
------
-A pharmacy makes eye cream and foot cream using two different machines, machine 1 and machine 2. Machine 1 can  make 30 ml of eye cream and 60 ml of foot cream per hour. Machine 2 can make 45 ml of eye cream and 30 ml of foot cream per hour. Furthermore, machine 1 requires 20 ml of distilled water per hour while machine 2 requires 15 ml of distilled water per hour. The pharmacy has available 1200 ml of distilled water. If the pharmacy needs to make at least 1300 ml of eye cream and 1500 ml of foot cream, how many hours should each machine be used to minimize the total time needed?
------
-
-Here is a list of parameters that someone has extracted from the description:
-
-{
-    "NumMachines": {
-        "definition": "Number of machines",
-        "shape": [],
-        "type": "int"
-    },
-    "NumProducts": {
-        "definition": "Number of products",
-        "shape": [],
-        "type": "int"
-    },
-    "ProductionRate": {
-        "definition": "Amount of product p produced per hour by machine m",
-        "shape": [
-            "NumMachines",
-            "NumProducts"
-        ],
-        "type": "string"
-    },
-    "WaterUsage": {
-        "definition": "Amount of distilled water consumed per hour by machine m",
-        "shape": [
-            "NumMachines"
-        ],
-        "type": "string"
-    },
-    "TotalWaterAvailable": {
-        "definition": "Total amount of distilled water available",
-        "shape": [],
-        "type": "int"
-    },
-    "RequiredProduct": {
-        "definition": "Minimum required amount of product p",
-        "shape": [
-            "NumProducts"
-        ],
-        "type": "string"
-    }
-}
-
-
-Consider this potential constraint: Number of hours each machine is used must be non-negative
-
-
-- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
-- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
-    
-
-Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
-
-----
-Yes, this is indeed a constraint and it should be explicitly modeled.
-
-Let’s reason carefully:
-
-- The decision variables in this problem are the number of hours each machine is used (say, \( h_1 \) and \( h_2 \)).
-- In the real world, it is physically impossible to operate a machine for a negative number of hours.
-- If we do not explicitly impose non-negativity, the LP solver could theoretically assign negative values to these variables to help satisfy other constraints (e.g., water or production requirements), which would make the solution mathematically feasible but physically meaningless.
-
-In linear programming, non-negativity constraints are fundamental unless variables are explicitly defined as free (unrestricted in sign). Since “hours of operation” cannot be negative by definition, we must include:
-
-\[
-h_1 \ge 0, \quad h_2 \ge 0
-\]
-
-Therefore:
-- ✅ It is a real, logically necessary constraint.
-- ✅ It must be explicitly included in the (MI)LP formulation (unless the modeling language enforces non-negativity by default).
-
-Confidence level:  
-5 OUT OF 5
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -370,7 +471,7 @@ Extracting constraint formulations
 
 ----
 {
-    "FORMULATION": "$\\sum_{m=1}^{NumMachines} ProductionRate[m,1] \\cdot HoursUsed[m] \\geq 1300$",
+    "FORMULATION": "$30 \\cdot HoursUsed[1] + 45 \\cdot HoursUsed[2] \\geq 1300$",
     "NEW VARIABLES": {
         "HoursUsed": {
             "shape": "[NumMachines]",
@@ -383,20 +484,20 @@ Extracting constraint formulations
 ----
 ----
 EXTRACTED ITEMS
-$\\sum_{m=1}^{NumMachines} ProductionRate[m,1] \\cdot HoursUsed[m] \\geq 1300$
+$30 \\cdot HoursUsed[1] + 45 \\cdot HoursUsed[2] \\geq 1300$
 {'HoursUsed': {'shape': '[NumMachines]', 'type': 'continuous', 'definition': 'Number of hours machine m is used'}}
 []
 ----
 ----
 {
-    "FORMULATION": "$\\sum_{m=1}^{NumMachines} ProductionRate[m,2] \\cdot HoursUsed[m] \\ge 1500$",
+    "FORMULATION": "$60 \\cdot HoursUsed[1] + 30 \\cdot HoursUsed[2] \\geq 1500$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$\\sum_{m=1}^{NumMachines} ProductionRate[m,2] \\cdot HoursUsed[m] \\ge 1500$
+$60 \\cdot HoursUsed[1] + 30 \\cdot HoursUsed[2] \\geq 1500$
 {}
 []
 ----
@@ -415,14 +516,27 @@ $\\sum_{m=1}^{NumMachines} WaterUsage[m] \\cdot HoursUsed[m] \\leq TotalWaterAva
 ----
 ----
 {
-    "FORMULATION": "$\\forall m = 1, \\dots, NumMachines, \\; HoursUsed[m] \\geq 0$",
+    "FORMULATION": "$HoursUsed[1] \\ge 0$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$\\forall m = 1, \\dots, NumMachines, \\; HoursUsed[m] \\geq 0$
+$HoursUsed[1] \\ge 0$
+{}
+[]
+----
+----
+{
+    "FORMULATION": "$HoursUsed[2] \\geq 0$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$HoursUsed[2] \\geq 0$
 {}
 []
 ----
@@ -434,22 +548,24 @@ CPU model: Intel(R) Xeon(R) Platinum, instruction set [SSE2|AVX|AVX2|AVX512]
 Thread count: 1 physical cores, 2 logical processors, using up to 2 threads
 
 Optimize a model with 5 rows, 2 columns and 8 nonzeros (Min)
-Model fingerprint: 0x532fadc0
-Model has 0 linear objective coefficients
+Model fingerprint: 0x0c59a288
+Model has 2 linear objective coefficients
 Coefficient statistics:
   Matrix range     [1e+00, 6e+01]
-  Objective range  [0e+00, 0e+00]
+  Objective range  [1e+00, 1e+00]
   Bounds range     [0e+00, 0e+00]
   RHS range        [1e+03, 2e+03]
 
-Presolve removed 5 rows and 2 columns
+Presolve removed 2 rows and 0 columns
 Presolve time: 0.00s
-Presolve: All rows and columns removed
-Iteration    Objective       Primal Inf.    Dual Inf.      Time
-       0    0.0000000e+00   0.000000e+00   0.000000e+00      0s
+Presolved: 3 rows, 2 columns, 6 nonzeros
 
-Solved in 0 iterations and 0.00 seconds (0.00 work units)
-Optimal objective  0.000000000e+00
-Optimal Objective Value:  0.0
-Optimal Objective Value:  0.0
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0    0.0000000e+00   8.750000e+01   0.000000e+00      0s
+       2    3.4166667e+01   0.000000e+00   0.000000e+00      0s
+
+Solved in 2 iterations and 0.00 seconds (0.00 work units)
+Optimal objective  3.416666667e+01
+Optimal Objective Value:  34.166666666666664
+Optimal Objective Value:  34.166666666666664
 

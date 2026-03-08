@@ -1,99 +1,9 @@
 ----
-**Step-by-step reasoning**
-
-We check whether any constraints are redundant by determining if they are ever binding given the others.
-
----
-
-### 1️⃣ Compare Mint and Active Ingredient Constraints
-
-Mint constraint:
-\[
-10x_1 + 12x_2 \le 120
-\]
-
-Active ingredient constraint:
-\[
-20x_1 + 15x_2 \le 100
-\]
-
-Divide the active constraint by 5:
-\[
-4x_1 + 3x_2 \le 20
-\]
-
-Now check whether the mint constraint can ever be violated while the active constraint holds.
-
-Maximize  
-\[
-10x_1 + 12x_2
-\]
-subject to  
-\[
-20x_1 + 15x_2 \le 100, \quad x_1,x_2 \ge 0
-\]
-
-The extreme points of the active constraint are:
-
-- \( (5,0) \)
-- \( (0,20/3) \)
-
-Evaluate the mint expression:
-
-- At \( (5,0) \): \( 50 \)
-- At \( (0,20/3) \): \( 80 \)
-
-Both are **≤ 120**.
-
-✅ Therefore, the mint constraint is **never binding** and is redundant.
-
----
-
-### 2️⃣ Compare Black Tar Constraint
-
-Black tar constraint:
-\[
-5x_1 + 3x_2 \le 50
-\]
-
-Maximize  
-\[
-5x_1 + 3x_2
-\]
-subject to the active constraint.
-
-At extreme points:
-
-- At \( (5,0) \): \( 25 \)
-- At \( (0,20/3) \): \( 20 \)
-
-Both are **≤ 50**.
-
-✅ Therefore, the black tar constraint is also **redundant**.
-
----
-
-### 3️⃣ Non-negativity Constraints
-
-These cannot be removed because negative demonstrations are not meaningful.
-
-✅ They must remain.
-
----
-
-# ✅ Final Conclusion
-
-The mint constraint and black tar constraint are redundant.
-
-The updated list of constraints is:
-
-```python
 [
-    "20 * (number of demonstration 1) + 15 * (number of demonstration 2) should not exceed TotalActiveIngredientAvailable",
-    "Number of demonstration 1 should be greater than or equal to 0",
-    "Number of demonstration 2 should be greater than or equal to 0"
+    "20 * x1 + 15 * x2 <= 100",
+    "x1 >= 0",
+    "x2 >= 0"
 ]
-```
 ----
 +++++++++++++++++++
 ++ Constraint Qs ++
@@ -160,7 +70,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: 20 * (number of demonstration 1) + 15 * (number of demonstration 2) should not exceed TotalActiveIngredientAvailable
+Consider this potential constraint: 20 * x1 + 15 * x2 <= 100
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -170,39 +80,37 @@ Consider this potential constraint: 20 * (number of demonstration 1) + 15 * (num
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this **is definitely a constraint** and it should be explicitly included in the (MI)LP formulation.
+Yes, this is indeed a valid constraint and should be explicitly included in the (MI)LP formulation.
 
-### Why?
+### Reasoning
 
 From the problem description:
 
-- Demonstration 1 uses **20 units of active ingredient**
-- Demonstration 2 uses **15 units of active ingredient**
-- The show has **100 units total** of active ingredient available
+- Demonstration 1 uses **20 units of active ingredient** per run.
+- Demonstration 2 uses **15 units of active ingredient** per run.
+- The show has **100 units of active ingredient available**.
 
-If we let:
+If:
 - \( x_1 \) = number of times demonstration 1 is performed  
 - \( x_2 \) = number of times demonstration 2 is performed  
 
-Then total active ingredient usage is:
+Then total active ingredient consumption is:
 
 \[
 20x_1 + 15x_2
 \]
 
-Since only 100 units are available, we must enforce:
+Since only 100 units are available, we must impose:
 
 \[
 20x_1 + 15x_2 \le 100
 \]
 
-This is a classic **resource capacity constraint**, directly stated in the problem. It is essential for correctness and feasibility of the optimization model.
+This directly models the resource limitation described in the problem.
 
 ### Conclusion
 
-✅ Yes, it is a constraint.  
-✅ It must be explicitly modeled.  
-✅ It directly reflects a hard resource limitation given in the problem.
+✅ This is absolutely a necessary constraint and should remain in the model.
 
 **5 OUT OF 5**
 +--+
@@ -271,7 +179,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: Number of demonstration 1 should be greater than or equal to 0
+Consider this potential constraint: x1 >= 0
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -281,21 +189,24 @@ Consider this potential constraint: Number of demonstration 1 should be greater 
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this **is** a constraint.
+Yes, \( x_1 \ge 0 \) **is** a constraint and it should be explicitly included in the (MI)LP formulation.
 
-The number of times demonstration 1 is performed is a decision variable (let’s call it \( x_1 \)). Since it represents a physical quantity (number of demonstrations), it cannot be negative.
+### Reasoning
 
-In mathematical optimization models (LP or MILP), **non-negativity constraints are essential** unless variables are explicitly defined with a nonnegative domain. Even though many modeling frameworks assume nonnegativity by default, from a formulation standpoint this is absolutely a constraint that must be present:
+- Let \( x_1 \) represent the number of times demonstration 1 is performed.
+- Since it represents a physical quantity (number of demonstrations), it **cannot be negative**.
+- In linear and mixed-integer programming, nonnegativity constraints are not automatically assumed unless explicitly stated.
+- Therefore, we must include:
+  \[
+  x_1 \ge 0
+  \]
+- (And similarly, \( x_2 \ge 0 \) for demonstration 2.)
 
-\[
-x_1 \ge 0
-\]
+If the model requires integer counts of demonstrations, then \( x_1 \ge 0 \) would be combined with an integrality constraint (e.g., \( x_1 \in \mathbb{Z}_{\ge 0} \)), but the nonnegativity condition is still essential.
 
-Without it, the solver could choose a negative number of demonstrations, which would be physically meaningless and could distort the optimization.
+Thus, this is definitely a real and necessary modeling constraint.
 
-So yes — this is a real and necessary constraint (specifically, a variable domain constraint).
-
-**Confidence: 5 OUT OF 5**
+**5 OUT OF 5**
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -362,7 +273,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: Number of demonstration 2 should be greater than or equal to 0
+Consider this potential constraint: x2 >= 0
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -372,36 +283,14 @@ Consider this potential constraint: Number of demonstration 2 should be greater 
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this **is** a constraint — specifically, a **non-negativity constraint** on the decision variable representing the number of times demonstration 2 is performed.
+Yes, \( x_2 \ge 0 \) is indeed a constraint.
 
-### Step-by-step reasoning:
+Here, \( x_2 \) represents the number of times demonstration 2 is performed. Since it would not make physical sense to perform a negative number of demonstrations, non-negativity is a required modeling condition. In linear programming (and mixed-integer linear programming), decision variables representing quantities of activities are typically constrained to be nonnegative unless otherwise specified.
 
-1. **Decision variables**  
-   Let:
-   - \( x_1 \) = number of times demonstration 1 is performed  
-   - \( x_2 \) = number of times demonstration 2 is performed  
+Even if not explicitly stated in the word problem, nonnegativity is an essential structural constraint of the model and should be included explicitly in the formulation (along with \( x_1 \ge 0 \)).
 
-2. Since these represent *numbers of demonstrations*, they:
-   - Cannot be negative  
-   - Should be at least 0  
-   - Likely should be integers (though that depends on modeling assumptions)
+Therefore, this is a legitimate and necessary constraint in the model.
 
-3. Therefore, the constraint:
-   \[
-   x_2 \ge 0
-   \]
-   is absolutely a valid and necessary modeling constraint.
-
-4. Even though non-negativity constraints are often considered "standard" and sometimes implicit in LP formulations, they **must be explicitly included in a complete mathematical model** unless variable domains are otherwise specified.
-
----
-
-### Conclusion
-
-✅ Yes, this is a real and necessary constraint.  
-✅ It should be explicitly modeled (either as a non-negativity condition or via variable domain declaration).
-
-**Confidence level:**  
 **5 OUT OF 5**
 +--+
 ---
@@ -418,9 +307,9 @@ Extracting constraint formulations
 
 ----
 {
-    "FORMULATION": "$\\sum_{i=1}^{NumDemonstrations} ActiveIngredientUsed[i] \\cdot NumDemos[i] \\leq TotalActiveIngredientAvailable$",
+    "FORMULATION": "$20 \\cdot DemoCount[1] + 15 \\cdot DemoCount[2] \\leq TotalActiveIngredientAvailable$",
     "NEW VARIABLES": {
-        "NumDemos": {
+        "DemoCount": {
             "shape": "[NumDemonstrations]",
             "type": "integer",
             "definition": "Number of times each demonstration is performed"
@@ -431,33 +320,33 @@ Extracting constraint formulations
 ----
 ----
 EXTRACTED ITEMS
-$\\sum_{i=1}^{NumDemonstrations} ActiveIngredientUsed[i] \\cdot NumDemos[i] \\leq TotalActiveIngredientAvailable$
-{'NumDemos': {'shape': '[NumDemonstrations]', 'type': 'integer', 'definition': 'Number of times each demonstration is performed'}}
+$20 \\cdot DemoCount[1] + 15 \\cdot DemoCount[2] \\leq TotalActiveIngredientAvailable$
+{'DemoCount': {'shape': '[NumDemonstrations]', 'type': 'integer', 'definition': 'Number of times each demonstration is performed'}}
 []
 ----
 ----
 {
-    "FORMULATION": "$NumDemos[1] \\geq 0$",
+    "FORMULATION": "$DemoCount[1] \\geq 0$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$NumDemos[1] \\geq 0$
+$DemoCount[1] \\geq 0$
 {}
 []
 ----
 ----
 {
-    "FORMULATION": "$NumDemos[2] \\geq 0$",
+    "FORMULATION": "$DemoCount[2] \\geq 0$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$NumDemos[2] \\geq 0$
+$DemoCount[2] \\geq 0$
 {}
 []
 ----

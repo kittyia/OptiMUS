@@ -29,25 +29,25 @@ MinimumContainers = data["MinimumContainers"] # shape: [], definition: Minimum n
 
 ### Define the variables
 
-Containers = model.addVar(vtype=GRB.INTEGER, name="Containers")
+NumberOfContainers = model.addVar(vtype=GRB.INTEGER, name="NumberOfContainers")
 
-Trucks = model.addVar(vtype=GRB.INTEGER, name="Trucks")
+NumberOfTrucks = model.addVar(vtype=GRB.INTEGER, name="NumberOfTrucks")
 
 
 
 ### Define the constraints
 
-model.addConstr(ContainerCapacity * Containers + TruckCapacity * Trucks >= MinimumOilSent)
-model.addConstr(Trucks <= TruckToContainerRatio * Containers)
-model.addConstr(Containers >= MinimumContainers)
-model.addConstr(Trucks >= 0)
-model.addConstr(Containers >= 0)
-model.addConstr(Trucks >= 0)
+model.addConstr(ContainerCapacity * NumberOfContainers + TruckCapacity * NumberOfTrucks >= MinimumOilSent)
+model.addConstr(NumberOfTrucks <= TruckToContainerRatio * NumberOfContainers)
+model.addConstr(NumberOfContainers >= MinimumContainers)
+model.addConstr(NumberOfTrucks >= 0)
+model.addConstr(NumberOfContainers >= 0)
+model.addConstr(NumberOfTrucks >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(NumberOfContainers + NumberOfTrucks, GRB.MINIMIZE)
 
 
 ### Optimize the model

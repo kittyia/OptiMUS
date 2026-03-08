@@ -45,7 +45,7 @@ model.addConstr(SubsoilBags >= 0)
 
 ### Define the objective
 
-
+model.setObjective(WaterSubsoil * SubsoilBags + WaterTopsoil * TopsoilBags, GRB.MINIMIZE)
 
 
 ### Optimize the model

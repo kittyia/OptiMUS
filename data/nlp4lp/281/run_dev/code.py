@@ -31,7 +31,7 @@ Distance = data["Distance"] # shape: ['NumNeighborhoods', 'NumSchools'], definit
 
 ### Define the variables
 
-Assign = model.addVars(NumNeighborhoods, NumSchools, NumGrades, vtype=GRB.INTEGER, name="Assign")
+Assignments = model.addVars(NumNeighborhoods, NumSchools, NumGrades, vtype=GRB.INTEGER, name="Assignments")
 
 
 
@@ -40,23 +40,29 @@ Assign = model.addVars(NumNeighborhoods, NumSchools, NumGrades, vtype=GRB.INTEGE
 for n in range(NumNeighborhoods):
     for g in range(NumGrades):
         model.addConstr(
-            sum(Assign[n, s, g] for s in range(NumSchools)) == Population[n][g]
+            sum(Assignments[n, s, g] for s in range(NumSchools)) == Population[n][g]
         )
 for s in range(NumSchools):
     for g in range(NumGrades):
         model.addConstr(
-            sum(Assign[n, s, g] for n in range(NumNeighborhoods)) 
+            sum(Assignments[n, s, g] for n in range(NumNeighborhoods)) 
             <= Capacity[s][g]
         )
 for n in range(NumNeighborhoods):
     for s in range(NumSchools):
         for g in range(NumGrades):
-            model.addConstr(Assign[n, s, g] >= 0)
+            model.addConstr(Assignments[n, s, g] >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(
+    quicksum(Distance[n][s] * Assignments[n, s, g]
+             for n in range(NumNeighborhoods)
+             for s in range(NumSchools)
+             for g in range(NumGrades)),
+    GRB.MINIMIZE
+)
 
 
 ### Optimize the model

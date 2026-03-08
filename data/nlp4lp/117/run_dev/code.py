@@ -50,7 +50,10 @@ model.addConstr(ServingsOfCashews >= 0)
 
 ### Define the objective
 
-
+model.setObjective(
+    FatPerServing[0] * ServingsOfAlmonds + FatPerServing[1] * ServingsOfCashews,
+    GRB.MINIMIZE
+)
 
 
 ### Optimize the model

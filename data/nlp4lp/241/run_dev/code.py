@@ -43,16 +43,13 @@ AirTrips = model.addVar(vtype=GRB.INTEGER, name="AirTrips")
 
 ### Define the constraints
 
-model.addConstr(
-    FreightCapacityPerTrip * FreightTrips + 
-    AirCapacityPerTrip * AirTrips 
-    >= MinimumTotalTons
-)
+model.addConstr(FreightCapacityPerTrip * FreightTrips + AirCapacityPerTrip * AirTrips >= MinimumTotalTons)
 model.addConstr(FreightCostPerTrip * FreightTrips + AirCostPerTrip * AirTrips <= Budget)
-model.addConstr(7 * AirTrips >= 5 * FreightTrips)
+model.addConstr(
+    AirCapacityPerTrip * AirTrips >=
+    MinimumAirProportion * (FreightCapacityPerTrip * FreightTrips + AirCapacityPerTrip * AirTrips)
+)
 model.addConstr(FreightTrips >= MinimumFreightTrips)
-model.addConstr(AirTrips >= 0)
-model.addConstr(FreightTrips >= 0)
 model.addConstr(AirTrips >= 0)
 
 

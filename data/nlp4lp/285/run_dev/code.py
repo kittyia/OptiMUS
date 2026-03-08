@@ -47,7 +47,10 @@ model.addConstr(AcresPears <= MaxPearsToApplesRatio * AcresApples)
 
 ### Define the objective
 
-
+model.setObjective(
+    ProfitPerAcreApples * AcresApples + ProfitPerAcrePears * AcresPears,
+    GRB.MAXIMIZE
+)
 
 
 ### Optimize the model

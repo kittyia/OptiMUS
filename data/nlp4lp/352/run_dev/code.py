@@ -37,65 +37,65 @@ DistributedMaxHours = data["DistributedMaxHours"] # shape: [], definition: Maxim
 
 ### Define the variables
 
-isolateCentral = model.addVars(N, vtype=GRB.BINARY, name="isolateCentral")
+IsolateCentralChoice = model.addVars(N, vtype=GRB.BINARY, name="IsolateCentralChoice")
 
-isolateDistributed = model.addVars(N, vtype=GRB.BINARY, name="isolateDistributed")
+ScanCentralChoice = model.addVars(N, vtype=GRB.BINARY, name="ScanCentralChoice")
 
-scanCentral = model.addVars(N, vtype=GRB.BINARY, name="scanCentral")
+IsolateDistributedChoice = model.addVars(N, vtype=GRB.BINARY, name="IsolateDistributedChoice")
 
-scanDistributed = model.addVars(N, vtype=GRB.BINARY, name="scanDistributed")
+ScanDistributedChoice = model.addVars(N, vtype=GRB.BINARY, name="ScanDistributedChoice")
 
 
 
 ### Define the constraints
 
 for i in range(N):
+    model.addConstr(IsolateCentralChoice[i] >= 0)
+    model.addConstr(IsolateCentralChoice[i] <= 1)
+    
+    model.addConstr(ScanCentralChoice[i] >= 0)
+    model.addConstr(ScanCentralChoice[i] <= 1)
+    
+    model.addConstr(IsolateDistributedChoice[i] >= 0)
+    model.addConstr(IsolateDistributedChoice[i] <= 1)
+    
+    model.addConstr(ScanDistributedChoice[i] >= 0)
+    model.addConstr(ScanDistributedChoice[i] <= 1)
+for i in range(N):
     model.addConstr(
-        isolateCentral[i] 
-        + isolateDistributed[i] 
-        + scanCentral[i] 
-        + scanDistributed[i] 
-        == 1
+        IsolateCentralChoice[i] +
+        ScanCentralChoice[i] +
+        IsolateDistributedChoice[i] +
+        ScanDistributedChoice[i] == 1
     )
 model.addConstr(
-    sum(IsolateCentral[i] * isolateCentral[i] + 
-        ScanCentral[i] * scanCentral[i] 
-        for i in range(N)) 
-    <= CentralMaxHours
+    sum(
+        IsolateCentral[i] * IsolateCentralChoice[i] +
+        ScanCentral[i] * ScanCentralChoice[i]
+        for i in range(N)
+    ) <= CentralMaxHours
 )
 model.addConstr(
     sum(
-        isolateDistributed[i] * IsolateDistributed[i] +
-        scanDistributed[i] * ScanDistributed[i]
+        IsolateDistributed[i] * IsolateDistributedChoice[i] +
+        ScanDistributed[i] * ScanDistributedChoice[i]
         for i in range(N)
     ) <= DistributedMaxHours
 )
-for i in range(N):
-    model.addConstr(isolateCentral[i] >= 0)
-    model.addConstr(isolateCentral[i] <= 1)
-    
-    model.addConstr(isolateDistributed[i] >= 0)
-    model.addConstr(isolateDistributed[i] <= 1)
-    
-    model.addConstr(scanCentral[i] >= 0)
-    model.addConstr(scanCentral[i] <= 1)
-    
-    model.addConstr(scanDistributed[i] >= 0)
-    model.addConstr(scanDistributed[i] <= 1)
 
 
 ### Define the objective
 
 model.setObjective(
     CentralCost * quicksum(
-        IsolateCentral[i] * isolateCentral[i] + 
-        ScanCentral[i] * scanCentral[i]
+        IsolateCentral[i] * IsolateCentralChoice[i] +
+        ScanCentral[i] * ScanCentralChoice[i]
         for i in range(N)
     )
     +
     DistributedCost * quicksum(
-        IsolateDistributed[i] * isolateDistributed[i] + 
-        ScanDistributed[i] * scanDistributed[i]
+        IsolateDistributed[i] * IsolateDistributedChoice[i] +
+        ScanDistributed[i] * ScanDistributedChoice[i]
         for i in range(N)
     ),
     GRB.MINIMIZE

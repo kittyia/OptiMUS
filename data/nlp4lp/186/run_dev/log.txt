@@ -1,29 +1,18 @@
 ----
-Let the decision variables be:
-- Number of large ships used  
-- Number of small ships used  
+There is no logical redundancy among the constraints: each one plays a distinct role.
 
-Now evaluate each constraint:
+- The capacity constraint ensures enough containers are transported.
+- The large-to-small ship constraint reflects the port limitation.
+- The non-negativity and integrality constraints ensure feasible, realistic ship counts.
 
-1. **Total containers ≥ RequiredContainers**  
-   This is necessary to enforce the demand requirement. It cannot be removed.
-
-2. **Large ships ≤ small ships**  
-   This reflects the port limitation condition. It is necessary and cannot be removed.
-
-3. **Large ships must be a non-negative integer**  
-4. **Small ships must be a non-negative integer**  
-
-Constraints 3 and 4 are not redundant, but they are structurally identical domain constraints applied to two variables. They can be combined into a single constraint stating that both decision variables are non‑negative integers.
-
-No other constraints are redundant, and no additional combinations are appropriate.
+However, the last two constraints can be **combined**, since they both describe domain restrictions on the decision variables. Instead of stating them separately, we can express them together as a single constraint specifying that both variables are non-negative integers.
 
 Updated list of constraints:
 
 [
-    "The total number of containers transported by large and small ships must be at least RequiredContainers",
-    "The number of large ships used cannot exceed the number of small ships used",
-    "The numbers of large ships used and small ships used must be non-negative integers"
+    "500 * (number of large ships) + 200 * (number of small ships) must be greater than or equal to 3000",
+    "The number of large ships must be less than or equal to the number of small ships",
+    "The number of large ships and the number of small ships must be non-negative integers"
 ]
 ----
 +++++++++++++++++++
@@ -58,7 +47,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: The total number of containers transported by large and small ships must be at least RequiredContainers
+Consider this potential constraint: 500 * (number of large ships) + 200 * (number of small ships) must be greater than or equal to 3000
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -68,31 +57,36 @@ Consider this potential constraint: The total number of containers transported b
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is definitely a constraint and it must be explicitly included in the (MI)LP formulation.
+Yes, this is absolutely a constraint and it should be explicitly included in the (MI)LP formulation.
 
-Reasoning step by step:
+### Why?
 
-- The company is required to transport **at least 3000 containers**.
-- The decision variables (implicitly) are the number of large ships and small ships.
-- Each large ship carries 500 containers.
-- Each small ship carries 200 containers.
-- Therefore, the total transported is:
+The problem states that the company **needs to transport at least 3000 containers**. That requirement must be enforced mathematically. Since:
+
+- Each large ship carries 500 containers  
+- Each small ship carries 200 containers  
+
+If we let:
+- \( L \) = number of large ships  
+- \( S \) = number of small ships  
+
+Then the total transported containers is:
 
 \[
-500 \cdot (\text{# large ships}) + 200 \cdot (\text{# small ships})
+500L + 200S
 \]
 
-- The phrase *“needs to transport at least 3000 containers”* directly translates to a lower bound constraint:
+The phrase **“at least 3000 containers”** translates directly to:
 
 \[
-500L + 200S \ge \text{RequiredContainers}
+500L + 200S \ge 3000
 \]
 
-This is not optional or derived — it is the core requirement of the problem. Without this constraint, the model would have no link between ship counts and the contractual obligation.
+This is a fundamental feasibility constraint. Without it, the optimization model would not enforce the contractual requirement and could choose zero ships to minimize the objective.
 
-So this is unquestionably a structural constraint of the model.
+So yes — this is a necessary and essential constraint in the model.
 
-**Confidence: 5 OUT OF 5**
+**Confidence level: 5 OUT OF 5**
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -126,7 +120,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: The number of large ships used cannot exceed the number of small ships used
+Consider this potential constraint: The number of large ships must be less than or equal to the number of small ships
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -136,32 +130,26 @@ Consider this potential constraint: The number of large ships used cannot exceed
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is **definitely a constraint** and it should be explicitly included in the (MI)LP formulation.
-
-### Why?
+Yes, this is clearly a constraint and should be explicitly included in the (MI)LP formulation.
 
 The problem statement explicitly says:
 
 > “Because most ports are small, the number of large ships cannot exceed the number of small ships.”
 
-This is not background information — it directly restricts the feasible combinations of decision variables.
+This directly imposes a structural restriction on the decision variables. If we let:
 
-If we define:
 - \( L \) = number of large ships  
 - \( S \) = number of small ships  
 
 then the constraint is:
 
 \[
-L \le S
+L \leq S
 \]
 
-This limits the feasible region and affects the optimal solution. Without it, the model might choose many large ships (since they carry more containers per ship), potentially violating the real-world operational limitation described.
+This is not an implied or optional modeling assumption — it is a direct logical requirement stated in the problem description. Therefore, it must be explicitly included in the model.
 
-Since this statement directly restricts the values of the decision variables, it **must** be explicitly modeled.
-
-### Confidence Level
-**5 OUT OF 5**
+**Confidence level:** 5 OUT OF 5
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -195,7 +183,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: The numbers of large ships used and small ships used must be non-negative integers
+Consider this potential constraint: The number of large ships and the number of small ships must be non-negative integers
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -205,27 +193,23 @@ Consider this potential constraint: The numbers of large ships used and small sh
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this **is** a constraint, and it absolutely should be explicitly modeled in the (MI)LP formulation.
+Yes, this **is** a constraint and it should definitely be modeled explicitly in the (MI)LP formulation.
 
-### Why?
+Here’s why:
 
-The decision variables in this problem are:
+- The decision variables represent the **number of large ships** and **number of small ships**.
+- These are **counts of physical objects**, so:
+  - They cannot be negative.
+  - They cannot be fractional.
+- Therefore, they must be modeled as **non-negative integers**.
 
-- Number of large ships used  
-- Number of small ships used  
+In an MILP formulation, this is captured as:
+- \( L \ge 0 \), \( S \ge 0 \)
+- \( L, S \in \mathbb{Z} \)
 
-These represent **counts of ships**, which means:
+This is not merely implied — it is a fundamental modeling requirement. Without integrality, the solver might return fractional ships (e.g., 2.4 ships), which is infeasible in reality. Without non-negativity, negative ship counts would also be allowed mathematically.
 
-1. **They cannot be negative** (you cannot use −3 ships).
-2. **They must be integers** (you cannot use 2.5 ships).
-
-In linear and mixed-integer programming, these are called **domain constraints**:
-- Non-negativity constraints (≥ 0)
-- Integrality constraints (integer-valued variables)
-
-Even though non-negativity is often assumed by default in LP formulations, it is still part of the formal model and must be specified. Integrality is especially critical here, since relaxing to continuous variables would allow fractional ships and change the problem fundamentally.
-
-So yes — this is a legitimate and necessary modeling constraint.
+So this is a **core variable domain constraint** and absolutely should be included.
 
 **5 OUT OF 5**
 +--+
@@ -256,67 +240,9 @@ Extracting constraint formulations
             "definition": "Number of small ships used"
         }
     },
-    "AUXILIARY CONSTRAINTS": []
+    "AUXILIARY CONSTRAINTS": [
+        "$LargeShips \\geq 0$",
+        "$SmallShips \\geq 0$"
+    ]
 }
 ----
-----
-EXTRACTED ITEMS
-$LargeShipCapacity \\cdot LargeShips + SmallShipCapacity \\cdot SmallShips \\geq RequiredContainers$
-{'LargeShips': {'shape': [], 'type': 'integer', 'definition': 'Number of large ships used'}, 'SmallShips': {'shape': [], 'type': 'integer', 'definition': 'Number of small ships used'}}
-[]
-----
-----
-{
-    "FORMULATION": "$LargeShips \\leq SmallShips$",
-    "NEW VARIABLES": {},
-    "AUXILIARY CONSTRAINTS": []
-}
-----
-----
-EXTRACTED ITEMS
-$LargeShips \\leq SmallShips$
-{}
-[]
-----
-----
-{
-    "FORMULATION": "$LargeShips \\geq 0, \\; SmallShips \\geq 0, \\; LargeShips, SmallShips \\in \\mathbb{Z}$",
-    "NEW VARIABLES": {},
-    "AUXILIARY CONSTRAINTS": []
-}
-----
-----
-EXTRACTED ITEMS
-$LargeShips \\geq 0, \\; SmallShips \\geq 0, \\; LargeShips, SmallShips \\in \\mathbb{Z}$
-{}
-[]
-----
-Code executed successfully. Output:
-Restricted license - for non-production use only - expires 2027-11-29
-Gurobi Optimizer version 13.0.1 build v13.0.1rc0 (linux64 - "Alibaba Cloud Linux 3.2104 U12.3 (OpenAnolis Edition)")
-
-CPU model: Intel(R) Xeon(R) Platinum, instruction set [SSE2|AVX|AVX2|AVX512]
-Thread count: 1 physical cores, 2 logical processors, using up to 2 threads
-
-Optimize a model with 4 rows, 2 columns and 6 nonzeros (Min)
-Model fingerprint: 0x845fdff6
-Model has 0 linear objective coefficients
-Variable types: 0 continuous, 2 integer (0 binary)
-Coefficient statistics:
-  Matrix range     [1e+00, 5e+02]
-  Objective range  [0e+00, 0e+00]
-  Bounds range     [0e+00, 0e+00]
-  RHS range        [3e+03, 3e+03]
-
-Found heuristic solution: objective 0.0000000
-
-Explored 0 nodes (0 simplex iterations) in 0.00 seconds (0.00 work units)
-Thread count was 1 (of 2 available processors)
-
-Solution count 1: 0 
-
-Optimal solution found (tolerance 1.00e-04)
-Best objective 0.000000000000e+00, best bound 0.000000000000e+00, gap 0.0000%
-Optimal Objective Value:  0.0
-Optimal Objective Value:  0.0
-

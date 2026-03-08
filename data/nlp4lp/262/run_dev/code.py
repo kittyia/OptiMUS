@@ -54,14 +54,17 @@ model.addConstr(
 )
 model.addConstr(MaterialRequiredMedicationPatch * MedicationPatches + MaterialRequiredAntiBioticCream * AntiBioticCreams <= AvailableMaterials)
 model.addConstr(AntiBioticCreams >= MinRatioAntiBioticCreamToMedicationPatch * MedicationPatches)
-model.addConstr(MedicationPatches + AntiBioticCreams <= MaxTotalBatches)
 model.addConstr(MedicationPatches >= 0)
 model.addConstr(AntiBioticCreams >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(
+    TreatmentPerBatchMedicationPatch * MedicationPatches +
+    TreatmentPerBatchAntiBioticCream * AntiBioticCreams,
+    GRB.MAXIMIZE
+)
 
 
 ### Optimize the model

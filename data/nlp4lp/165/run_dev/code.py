@@ -42,14 +42,20 @@ FullTimeVolunteers = model.addVar(vtype=GRB.INTEGER, name="FullTimeVolunteers")
 ### Define the constraints
 
 model.addConstr(PointsPerSeasonal * SeasonalVolunteers + PointsPerFullTime * FullTimeVolunteers <= PointsLimit)
-model.addConstr(7 * SeasonalVolunteers <= 3 * FullTimeVolunteers)
+model.addConstr(SeasonalVolunteers <= MaxSeasonalPercentage * (SeasonalVolunteers + FullTimeVolunteers))
 model.addConstr(FullTimeVolunteers >= MinFullTimeVolunteers)
 model.addConstr(SeasonalVolunteers >= 0)
+model.addConstr(SeasonalVolunteers >= 0)
+model.addConstr(FullTimeVolunteers >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(
+    GiftsPerSeasonal * SeasonalVolunteers +
+    GiftsPerFullTime * FullTimeVolunteers,
+    GRB.MAXIMIZE
+)
 
 
 ### Optimize the model

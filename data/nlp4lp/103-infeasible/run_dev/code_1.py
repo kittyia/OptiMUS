@@ -1,54 +1,78 @@
-ython
+import os
+import numpy as np
 import json
-import pulp
+from gurobipy import Model, GRB, quicksum
 
-# Create the optimization model (Minimization)
-model = pulp.LpProblem("OptimizationProblem", pulp.LpMinimize)
 
-# Load data
+model = Model("OptimizationProblem")
+
 with open("data.json", "r") as f:
     data = json.load(f)
 
-# Parameters
+
+### Define the parameters
+
 TotalMRNAAvailable = data["TotalMRNAAvailable"]
+
 MRNAPerChildVaccine = data["MRNAPerChildVaccine"]
+
 MRNAPerAdultVaccine = data["MRNAPerAdultVaccine"]
+
 FeverSuppressantPerChildVaccine = data["FeverSuppressantPerChildVaccine"]
+
 FeverSuppressantPerAdultVaccine = data["FeverSuppressantPerAdultVaccine"]
+
 MinPercentageAdultVaccines = data["MinPercentageAdultVaccines"]
+
 MinChildVaccines = data["MinChildVaccines"]
 
-# Decision Variables
-childVaccines = pulp.LpVariable("childVaccines", lowBound=0, cat="Integer")
-adultVaccines = pulp.LpVariable("adultVaccines", lowBound=0, cat="Integer")
 
-# Objective Function: Minimize total fever suppressant used
-model += (FeverSuppressantPerChildVaccine * childVaccines +
-          FeverSuppressantPerAdultVaccine * adultVaccines)
+### Define the variables
 
-# Constraints
+ChildVaccines = model.addVar(vtype=GRB.INTEGER, name="ChildVaccines")
+
+AdultVaccines = model.addVar(vtype=GRB.INTEGER, name="AdultVaccines")
+
+
+### Define the constraints
 
 # mRNA availability constraint
-model += (MRNAPerChildVaccine * childVaccines +
-          MRNAPerAdultVaccine * adultVaccines <= TotalMRNAAvailable)
+model.addConstr(
+    MRNAPerChildVaccine * ChildVaccines +
+    MRNAPerAdultVaccine * AdultVaccines
+    <= TotalMRNAAvailable
+)
 
-# At least the minimum percentage of vaccines must be adult vaccines
-# adult >= (MinPercentageAdultVaccines/100) * (child + adult)
-model += adultVaccines >= (MinPercentageAdultVaccines / 100.0) * (childVaccines + adultVaccines)
+# At least MinPercentageAdultVaccines% of total vaccines are adult vaccines
+model.addConstr(
+    (1 - MinPercentageAdultVaccines / 100.0) * AdultVaccines
+    >= (MinPercentageAdultVaccines / 100.0) * ChildVaccines
+)
 
-# At least minimum number of children's vaccines
-model += childVaccines >= MinChildVaccines
+# Minimum number of children's vaccines
+model.addConstr(ChildVaccines >= MinChildVaccines)
 
-# Solve the model
-model.solve()
 
-# Output results
-if pulp.LpStatus[model.status] == "Optimal":
-    optimal_value = pulp.value(model.objective)
-    print("Optimal Objective Value:", optimal_value)
+### Define the objective
+
+model.setObjective(
+    FeverSuppressantPerChildVaccine * ChildVaccines +
+    FeverSuppressantPerAdultVaccine * AdultVaccines,
+    GRB.MINIMIZE
+)
+
+
+### Optimize the model
+
+model.optimize()
+
+
+### Output optimal objective value
+
+if model.status == GRB.OPTIMAL:
+    print("Optimal Objective Value: ", model.objVal)
     with open("output_solution.txt", "w") as f:
-        f.write(str(optimal_value))
+        f.write(str(model.objVal))
 else:
     with open("output_solution.txt", "w") as f:
-        f.write(pulp.LpStatus[model.status])
-``
+        f.write(str(model.status))

@@ -37,17 +37,14 @@ Hours = model.addVars(NumFactories, vtype=GRB.CONTINUOUS, name="Hours")
 
 ### Define the constraints
 
+model.addConstr(20 * Hours[0] + 10 * Hours[1] >= 700)
+model.addConstr(15 * Hours[0] + 30 * Hours[1] >= 600)
 model.addConstr(
-    sum(ProductionRate[0][j] * Hours[j] for j in range(NumFactories)) >= 700
+    sum(ResourceRequirement[j] * Hours[j] for j in range(NumFactories)) 
+    <= TotalResource
 )
-model.addConstr(
-    sum(ProductionRate[1][j] * Hours[j] for j in range(NumFactories)) >= 600
-)
-model.addConstr(
-    sum(ResourceRequirement[j] * Hours[j] for j in range(NumFactories)) <= TotalResource
-)
-for j in range(NumFactories):
-    model.addConstr(Hours[j] >= 0)
+model.addConstr(Hours[0] >= 0)
+model.addConstr(Hours[1] >= 0)
 
 
 ### Define the objective

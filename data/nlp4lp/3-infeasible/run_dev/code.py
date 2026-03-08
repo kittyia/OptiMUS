@@ -47,11 +47,15 @@ model.addConstr(CostRadioAd * RadioAds + CostSocialMediaAd * SocialMediaAds <= A
 model.addConstr(RadioAds >= MinRadioAds)
 model.addConstr(RadioAds <= MaxRadioAds)
 model.addConstr(SocialMediaAds >= MinSocialMediaAds)
+# RadioAds is defined as an integer variable (vtype=GRB.INTEGER), 
+# so no additional constraint is required to enforce integrality.
+# SocialMediaAds is defined as an integer variable (vtype=GRB.INTEGER), 
+# so no additional constraint is required to enforce integrality.
 
 
 ### Define the objective
 
-
+model.setObjective(ExposureRadioAd * RadioAds + ExposureSocialMediaAd * SocialMediaAds, GRB.MAXIMIZE)
 
 
 ### Optimize the model

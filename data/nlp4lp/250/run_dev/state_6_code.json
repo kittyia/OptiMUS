@@ -40,42 +40,39 @@
         }
     },
     "objective": {
-        "description": "\"Minimize the total time required to execute the production methods while meeting fabric, plastic, and special element constraints.\"",
-        "formulation": "$\\min \\; xA + xB$",
-        "code": ""
+        "description": "\"Minimize the total time required to execute methods A and B while meeting the production and resource constraints\"",
+        "formulation": "$\\min \\sum_{m=1}^{\\text{NumMethods}} \\text{MethodHours}_m$",
+        "code": "model.setObjective(quicksum(MethodHours[m] for m in range(NumMethods)), GRB.MINIMIZE)"
     },
     "constraints": [
         {
-            "description": "14 * x_A + 25 * x_B >= 1000",
-            "formulation": "$14 xA + 25 xB \\\\geq 1000$",
-            "code": "model.addConstr(14 * xA + 25 * xB >= 1000)"
+            "description": "The total special element consumption by method A and method B should not exceed 3500 units",
+            "formulation": "$\\\\sum_{m=1}^{NumMethods} SpecialElementConsumption[m] \\\\cdot MethodHours[m] \\\\leq TotalSpecialElement$",
+            "code": "model.addConstr(\n    sum(SpecialElementConsumption[m] * MethodHours[m] for m in range(NumMethods))\n    <= TotalSpecialElement\n)"
         },
         {
-            "description": "60 * x_A + 65 * x_B <= 3500",
-            "formulation": "$60 xA + 65 xB \\\\le 3500$",
-            "code": "model.addConstr(SpecialElementConsumption[0] * xA + SpecialElementConsumption[1] * xB <= TotalSpecialElement)"
+            "description": "The total fabric produced by method A and method B should be at least 1400 units",
+            "formulation": "$\\\\sum_{m=1}^{NumMethods} ProductionRate[1, m] \\\\cdot MethodHours[m] \\\\geq 1400$",
+            "code": "model.addConstr(\n    sum(ProductionRate[0][m] * MethodHours[m] for m in range(NumMethods)) >= 1400\n)"
         },
         {
-            "description": "x_A >= 0",
-            "formulation": "$xA \\\\geq 0$",
-            "code": "model.addConstr(xA >= 0)"
+            "description": "The total plastic produced by method A and method B should be at least 1000 units",
+            "formulation": "$\\\\sum_{m=1}^{NumMethods} ProductionRate[Plastic, m] \\\\cdot MethodHours[m] \\\\geq 1000$",
+            "code": "model.addConstr(\n    sum(ProductionRate[1][m] * MethodHours[m] for m in range(NumMethods)) >= 1000\n)"
         },
         {
-            "description": "x_B >= 0",
-            "formulation": "$xB \\\\geq 0$",
-            "code": "model.addConstr(xB >= 0)"
+            "description": "The number of hours method A and method B are executed must be non-negative",
+            "formulation": "$\\\\forall m = 1, \\\\dots, NumMethods, \\\\; MethodHours[m] \\\\geq 0$",
+            "code": "for m in range(NumMethods):\n    model.addConstr(MethodHours[m] >= 0)"
         }
     ],
     "variables": {
-        "xA": {
-            "shape": [],
+        "MethodHours": {
+            "shape": [
+                "NumMethods"
+            ],
             "type": "continuous",
-            "definition": "Number of hours method A is executed"
-        },
-        "xB": {
-            "shape": [],
-            "type": "continuous",
-            "definition": "Number of hours method B is executed"
+            "definition": "Number of hours each production method is executed"
         }
     }
 }

@@ -35,31 +35,31 @@ WasteProducedPerBeaker = data["WasteProducedPerBeaker"] # shape: ['NumBeakers'],
 
 ### Define the variables
 
-UseBeakers = model.addVars(NumBeakers, vtype=GRB.INTEGER, name="UseBeakers")
+BeakersUsed = model.addVars(NumBeakers, vtype=GRB.INTEGER, name="BeakersUsed")
 
 
 
 ### Define the constraints
 
 model.addConstr(
-    sum(FlourUsagePerBeaker[i] * UseBeakers[i] for i in range(NumBeakers))
+    sum(FlourUsagePerBeaker[i] * BeakersUsed[i] for i in range(NumBeakers)) 
     <= FlourAvailable
 )
 model.addConstr(
-    sum(SpecialLiquidUsagePerBeaker[i] * UseBeakers[i] for i in range(NumBeakers))
+    sum(SpecialLiquidUsagePerBeaker[i] * BeakersUsed[i] for i in range(NumBeakers))
     <= SpecialLiquidAvailable
 )
 model.addConstr(
-    sum(WasteProducedPerBeaker[i] * UseBeakers[i] for i in range(NumBeakers))
+    sum(WasteProducedPerBeaker[i] * BeakersUsed[i] for i in range(NumBeakers)) 
     <= MaxWasteAllowed
 )
 for i in range(NumBeakers):
-    model.addConstr(UseBeakers[i] >= 0)
+    model.addConstr(BeakersUsed[i] >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(quicksum(SlimeProducedPerBeaker[i] * BeakersUsed[i] for i in range(NumBeakers)), GRB.MAXIMIZE)
 
 
 ### Optimize the model

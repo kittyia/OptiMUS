@@ -1,9 +1,9 @@
 ----
 [
-    "12 * LowPowerUnits + 17 * HighPowerUnits >= 250",
-    "150 * LowPowerUnits + 250 * HighPowerUnits <= 3400",
-    "7 * LowPowerUnits <= 3 * HighPowerUnits",
-    "HighPowerUnits >= 7",
+    "12 * LowPowerUnits + 17 * HighPowerUnits >= TotalCoolingRequired",
+    "150 * LowPowerUnits + 250 * HighPowerUnits <= TotalElectricityAvailable",
+    "LowPowerUnits <= MaxLowPowerPercentage * (LowPowerUnits + HighPowerUnits)",
+    "HighPowerUnits >= MinHighPowerModels",
     "LowPowerUnits >= 0",
     "LowPowerUnits and HighPowerUnits are integers"
 ]
@@ -65,7 +65,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: 12 * LowPowerUnits + 17 * HighPowerUnits >= 250
+Consider this potential constraint: 12 * LowPowerUnits + 17 * HighPowerUnits >= TotalCoolingRequired
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -75,39 +75,31 @@ Consider this potential constraint: 12 * LowPowerUnits + 17 * HighPowerUnits >= 
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is **definitely a required constraint**.
+Yes, this is definitely a constraint and it should be explicitly included in the (MI)LP formulation.
 
 ### Why?
 
-The problem explicitly states:
+The problem states:
 
-> "the apartment needs to condition **at least 250 housing units**"
+> “If the apartment needs to condition **at least 250 housing units**…”
 
-Each unit provides cooling capacity:
-- Low-power: 12 housing units
-- High-power: 17 housing units
+This is a **minimum service requirement**, which directly translates into a constraint on total cooling capacity provided by the air conditioners.
 
-If:
-- `LowPowerUnits = number of low-powered air conditioners`
-- `HighPowerUnits = number of high-powered air conditioners`
+- Each **low-power unit** cools 12 housing units.
+- Each **high-power unit** cools 17 housing units.
+- The total number of housing units that must be cooled is given by `TotalCoolingRequired`.
 
-Then the total cooling capacity provided is:
+Therefore, the total cooling provided must be **at least** the required amount:
 
 \[
-12 \cdot \text{LowPowerUnits} + 17 \cdot \text{HighPowerUnits}
+12 \cdot \text{LowPowerUnits} + 17 \cdot \text{HighPowerUnits} \ge \text{TotalCoolingRequired}
 \]
 
-Since the apartment must cool **at least 250 housing units**, this gives the constraint:
-
-\[
-12 \cdot \text{LowPowerUnits} + 17 \cdot \text{HighPowerUnits} \ge 250
-\]
-
-This is a direct translation of a core requirement of the problem, and it is absolutely necessary in the MILP model.
+This is a fundamental feasibility constraint. Without it, the model could choose too few units and still satisfy other constraints (like electricity or percentage limits), resulting in an infeasible real-world solution.
 
 ### Conclusion
 
-✅ This is unquestionably a valid and required constraint.
+✅ This is absolutely a required constraint in the optimization model.
 
 **5 OUT OF 5**
 +--+
@@ -168,7 +160,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: 150 * LowPowerUnits + 250 * HighPowerUnits <= 3400
+Consider this potential constraint: 150 * LowPowerUnits + 250 * HighPowerUnits <= TotalElectricityAvailable
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -178,21 +170,35 @@ Consider this potential constraint: 150 * LowPowerUnits + 250 * HighPowerUnits <
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is clearly a valid and necessary constraint.
+Yes, this is **definitely a constraint**, and it should be explicitly included in the (MI)LP formulation.
 
-The problem states that:
+### Why?
 
-- A low-powered unit uses **150 units of electricity per day**.
-- A high-powered unit uses **250 units of electricity per day**.
-- The apartment complex has **3400 units of electricity available**.
+The problem states:
 
-Since total electricity consumption cannot exceed the available electricity, we must impose the resource constraint:
+> "the apartment ... has 3400 units of electricity available"
+
+This clearly imposes a **resource limitation**. Since each:
+- Low-power unit consumes **150** units/day  
+- High-power unit consumes **250** units/day  
+
+the total electricity consumption must not exceed the available 3400 units.
+
+Thus, the constraint:
 
 \[
-150 \cdot \text{LowPowerUnits} + 250 \cdot \text{HighPowerUnits} \le 3400
+150 \cdot \text{LowPowerUnits} + 250 \cdot \text{HighPowerUnits} \le \text{TotalElectricityAvailable}
 \]
 
-This is a standard capacity (resource) constraint and directly follows from the problem description. It is essential to the formulation and absolutely should be included in the (MI)LP model.
+is a **direct and necessary modeling translation** of the problem statement.
+
+Without this constraint, the model could choose arbitrarily many units (especially high-power ones, since we are minimizing the number of units) and violate the electricity limitation.
+
+### Conclusion
+
+✅ This is absolutely a required constraint in the formulation.  
+✅ It is explicitly supported by the problem statement.  
+✅ It represents a physical resource limitation.
 
 **5 OUT OF 5**
 +--+
@@ -253,7 +259,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: 7 * LowPowerUnits <= 3 * HighPowerUnits
+Consider this potential constraint: LowPowerUnits <= MaxLowPowerPercentage * (LowPowerUnits + HighPowerUnits)
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -263,48 +269,42 @@ Consider this potential constraint: 7 * LowPowerUnits <= 3 * HighPowerUnits
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this **is** a valid constraint and it correctly represents the “at most 30% low-powered models” requirement.
+Yes, this **is definitely a constraint**, and it should be explicitly modeled in the (MI)LP formulation.
+
+### Why?
+
+The problem states:
+
+> “the strata decided to limit the number of low-powered models to only 30%”
+
+This clearly means that **low-powered units can make up at most 30% of the total number of air conditioners purchased**.
 
 Let:
-- \( L \) = number of low-power units  
-- \( H \) = number of high-power units  
+- \( L \) = LowPowerUnits  
+- \( H \) = HighPowerUnits  
 
-The problem states that low-powered models can make up **at most 30% of the total units purchased**, which translates to:
-
-\[
-L \le 0.3(L + H)
-\]
-
-Now simplify:
+Then the natural mathematical interpretation is:
 
 \[
-L \le 0.3L + 0.3H
+L \le 0.30(L + H)
 \]
 
-\[
-L - 0.3L \le 0.3H
-\]
+This is exactly the proposed constraint.
 
-\[
-0.7L \le 0.3H
-\]
+### Why it must be included
 
-Multiply both sides by 10 to eliminate decimals:
+Without this constraint:
+- The optimizer would likely choose mostly low-power units because they cool relatively efficiently per electricity unit.
+- That would violate the aesthetic restriction in the problem statement.
 
-\[
-7L \le 3H
-\]
+This condition is:
+- Explicitly stated,
+- Structurally necessary,
+- And directly translates to a linear inequality.
 
-This is **exactly** the proposed constraint:
+It is a core modeling constraint and should **definitely** be included.
 
-\[
-7 \cdot \text{LowPowerUnits} \le 3 \cdot \text{HighPowerUnits}
-\]
-
-So:
-- ✅ It is indeed a constraint.
-- ✅ It correctly models the 30% limit.
-- ✅ It is linear and suitable for an MILP formulation.
+### Confidence Level
 
 **5 OUT OF 5**
 +--+
@@ -365,7 +365,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: HighPowerUnits >= 7
+Consider this potential constraint: HighPowerUnits >= MinHighPowerModels
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -375,25 +375,25 @@ Consider this potential constraint: HighPowerUnits >= 7
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is clearly a constraint.
+Yes, this is clearly a constraint and it should be explicitly included in the (MI)LP formulation.
 
-The problem statement explicitly says: **“at least 7 high-powered models must be used.”**  
-This directly translates to the linear constraint:
+The problem statement explicitly says:  
+> “at least 7 high-powered models must be used.”
+
+This directly translates into the inequality:
 
 \[
-\text{HighPowerUnits} \ge 7
+\text{HighPowerUnits} \ge \text{MinHighPowerModels}
 \]
 
-This is:
+Since:
+- This is a mandatory requirement ("must be used"),
+- It imposes a lower bound on a decision variable,
+- It cannot be derived from any other constraint in the problem,
 
-- A hard requirement (not optional or implied),
-- Quantitative and directly enforceable,
-- Independent of other constraints (not redundant),
-- Necessary for correctly modeling the feasible region.
+it is a necessary and independent modeling constraint.
 
-Therefore, it absolutely should be explicitly included in the (MI)LP formulation.
-
-**5 OUT OF 5**
+**Confidence: 5 OUT OF 5**
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -464,16 +464,16 @@ Take a deep breath and think step by step. You will be awarded a million dollars
 ----
 Yes, **LowPowerUnits ≥ 0** is indeed a constraint.
 
-In an optimization model, the number of air conditioners purchased is a **decision variable**. Since it represents a physical quantity (a count of units), it must be **nonnegative**. Negative air conditioners would have no practical meaning.
+In an optimization model, the number of air conditioners purchased is a decision variable representing a physical quantity. It cannot be negative in any realistic scenario. Therefore, non-negativity is a fundamental domain restriction.
 
-Even though this type of constraint is often handled implicitly through the **variable domain specification** (e.g., nonnegative integers), it is still fundamentally a required modeling constraint. In an (MI)LP formulation, this would typically be written as:
+In a (MI)LP formulation, this would typically be modeled as:
 
 - \( \text{LowPowerUnits} \ge 0 \)
-- \( \text{LowPowerUnits} \in \mathbb{Z} \)
+- (and in fact, it should also be an integer variable)
 
-So yes — this constraint should be explicitly included (either as a domain restriction or a written inequality).
+Although solvers often default variables to be nonnegative, from a modeling standpoint this is an essential constraint (or at least an explicit variable bound). It ensures the model remains physically meaningful.
 
-**5 OUT OF 5**
+**Confidence: 5 OUT OF 5**
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -542,34 +542,18 @@ Consider this potential constraint: LowPowerUnits and HighPowerUnits are integer
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this **is** a constraint and it should be explicitly modeled in the (MI)LP formulation.
+Yes, this is indeed a constraint.
 
-### Why?
+The decision variables represent the **number of air conditioners purchased**, and in reality, you cannot purchase fractional units of an air conditioner. Therefore, both:
 
-The decision variables are:
+- **LowPowerUnits**
+- **HighPowerUnits**
 
-- `LowPowerUnits`
-- `HighPowerUnits`
+must be **nonnegative integers**.
 
-These represent the **number of air conditioners purchased**. Since air conditioners are indivisible physical items, fractional values (e.g., 3.7 units) would not be meaningful or feasible in reality.
+This is not just a modeling preference — it is a structural requirement of the problem. Without explicitly enforcing integrality, a linear program could return fractional values (e.g., 10.3 units), which would be infeasible in practice.
 
-If we failed to impose integrality:
-
-- The LP relaxation might produce fractional solutions.
-- The objective is to **minimize the total number of units**, so fractional values could artificially reduce the objective value.
-- This would produce a mathematically optimal but physically infeasible solution.
-
-Therefore, the variables must be modeled as:
-
-\[
-\text{LowPowerUnits}, \text{HighPowerUnits} \in \mathbb{Z}_{\ge 0}
-\]
-
-This makes the model a **Mixed-Integer Linear Program (MILP)** rather than a pure LP.
-
-### Conclusion
-
-This is a necessary modeling constraint and should definitely be included.
+Therefore, this is an essential integrality constraint in the MILP formulation.
 
 **5 OUT OF 5**
 +--+
@@ -587,7 +571,7 @@ Extracting constraint formulations
 
 ----
 {
-    "FORMULATION": "$12 \\cdot LowPowerUnits + 17 \\cdot HighPowerUnits \\geq 250$",
+    "FORMULATION": "$12 \\cdot LowPowerUnits + 17 \\cdot HighPowerUnits \\geq TotalCoolingRequired$",
     "NEW VARIABLES": {
         "LowPowerUnits": {
             "shape": [],
@@ -605,7 +589,7 @@ Extracting constraint formulations
 ----
 ----
 EXTRACTED ITEMS
-$12 \\cdot LowPowerUnits + 17 \\cdot HighPowerUnits \\geq 250$
+$12 \\cdot LowPowerUnits + 17 \\cdot HighPowerUnits \\geq TotalCoolingRequired$
 {'LowPowerUnits': {'shape': [], 'type': 'integer', 'definition': 'Number of low-powered air conditioners to purchase'}, 'HighPowerUnits': {'shape': [], 'type': 'integer', 'definition': 'Number of high-powered air conditioners to purchase'}}
 []
 ----
@@ -624,53 +608,53 @@ $LowPowerElectricityUsage \\cdot LowPowerUnits + HighPowerElectricityUsage \\cdo
 ----
 ----
 {
-    "FORMULATION": "$7 \\cdot LowPowerUnits \\leq 3 \\cdot HighPowerUnits$",
+    "FORMULATION": "$LowPowerUnits \\leq MaxLowPowerPercentage \\cdot (LowPowerUnits + HighPowerUnits)$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$7 \\cdot LowPowerUnits \\leq 3 \\cdot HighPowerUnits$
+$LowPowerUnits \\leq MaxLowPowerPercentage \\cdot (LowPowerUnits + HighPowerUnits)$
 {}
 []
 ----
 ----
 {
-    "FORMULATION": "$HighPowerUnits \\geq 7$",
+    "FORMULATION": "$HighPowerUnits \\ge MinHighPowerModels$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$HighPowerUnits \\geq 7$
+$HighPowerUnits \\ge MinHighPowerModels$
 {}
 []
 ----
 ----
 {
-    "FORMULATION": "$LowPowerUnits \\geq 0$",
+    "FORMULATION": "$LowPowerUnits \\ge 0$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$LowPowerUnits \\geq 0$
+$LowPowerUnits \\ge 0$
 {}
 []
 ----
 ----
 {
-    "FORMULATION": "$LowPowerUnits \\in \\mathbb{Z}_{\\ge 0}, \\; HighPowerUnits \\in \\mathbb{Z}_{\\ge 0}$",
+    "FORMULATION": "$LowPowerUnits, \\; HighPowerUnits \\in \\mathbb{Z}_{\\geq 0}$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$LowPowerUnits \\in \\mathbb{Z}_{\\ge 0}, \\; HighPowerUnits \\in \\mathbb{Z}_{\\ge 0}$
+$LowPowerUnits, \\; HighPowerUnits \\in \\mathbb{Z}_{\\geq 0}$
 {}
 []
 ----
@@ -727,9 +711,17 @@ HighPowerUnits = model.addVar(vtype=GRB.INTEGER, name="HighPowerUnits")
 
 ### Define the constraints
 
-model.addConstr(LowPowerCoolingCapacity * LowPowerUnits + HighPowerCoolingCapacity * HighPowerUnits >= TotalCoolingRequired)
-model.addConstr(LowPowerElectricityUsage * LowPowerUnits + HighPowerElectricityUsage * HighPowerUnits <= TotalElectricityAvailable)
-model.addConstr(7 * LowPowerUnits <= 3 * HighPowerUnits)
+model.addConstr(
+    LowPowerCoolingCapacity * LowPowerUnits
+    + HighPowerCoolingCapacity * HighPowerUnits
+    >= TotalCoolingRequired
+)
+model.addConstr(
+    LowPowerElectricityUsage * LowPowerUnits +
+    HighPowerElectricityUsage * HighPowerUnits
+    <= TotalElectricityAvailable
+)
+model.addConstr(LowPowerUnits <= MaxLowPowerPercentage * (LowPowerUnits + HighPowerUnits))
 model.addConstr(HighPowerUnits >= MinHighPowerModels)
 model.addConstr(LowPowerUnits >= 0)
 model.addConstr(LowPowerUnits >= 0)
@@ -763,7 +755,7 @@ else:
 
 Error Message:
 Traceback (most recent call last):
-  File "/home/admin/OptiMUS/data/nlp4lp/219-infeasible/run_dev/code.py", line 68, in <module>
+  File "/home/admin/OptiMUS/data/nlp4lp/219-infeasible/run_dev/code.py", line 76, in <module>
     print("Optimal Objective Value: ", model.objVal)
                                        ^^^^^^^^^^^^
   File "src/gurobipy/_model.pyx", line 399, in gurobipy._model.Model.__getattr__
@@ -792,7 +784,7 @@ Response received.
 =====
 import os
 import numpy as np
-import json 
+import json
 from gurobipy import Model, GRB, quicksum
 
 
@@ -802,8 +794,7 @@ with open("data.json", "r") as f:
     data = json.load(f)
 
 
-### Define the parameters
-
+# Define the parameters
 LowPowerCoolingCapacity = data["LowPowerCoolingCapacity"]
 LowPowerElectricityUsage = data["LowPowerElectricityUsage"]
 HighPowerCoolingCapacity = data["HighPowerCoolingCapacity"]
@@ -814,57 +805,49 @@ TotalCoolingRequired = data["TotalCoolingRequired"]
 TotalElectricityAvailable = data["TotalElectricityAvailable"]
 
 
-### Define the variables
-
+# Define the variables
 LowPowerUnits = model.addVar(vtype=GRB.INTEGER, name="LowPowerUnits")
 HighPowerUnits = model.addVar(vtype=GRB.INTEGER, name="HighPowerUnits")
 
 
-### Define the constraints
-
+# Define the constraints
 model.addConstr(
-    LowPowerCoolingCapacity * LowPowerUnits +
-    HighPowerCoolingCapacity * HighPowerUnits
+    LowPowerCoolingCapacity * LowPowerUnits
+    + HighPowerCoolingCapacity * HighPowerUnits
     >= TotalCoolingRequired
 )
 
 model.addConstr(
-    LowPowerElectricityUsage * LowPowerUnits +
-    HighPowerElectricityUsage * HighPowerUnits
+    LowPowerElectricityUsage * LowPowerUnits
+    + HighPowerElectricityUsage * HighPowerUnits
     <= TotalElectricityAvailable
 )
 
-# LowPowerUnits <= MaxLowPowerPercentage * (LowPowerUnits + HighPowerUnits)
-# Reformulated to avoid division:
-# Low <= p(Low + High) → (1-p)Low <= p High
-p = MaxLowPowerPercentage
-model.addConstr((1 - p) * LowPowerUnits <= p * HighPowerUnits)
+model.addConstr(
+    LowPowerUnits <= MaxLowPowerPercentage * (LowPowerUnits + HighPowerUnits)
+)
 
 model.addConstr(HighPowerUnits >= MinHighPowerModels)
-
 model.addConstr(LowPowerUnits >= 0)
 model.addConstr(HighPowerUnits >= 0)
 
 
-### Define the objective
-
+# Define the objective
 model.setObjective(LowPowerUnits + HighPowerUnits, GRB.MINIMIZE)
 
 
-### Optimize the model
-
+# Optimize the model
 model.optimize()
 
 
-### Output optimal objective value
-
-if model.status == GRB.OPTIMAL:
+# Output results safely
+if model.Status == GRB.OPTIMAL:
     print("Optimal Objective Value: ", model.ObjVal)
     with open("output_solution.txt", "w") as f:
         f.write(str(model.ObjVal))
 else:
     with open("output_solution.txt", "w") as f:
-        f.write(str(model.status))
+        f.write(str(model.Status))
 =====
 ==========
 

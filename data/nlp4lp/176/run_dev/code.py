@@ -29,24 +29,24 @@ RequiredBricks = data["RequiredBricks"] # shape: [], definition: Minimum number 
 
 ### Define the variables
 
-numCows = model.addVar(vtype=GRB.INTEGER, name="numCows")
+cows = model.addVar(vtype=GRB.INTEGER, name="cows")
 
-numElephants = model.addVar(vtype=GRB.INTEGER, name="numElephants")
+elephants = model.addVar(vtype=GRB.INTEGER, name="elephants")
 
 
 
 ### Define the constraints
 
-model.addConstr(numElephants <= numCows)
-model.addConstr(numCows <= 2 * numElephants)
-model.addConstr(BrickCapacityCow * numCows + BrickCapacityElephant * numElephants >= RequiredBricks)
-model.addConstr(numCows >= 0)
-model.addConstr(numElephants >= 0)
+model.addConstr(BrickCapacityCow * cows + BrickCapacityElephant * elephants >= RequiredBricks)
+model.addConstr(elephants <= cows)
+model.addConstr(cows <= 2 * elephants)
+model.addConstr(cows >= 0)
+model.addConstr(elephants >= 0)
 
 
 ### Define the objective
 
-model.setObjective(numCows + numElephants, GRB.MINIMIZE)
+model.setObjective(cows + elephants, GRB.MINIMIZE)
 
 
 ### Optimize the model

@@ -54,7 +54,7 @@ model.addConstr(PumpkinsAcres >= 0)
 
 ### Define the objective
 
-
+model.setObjective(RevenueTurnips * TurnipsAcres + RevenuePumpkins * PumpkinsAcres, GRB.MAXIMIZE)
 
 
 ### Optimize the model

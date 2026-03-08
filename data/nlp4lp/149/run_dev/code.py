@@ -29,26 +29,26 @@ Budget = data["Budget"] # shape: [], definition: Budget for shipping
 
 ### Define the variables
 
-NumTrips = model.addVars(NumVehicleTypes, vtype=GRB.INTEGER, name="NumTrips")
+Trips = model.addVars(NumVehicleTypes, vtype=GRB.INTEGER, name="Trips")
 
 
 
 ### Define the constraints
 
 model.addConstr(
-    sum(Capacity[v] * NumTrips[v] for v in range(NumVehicleTypes)) >= MinPatties
+    sum(Capacity[v] * Trips[v] for v in range(NumVehicleTypes)) >= MinPatties
 )
 model.addConstr(
-    sum(CostPerTrip[v] * NumTrips[v] for v in range(NumVehicleTypes)) <= Budget
+    sum(CostPerTrip[i] * Trips[i] for i in range(NumVehicleTypes)) <= Budget
 )
-model.addConstr(NumTrips[0] <= NumTrips[1])
+model.addConstr(Trips[0] <= Trips[1])
 for v in range(NumVehicleTypes):
-    model.addConstr(NumTrips[v] >= 0)
+    model.addConstr(Trips[v] >= 0)
 
 
 ### Define the objective
 
-model.setObjective(quicksum(NumTrips[i] for i in range(NumVehicleTypes)), GRB.MINIMIZE)
+model.setObjective(quicksum(Trips[i] for i in range(NumVehicleTypes)), GRB.MINIMIZE)
 
 
 ### Optimize the model

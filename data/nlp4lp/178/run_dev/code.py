@@ -37,13 +37,10 @@ CompanyCarRides = model.addVar(vtype=GRB.INTEGER, name="CompanyCarRides")
 
 ### Define the constraints
 
-model.addConstr(
-    EmployeesPerTaxiRide * TaxiRides
-    + EmployeesPerCompanyCarRide * CompanyCarRides
-    >= MinEmployees
-)
-model.addConstr(CompanyCarRides <= (MaxCompanyCarRidePercentage / 100.0) * (TaxiRides + CompanyCarRides))
+model.addConstr(EmployeesPerTaxiRide * TaxiRides + EmployeesPerCompanyCarRide * CompanyCarRides >= MinEmployees)
+model.addConstr(2 * CompanyCarRides <= 3 * TaxiRides)
 model.addConstr(CompanyCarRides >= MinCompanyCarRides)
+model.addConstr(TaxiRides >= 0)
 model.addConstr(TaxiRides >= 0)
 model.addConstr(CompanyCarRides >= 0)
 

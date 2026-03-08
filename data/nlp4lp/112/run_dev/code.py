@@ -35,29 +35,25 @@ HeatPerBoxType = data["HeatPerBoxType"] # shape: ['NumBoxTypes'], definition: Un
 
 ### Define the variables
 
-NumBoxes = model.addVars(NumBoxTypes, vtype=GRB.INTEGER, name="NumBoxes")
+CheapBoxes = model.addVar(vtype=GRB.INTEGER, name="CheapBoxes")
+
+ExpensiveBoxes = model.addVar(vtype=GRB.INTEGER, name="ExpensiveBoxes")
 
 
 
 ### Define the constraints
 
-model.addConstr(
-    sum(MetalPerBoxType[i] * NumBoxes[i] for i in range(NumBoxTypes)) <= MetalAvailable
-)
-model.addConstr(
-    sum(AcidPerBoxType[i] * NumBoxes[i] for i in range(NumBoxTypes)) 
-    <= AcidAvailable
-)
-model.addConstr(
-    sum(HeatPerBoxType[i] * NumBoxes[i] for i in range(NumBoxTypes)) <= MaxHeat
-)
-for i in range(NumBoxTypes):
-    model.addConstr(NumBoxes[i] >= 0)
+model.addConstr(2 * CheapBoxes + 3 * ExpensiveBoxes <= MaxHeat)
+model.addConstr(CheapBoxes >= 0)
+model.addConstr(ExpensiveBoxes >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(
+    FoamPerBoxType[0] * CheapBoxes + FoamPerBoxType[1] * ExpensiveBoxes,
+    GRB.MAXIMIZE
+)
 
 
 ### Optimize the model

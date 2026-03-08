@@ -48,7 +48,12 @@ for p in range(P):
 
 ### Define the objective
 
-
+model.setObjective(
+    quicksum(TransmissionCosts[p][c] * send[p, c] 
+             for p in range(P) 
+             for c in range(C)),
+    GRB.MINIMIZE
+)
 
 
 ### Optimize the model

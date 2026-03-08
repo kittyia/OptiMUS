@@ -1,73 +1,9 @@
 ----
-Yes, there is redundancy in the constraint list. Let’s examine each one carefully.
-
-### 1. Sulfate minimum constraint  
-**Constraint:**  
-> The number of sulfate units must be greater than or equal to the minimum required sulfate units  
-
-This is necessary and cannot be removed.
-
----
-
-### 2. Total units equality constraint  
-**Constraint:**  
-> The total number of sulfate and ginger units must equal the specified total units  
-
-This is essential because the problem explicitly states that the shampoo must contain a total of 400 units. It cannot be removed or relaxed.
-
----
-
-### 3. Sulfate-to-ginger ratio constraint  
-**Constraint:**  
-> The number of sulfate units must be less than or equal to the maximum allowed sulfate-to-ginger ratio multiplied by the number of ginger units  
-
-This constraint enforces the safety requirement and is necessary.
-
----
-
-### 4. Non-negativity of sulfate  
-**Constraint:**  
-> The number of sulfate units must be non-negative  
-
-This is **redundant** because:
-
-- We already require sulfate ≥ minimum required sulfate units.
-- The minimum required sulfate units is 100.
-- Since sulfate ≥ 100, it is automatically non-negative.
-
-So this constraint can be removed.
-
----
-
-### 5. Non-negativity of ginger  
-**Constraint:**  
-> The number of ginger units must be non-negative  
-
-This is also **redundant**. Here's why:
-
-- We have the equality constraint:  
-  \[
-  S + G = 400
-  \]
-- We require \( S \ge 100 \).
-- The ratio constraint is \( S \le 2G \).
-
-If \( G < 0 \), then \( 2G < 0 \), meaning \( S \le 2G < 0 \).  
-But we also require \( S \ge 100 \), which creates a contradiction.
-
-Therefore, \( G \) cannot be negative in any feasible solution. The constraint is implied by the others and can be removed.
-
----
-
-### ✅ Updated Constraint List
-
-```python
 [
-    "The number of sulfate units must be greater than or equal to the minimum required sulfate units",
-    "The total number of sulfate and ginger units must equal the specified total units",
-    "The number of sulfate units must be less than or equal to the maximum allowed sulfate-to-ginger ratio multiplied by the number of ginger units"
+    "Units of sulfate added must be greater than or equal to MinSulfateUnits",
+    "Total units of sulfate and ginger combined must equal TotalUnits",
+    "Units of sulfate must be less than or equal to MaxSulfateToGingerRatio times the units of ginger"
 ]
-```
 ----
 +++++++++++++++++++
 ++ Constraint Qs ++
@@ -111,7 +47,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: The number of sulfate units must be greater than or equal to the minimum required sulfate units
+Consider this potential constraint: Units of sulfate added must be greater than or equal to MinSulfateUnits
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -121,25 +57,18 @@ Consider this potential constraint: The number of sulfate units must be greater 
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is absolutely a constraint and must be explicitly modeled.
+Yes, this is explicitly a constraint and must be included in the (MI)LP formulation.
 
-The problem statement clearly says:
+The problem statement clearly says:  
+> “The shampoo must contain at least 100 units of sulfates.”
 
-> "The shampoo must contain at least 100 units of sulfates."
-
-This directly translates into the constraint:
+This directly translates to a lower bound constraint on the decision variable representing sulfate units:
 
 \[
 \text{SulfateUnits} \ge \text{MinSulfateUnits}
 \]
 
-This is a hard requirement (not optional, not implied, not redundant), and it restricts the feasible region of the optimization model. Without this constraint, the optimizer could reduce sulfate arbitrarily (possibly to zero) to reduce total time, which would violate the problem’s conditions.
-
-So:
-
-- ✅ It is explicitly stated.
-- ✅ It is necessary for feasibility.
-- ✅ It must be included in the (MI)LP formulation.
+This is not implied or optional — it is a hard requirement stated in the problem description. Therefore, it must be explicitly modeled as a constraint in the formulation.
 
 **5 OUT OF 5**
 +--+
@@ -185,7 +114,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: The total number of sulfate and ginger units must equal the specified total units
+Consider this potential constraint: Total units of sulfate and ginger combined must equal TotalUnits
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -195,23 +124,24 @@ Consider this potential constraint: The total number of sulfate and ginger units
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-The statement says:
+Yes, this is clearly a constraint and should be explicitly modeled.
 
-> “The shampoo must contain at least 100 units of sulfates and a total of 400 units of both ingredient.”
+The problem statement says:  
 
-The phrase **“a total of 400 units of both ingredient”** clearly specifies that the sum of sulfate and ginger units must equal 400. This is not a derived or optional modeling choice — it is an explicit requirement in the problem statement.
+> “The shampoo must contain … **a total of 400 units of both ingredient**.”
 
-Therefore, the constraint
+This directly implies:
 
 \[
-\text{Sulfate} + \text{Ginger} = 400
+\text{Sulfate} + \text{Ginger} = \text{TotalUnits}
 \]
 
-is absolutely a required model constraint.
+Since “a total of 400 units” indicates an exact total (not at least or at most), this is an equality constraint in the model.
 
-There is no ambiguity here (it does not say “at least 400” or “at most 400” — it says total of 400), so this should definitely be included as an equality constraint in the (MI)LP formulation.
+There is no ambiguity in the language suggesting flexibility; it is a strict formulation requirement. Therefore, this must be included explicitly in the (MI)LP formulation.
 
-**Confidence: 5 OUT OF 5**
+**Confidence level:**  
+5 OUT OF 5
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -255,7 +185,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: The number of sulfate units must be less than or equal to the maximum allowed sulfate-to-ginger ratio multiplied by the number of ginger units
+Consider this potential constraint: Units of sulfate must be less than or equal to MaxSulfateToGingerRatio times the units of ginger
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -265,27 +195,31 @@ Consider this potential constraint: The number of sulfate units must be less tha
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is clearly a constraint and it should be explicitly modeled.
+The statement in the problem says:
 
-The problem states:  
-> “there can be at most twice the amount of sulfate as ginger in the shampoo.”
+> “Since too much sulfate can damage the hair, there can be at most twice the amount of sulfate as ginger in the shampoo.”
+
+This clearly imposes a **feasibility restriction** on the decision variables.  
 
 Let:
-- \( S \) = number of sulfate units  
-- \( G \) = number of ginger units  
-- \( R \) = MaxSulfateToGingerRatio (given as 2)
+- \( S \) = units of sulfate  
+- \( G \) = units of ginger  
 
-The statement “at most twice” translates directly to:
+"At most twice the amount of sulfate as ginger" translates directly to:
 
 \[
-S \le R \cdot G
+S \le 2G
 \]
 
-This is a linear constraint and is essential to correctly represent the problem’s feasible region. It is not redundant with any other condition given, and omitting it would fundamentally change the model.
+This is not part of the objective, nor is it implied by other constraints. It is an explicit physical/quality restriction on the formulation of the shampoo. Therefore:
 
-Therefore, it absolutely belongs in the (MI)LP formulation.
+- ✅ It is absolutely a constraint.
+- ✅ It must be explicitly modeled in the LP formulation.
+- ✅ It is independent of the total-units constraint and minimum sulfate constraint.
 
-**5 OUT OF 5**
+There is no ambiguity in the wording — it clearly defines a hard upper bound relationship between the two variables.
+
+**Confidence level: 5 OUT OF 5**
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -301,12 +235,12 @@ Extracting constraint formulations
 
 ----
 {
-    "FORMULATION": "$SulfateUnits \\geq MinSulfateUnits$",
+    "FORMULATION": "$sulfateUnits \\geq MinSulfateUnits$",
     "NEW VARIABLES": {
-        "SulfateUnits": {
+        "sulfateUnits": {
             "shape": [],
             "type": "continuous",
-            "definition": "Number of sulfate units added to the shampoo"
+            "definition": "Number of units of sulfate added to the shampoo"
         }
     },
     "AUXILIARY CONSTRAINTS": []
@@ -314,18 +248,18 @@ Extracting constraint formulations
 ----
 ----
 EXTRACTED ITEMS
-$SulfateUnits \\geq MinSulfateUnits$
-{'SulfateUnits': {'shape': [], 'type': 'continuous', 'definition': 'Number of sulfate units added to the shampoo'}}
+$sulfateUnits \\geq MinSulfateUnits$
+{'sulfateUnits': {'shape': [], 'type': 'continuous', 'definition': 'Number of units of sulfate added to the shampoo'}}
 []
 ----
 ----
 {
-    "FORMULATION": "$SulfateUnits + GingerUnits = TotalUnits$",
+    "FORMULATION": "$sulfateUnits + gingerUnits = TotalUnits$",
     "NEW VARIABLES": {
-        "GingerUnits": {
+        "gingerUnits": {
             "shape": [],
             "type": "continuous",
-            "definition": "Number of ginger units added to the shampoo"
+            "definition": "Number of units of ginger added to the shampoo"
         }
     },
     "AUXILIARY CONSTRAINTS": []
@@ -333,20 +267,20 @@ $SulfateUnits \\geq MinSulfateUnits$
 ----
 ----
 EXTRACTED ITEMS
-$SulfateUnits + GingerUnits = TotalUnits$
-{'GingerUnits': {'shape': [], 'type': 'continuous', 'definition': 'Number of ginger units added to the shampoo'}}
+$sulfateUnits + gingerUnits = TotalUnits$
+{'gingerUnits': {'shape': [], 'type': 'continuous', 'definition': 'Number of units of ginger added to the shampoo'}}
 []
 ----
 ----
 {
-    "FORMULATION": "$SulfateUnits \\leq MaxSulfateToGingerRatio \\cdot GingerUnits$",
+    "FORMULATION": "$sulfateUnits \\leq MaxSulfateToGingerRatio \\cdot gingerUnits$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$SulfateUnits \\leq MaxSulfateToGingerRatio \\cdot GingerUnits$
+$sulfateUnits \\leq MaxSulfateToGingerRatio \\cdot gingerUnits$
 {}
 []
 ----

@@ -37,23 +37,23 @@ MaxMangoFraction = data["MaxMangoFraction"] # shape: [], definition: Maximum fra
 
 ### Define the variables
 
-Bananas = model.addVar(vtype=GRB.INTEGER, name="Bananas")
+NumberOfBananas = model.addVar(vtype=GRB.INTEGER, name="NumberOfBananas")
 
-Mangoes = model.addVar(vtype=GRB.INTEGER, name="Mangoes")
+NumberOfMangoes = model.addVar(vtype=GRB.INTEGER, name="NumberOfMangoes")
 
 
 
 ### Define the constraints
 
-model.addConstr(CalorieBanana * Bananas + CalorieMango * Mangoes >= MinCalories)
-model.addConstr(Mangoes <= MaxMangoFraction * (Bananas + Mangoes))
-model.addConstr(Bananas >= 0)
-model.addConstr(Mangoes >= 0)
+model.addConstr(CalorieBanana * NumberOfBananas + CalorieMango * NumberOfMangoes >= MinCalories)
+model.addConstr(NumberOfMangoes <= MaxMangoFraction * (NumberOfBananas + NumberOfMangoes))
+model.addConstr(NumberOfBananas >= 0)
+model.addConstr(NumberOfMangoes >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(SugarBanana * NumberOfBananas + SugarMango * NumberOfMangoes, GRB.MINIMIZE)
 
 
 ### Optimize the model

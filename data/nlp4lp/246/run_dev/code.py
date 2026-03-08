@@ -27,23 +27,23 @@ MinPeoplePerHour = data["MinPeoplePerHour"] # shape: [], definition: Minimum num
 
 ### Define the variables
 
-TrainUnits = model.addVar(vtype=GRB.INTEGER, name="TrainUnits")
+numTrains = model.addVar(vtype=GRB.INTEGER, name="numTrains")
 
-TramUnits = model.addVar(vtype=GRB.INTEGER, name="TramUnits")
+numTrams = model.addVar(vtype=GRB.INTEGER, name="numTrams")
 
 
 
 ### Define the constraints
 
-model.addConstr(TrainCapacity * TrainUnits + TramCapacity * TramUnits >= MinPeoplePerHour)
-model.addConstr(TramUnits >= MinTramsToTrainsRatio * TrainUnits)
-model.addConstr(TrainUnits >= 0)
-model.addConstr(TramUnits >= 0)
+model.addConstr(TrainCapacity * numTrains + TramCapacity * numTrams >= MinPeoplePerHour)
+model.addConstr(numTrams >= MinTramsToTrainsRatio * numTrains)
+model.addConstr(numTrains >= 0)
+model.addConstr(numTrams >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(numTrains + numTrams, GRB.MINIMIZE)
 
 
 ### Optimize the model

@@ -35,35 +35,26 @@ SpecializedHours = model.addVar(vtype=GRB.CONTINUOUS, name="SpecializedHours")
 
 CommonHours = model.addVar(vtype=GRB.CONTINUOUS, name="CommonHours")
 
-SpecializedImages = model.addVar(vtype=GRB.CONTINUOUS, name="SpecializedImages")
-
-CommonImages = model.addVar(vtype=GRB.CONTINUOUS, name="CommonImages")
-
 
 
 ### Define the constraints
 
+model.addConstr(SpecializedAnnotRate * SpecializedHours + CommonAnnotRate * CommonHours >= MinTotalImages)
 model.addConstr(
-    SpecializedAnnotRate * SpecializedHours + 
-    CommonAnnotRate * CommonHours 
-    >= MinTotalImages
+    SpecializedAnnotRate * SpecializedHours 
+    >= MinSpecializedFraction * (SpecializedAnnotRate * SpecializedHours + CommonAnnotRate * CommonHours)
 )
-model.addConstr(
-    SpecializedAnnotRate * SpecializedHours
-    >= MinSpecializedFraction * (
-        SpecializedAnnotRate * SpecializedHours
-        + CommonAnnotRate * CommonHours
-    )
-)
-model.addConstr(SpecializedImages == SpecializedAnnotRate * SpecializedHours)
-model.addConstr(CommonImages == CommonAnnotRate * CommonHours)
 model.addConstr(SpecializedHours >= 0)
 model.addConstr(CommonHours >= 0)
 
 
 ### Define the objective
 
-model.setObjective(SpecializedCostPerHour * SpecializedHours + CommonCostPerHour * CommonHours, GRB.MINIMIZE)
+model.setObjective(
+    SpecializedCostPerHour * SpecializedHours +
+    CommonCostPerHour * CommonHours,
+    GRB.MINIMIZE
+)
 
 
 ### Optimize the model

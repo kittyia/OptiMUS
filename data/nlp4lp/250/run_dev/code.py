@@ -31,23 +31,29 @@ MinRequired = data["MinRequired"] # shape: ['NumProducts'], definition: Minimum 
 
 ### Define the variables
 
-xA = model.addVar(vtype=GRB.CONTINUOUS, name="xA")
-
-xB = model.addVar(vtype=GRB.CONTINUOUS, name="xB")
+MethodHours = model.addVars(NumMethods, vtype=GRB.CONTINUOUS, name="MethodHours")
 
 
 
 ### Define the constraints
 
-model.addConstr(14 * xA + 25 * xB >= 1000)
-model.addConstr(SpecialElementConsumption[0] * xA + SpecialElementConsumption[1] * xB <= TotalSpecialElement)
-model.addConstr(xA >= 0)
-model.addConstr(xB >= 0)
+model.addConstr(
+    sum(SpecialElementConsumption[m] * MethodHours[m] for m in range(NumMethods))
+    <= TotalSpecialElement
+)
+model.addConstr(
+    sum(ProductionRate[0][m] * MethodHours[m] for m in range(NumMethods)) >= 1400
+)
+model.addConstr(
+    sum(ProductionRate[1][m] * MethodHours[m] for m in range(NumMethods)) >= 1000
+)
+for m in range(NumMethods):
+    model.addConstr(MethodHours[m] >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(quicksum(MethodHours[m] for m in range(NumMethods)), GRB.MINIMIZE)
 
 
 ### Optimize the model

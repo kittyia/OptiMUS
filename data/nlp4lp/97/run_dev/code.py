@@ -48,11 +48,12 @@ ChickenMeals = model.addVar(vtype=GRB.INTEGER, name="ChickenMeals")
 model.addConstr(IronPerFishMeal * FishMeals + IronPerChickenMeal * ChickenMeals >= MinimumIron)
 model.addConstr(ChickenMeals >= 2 * FishMeals)
 model.addConstr(FishMeals >= 0)
+model.addConstr(ChickenMeals >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(FatPerFishMeal * FishMeals + FatPerChickenMeal * ChickenMeals, GRB.MINIMIZE)
 
 
 ### Optimize the model

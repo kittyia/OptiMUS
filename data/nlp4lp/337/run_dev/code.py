@@ -37,7 +37,7 @@ NickelMax = data["NickelMax"] # shape: ['S'], definition: Maximum allowed nickel
 
 ### Define the variables
 
-alloyUse = model.addVars(S, A, vtype=GRB.CONTINUOUS, name="alloyUse")
+alloyUse = model.addVars(A, S, vtype=GRB.CONTINUOUS, name="alloyUse")
 
 totalSteel = model.addVars(S, vtype=GRB.CONTINUOUS, name="totalSteel")
 
@@ -46,33 +46,35 @@ totalSteel = model.addVars(S, vtype=GRB.CONTINUOUS, name="totalSteel")
 ### Define the constraints
 
 for s in range(S):
-    model.addConstr(totalSteel[s] == sum(alloyUse[s, a] for a in range(A)))
+    model.addConstr(
+        totalSteel[s] == sum(alloyUse[a, s] for a in range(A))
+    )
 for a in range(A):
     model.addConstr(
-        sum(alloyUse[s, a] for s in range(S)) <= AvailableAlloy[a]
+        sum(alloyUse[a, s] for s in range(S)) <= AvailableAlloy[a]
     )
 for s in range(S):
     model.addConstr(
-        sum(CarbonContent[a] * alloyUse[s, a] for a in range(A))
+        sum(CarbonContent[a] * alloyUse[a, s] for a in range(A)) 
         >= CarbonMin[s] * totalSteel[s]
     )
 for s in range(S):
     model.addConstr(
-        sum(NickelContent[a] * alloyUse[s, a] for a in range(A))
+        sum(NickelContent[a] * alloyUse[a, s] for a in range(A))
         <= NickelMax[s] * totalSteel[s]
     )
 for s in range(S):
-    model.addConstr(alloyUse[s, 0] <= 0.4 * totalSteel[s])
-for s in range(S):
-    for a in range(A):
-        model.addConstr(alloyUse[s, a] >= 0)
+    model.addConstr(alloyUse[0, s] <= 0.4 * totalSteel[s])
+for a in range(A):
+    for s in range(S):
+        model.addConstr(alloyUse[a, s] >= 0)
 
 
 ### Define the objective
 
 model.setObjective(
     quicksum(SteelPrice[s] * totalSteel[s] for s in range(S))
-    - quicksum(AlloyPrice[a] * alloyUse[s, a] for s in range(S) for a in range(A)),
+    - quicksum(AlloyPrice[a] * alloyUse[a, s] for a in range(A) for s in range(S)),
     GRB.MAXIMIZE
 )
 

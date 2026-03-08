@@ -1,42 +1,44 @@
 ----
-Step-by-step reasoning:
+**Step-by-step reasoning**
 
 1. **Capacity constraint**  
-   > 10 times the number of canoes plus 15 times the number of diesel boats must be at least 1000  
-   This ensures enough fish are transported. It is essential and cannot be removed or merged with others.
+   \[
+   10C + 15D \ge 1000
+   \]  
+   This is essential and cannot be removed or simplified further.
 
 2. **Environmental ratio constraint**  
-   > The number of canoes used must be at least 3 times the number of diesel boats used  
-   This directly encodes the regulatory requirement. It is essential and cannot be removed.
+   \[
+   C \ge 3D
+   \]  
+   This is also essential and cannot be removed.
 
-3. **Non-negativity of canoes**  
-   > The number of canoes used must be non-negative  
+3. **Nonnegativity constraints**  
+   - \( C \ge 0 \)  
+   - \( D \ge 0 \)
 
-4. **Non-negativity of diesel boats**  
-   > The number of diesel boats used must be non-negative  
+   Since we already require that both variables are integers, we can combine nonnegativity and integrality into a single statement:  
+   **“C and D are nonnegative integers.”**
 
-Now check redundancy:
+   Additionally, note that if \( D \ge 0 \) and \( C \ge 3D \), then automatically \( C \ge 0 \).  
+   So the standalone constraint \( C \ge 0 \) is redundant.
 
-- If we keep  
-  - \( C \ge 3D \)  
-  - \( D \ge 0 \)  
+4. **Integrality constraint**  
+   - “Number of canoes and number of diesel boats are integers”
 
-  then since \( D \ge 0 \), we have \( 3D \ge 0 \).  
-  Because \( C \ge 3D \), it follows that \( C \ge 0 \).
+   This can be combined with nonnegativity into one constraint.
 
-  Therefore, the non-negativity constraint on canoes is **implied** by the ratio constraint together with diesel boat non-negativity.
+---
 
-- However, diesel boat non-negativity **cannot** be removed. Without it, negative diesel boats could satisfy the other constraints.
+### ✅ Updated list of constraints
 
-Thus, **"The number of canoes used must be non-negative" is redundant** and can be removed.
-
-Updated list of constraints:
-
+```python
 [
-    "10 times the number of canoes plus 15 times the number of diesel boats must be at least 1000",
-    "The number of canoes used must be at least 3 times the number of diesel boats used",
-    "The number of diesel boats used must be non-negative"
+    "10 * (number of canoes) + 15 * (number of diesel boats) >= 1000",
+    "Number of canoes >= 3 * (number of diesel boats)",
+    "Number of canoes and number of diesel boats are nonnegative integers"
 ]
+```
 ----
 +++++++++++++++++++
 ++ Constraint Qs ++
@@ -75,7 +77,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: 10 times the number of canoes plus 15 times the number of diesel boats must be at least 1000
+Consider this potential constraint: 10 * (number of canoes) + 15 * (number of diesel boats) >= 1000
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -85,25 +87,41 @@ Consider this potential constraint: 10 times the number of canoes plus 15 times 
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is absolutely a constraint and it should be explicitly included in the (MI)LP formulation.
+Yes, this **is definitely a constraint**, and it should explicitly appear in the MILP formulation.
 
-Reasoning step by step:
+### Why?
 
-- Each canoe carries 10 fish.
-- Each diesel boat carries 15 fish.
-- Let:
-  - \( C \) = number of canoes  
-  - \( D \) = number of diesel boats  
-- The total number of fish transported is therefore:
-  \[
-  10C + 15D
-  \]
-- The problem states that **at least 1000 fish must be transported to shore**, which translates directly into:
-  \[
-  10C + 15D \ge 1000
-  \]
+The problem states:
 
-This is a fundamental feasibility constraint. Without it, the model would minimize the number of boats by choosing zero boats, which would violate the requirement to transport at least 1000 fish. Therefore, it is essential to explicitly include this constraint in the formulation.
+> “If at least 1000 fish need to be transported to shore…”
+
+This directly translates into a **minimum total capacity requirement**. Since:
+- Each canoe carries 10 fish
+- Each diesel boat carries 15 fish
+
+If we let:
+- \( C \) = number of canoes  
+- \( D \) = number of diesel boats  
+
+Then the total number of fish transported is:
+
+\[
+10C + 15D
+\]
+
+To ensure at least 1000 fish are transported:
+
+\[
+10C + 15D \ge 1000
+\]
+
+This is a core feasibility constraint. Without it, the model would simply minimize the number of boats by choosing zero boats, which would not satisfy the problem requirement.
+
+### Conclusion
+
+✅ This is absolutely a necessary constraint.  
+✅ It must be explicitly included in the (MI)LP formulation.  
+✅ It directly encodes a hard requirement from the problem statement.
 
 **5 OUT OF 5**
 +--+
@@ -144,7 +162,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: The number of canoes used must be at least 3 times the number of diesel boats used
+Consider this potential constraint: Number of canoes >= 3 * (number of diesel boats)
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -154,25 +172,23 @@ Consider this potential constraint: The number of canoes used must be at least 3
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is clearly a constraint and should be explicitly modeled in the (MI)LP formulation.
+Yes, this is explicitly a constraint.
 
-The problem statement says:  
-> “In order to follow environmental rules, the number of small canoes used has to be at least 3 times as many as the number of diesel boats used.”
+The problem states:  
+> “the number of small canoes used has to be at least 3 times as many as the number of diesel boats used.”
 
-This directly imposes a structural restriction on the decision variables. If we let:
-
-- \( x \) = number of canoes  
-- \( y \) = number of diesel boats  
-
-then the condition translates to:
+This directly translates to the mathematical constraint:
 
 \[
-x \ge 3y
+\text{Number of Canoes} \ge 3 \times \text{Number of Diesel Boats}
 \]
 
-This is not optional, not descriptive, and not implied by the objective — it is a hard requirement imposed by environmental regulations. Therefore, it must be explicitly included as a constraint in the model.
+This is not implied or optional — it is a regulatory requirement (“in order to follow environmental rules”), which makes it a hard constraint that must be included in the (mixed-integer) linear programming formulation.
 
-There is no ambiguity in interpretation, and it directly matches the provided parameter `CanoeToBoatRatio`.
+Therefore:
+- ✅ It is definitely a constraint.
+- ✅ It must be explicitly modeled.
+- ✅ It is clearly and unambiguously stated.
 
 **5 OUT OF 5**
 +--+
@@ -213,7 +229,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: The number of diesel boats used must be non-negative
+Consider this potential constraint: Number of canoes and number of diesel boats are nonnegative integers
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -223,27 +239,34 @@ Consider this potential constraint: The number of diesel boats used must be non-
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this **is** a constraint.
+Yes, this **is** a constraint and it should be explicitly modeled in the (MI)LP formulation.
 
-In an optimization model, the number of diesel boats is a decision variable representing a physical quantity. It cannot be negative in reality, so we must enforce:
+### Why?
 
-\[
-\text{DieselBoats} \ge 0
-\]
+The decision variables in this problem are:
 
-Even though non-negativity is often treated as a *standard domain restriction* (rather than a “structural” constraint like the capacity or ratio constraints), it is still an essential modeling requirement. Without it, the solver could assign negative values, which would be infeasible in the real-world context and could distort the objective.
+- Number of canoes  
+- Number of diesel boats  
 
-In a proper (MI)LP formulation, this would typically be included either:
+Because these represent **counts of physical items**, they:
 
-- Explicitly as a constraint:  
-  \[
-  D \ge 0
-  \]
-- Or implicitly through the variable declaration (e.g., integer, lower bound 0).
+1. **Cannot be negative** → Nonnegativity is required.  
+2. **Cannot be fractional** → Integrality is required.  
 
-Since this is a count of boats, we would also typically require it to be an integer variable, but that is a separate modeling decision.
+In mathematical programming, these are enforced as **domain constraints** (e.g., \( x \ge 0 \), \( x \in \mathbb{Z} \)). Even though they may seem “obvious,” they are essential to correctly defining the feasible region.
 
-**Confidence level: 5 OUT OF 5**
+Without:
+- **Nonnegativity**, the solver could choose negative boats.
+- **Integrality**, the solver could choose fractional boats (e.g., 3.7 canoes).
+
+Thus, this must be explicitly modeled in the MILP formulation.
+
+### Conclusion
+
+✅ Yes, this is a constraint (specifically a domain constraint).  
+✅ It should definitely be included in the formulation.  
+
+**5 OUT OF 5**
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -259,14 +282,14 @@ Extracting constraint formulations
 
 ----
 {
-    "FORMULATION": "$10 \\, Canoes + 15 \\, DieselBoats \\geq 1000$",
+    "FORMULATION": "$10 \\cdot NumCanoes + 15 \\cdot NumDieselBoats \\geq 1000$",
     "NEW VARIABLES": {
-        "Canoes": {
+        "NumCanoes": {
             "shape": [],
             "type": "integer",
-            "definition": "Number of canoes used to transport fish"
+            "definition": "Number of small canoes used to transport fish"
         },
-        "DieselBoats": {
+        "NumDieselBoats": {
             "shape": [],
             "type": "integer",
             "definition": "Number of small diesel boats used to transport fish"
@@ -277,33 +300,33 @@ Extracting constraint formulations
 ----
 ----
 EXTRACTED ITEMS
-$10 \\, Canoes + 15 \\, DieselBoats \\geq 1000$
-{'Canoes': {'shape': [], 'type': 'integer', 'definition': 'Number of canoes used to transport fish'}, 'DieselBoats': {'shape': [], 'type': 'integer', 'definition': 'Number of small diesel boats used to transport fish'}}
+$10 \\cdot NumCanoes + 15 \\cdot NumDieselBoats \\geq 1000$
+{'NumCanoes': {'shape': [], 'type': 'integer', 'definition': 'Number of small canoes used to transport fish'}, 'NumDieselBoats': {'shape': [], 'type': 'integer', 'definition': 'Number of small diesel boats used to transport fish'}}
 []
 ----
 ----
 {
-    "FORMULATION": "$Canoes \\geq CanoeToBoatRatio \\cdot DieselBoats$",
+    "FORMULATION": "$NumCanoes \\ge CanoeToBoatRatio \\cdot NumDieselBoats$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$Canoes \\geq CanoeToBoatRatio \\cdot DieselBoats$
+$NumCanoes \\ge CanoeToBoatRatio \\cdot NumDieselBoats$
 {}
 []
 ----
 ----
 {
-    "FORMULATION": "$DieselBoats \\geq 0$",
+    "FORMULATION": "$NumCanoes \\in \\mathbb{Z}_{\\ge 0}, \\; NumDieselBoats \\in \\mathbb{Z}_{\\ge 0}$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$DieselBoats \\geq 0$
+$NumCanoes \\in \\mathbb{Z}_{\\ge 0}, \\; NumDieselBoats \\in \\mathbb{Z}_{\\ge 0}$
 {}
 []
 ----
@@ -314,8 +337,8 @@ Gurobi Optimizer version 13.0.1 build v13.0.1rc0 (linux64 - "Alibaba Cloud Linux
 CPU model: Intel(R) Xeon(R) Platinum, instruction set [SSE2|AVX|AVX2|AVX512]
 Thread count: 1 physical cores, 2 logical processors, using up to 2 threads
 
-Optimize a model with 3 rows, 2 columns and 5 nonzeros (Min)
-Model fingerprint: 0xd7e9be9a
+Optimize a model with 4 rows, 2 columns and 6 nonzeros (Min)
+Model fingerprint: 0x42226135
 Model has 2 linear objective coefficients
 Variable types: 0 continuous, 2 integer (0 binary)
 Coefficient statistics:
@@ -325,7 +348,7 @@ Coefficient statistics:
   RHS range        [1e+03, 1e+03]
 
 Found heuristic solution: objective 100.0000000
-Presolve removed 1 rows and 0 columns
+Presolve removed 2 rows and 0 columns
 Presolve time: 0.00s
 Presolved: 2 rows, 2 columns, 4 nonzeros
 Variable types: 0 continuous, 2 integer (0 binary)

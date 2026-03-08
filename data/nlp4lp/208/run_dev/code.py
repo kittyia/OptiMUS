@@ -29,24 +29,24 @@ MaxTotalSupplyTacos = data["MaxTotalSupplyTacos"] # shape: [], definition: Maxim
 
 ### Define the variables
 
-x1 = model.addVar(vtype=GRB.CONTINUOUS, name="x1")
+x1 = model.addVar(vtype=GRB.INTEGER, name="x1")
 
-x2 = model.addVar(vtype=GRB.CONTINUOUS, name="x2")
+x2 = model.addVar(vtype=GRB.INTEGER, name="x2")
 
 
 
 ### Define the constraints
 
 model.addConstr(x1 >= 0)
-model.addConstr(x2 >= 0)
 model.addConstr(x1 <= MaxDemandRegularTacos)
+model.addConstr(x2 >= 0)
 model.addConstr(x2 <= MaxDemandDeluxeTacos)
 model.addConstr(x1 + x2 <= MaxTotalSupplyTacos)
 
 
 ### Define the objective
 
-
+model.setObjective(ProfitPerRegularTaco * x1 + ProfitPerDeluxeTaco * x2, GRB.MAXIMIZE)
 
 
 ### Optimize the model

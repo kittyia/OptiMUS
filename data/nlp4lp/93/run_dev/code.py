@@ -46,13 +46,13 @@ model.addConstr(
     ToothMedicationPerLargeBone * LargeBones
     <= TotalToothMedication
 )
-model.addConstr(SmallBones >= MinProportionSmallBones * (SmallBones + LargeBones))
+model.addConstr((1 - MinProportionSmallBones) * SmallBones - MinProportionSmallBones * LargeBones >= 0)
 model.addConstr(LargeBones >= MinLargeBones)
 
 
 ### Define the objective
 
-
+model.setObjective(MeatPerSmallBone * SmallBones + MeatPerLargeBone * LargeBones, GRB.MINIMIZE)
 
 
 ### Optimize the model

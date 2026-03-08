@@ -43,16 +43,14 @@ CarTrips = model.addVar(vtype=GRB.INTEGER, name="CarTrips")
 
 model.addConstr(BusCapacity * BusTrips + CarCapacity * CarTrips >= TotalMonkeys)
 model.addConstr(BusTrips <= MaxBusTrips)
-model.addConstr(2 * CarTrips >= 3 * BusTrips)
-model.addConstr(BusTrips >= 0)
-model.addConstr(CarTrips >= 0)
+model.addConstr(CarTrips >= MinCarTripFraction * (BusTrips + CarTrips))
 model.addConstr(BusTrips >= 0)
 model.addConstr(CarTrips >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(BusTripTime * BusTrips + CarTripTime * CarTrips, GRB.MINIMIZE)
 
 
 ### Optimize the model

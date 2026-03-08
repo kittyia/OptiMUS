@@ -33,22 +33,25 @@ MinNumMolars = data["MinNumMolars"] # shape: [], definition: Minimum number of m
 
 ### Define the variables
 
-M = model.addVar(vtype=GRB.INTEGER, name="M")
+NumMolars = model.addVar(vtype=GRB.INTEGER, name="NumMolars")
 
-C = model.addVar(vtype=GRB.INTEGER, name="C")
+NumCanines = model.addVar(vtype=GRB.INTEGER, name="NumCanines")
 
 
 
 ### Define the constraints
 
-model.addConstr(ResinPerMolar * M + ResinPerCanine * C <= TotalResin)
-model.addConstr(C >= MinPercentageCanines * (M + C))
-model.addConstr(M >= MinNumMolars)
+model.addConstr(ResinPerMolar * NumMolars + ResinPerCanine * NumCanines <= TotalResin)
+model.addConstr(NumCanines >= MinPercentageCanines * (NumMolars + NumCanines))
+model.addConstr(NumMolars >= MinNumMolars)
 
 
 ### Define the objective
 
-
+model.setObjective(
+    PainKillerPerMolar * NumMolars + PainKillerPerCanine * NumCanines,
+    GRB.MINIMIZE
+)
 
 
 ### Optimize the model

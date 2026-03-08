@@ -29,24 +29,22 @@ MinimumGlassBottles = data["MinimumGlassBottles"] # shape: [], definition: The m
 
 ### Define the variables
 
-NumberOfCans = model.addVar(vtype=GRB.INTEGER, name="NumberOfCans")
+NumCans = model.addVar(vtype=GRB.INTEGER, name="NumCans")
 
-NumberOfGlassBottles = model.addVar(vtype=GRB.INTEGER, name="NumberOfGlassBottles")
+NumGlassBottles = model.addVar(vtype=GRB.INTEGER, name="NumGlassBottles")
 
 
 
 ### Define the constraints
 
-model.addConstr(CapacityCan * NumberOfCans + CapacityBottle * NumberOfGlassBottles >= MinimumTotalVolume)
-model.addConstr(NumberOfCans >= RatioCansToBottles * NumberOfGlassBottles)
-model.addConstr(NumberOfGlassBottles >= MinimumGlassBottles)
-model.addConstr(NumberOfCans >= 0)
-model.addConstr(NumberOfGlassBottles >= 0)
+model.addConstr(CapacityCan * NumCans + CapacityBottle * NumGlassBottles >= MinimumTotalVolume)
+model.addConstr(NumCans >= RatioCansToBottles * NumGlassBottles)
+model.addConstr(NumGlassBottles >= MinimumGlassBottles)
 
 
 ### Define the objective
 
-del.setObjective(NumberOfCans + NumberOfGlassBottles, GRB.MAXIMIZE
+model.setObjective(NumCans + NumGlassBottles, GRB.MAXIMIZE)
 
 
 ### Optimize the model

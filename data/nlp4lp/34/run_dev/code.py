@@ -35,27 +35,29 @@ TotalEngineeringHoursAvailable = data["TotalEngineeringHoursAvailable"] # shape:
 
 ### Define the variables
 
-NumberOfScooters = model.addVar(vtype=GRB.INTEGER, name="NumberOfScooters")
+NumScooters = model.addVar(vtype=GRB.INTEGER, name="NumScooters")
 
-NumberOfBikes = model.addVar(vtype=GRB.INTEGER, name="NumberOfBikes")
+NumBikes = model.addVar(vtype=GRB.INTEGER, name="NumBikes")
 
 
 
 ### Define the constraints
 
+model.addConstr(DesignHoursPerScooter * NumScooters + DesignHoursPerBike * NumBikes <= TotalDesignHoursAvailable)
 model.addConstr(
-    DesignHoursPerScooter * NumberOfScooters +
-    DesignHoursPerBike * NumberOfBikes
-    <= TotalDesignHoursAvailable
+    EngineeringHoursPerScooter * NumScooters +
+    EngineeringHoursPerBike * NumBikes
+    <= TotalEngineeringHoursAvailable
 )
-model.addConstr(EngineeringHoursPerScooter * NumberOfScooters + EngineeringHoursPerBike * NumberOfBikes <= TotalEngineeringHoursAvailable)
-model.addConstr(NumberOfScooters >= 0)
-model.addConstr(NumberOfBikes >= 0)
+model.addConstr(NumScooters >= 0)
+model.addConstr(NumBikes >= 0)
+model.addConstr(NumScooters >= 0)
+model.addConstr(NumBikes >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(ProfitPerScooter * NumScooters + ProfitPerBike * NumBikes, GRB.MAXIMIZE)
 
 
 ### Optimize the model

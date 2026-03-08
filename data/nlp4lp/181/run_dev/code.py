@@ -41,16 +41,16 @@ CarTrips = model.addVar(vtype=GRB.INTEGER, name="CarTrips")
 
 ### Define the constraints
 
-model.addConstr(TruckTrips >= 0)
-model.addConstr(TruckTrips <= MaxTruckTrips)
-model.addConstr(CarTrips >= 0)
-model.addConstr(CarTrips >= (MinCarTripPercentage / 100.0) * (TruckTrips + CarTrips))
 model.addConstr(TruckCapacity * TruckTrips + CarCapacity * CarTrips >= MinTotalPackages)
+model.addConstr(TruckTrips <= MaxTruckTrips)
+model.addConstr(CarTrips >= (MinCarTripPercentage / 100) * (TruckTrips + CarTrips))
+model.addConstr(TruckTrips >= 0)
+model.addConstr(CarTrips >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(TruckGas * TruckTrips + CarGas * CarTrips, GRB.MINIMIZE)
 
 
 ### Optimize the model

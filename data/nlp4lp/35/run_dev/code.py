@@ -39,17 +39,19 @@ AcresPlanted = model.addVars(NumCrops, vtype=GRB.CONTINUOUS, name="AcresPlanted"
 
 ### Define the constraints
 
-model.addConstr(sum(AcresPlanted[c] for c in range(NumCrops)) <= TotalFarmArea)
 model.addConstr(
-    sum(WateringCostPerAcre[i] * AcresPlanted[i] for i in range(NumCrops))
+    sum(AcresPlanted[c] for c in range(NumCrops)) <= TotalFarmArea
+)
+model.addConstr(
+    sum(WateringCostPerAcre[i] * AcresPlanted[i] for i in range(NumCrops)) 
     <= TotalWateringBudget
 )
 model.addConstr(
     sum(LaborPerAcre[i] * AcresPlanted[i] for i in range(NumCrops)) 
     <= TotalAvailableLabor
 )
-for c in range(NumCrops):
-    model.addConstr(AcresPlanted[c] >= 0)
+for i in range(NumCrops):
+    model.addConstr(AcresPlanted[i] >= 0)
 
 
 ### Define the objective

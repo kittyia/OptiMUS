@@ -31,27 +31,29 @@ ProfitPerProduct = data["ProfitPerProduct"] # shape: ['NumProducts'], definition
 
 ### Define the variables
 
-NumProduced = model.addVars(NumProducts, vtype=GRB.INTEGER, name="NumProduced")
+crepeCakes = model.addVar(vtype=GRB.INTEGER, name="crepeCakes")
+
+spongeCakes = model.addVar(vtype=GRB.INTEGER, name="spongeCakes")
+
+birthdayCakes = model.addVar(vtype=GRB.INTEGER, name="birthdayCakes")
 
 
 
 ### Define the constraints
 
-model.addConstr(
-    sum(BatterPerProduct[i] * NumProduced[i] for i in range(NumProducts)) 
-    <= BatterAvailable
-)
-model.addConstr(
-    sum(MilkPerProduct[i] * NumProduced[i] for i in range(NumProducts)) 
-    <= MilkAvailable
-)
-for i in range(NumProducts):
-    model.addConstr(NumProduced[i] >= 0)
+model.addConstr(400 * crepeCakes + 500 * spongeCakes + 450 * birthdayCakes <= 20000)
+model.addConstr(200 * crepeCakes + 300 * spongeCakes + 350 * birthdayCakes <= 14000)
+model.addConstr(crepeCakes >= 0)
+model.addConstr(spongeCakes >= 0)
+model.addConstr(birthdayCakes >= 0)
+model.addConstr(crepeCakes >= 0)
+model.addConstr(spongeCakes >= 0)
+model.addConstr(birthdayCakes >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(12 * crepeCakes + 10 * spongeCakes + 15 * birthdayCakes, GRB.MAXIMIZE)
 
 
 ### Optimize the model

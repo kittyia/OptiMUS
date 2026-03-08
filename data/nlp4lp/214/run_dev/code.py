@@ -37,15 +37,14 @@ NumBloodTests = model.addVar(vtype=GRB.INTEGER, name="NumBloodTests")
 
 ### Define the constraints
 
-model.addConstr(TimeTemperatureCheck * NumTemperatureChecks + 
-                TimeBloodTest * NumBloodTests <= TotalStaffMinutes)
+model.addConstr(TimeTemperatureCheck * NumTemperatureChecks + TimeBloodTest * NumBloodTests <= TotalStaffMinutes)
 model.addConstr(NumBloodTests >= MinBloodTests)
 model.addConstr(NumTemperatureChecks >= TempToBloodRatio * NumBloodTests)
 
 
 ### Define the objective
 
-
+model.setObjective(NumTemperatureChecks + NumBloodTests, GRB.MAXIMIZE)
 
 
 ### Optimize the model

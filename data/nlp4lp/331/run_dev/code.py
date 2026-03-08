@@ -53,17 +53,17 @@ model.addConstr(
     sum(amount[k] for k in range(NumMinerals)) + numMang == SteelQuantity
 )
 model.addConstr(
-    sum(SiliconContent[k] * amount[k] for k in range(NumMinerals)) 
-    >= SiliconMinPercent * SteelQuantity
+    sum(ManganeseContent[k] * amount[k] for k in range(NumMinerals)) + numMang
+    >= ManganesePercent * SteelQuantity
+)
+model.addConstr(
+    sum((SiliconContent[k] / 100.0) * amount[k] for k in range(NumMinerals)) 
+    >= (SiliconMinPercent / 100.0) * SteelQuantity
 )
 
 model.addConstr(
-    sum(SiliconContent[k] * amount[k] for k in range(NumMinerals)) 
-    <= SiliconMaxPercent * SteelQuantity
-)
-model.addConstr(
-    sum(ManganeseContent[k] * amount[k] for k in range(NumMinerals)) + numMang
-    >= ManganesePercent * SteelQuantity
+    sum((SiliconContent[k] / 100.0) * amount[k] for k in range(NumMinerals)) 
+    <= (SiliconMaxPercent / 100.0) * SteelQuantity
 )
 for k in range(NumMinerals):
     model.addConstr(amount[k] >= 0)

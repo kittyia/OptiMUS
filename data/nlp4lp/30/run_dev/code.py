@@ -42,13 +42,16 @@ AcresCucumbers = model.addVar(vtype=GRB.CONTINUOUS, name="AcresCucumbers")
 model.addConstr(AcresPotatoes + AcresCucumbers <= TotalLandAvailable)
 model.addConstr(AcresPotatoes >= MinAcresPotatoes)
 model.addConstr(AcresCucumbers >= MinAcresCucumbers)
-model.addConstr(AcresCucumbers >= AcresPotatoes)
 model.addConstr(AcresCucumbers <= MaxCucumbersPerPotatoesRatio * AcresPotatoes)
 
 
 ### Define the objective
 
-model.setObjective(ProfitPerAcrePotatoes * AcresPotatoes + ProfitPerAcreCucumbers * AcresCucumbers, GRB.MAXIMIZE)
+model.setObjective(
+    ProfitPerAcrePotatoes * AcresPotatoes + 
+    ProfitPerAcreCucumbers * AcresCucumbers,
+    GRB.MAXIMIZE
+)
 
 
 ### Optimize the model

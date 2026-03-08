@@ -36,10 +36,10 @@ TanksProcessed = model.addVars(NumOilTypes, vtype=GRB.CONTINUOUS, name="TanksPro
 ### Define the constraints
 
 model.addConstr(
-    sum(CompoundRequirement[0][i] * TanksProcessed[i] for i in range(NumOilTypes)) <= 250
+    sum(CompoundRequirement[0][j] * TanksProcessed[j] for j in range(NumOilTypes)) <= 250
 )
 model.addConstr(
-    sum(CompoundRequirement[1][i] * TanksProcessed[i] for i in range(NumOilTypes))
+    sum(CompoundRequirement[1][j] * TanksProcessed[j] for j in range(NumOilTypes)) 
     <= TotalCompoundAvailable[1]
 )
 for i in range(NumOilTypes):
@@ -48,7 +48,7 @@ for i in range(NumOilTypes):
 
 ### Define the objective
 
-
+model.setObjective(quicksum(NetRevenue[i] * TanksProcessed[i] for i in range(NumOilTypes)), GRB.MAXIMIZE)
 
 
 ### Optimize the model

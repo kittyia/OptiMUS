@@ -44,18 +44,19 @@ ClimbingGames = model.addVar(vtype=GRB.INTEGER, name="ClimbingGames")
 model.addConstr(ThrowingGames >= MinRatioThrowingClimbing * ClimbingGames)
 model.addConstr(ClimbingGames >= MinClimbingGames)
 model.addConstr(
-    PrizeCostPerThrowingGame * ThrowingGames +
-    PrizeCostPerClimbingGame * ClimbingGames
+    PrizeCostPerThrowingGame * ThrowingGames
+    + PrizeCostPerClimbingGame * ClimbingGames
     <= MaxPrizeCostPerHour
 )
 
 
 ### Define the objective
 
-del.setObjective(
+model.setObjective(
     CustomersPerThrowingGame * ThrowingGames +
     CustomersPerClimbingGame * ClimbingGames,
     GRB.MAXIMIZE
+)
 
 
 ### Optimize the model

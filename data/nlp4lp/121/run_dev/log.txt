@@ -1,9 +1,9 @@
 ----
 [
-    "80 * Bananas + 100 * Mangoes >= 4000",
-    "Mangoes / (Bananas + Mangoes) <= 0.33",
-    "Bananas >= 0",
-    "Mangoes >= 0"
+    "80 * NumberOfBananas + 100 * NumberOfMangoes >= 4000",
+    "NumberOfMangoes <= MaxMangoFraction * (NumberOfBananas + NumberOfMangoes)",
+    "NumberOfBananas >= 0",
+    "NumberOfMangoes >= 0"
 ]
 ----
 +++++++++++++++++++
@@ -68,7 +68,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: 80 * Bananas + 100 * Mangoes >= 4000
+Consider this potential constraint: 80 * NumberOfBananas + 100 * NumberOfMangoes >= 4000
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -78,39 +78,30 @@ Consider this potential constraint: 80 * Bananas + 100 * Mangoes >= 4000
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is **definitely** a constraint and it should be explicitly included in the (MI)LP formulation.
+Yes, this is definitely a valid constraint.
 
-### Why?
+The problem explicitly states that:
 
-The problem states:
+> *The gorilla must consume at least 4000 calories.*
 
-> *“The gorilla must consume at least 4000 calories.”*
+Each banana provides 80 calories and each mango provides 100 calories. If:
 
-Each fruit contributes calories:
-- Banana: 80 calories  
-- Mango: 100 calories  
+- \( B \) = NumberOfBananas  
+- \( M \) = NumberOfMangoes  
 
-If:
-- `Bananas` = number of bananas  
-- `Mangoes` = number of mangoes  
-
-Then total calories consumed is:
+Then total calorie intake is:
 
 \[
-80 \cdot \text{Bananas} + 100 \cdot \text{Mangoes}
+80B + 100M
 \]
 
-The requirement "at least 4000 calories" translates directly into:
+Since the gorilla must consume **at least** 4000 calories, the correct constraint is:
 
 \[
-80 \cdot \text{Bananas} + 100 \cdot \text{Mangoes} \ge 4000
+80B + 100M \ge 4000
 \]
 
-This is a **core feasibility constraint**, not optional or derived indirectly. Without it, the model would not enforce the caloric requirement.
-
-### Conclusion
-✅ This is absolutely a constraint.  
-✅ It must be explicitly included in the formulation.  
+This directly models the minimum calorie requirement and is essential to the feasibility of the optimization problem. It must be explicitly included in the (MI)LP formulation.
 
 **5 OUT OF 5**
 +--+
@@ -176,7 +167,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: Mangoes / (Bananas + Mangoes) <= 0.33
+Consider this potential constraint: NumberOfMangoes <= MaxMangoFraction * (NumberOfBananas + NumberOfMangoes)
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -186,47 +177,32 @@ Consider this potential constraint: Mangoes / (Bananas + Mangoes) <= 0.33
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is absolutely a real constraint and it should be modeled.
+Yes, this **is** a valid and necessary constraint.
 
 The statement:
 
-> “Since the gorilla prefers bananas, at most 33% of the fruits he eats can be mangoes.”
+> “At most 33% of the fruits he eats can be mangoes.”
 
-directly translates to:
-
-\[
-\frac{\text{Mangoes}}{\text{Bananas} + \text{Mangoes}} \le 0.33
-\]
-
-So conceptually, this is **exactly** the correct mathematical expression of that requirement.
-
-Although written as a fractional constraint (which is nonlinear), it can be easily linearized:
+translates mathematically to:
 
 \[
-\frac{M}{B + M} \le 0.33
+\frac{\text{NumberOfMangoes}}{\text{NumberOfBananas} + \text{NumberOfMangoes}} \le \text{MaxMangoFraction}
 \]
 
-Multiply both sides by \(B + M\) (which is positive):
+Multiplying both sides by \((\text{NumberOfBananas} + \text{NumberOfMangoes})\) gives:
 
 \[
-M \le 0.33(B + M)
+\text{NumberOfMangoes} \le \text{MaxMangoFraction} \cdot (\text{NumberOfBananas} + \text{NumberOfMangoes})
 \]
 
-\[
-M \le 0.33B + 0.33M
-\]
+This is exactly the proposed constraint.
 
-\[
-0.67M \le 0.33B
-\]
+It is:
+- Directly derived from the problem statement  
+- Necessary to enforce the preference restriction  
+- Linear (so it belongs in an LP/MILP model)  
 
-\[
-M \le \frac{0.33}{0.67} B
-\]
-
-So this becomes a standard linear constraint suitable for an LP/MILP.
-
-There is no ambiguity in the text — this requirement is explicitly stated and must be included in the model.
+Therefore, it **should absolutely be included** in the formulation.
 
 **5 OUT OF 5**
 +--+
@@ -292,7 +268,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: Bananas >= 0
+Consider this potential constraint: NumberOfBananas >= 0
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -302,30 +278,24 @@ Consider this potential constraint: Bananas >= 0
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, **Bananas ≥ 0** is indeed a constraint.
+Yes, **`NumberOfBananas ≥ 0` is absolutely a constraint**.
 
 ### Step-by-step reasoning:
 
-- The number of bananas the gorilla eats is a **decision variable**.
-- In reality, the gorilla cannot eat a negative number of bananas.
-- Therefore, this is a **non-negativity constraint**, which is standard and necessary in LP/MILP formulations unless otherwise specified.
-- Even though non-negativity is often implicit in mathematical modeling, it **must be explicitly stated** in a formal optimization model.
+- `NumberOfBananas` is a decision variable.
+- It represents a physical quantity (how many bananas the gorilla eats).
+- A negative number of bananas is physically impossible.
+- Therefore, non-negativity is required for the model to make real-world sense.
 
-So this constraint is:
+In linear and mixed-integer programming, **non-negativity constraints are fundamental modeling constraints**, even if sometimes solvers assume non-negativity by default. From a modeling perspective, they *must* be explicitly included unless otherwise specified.
 
-\[
-\text{Bananas} \ge 0
-\]
+Without this constraint, the solver could assign negative bananas to artificially reduce sugar intake while still meeting calorie/potassium constraints — which would be nonsensical.
 
-and similarly, we would also require:
+So:
 
-\[
-\text{Mangoes} \ge 0
-\]
-
-### Confidence
-
-This is a fundamental modeling requirement. I am fully confident it should be included.
+- ✅ It *is* a real constraint.
+- ✅ It *should* be explicitly modeled (unless the modeling framework automatically enforces non-negativity).
+- ✅ Confidence is very high.
 
 **5 OUT OF 5**
 +--+
@@ -391,7 +361,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: Mangoes >= 0
+Consider this potential constraint: NumberOfMangoes >= 0
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -401,20 +371,21 @@ Consider this potential constraint: Mangoes >= 0
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, **Mangoes ≥ 0** is indeed a constraint.
+Yes, **NumberOfMangoes ≥ 0** is indeed a constraint.
 
-### Why?
+In any (MI)LP formulation, decision variables representing quantities of physical items (like number of mangoes) must be **nonnegative**, since negative quantities are not physically meaningful. While nonnegativity is sometimes treated as an implicit default in mathematical programming, it is still formally a constraint that must be part of the model definition.
 
-The number of mangoes represents a physical quantity (how many mangoes the gorilla eats). It cannot be negative in reality. In an optimization model, decision variables representing quantities of items must include **non-negativity constraints** unless otherwise specified.
+Because the number of mangoes represents a count of fruits consumed, it must satisfy:
 
-Even if not explicitly stated in the problem description, non-negativity is a **standard and necessary modeling assumption** for quantities of food consumed.
+\[
+\text{NumberOfMangoes} \ge 0
+\]
 
-Without this constraint, the solver could assign a negative value to mangoes to artificially reduce sugar intake or manipulate other constraints, which would be physically meaningless.
+(And typically it would also be integer, though that is a separate modeling choice.)
 
-Therefore, it **must be explicitly included** in the LP/MILP formulation.
+So yes — this is a valid and necessary modeling constraint.
 
-### Confidence
-5 OUT OF 5
+**5 OUT OF 5**
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -430,14 +401,14 @@ Extracting constraint formulations
 
 ----
 {
-    "FORMULATION": "$80 \\cdot Bananas + 100 \\cdot Mangoes \\geq 4000$",
+    "FORMULATION": "$80 \\cdot NumberOfBananas + 100 \\cdot NumberOfMangoes \\geq 4000$",
     "NEW VARIABLES": {
-        "Bananas": {
+        "NumberOfBananas": {
             "shape": [],
             "type": "integer",
             "definition": "Number of bananas consumed by the gorilla"
         },
-        "Mangoes": {
+        "NumberOfMangoes": {
             "shape": [],
             "type": "integer",
             "definition": "Number of mangoes consumed by the gorilla"
@@ -448,46 +419,46 @@ Extracting constraint formulations
 ----
 ----
 EXTRACTED ITEMS
-$80 \\cdot Bananas + 100 \\cdot Mangoes \\geq 4000$
-{'Bananas': {'shape': [], 'type': 'integer', 'definition': 'Number of bananas consumed by the gorilla'}, 'Mangoes': {'shape': [], 'type': 'integer', 'definition': 'Number of mangoes consumed by the gorilla'}}
+$80 \\cdot NumberOfBananas + 100 \\cdot NumberOfMangoes \\geq 4000$
+{'NumberOfBananas': {'shape': [], 'type': 'integer', 'definition': 'Number of bananas consumed by the gorilla'}, 'NumberOfMangoes': {'shape': [], 'type': 'integer', 'definition': 'Number of mangoes consumed by the gorilla'}}
 []
 ----
 ----
 {
-    "FORMULATION": "$Mangoes \\leq 0.33 (Bananas + Mangoes)$",
+    "FORMULATION": "$NumberOfMangoes \\leq MaxMangoFraction \\cdot (NumberOfBananas + NumberOfMangoes)$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$Mangoes \\leq 0.33 (Bananas + Mangoes)$
+$NumberOfMangoes \\leq MaxMangoFraction \\cdot (NumberOfBananas + NumberOfMangoes)$
 {}
 []
 ----
 ----
 {
-    "FORMULATION": "$Bananas \\geq 0$",
+    "FORMULATION": "$NumberOfBananas \\geq 0$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$Bananas \\geq 0$
+$NumberOfBananas \\geq 0$
 {}
 []
 ----
 ----
 {
-    "FORMULATION": "$Mangoes \\geq 0$",
+    "FORMULATION": "$NumberOfMangoes \\ge 0$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$Mangoes \\geq 0$
+$NumberOfMangoes \\ge 0$
 {}
 []
 ----
@@ -499,24 +470,37 @@ CPU model: Intel(R) Xeon(R) Platinum, instruction set [SSE2|AVX|AVX2|AVX512]
 Thread count: 1 physical cores, 2 logical processors, using up to 2 threads
 
 Optimize a model with 4 rows, 2 columns and 6 nonzeros (Min)
-Model fingerprint: 0xfce0a624
-Model has 0 linear objective coefficients
+Model fingerprint: 0x10bd15aa
+Model has 2 linear objective coefficients
 Variable types: 0 continuous, 2 integer (0 binary)
 Coefficient statistics:
   Matrix range     [3e-01, 1e+02]
-  Objective range  [0e+00, 0e+00]
+  Objective range  [8e+00, 1e+01]
   Bounds range     [0e+00, 0e+00]
   RHS range        [4e+03, 4e+03]
 
-Found heuristic solution: objective 0.0000000
+Found heuristic solution: objective 500.0000000
+Presolve removed 2 rows and 0 columns
+Presolve time: 0.00s
+Presolved: 2 rows, 2 columns, 4 nonzeros
+Variable types: 0 continuous, 2 integer (0 binary)
 
-Explored 0 nodes (0 simplex iterations) in 0.00 seconds (0.00 work units)
-Thread count was 1 (of 2 available processors)
+Root relaxation: objective 4.316000e+02, 1 iterations, 0.00 seconds (0.00 work units)
 
-Solution count 1: 0 
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0  431.60000    0    1  500.00000  431.60000  13.7%     -    0s
+H    0     0                     440.0000000  431.60000  1.91%     -    0s
+     0     0  431.60000    0    1  440.00000  431.60000  1.91%     -    0s
+
+Explored 1 nodes (1 simplex iterations) in 0.00 seconds (0.00 work units)
+Thread count was 2 (of 2 available processors)
+
+Solution count 2: 440 500 
 
 Optimal solution found (tolerance 1.00e-04)
-Best objective 0.000000000000e+00, best bound 0.000000000000e+00, gap 0.0000%
-Optimal Objective Value:  0.0
-Optimal Objective Value:  0.0
+Best objective 4.400000000000e+02, best bound 4.400000000000e+02, gap 0.0000%
+Optimal Objective Value:  440.0
+Optimal Objective Value:  440.0
 

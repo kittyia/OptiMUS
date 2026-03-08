@@ -33,29 +33,25 @@ DeliveryRate = data["DeliveryRate"] # shape: [], definition: Delivery rate of eq
 
 ### Define the variables
 
-NumberOfCarts = model.addVar(vtype=GRB.INTEGER, name="NumberOfCarts")
+Carts = model.addVar(vtype=GRB.INTEGER, name="Carts")
 
-NumberOfTrolleys = model.addVar(vtype=GRB.INTEGER, name="NumberOfTrolleys")
+Trolleys = model.addVar(vtype=GRB.INTEGER, name="Trolleys")
 
 
 
 ### Define the constraints
 
-model.addConstr(CartTransportRate * NumberOfCarts + TrolleyTransportRate * NumberOfTrolleys >= DeliveryRate)
-model.addConstr(NumberOfTrolleys >= MinTrolleys)
-model.addConstr(
-    TrolleyTransportRate * NumberOfTrolleys
-    <= (MaxTrolleyTransportPercentage / 100.0) * 
-       (CartTransportRate * NumberOfCarts + TrolleyTransportRate * NumberOfTrolleys)
-)
-model.addConstr(NumberOfCarts >= 0)
-model.addConstr(NumberOfCarts >= 0)
-model.addConstr(NumberOfTrolleys >= 0)
+model.addConstr(CartTransportRate * Carts + TrolleyTransportRate * Trolleys >= DeliveryRate)
+model.addConstr(Trolleys >= MinTrolleys)
+model.addConstr(Carts >= 2.1 * Trolleys)
+model.addConstr(Carts >= 0)
+model.addConstr(Carts >= 0)
+model.addConstr(Trolleys >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(CartWorkersRequired * Carts + TrolleyWorkersRequired * Trolleys, GRB.MINIMIZE)
 
 
 ### Optimize the model

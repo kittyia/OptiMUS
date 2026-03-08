@@ -1,38 +1,78 @@
 ----
-Step-by-step analysis:
+Yes, there is redundancy in the list of constraints. Let’s analyze them one by one.
 
-1. **"Units of chemical A must be greater than or equal to 300"**  
-   This constraint is necessary and cannot be removed. It enforces the minimum required amount of chemical A.
+### 1. `Units of chemical A must be greater than or equal to 0`
 
-2. **"Total units of chemicals (A + B) must be greater than or equal to 1500"**  
-   This constraint is also necessary and independent. It enforces the minimum total quantity requirement.
+This constraint is redundant.
 
-3. **"Units of chemical A must be less than or equal to one third of the units of chemical B"**  
-   This constraint is essential to enforce the safety ratio between A and B.
+We already have:
+- **Units of chemical A must be at least MinChemicalA**, and  
+- `MinChemicalA = 300` (which is strictly positive).
 
-4. **"Units of chemical A must be non-negative"**  
-   This is redundant because constraint (1) already enforces \( A \ge 300 \), which automatically guarantees \( A \ge 0 \).
+Since \( A \ge 300 \), it is automatically true that \( A \ge 0 \).  
+Therefore, this constraint can be removed.
 
-5. **"Units of chemical B must be non-negative"**  
-   This is also redundant. From constraints (1) and (3):
-   \[
-   A \ge 300, \quad A \le \frac{1}{3}B
-   \]
-   Combining them:
-   \[
-   300 \le \frac{1}{3}B \Rightarrow B \ge 900
-   \]
-   Thus, \( B \) is automatically non-negative. Therefore, the non-negativity constraint on B is implied and can be removed.
+---
 
-No remaining constraints can be combined, as they represent distinct logical requirements.
+### 2. `Units of chemical B must be greater than or equal to 0`
 
-Updated list of constraints:
+This constraint is also redundant.
 
+We have:
+- \( A \ge 300 \)
+- \( A \le \text{MaxRatioAtoB} \times B \)
+- Here, \( \text{MaxRatioAtoB} = \frac{1}{3} \)
+
+So:
+\[
+A \le \frac{1}{3}B
+\quad \Rightarrow \quad
+3A \le B
+\]
+
+Since \( A \ge 300 \), we get:
+\[
+B \ge 3A \ge 900
+\]
+
+Thus, \( B \ge 0 \) is automatically satisfied.  
+This constraint can also be removed.
+
+---
+
+### 3. `Units of chemical A must be at least MinChemicalA`
+
+Not redundant. Must remain.
+
+---
+
+### 4. `The total units of chemical A and chemical B must be at least MinTotalChemicals`
+
+Not redundant. Must remain.
+
+---
+
+### 5. `Units of chemical A must be less than or equal to MaxRatioAtoB times the units of chemical B`
+
+Not redundant. Must remain.
+
+---
+
+### Can Any Constraints Be Combined?
+
+No pair of remaining constraints can be cleanly combined without changing the model structure. They each represent logically distinct requirements.
+
+---
+
+### ✅ Updated List of Constraints
+
+```python
 [
-    "Units of chemical A must be greater than or equal to 300",
-    "Total units of chemicals (A + B) must be greater than or equal to 1500",
-    "Units of chemical A must be less than or equal to one third of the units of chemical B"
+    "Units of chemical A must be at least MinChemicalA",
+    "The total units of chemical A and chemical B must be at least MinTotalChemicals",
+    "Units of chemical A must be less than or equal to MaxRatioAtoB times the units of chemical B"
 ]
+```
 ----
 +++++++++++++++++++
 ++ Constraint Qs ++
@@ -76,7 +116,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: Units of chemical A must be greater than or equal to 300
+Consider this potential constraint: Units of chemical A must be at least MinChemicalA
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -86,21 +126,20 @@ Consider this potential constraint: Units of chemical A must be greater than or 
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is definitely a constraint.
+Yes, this is clearly a constraint.
 
-The problem statement explicitly says:
-
+The problem statement explicitly says:  
 > “there has to be at least 300 units of chemical A in the mixer”
 
-This directly translates to the inequality:
+This directly translates to the constraint:
 
 \[
-A \ge 300
+A \ge \text{MinChemicalA}
 \]
 
-This is a hard requirement (not implied, not optional, not derived), so it must be explicitly included in the (MI)LP formulation.
+where **MinChemicalA = 300**.
 
-There is no ambiguity in interpretation, and it clearly restricts the feasible region.
+This is not implied or optional — it is a hard requirement given in the description. Therefore, it must be explicitly included in the (MI)LP formulation.
 
 **5 OUT OF 5**
 +--+
@@ -146,7 +185,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: Total units of chemicals (A + B) must be greater than or equal to 1500
+Consider this potential constraint: The total units of chemical A and chemical B must be at least MinTotalChemicals
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -156,23 +195,25 @@ Consider this potential constraint: Total units of chemicals (A + B) must be gre
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is clearly a constraint.
+Yes, this is definitely a constraint and should be explicitly modeled.
 
-The problem statement explicitly says:
+The problem statement clearly says:
 
-> “at least 1500 units of total chemicals in the mixer”
+> "at least 1500 units of total chemicals in the mixer"
 
-This directly translates to the inequality:
+If we let:
+- \( A \) = units of chemical A  
+- \( B \) = units of chemical B  
+
+then this requirement translates directly to:
 
 \[
-A + B \ge 1500
+A + B \ge \text{MinTotalChemicals}
 \]
 
-This is a feasibility requirement (not part of the objective), so it must be explicitly included in the (MI)LP formulation as a constraint.
+This is a hard requirement stated explicitly in the problem, not something implied or derived. Therefore, it must be included in the (MI)LP formulation.
 
-There is no ambiguity in the wording, and it directly imposes a lower bound on the sum of decision variables.
-
-**5 OUT OF 5**
+**Confidence level: 5 OUT OF 5**
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -216,7 +257,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: Units of chemical A must be less than or equal to one third of the units of chemical B
+Consider this potential constraint: Units of chemical A must be less than or equal to MaxRatioAtoB times the units of chemical B
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -226,21 +267,26 @@ Consider this potential constraint: Units of chemical A must be less than or equ
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is clearly a constraint.
+Yes, this is clearly a constraint and should be explicitly included in the (MI)LP formulation.
 
-The statement:
+The problem states:  
+> "Because chemical A can be dangerous, there has to be at most a third as much chemical A as chemical B in the mixer."
 
-> “Because chemical A can be dangerous, there has to be at most a third as much chemical A as chemical B in the mixer.”
-
-directly translates to the mathematical inequality:
+This directly translates to:
 
 \[
 A \le \frac{1}{3} B
 \]
 
-This restricts the feasible region of the optimization problem and is not implied by any other requirement. Therefore, it must be explicitly included in the (MI)LP formulation.
+Given the parameter **MaxRatioAtoB**, this generalizes to:
 
-**Confidence level:** 5 OUT OF 5
+\[
+A \le \text{MaxRatioAtoB} \cdot B
+\]
+
+This is a structural feasibility requirement (a safety restriction), not something implied by the objective or other constraints. Therefore, it must be explicitly modeled.
+
+**Confidence: 5 OUT OF 5**
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -260,7 +306,7 @@ Extracting constraint formulations
     "NEW VARIABLES": {
         "ChemicalAUnits": {
             "shape": [],
-            "type": "continuous",
+            "type": "integer",
             "definition": "Number of units of chemical A added to the mixer"
         }
     },
@@ -270,7 +316,7 @@ Extracting constraint formulations
 ----
 EXTRACTED ITEMS
 $ChemicalAUnits \\geq MinChemicalA$
-{'ChemicalAUnits': {'shape': [], 'type': 'continuous', 'definition': 'Number of units of chemical A added to the mixer'}}
+{'ChemicalAUnits': {'shape': [], 'type': 'integer', 'definition': 'Number of units of chemical A added to the mixer'}}
 []
 ----
 ----
@@ -279,7 +325,7 @@ $ChemicalAUnits \\geq MinChemicalA$
     "NEW VARIABLES": {
         "ChemicalBUnits": {
             "shape": [],
-            "type": "continuous",
+            "type": "integer",
             "definition": "Number of units of chemical B added to the mixer"
         }
     },
@@ -289,7 +335,7 @@ $ChemicalAUnits \\geq MinChemicalA$
 ----
 EXTRACTED ITEMS
 $ChemicalAUnits + ChemicalBUnits \\geq MinTotalChemicals$
-{'ChemicalBUnits': {'shape': [], 'type': 'continuous', 'definition': 'Number of units of chemical B added to the mixer'}}
+{'ChemicalBUnits': {'shape': [], 'type': 'integer', 'definition': 'Number of units of chemical B added to the mixer'}}
 []
 ----
 ----
@@ -313,22 +359,39 @@ CPU model: Intel(R) Xeon(R) Platinum, instruction set [SSE2|AVX|AVX2|AVX512]
 Thread count: 1 physical cores, 2 logical processors, using up to 2 threads
 
 Optimize a model with 3 rows, 2 columns and 5 nonzeros (Min)
-Model fingerprint: 0xff852c22
-Model has 0 linear objective coefficients
+Model fingerprint: 0xfabfe2cd
+Model has 2 linear objective coefficients
+Variable types: 0 continuous, 2 integer (0 binary)
 Coefficient statistics:
   Matrix range     [3e-01, 1e+00]
-  Objective range  [0e+00, 0e+00]
+  Objective range  [3e+01, 4e+01]
   Bounds range     [0e+00, 0e+00]
   RHS range        [3e+02, 2e+03]
 
-Presolve removed 3 rows and 2 columns
+Presolve removed 1 rows and 0 columns
 Presolve time: 0.00s
-Presolve: All rows and columns removed
-Iteration    Objective       Primal Inf.    Dual Inf.      Time
-       0    0.0000000e+00   0.000000e+00   0.000000e+00      0s
+Presolved: 2 rows, 2 columns, 4 nonzeros
+Variable types: 0 continuous, 2 integer (0 binary)
+Found heuristic solution: objective 63000.000000
+Found heuristic solution: objective 62985.000000
+Found heuristic solution: objective 62970.000000
+Found heuristic solution: objective 62955.000000
+Found heuristic solution: objective 62940.000000
 
-Solved in 0 iterations and 0.00 seconds (0.00 work units)
-Optimal objective  0.000000000e+00
-Optimal Objective Value:  0.0
-Optimal Objective Value:  0.0
+Root relaxation: objective 6.187500e+04, 1 iterations, 0.00 seconds (0.00 work units)
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+*    0     0               0    61875.000000 61875.0000  0.00%     -    0s
+
+Explored 1 nodes (1 simplex iterations) in 0.00 seconds (0.00 work units)
+Thread count was 2 (of 2 available processors)
+
+Solution count 6: 61875 62940 62955 ... 63000
+
+Optimal solution found (tolerance 1.00e-04)
+Best objective 6.187500000000e+04, best bound 6.187500000000e+04, gap 0.0000%
+Optimal Objective Value:  61875.0
+Optimal Objective Value:  61875.0
 

@@ -63,40 +63,35 @@
         }
     },
     "objective": {
-        "description": "\"Minimize the total cost of the online advertising campaign\"",
+        "description": "\"Minimize the total cost of the online advertising campaign while meeting the required click and unique click goals for both age groups.\"",
         "formulation": "$\\min \\sum_{a=1}^{NumAdTypes} Costs_a \\, clicks_a$",
         "code": "model.setObjective(quicksum(Costs[a] * clicks[a] for a in range(NumAdTypes)), GRB.MINIMIZE)"
     },
     "constraints": [
         {
-            "description": "For each ad type a, clicks_a <= MaxClicks_a",
-            "formulation": "$\\\\forall a = 1, \\\\dots, \\\\text{NumAdTypes},\\\\; clicks[a] \\\\leq MaxClicks[a]$",
-            "code": "for a in range(NumAdTypes):\n    model.addConstr(clicks[a] <= MaxClicks[a])"
+            "description": "For each ad type a, 0 <= clicks_a <= MaxClicks[a]",
+            "formulation": "$\\\\forall a = 1, \\\\dots, \\\\text{NumAdTypes}, \\\\; 0 \\\\leq clicks[a] \\\\leq MaxClicks[a]$",
+            "code": "for a in range(NumAdTypes):\n    model.addConstr(clicks[a] >= 0)\n    model.addConstr(clicks[a] <= MaxClicks[a])"
         },
         {
-            "description": "For each ad type a, clicks_a >= 0",
-            "formulation": "$\\\\forall a = 1, \\\\dots, NumAdTypes, \\\\; clicks[a] \\\\geq 0$",
-            "code": "for a in range(NumAdTypes):\n    model.addConstr(clicks[a] >= 0)"
-        },
-        {
-            "description": "Sum over all ad types a of (YoungClicks_a * clicks_a) >= GoalYoung",
-            "formulation": "$\\\\sum_{a=1}^{NumAdTypes} YoungClicks_a \\\\cdot clicks_a \\\\geq GoalYoung$",
+            "description": "The total number of young clicks across all ad types must be at least GoalYoung: sum_a (YoungClicks[a] * clicks_a) >= GoalYoung",
+            "formulation": "$\\\\sum_{a=1}^{NumAdTypes} YoungClicks[a] \\\\cdot clicks[a] \\\\geq GoalYoung$",
             "code": "model.addConstr(\n    sum(YoungClicks[a] * clicks[a] for a in range(NumAdTypes)) >= GoalYoung\n)"
         },
         {
-            "description": "Sum over all ad types a of (OldClicks_a * clicks_a) >= GoalOld",
-            "formulation": "$\\\\sum_{a=1}^{NumAdTypes} OldClicks_a \\\\; clicks_a \\\\ge GoalOld$",
+            "description": "The total number of old clicks across all ad types must be at least GoalOld: sum_a (OldClicks[a] * clicks_a) >= GoalOld",
+            "formulation": "$\\\\sum_{a=1}^{NumAdTypes} OldClicks[a] \\\\cdot clicks[a] \\\\geq GoalOld$",
             "code": "model.addConstr(\n    sum(OldClicks[a] * clicks[a] for a in range(NumAdTypes)) >= GoalOld\n)"
         },
         {
-            "description": "Sum over all ad types a of (YoungClicks_a * UniqueClicks_a * clicks_a) >= GoalUniqueYoung",
-            "formulation": "$\\\\sum_{a=1}^{NumAdTypes} YoungClicks_a \\\\cdot UniqueClicks_a \\\\cdot clicks_a \\\\geq GoalUniqueYoung$",
-            "code": "model.addConstr(\n    sum(YoungClicks[a] * UniqueClicks[a] * clicks[a] for a in range(NumAdTypes))\n    >= GoalUniqueYoung\n)"
+            "description": "The total number of unique young clicks across all ad types must be at least GoalUniqueYoung: sum_a (UniqueClicks[a] * YoungClicks[a] * clicks_a) >= GoalUniqueYoung",
+            "formulation": "$\\\\sum_{a=1}^{NumAdTypes} UniqueClicks[a] \\\\cdot YoungClicks[a] \\\\cdot clicks[a] \\\\geq GoalUniqueYoung$",
+            "code": "model.addConstr(\n    sum(UniqueClicks[a] * YoungClicks[a] * clicks[a] for a in range(NumAdTypes)) \n    >= GoalUniqueYoung\n)"
         },
         {
-            "description": "Sum over all ad types a of (OldClicks_a * UniqueClicks_a * clicks_a) >= GoalUniqueOld",
-            "formulation": "$\\\\sum_{a=1}^{NumAdTypes} OldClicks[a] \\\\cdot UniqueClicks[a] \\\\cdot clicks[a] \\\\geq GoalUniqueOld$",
-            "code": "model.addConstr(\n    sum(OldClicks[a] * UniqueClicks[a] * clicks[a] for a in range(NumAdTypes))\n    >= GoalUniqueOld\n)"
+            "description": "The total number of unique old clicks across all ad types must be at least GoalUniqueOld: sum_a (UniqueClicks[a] * OldClicks[a] * clicks_a) >= GoalUniqueOld",
+            "formulation": "$\\\\sum_{a=1}^{NumAdTypes} UniqueClicks[a] \\\\cdot OldClicks[a] \\\\cdot clicks[a] \\\\geq GoalUniqueOld$",
+            "code": "model.addConstr(\n    sum(UniqueClicks[a] * OldClicks[a] * clicks[a] for a in range(NumAdTypes)) \n    >= GoalUniqueOld\n)"
         }
     ],
     "variables": {
@@ -105,7 +100,7 @@
                 "NumAdTypes"
             ],
             "type": "continuous",
-            "definition": "Number of clicks purchased (in thousands) for each ad type"
+            "definition": "Number of clicks purchased for each ad type (in thousands)"
         }
     }
 }

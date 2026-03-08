@@ -29,24 +29,27 @@ ProfitBWPrinter = data["ProfitBWPrinter"] # shape: [], definition: Profit per bl
 
 ### Define the variables
 
-NumColorPrinters = model.addVar(vtype=GRB.INTEGER, name="NumColorPrinters")
+colorPrinters = model.addVar(vtype=GRB.INTEGER, name="colorPrinters")
 
-NumBWPrinters = model.addVar(vtype=GRB.INTEGER, name="NumBWPrinters")
+bwPrinters = model.addVar(vtype=GRB.INTEGER, name="bwPrinters")
 
 
 
 ### Define the constraints
 
-model.addConstr(NumColorPrinters <= MaxColorPrinters))
-model.addConstr(NumBWPrinters <= MaxBWPrinters)
-model.addConstr(NumColorPrinters + NumBWPrinters <= MaxMachineCapacity)
-model.addConstr(NumColorPrinters >= 0)
-model.addConstr(NumBWPrinters >= 0)
+model.addConstr(colorPrinters >= 0)
+model.addConstr(colorPrinters <= MaxColorPrinters)
+model.addConstr(bwPrinters >= 0)
+model.addConstr(bwPrinters <= MaxBWPrinters)
+model.addConstr(colorPrinters + bwPrinters <= MaxMachineCapacity)
 
 
 ### Define the objective
 
-
+model.setObjective(
+    ProfitColorPrinter * colorPrinters + ProfitBWPrinter * bwPrinters,
+    GRB.MAXIMIZE
+)
 
 
 ### Optimize the model

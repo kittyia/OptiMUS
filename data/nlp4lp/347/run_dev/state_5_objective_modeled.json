@@ -29,42 +29,37 @@
         }
     },
     "objective": {
-        "description": "\"Minimize the total travel time required for the delivery person to travel from the intersection of 1st Avenue and 1st Street to the intersection of Wth Avenue and Nth Street.\"",
-        "formulation": "$\\min \\left( \\sum_{n=1}^{N} \\sum_{w=1}^{W-1} WestTime_{n,w} \\cdot WestFlow_{n,w} \\;+\\; \\sum_{n=1}^{N-1} \\sum_{w=1}^{W} NorthTime_{n,w} \\cdot NorthFlow_{n,w} \\right)$"
+        "description": "Minimize the total travel time required for the delivery person to reach the intersection of Wth Avenue and Nth Street from the starting point.",
+        "formulation": "$\\min \\sum_{n=1}^{N} \\sum_{w=1}^{W-1} WestTime_{n,w}\\, xWest_{n,w} \\;+\\; \\sum_{n=1}^{N-1} \\sum_{w=1}^{W} NorthTime_{n,w}\\, xNorth_{n,w}$"
     },
     "constraints": [
         {
-            "description": "Flow balance constraint: At the start node (1,1), total outgoing flow minus total incoming flow equals 1; at the destination node (N,W), total incoming flow minus total outgoing flow equals 1; at all other intersections, total incoming flow equals total outgoing flow",
-            "formulation": "$\\\\text{Start node } (1,1): \\\\quad WestFlow[1,1] + NorthFlow[1,1] = 1$ \\n\\n$\\\\text{Destination node } (N,W): \\\\quad WestFlow[N,W-1] + NorthFlow[N-1,W] = 1$ \\n\\n$\\\\forall n = 1, \\\\dots, N,\\\\; \\\\forall w = 1, \\\\dots, W,$ for $(n,w) \\\\neq (1,1)$ and $(n,w) \\\\neq (N,W)$:\\n\\n$\\\\big( \\\\mathbb{1}_{\\\\{w < W\\\\}} \\\\, WestFlow[n,w] + \\\\mathbb{1}_{\\\\{n < N\\\\}} \\\\, NorthFlow[n,w] \\\\big)\\n-\\n\\\\big( \\\\mathbb{1}_{\\\\{w > 1\\\\}} \\\\, WestFlow[n,w-1] + \\\\mathbb{1}_{\\\\{n > 1\\\\}} \\\\, NorthFlow[n-1,w] \\\\big) = 0$",
+            "description": "Flow conservation at each intersection (n,w): total inflow minus total outflow equals 0 for all intermediate nodes, equals -1 at the starting intersection (1,1), and equals 1 at the destination intersection (N,W)",
+            "formulation": "$\\\\forall n = 1,\\\\dots,N,\\\\; \\\\forall w = 1,\\\\dots,W:\\\\\\\\\\n\\\\left( \\\\mathbb{1}_{w>1} \\\\, xWest[n,w-1] + \\\\mathbb{1}_{n>1} \\\\, xNorth[n-1,w] \\\\right)\\n- \\\\left( \\\\mathbb{1}_{w<W} \\\\, xWest[n,w] + \\\\mathbb{1}_{n<N} \\\\, xNorth[n,w] \\\\right)\\n=\\n\\\\begin{cases}\\n-1 & \\\\text{if } (n,w) = (1,1), \\\\\\\\\\n1 & \\\\text{if } (n,w) = (N,W), \\\\\\\\\\n0 & \\\\text{otherwise.}\\n\\\\end{cases}$",
             "code": null
         },
         {
-            "description": "Flow is allowed only on arcs from (n,w) to (n+1,w) (north) and from (n,w) to (n,w+1) (west)",
-            "formulation": "$\\\\forall n = 1, \\\\dots, N, \\\\; \\\\forall w = 1, \\\\dots, W-1: \\\\; WestFlow[n,w] \\\\in \\\\{0,1\\\\}$\\n\\n$\\\\forall n = 1, \\\\dots, N-1, \\\\; \\\\forall w = 1, \\\\dots, W: \\\\; NorthFlow[n,w] \\\\in \\\\{0,1\\\\}$",
-            "code": null
-        },
-        {
-            "description": "All path decision (flow) variables must be non-negative",
-            "formulation": "$\\\\forall n = 1, \\\\dots, N,\\\\; \\\\forall w = 1, \\\\dots, W-1:\\\\; WestFlow_{n,w} \\\\geq 0 \\\\quad \\\\text{and} \\\\quad \\\\forall n = 1, \\\\dots, N-1,\\\\; \\\\forall w = 1, \\\\dots, W:\\\\; NorthFlow_{n,w} \\\\geq 0$",
+            "description": "Flow on each allowed street segment (northward or westward) must be non-negative",
+            "formulation": "$\\\\forall n = 1, \\\\dots, N,\\\\; \\\\forall w = 1, \\\\dots, W-1:\\\\; xWest[n,w] \\\\ge 0 \\\\quad \\\\text{and} \\\\quad \\\\forall n = 1, \\\\dots, N-1,\\\\; \\\\forall w = 1, \\\\dots, W:\\\\; xNorth[n,w] \\\\ge 0$",
             "code": null
         }
     ],
     "variables": {
-        "WestFlow": {
+        "xWest": {
             "shape": [
                 "N",
                 "W-1"
             ],
-            "type": "binary",
-            "definition": "Equals 1 if the path uses the horizontal arc from intersection (n,w) to (n,w+1), and 0 otherwise"
+            "type": "continuous",
+            "definition": "Flow on the west-directed arc from intersection (n,w) to (n,w+1)"
         },
-        "NorthFlow": {
+        "xNorth": {
             "shape": [
                 "N-1",
                 "W"
             ],
-            "type": "binary",
-            "definition": "Equals 1 if the path uses the vertical arc from intersection (n,w) to (n+1,w), and 0 otherwise"
+            "type": "continuous",
+            "definition": "Flow on the north-directed arc from intersection (n,w) to (n+1,w)"
         }
     }
 }

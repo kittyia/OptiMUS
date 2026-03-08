@@ -33,25 +33,23 @@ TotalCharge = data["TotalCharge"] # shape: [], definition: Total units of charge
 
 ### Define the variables
 
-NumberOfBikes = model.addVar(vtype=GRB.INTEGER, name="NumberOfBikes")
+numBikes = model.addVar(vtype=GRB.INTEGER, name="numBikes")
 
-NumberOfScooters = model.addVar(vtype=GRB.INTEGER, name="NumberOfScooters")
+numScooters = model.addVar(vtype=GRB.INTEGER, name="numScooters")
 
 
 
 ### Define the constraints
 
-model.addConstr(BikeCharge * NumberOfBikes + ScooterCharge * NumberOfScooters <= TotalCharge)
-model.addConstr(7 * NumberOfBikes <= 3 * NumberOfScooters)
-model.addConstr(NumberOfScooters >= MinScooters)
-model.addConstr(NumberOfBikes >= 0)
-model.addConstr(NumberOfBikes >= 0)
-model.addConstr(NumberOfScooters >= 0)
+model.addConstr(BikeCharge * numBikes + ScooterCharge * numScooters <= TotalCharge)
+model.addConstr(7 * numBikes <= 3 * numScooters)
+model.addConstr(numScooters >= MinScooters)
+model.addConstr(numBikes >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(BikeCapacity * numBikes + ScooterCapacity * numScooters, GRB.MAXIMIZE)
 
 
 ### Optimize the model

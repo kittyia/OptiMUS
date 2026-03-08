@@ -38,7 +38,7 @@ AmountFertilizer = model.addVars(NumFertilizers, vtype=GRB.CONTINUOUS, name="Amo
 ### Define the constraints
 
 model.addConstr(
-    sum(NitrousOxidePerFertilizer[i] * AmountFertilizer[i] for i in range(NumFertilizers)) 
+    sum(NitrousOxidePerFertilizer[i] * AmountFertilizer[i] for i in range(NumFertilizers))
     >= RequiredNitrousOxide
 )
 model.addConstr(
@@ -51,7 +51,7 @@ for i in range(NumFertilizers):
 
 ### Define the objective
 
-
+model.setObjective(quicksum(CostFertilizer[i] * AmountFertilizer[i] for i in range(NumFertilizers)), GRB.MINIMIZE)
 
 
 ### Optimize the model

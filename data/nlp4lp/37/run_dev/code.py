@@ -29,21 +29,21 @@ ResourceAvailability = data["ResourceAvailability"] # shape: ['NumResources'], d
 
 ### Define the variables
 
-Production = model.addVars(NumProducts, vtype=GRB.CONTINUOUS, name="Production")
+Batches = model.addVars(NumProducts, vtype=GRB.CONTINUOUS, name="Batches")
 
 
 
 ### Define the constraints
 
-model.addConstr(2 * Production[0] + 1 * Production[1] <= 70)
-model.addConstr(0.25 * Production[0] + 2 * Production[1] <= 32)
-model.addConstr(Production[1] >= 0)
-model.addConstr(Production[1] >= 0)
+model.addConstr(2 * Batches[0] + 1 * Batches[1] <= 70)
+model.addConstr(0.25 * Batches[0] + 2 * Batches[1] <= 32)
+model.addConstr(Batches[1] >= 0)
+model.addConstr(Batches[1] >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(quicksum(Profit[i] * Batches[i] for i in range(NumProducts)), GRB.MAXIMIZE)
 
 
 ### Optimize the model

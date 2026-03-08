@@ -33,23 +33,27 @@ MaxGasUnits = data["MaxGasUnits"] # shape: [], definition: The maximum units of 
 
 ### Define the variables
 
-numAutoElectricJacks = model.addVar(vtype=GRB.INTEGER, name="numAutoElectricJacks")
+AutoElectricJacks = model.addVar(vtype=GRB.INTEGER, name="AutoElectricJacks")
 
-numGasPoweredJacks = model.addVar(vtype=GRB.INTEGER, name="numGasPoweredJacks")
+GasPoweredJacks = model.addVar(vtype=GRB.INTEGER, name="GasPoweredJacks")
 
 
 
 ### Define the constraints
 
-model.addConstr(AutoElectricElectricityUsage * numAutoElectricJacks <= MaxElectricityUnits)
-model.addConstr(GasPoweredGasUsage * numGasPoweredJacks <= MaxGasUnits)
-model.addConstr(numAutoElectricJacks >= 0)
-model.addConstr(numGasPoweredJacks >= 0)
+model.addConstr(6 * AutoElectricJacks <= MaxElectricityUnits)
+model.addConstr(7 * GasPoweredJacks <= MaxGasUnits)
+model.addConstr(AutoElectricJacks >= 0)
+model.addConstr(GasPoweredJacks >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(
+    AutoElectricProcessingRate * AutoElectricJacks +
+    GasPoweredProcessingRate * GasPoweredJacks,
+    GRB.MAXIMIZE
+)
 
 
 ### Optimize the model

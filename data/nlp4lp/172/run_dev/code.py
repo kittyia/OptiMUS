@@ -41,11 +41,9 @@ CarTrips = model.addVar(vtype=GRB.INTEGER, name="CarTrips")
 
 ### Define the constraints
 
-model.addConstr(
-    HelicopterCapacity * HelicopterTrips + CarCapacity * CarTrips >= MinFishToTransport
-)
+model.addConstr(HelicopterCapacity * HelicopterTrips + CarCapacity * CarTrips >= MinFishToTransport)
 model.addConstr(HelicopterTrips <= MaxHelicopterTrips)
-model.addConstr(2 * CarTrips - 3 * HelicopterTrips >= 0)
+model.addConstr(2 * CarTrips >= 3 * HelicopterTrips)
 model.addConstr(HelicopterTrips >= 0)
 model.addConstr(CarTrips >= 0)
 model.addConstr(HelicopterTrips >= 0)
@@ -54,7 +52,7 @@ model.addConstr(CarTrips >= 0)
 
 ### Define the objective
 
-
+model.setObjective(HelicopterTime * HelicopterTrips + CarTime * CarTrips, GRB.MINIMIZE)
 
 
 ### Optimize the model

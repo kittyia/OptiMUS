@@ -29,21 +29,26 @@ MaxCleansingToOdorRatio = data["MaxCleansingToOdorRatio"] # shape: [], definitio
 
 ### Define the variables
 
-CleansingUnits = model.addVar(vtype=GRB.CONTINUOUS, name="CleansingUnits")
+cleansingUnits = model.addVar(vtype=GRB.CONTINUOUS, name="cleansingUnits")
 
-OdorRemovingUnits = model.addVar(vtype=GRB.CONTINUOUS, name="OdorRemovingUnits")
+odorRemovingUnits = model.addVar(vtype=GRB.CONTINUOUS, name="odorRemovingUnits")
 
 
 
 ### Define the constraints
 
-model.addConstr(CleansingUnits >= MinCleansingUnits)
-model.addConstr(CleansingUnits <= MaxCleansingToOdorRatio * OdorRemovingUnits)
+model.addConstr(cleansingUnits >= MinCleansingUnits)
+model.addConstr(cleansingUnits <= MaxCleansingToOdorRatio * odorRemovingUnits)
+model.addConstr(cleansingUnits + odorRemovingUnits >= MaxTotalUnits)
 
 
 ### Define the objective
 
-
+model.setObjective(
+    CleansingChemicalTime * cleansingUnits +
+    OdorRemovingChemicalTime * odorRemovingUnits,
+    GRB.MINIMIZE
+)
 
 
 ### Optimize the model

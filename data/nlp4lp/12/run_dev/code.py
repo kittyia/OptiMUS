@@ -51,7 +51,7 @@ model.addConstr(TemperedPanes >= 0)
 
 ### Define the objective
 
-
+model.setObjective(ProfitRegular * RegularPanes + ProfitTempered * TemperedPanes, GRB.MAXIMIZE)
 
 
 ### Optimize the model

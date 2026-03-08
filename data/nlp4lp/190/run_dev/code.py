@@ -29,21 +29,21 @@ MaxHours = data["MaxHours"] # shape: ['NumMachines'], definition: Maximum availa
 
 ### Define the variables
 
-Batches = model.addVars(NumProducts, vtype=GRB.INTEGER, name="Batches")
+ProduceBatches = model.addVars(NumProducts, vtype=GRB.CONTINUOUS, name="ProduceBatches")
 
 
 
 ### Define the constraints
 
-model.addConstr(4 * Batches[0] + 2 * Batches[1] <= 4000)
-model.addConstr(TimeRequired[1][0] * Batches[0] + TimeRequired[1][1] * Batches[1] <= MaxHours[1])
-model.addConstr(Batches[1] >= 0)
-model.addConstr(Batches[1] >= 0)
+model.addConstr(TimeRequired[0][0] * ProduceBatches[0] + TimeRequired[0][1] * ProduceBatches[1] <= MaxHours[0])
+model.addConstr(2.5 * ProduceBatches[1] + 3.5 * ProduceBatches[2] <= 4000)
+for p in range(NumProducts):
+    model.addConstr(ProduceBatches[p] >= 0)
 
 
 ### Define the objective
 
-model.setObjective(quicksum(ProfitPerBatch[i] * Batches[i] for i in range(NumProducts)), GRB.MAXIMIZE)
+model.setObjective(quicksum(ProfitPerBatch[i] * ProduceBatches[i] for i in range(NumProducts)), GRB.MAXIMIZE)
 
 
 ### Optimize the model

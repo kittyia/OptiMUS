@@ -46,17 +46,18 @@ StrawberryPacks = model.addVar(vtype=GRB.INTEGER, name="StrawberryPacks")
 ### Define the constraints
 
 model.addConstr(
-    AntiOxidantsPerBlueberryPack * BlueberryPacks +
-    AntiOxidantsPerStrawberryPack * StrawberryPacks
+    AntiOxidantsPerBlueberryPack * BlueberryPacks
+    + AntiOxidantsPerStrawberryPack * StrawberryPacks
     >= MinimumAntiOxidants
 )
+model.addConstr(MineralsPerBlueberryPack * BlueberryPacks + MineralsPerStrawberryPack * StrawberryPacks >= MinimumMinerals)
 model.addConstr(StrawberryPacks >= MinimumStrawberriesToBlueberriesRatio * BlueberryPacks)
 model.addConstr(BlueberryPacks >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(SugarPerBlueberryPack * BlueberryPacks + SugarPerStrawberryPack * StrawberryPacks, GRB.MINIMIZE)
 
 
 ### Optimize the model

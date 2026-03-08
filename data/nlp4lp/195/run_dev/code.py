@@ -51,7 +51,7 @@ model.addConstr(ServingsProteinBars >= 0)
 
 ### Define the objective
 
-del.setObjective(CostNoodles * ServingsNoodles + CostProteinBars * ServingsProteinBars, GRB.MINIMIZE
+model.setObjective(CostNoodles * ServingsNoodles + CostProteinBars * ServingsProteinBars, GRB.MINIMIZE)
 
 
 ### Optimize the model

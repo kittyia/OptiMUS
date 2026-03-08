@@ -37,14 +37,14 @@ TreatmentPills = model.addVar(vtype=GRB.INTEGER, name="TreatmentPills")
 
 ### Define the constraints
 
+model.addConstr(PreventionPillCost * PreventionPills + TreatmentPillCost * TreatmentPills <= Budget)
 model.addConstr(PreventionPills >= PreventionToTreatmentRatio * TreatmentPills)
 model.addConstr(TreatmentPills >= MinimumTreatmentPills)
-model.addConstr(PreventionPillCost * PreventionPills + TreatmentPillCost * TreatmentPills <= Budget)
 
 
 ### Define the objective
 
-
+model.setObjective(TreatmentPills, GRB.MAXIMIZE)
 
 
 ### Optimize the model

@@ -52,7 +52,7 @@ model.addConstr(CucumbersSold >= 0)
 
 ### Define the objective
 
-
+model.setObjective(ProfitCarrot * CarrotsSold + ProfitCucumber * CucumbersSold, GRB.MAXIMIZE)
 
 
 ### Optimize the model

@@ -29,24 +29,24 @@ TotalOre = data["TotalOre"] # shape: [], definition: Total units of ore to be tr
 
 ### Define the variables
 
-numSmallWagons = model.addVar(vtype=GRB.INTEGER, name="numSmallWagons")
+SmallWagons = model.addVar(vtype=GRB.INTEGER, name="SmallWagons")
 
-numLargeWagons = model.addVar(vtype=GRB.INTEGER, name="numLargeWagons")
+LargeWagons = model.addVar(vtype=GRB.INTEGER, name="LargeWagons")
 
 
 
 ### Define the constraints
 
-model.addConstr(SmallWagonCapacity * numSmallWagons + LargeWagonCapacity * numLargeWagons >= TotalOre)
-model.addConstr(numSmallWagons >= MinSmallToLargeRatio * numLargeWagons)
-model.addConstr(numLargeWagons >= MinLargeWagons)
-# Integrality is enforced in the variable definitions using vtype=GRB.INTEGER,
-# so no additional constraints are needed here.
+model.addConstr(SmallWagonCapacity * SmallWagons + LargeWagonCapacity * LargeWagons >= TotalOre)
+model.addConstr(SmallWagons >= MinSmallToLargeRatio * LargeWagons)
+model.addConstr(LargeWagons >= MinLargeWagons)
+model.addConstr(SmallWagons >= 0)
+model.addConstr(LargeWagons >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(SmallWagons + LargeWagons, GRB.MINIMIZE)
 
 
 ### Optimize the model

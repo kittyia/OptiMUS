@@ -1,9 +1,9 @@
 ----
 [
     "5 * HelicopterTrips + 8 * BusTrips >= 120",
-    "7 * HelicopterTrips >= 3 * BusTrips",
+    "7 * HelicopterTrips - 3 * BusTrips >= 0",
     "BusTrips <= 10",
-    "HelicopterTrips and BusTrips are nonnegative integers"
+    "HelicopterTrips, BusTrips >= 0 and integers"
 ]
 ----
 +++++++++++++++++++
@@ -68,7 +68,7 @@ Consider this potential constraint: 5 * HelicopterTrips + 8 * BusTrips >= 120
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this **is definitely a constraint** and it should be explicitly included in the (MI)LP formulation.
+Yes, this is definitely a constraint and it should be explicitly included in the (MI)LP formulation.
 
 ### Why?
 
@@ -86,17 +86,17 @@ then the total number of transported patients is:
 5 \cdot \text{HelicopterTrips} + 8 \cdot \text{BusTrips}
 \]
 
-Since at least 120 patients must be transported, we must enforce:
+The requirement “at least 120 patients need to be transported” translates directly into:
 
 \[
 5 \cdot \text{HelicopterTrips} + 8 \cdot \text{BusTrips} \ge 120
 \]
 
-This directly models the **MinPatients** requirement from the problem description. It is a fundamental feasibility constraint and absolutely necessary in the formulation.
+This is a core feasibility constraint derived directly from the problem statement. Without it, the model would not enforce the minimum number of patients transported.
 
-There is no ambiguity here — omitting this constraint would make the model incorrect.
+There is no ambiguity in interpretation, and it is fully consistent with the given parameters.
 
-**Confidence level: 5 OUT OF 5**
+**5 OUT OF 5**
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -150,7 +150,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: 7 * HelicopterTrips >= 3 * BusTrips
+Consider this potential constraint: 7 * HelicopterTrips - 3 * BusTrips >= 0
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -160,21 +160,21 @@ Consider this potential constraint: 7 * HelicopterTrips >= 3 * BusTrips
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Let:
-- \( H \) = number of helicopter trips  
-- \( B \) = number of bus trips  
+Let  
+- \( H \) = HelicopterTrips  
+- \( B \) = BusTrips  
 
 The problem states:
 
 > At least 30% of the trips should be by helicopter.
 
-Mathematically:
+This translates to:
 
 \[
 \frac{H}{H + B} \ge 0.3
 \]
 
-Multiply both sides by \( H + B \) (valid since trips are nonnegative and not both zero in a feasible solution):
+Multiply both sides by \(H + B\):
 
 \[
 H \ge 0.3(H + B)
@@ -186,26 +186,34 @@ Expand:
 H \ge 0.3H + 0.3B
 \]
 
+Subtract \(0.3H\) from both sides:
+
 \[
 0.7H \ge 0.3B
 \]
 
-Multiply both sides by 10 to eliminate decimals:
+Multiply both sides by 10:
 
 \[
 7H \ge 3B
 \]
 
-This matches exactly the proposed constraint:
+Rewriting:
 
 \[
-7 \cdot \text{HelicopterTrips} \ge 3 \cdot \text{BusTrips}
+7H - 3B \ge 0
 \]
 
-✅ Therefore, this is a correct linear reformulation of the 30% helicopter trip requirement and **should absolutely be included** in the MILP model.
+This exactly matches the proposed constraint:
 
-**Answer:**  
-5 OUT OF 5
+\[
+7 \cdot \text{HelicopterTrips} - 3 \cdot \text{BusTrips} \ge 0
+\]
+
+✅ It is a correct linear reformulation of the 30% helicopter-trip requirement.  
+✅ It should absolutely be included in the MILP formulation.
+
+**Confidence: 5 OUT OF 5**
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -269,17 +277,16 @@ Consider this potential constraint: BusTrips <= 10
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is explicitly a constraint in the problem description.
+Yes, this is explicitly a constraint.
 
-The statement *“there can be at most 10 bus trips”* directly translates into the mathematical constraint:
+The problem statement clearly says: *“In addition, there can be at most 10 bus trips.”*  
+This directly translates to the mathematical constraint:
 
 \[
 \text{BusTrips} \le 10
 \]
 
-This is a clear upper bound on the decision variable representing the number of bus trips. It is not implicit or derived — it is directly stated and must be enforced in the model.
-
-Therefore, it **must** be included explicitly in the (MI)LP formulation.
+This is not implied or derived — it is explicitly stated as a hard upper bound in the description. Therefore, it must be included in the (MI)LP formulation.
 
 **Confidence: 5 OUT OF 5**
 +--+
@@ -335,7 +342,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: HelicopterTrips and BusTrips are nonnegative integers
+Consider this potential constraint: HelicopterTrips, BusTrips >= 0 and integers
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -345,29 +352,30 @@ Consider this potential constraint: HelicopterTrips and BusTrips are nonnegative
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this **is absolutely a constraint**, and it must be explicitly modeled in the (MI)LP formulation.
+Yes, this is indeed a constraint — specifically, it defines the **domain of the decision variables**.
 
-### Why?
+### Why this is a constraint
 
-- **HelicopterTrips** and **BusTrips** represent the *number of trips*.
-- A number of trips:
-  - Cannot be negative → **nonnegativity constraint**
-  - Cannot be fractional (you cannot take 2.7 trips) → **integrality constraint**
+- **HelicopterTrips ≥ 0, BusTrips ≥ 0**  
+  You cannot take a negative number of trips. This is a fundamental feasibility requirement.
 
-If we do not explicitly enforce:
-- \( \text{HelicopterTrips} \ge 0 \), integer  
-- \( \text{BusTrips} \ge 0 \), integer  
+- **HelicopterTrips, BusTrips are integers**  
+  Trips cannot be fractional (e.g., 3.7 helicopter trips is not physically meaningful).  
+  Therefore, this is a **mixed-integer** model and integrality must be enforced explicitly.
 
-then:
-- A linear programming relaxation could produce fractional trip values.
-- The solution could become physically meaningless.
-- The minimum-time solution would likely exploit fractional trips.
+### Should this be explicitly modeled?
 
-Because this problem naturally requires integer decisions, it is inherently a **Mixed-Integer Linear Program (MILP)**.
+Absolutely. In an (MI)LP formulation:
+- Nonnegativity constraints must be stated (unless implicitly assumed by the modeling language).
+- Integrality must be explicitly enforced to correctly represent discrete trips.
 
-So yes — this is not optional modeling detail. It is a **core structural constraint**.
+Without integrality, the solver could return fractional trips, which would make the solution invalid in practice.
 
-**Confidence: 5 OUT OF 5**
+### Conclusion
+
+This is a valid and necessary constraint defining the decision variable domains.
+
+**5 OUT OF 5**
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -383,7 +391,7 @@ Extracting constraint formulations
 
 ----
 {
-    "FORMULATION": "$HelicopterCapacity \\cdot HelicopterTrips + BusCapacity \\cdot BusTrips \\geq MinPatients$",
+    "FORMULATION": "$5 \\cdot HelicopterTrips + 8 \\cdot BusTrips \\geq 120$",
     "NEW VARIABLES": {
         "HelicopterTrips": {
             "shape": [],
@@ -396,9 +404,83 @@ Extracting constraint formulations
             "definition": "Number of bus trips used to transport patients"
         }
     },
-    "AUXILIARY CONSTRAINTS": [
-        "$HelicopterTrips \\geq 0$",
-        "$BusTrips \\geq 0$"
-    ]
+    "AUXILIARY CONSTRAINTS": []
 }
 ----
+----
+EXTRACTED ITEMS
+$5 \\cdot HelicopterTrips + 8 \\cdot BusTrips \\geq 120$
+{'HelicopterTrips': {'shape': [], 'type': 'integer', 'definition': 'Number of helicopter trips used to transport patients'}, 'BusTrips': {'shape': [], 'type': 'integer', 'definition': 'Number of bus trips used to transport patients'}}
+[]
+----
+----
+{
+    "FORMULATION": "$7 \\, HelicopterTrips - 3 \\, BusTrips \\geq 0$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$7 \\, HelicopterTrips - 3 \\, BusTrips \\geq 0$
+{}
+[]
+----
+----
+{
+    "FORMULATION": "$BusTrips \\leq MaxBusTrips$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$BusTrips \\leq MaxBusTrips$
+{}
+[]
+----
+----
+{
+    "FORMULATION": "$HelicopterTrips \\ge 0,\\; BusTrips \\ge 0,\\; HelicopterTrips,\\; BusTrips \\in \\mathbb{Z}$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$HelicopterTrips \\ge 0,\\; BusTrips \\ge 0,\\; HelicopterTrips,\\; BusTrips \\in \\mathbb{Z}$
+{}
+[]
+----
+Code executed successfully. Output:
+Restricted license - for non-production use only - expires 2027-11-29
+Gurobi Optimizer version 13.0.1 build v13.0.1rc0 (linux64 - "Alibaba Cloud Linux 3.2104 U12.3 (OpenAnolis Edition)")
+
+CPU model: Intel(R) Xeon(R) Platinum, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 1 physical cores, 2 logical processors, using up to 2 threads
+
+Optimize a model with 5 rows, 2 columns and 7 nonzeros (Min)
+Model fingerprint: 0x8e71c972
+Model has 2 linear objective coefficients
+Variable types: 0 continuous, 2 integer (0 binary)
+Coefficient statistics:
+  Matrix range     [1e+00, 8e+00]
+  Objective range  [1e+00, 3e+00]
+  Bounds range     [0e+00, 0e+00]
+  RHS range        [1e+01, 1e+02]
+
+Found heuristic solution: objective 24.0000000
+Presolve removed 5 rows and 2 columns
+Presolve time: 0.00s
+Presolve: All rows and columns removed
+
+Explored 0 nodes (0 simplex iterations) in 0.00 seconds (0.00 work units)
+Thread count was 1 (of 2 available processors)
+
+Solution count 1: 24 
+
+Optimal solution found (tolerance 1.00e-04)
+Best objective 2.400000000000e+01, best bound 2.400000000000e+01, gap 0.0000%
+Optimal Objective Value:  24.0
+Optimal Objective Value:  24.0
+

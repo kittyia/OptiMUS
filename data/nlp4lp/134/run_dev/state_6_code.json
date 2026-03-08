@@ -28,25 +28,25 @@
         }
     },
     "objective": {
-        "description": "\"Minimize the total time required for the pool to be ready (i.e., the total time for the added chlorine and water softener to become effective)\"",
-        "formulation": "$\\min \\; \\text{ChlorineEffectivenessTime} \\cdot \\text{ChlorineUnits} \\;+\\; \\text{WaterSoftenerEffectivenessTime} \\cdot \\text{WaterSoftenerUnits}$",
-        "code": ""
+        "description": "\"Minimize the total time required for the pool to be ready (i.e., the total time until the added chlorine and water softener become effective).\"",
+        "formulation": "$\\min \\left( ChlorineEffectivenessTime \\cdot ChlorineUnits + WaterSoftenerEffectivenessTime \\cdot WaterSoftenerUnits \\right)$",
+        "code": "model.setObjective(\n    ChlorineEffectivenessTime * ChlorineUnits +\n    WaterSoftenerEffectivenessTime * WaterSoftenerUnits,\n    GRB.MINIMIZE\n)"
     },
     "constraints": [
         {
-            "description": "The amount of chlorine added must be at least MinChlorineUnits",
-            "formulation": "$ChlorineUnits \\\\geq MinChlorineUnits$",
+            "description": "The amount of chlorine added must be at most half the amount of water softener added (Chlorine \u2264 0.5 \u00d7 WaterSoftener)",
+            "formulation": "$ChlorineUnits \\\\leq 0.5 \\\\cdot WaterSoftenerUnits$",
+            "code": "model.addConstr(ChlorineUnits <= MaxChlorineToWaterSoftenerRatio * WaterSoftenerUnits)"
+        },
+        {
+            "description": "The amount of chlorine added must be at least 200 units (Chlorine \u2265 200)",
+            "formulation": "$ChlorineUnits \\\\geq 200$",
             "code": "model.addConstr(ChlorineUnits >= MinChlorineUnits)"
         },
         {
-            "description": "The total amount of chlorine and water softener added must equal TotalChemicalUnits",
+            "description": "The total amount of chemicals added must equal 500 units (Chlorine + WaterSoftener = 500)",
             "formulation": "$ChlorineUnits + WaterSoftenerUnits = TotalChemicalUnits$",
             "code": "model.addConstr(ChlorineUnits + WaterSoftenerUnits == TotalChemicalUnits)"
-        },
-        {
-            "description": "The amount of chlorine added must be at most MaxChlorineToWaterSoftenerRatio times the amount of water softener added",
-            "formulation": "$ChlorineUnits \\\\leq MaxChlorineToWaterSoftenerRatio \\\\cdot WaterSoftenerUnits$",
-            "code": "model.addConstr(ChlorineUnits <= MaxChlorineToWaterSoftenerRatio * WaterSoftenerUnits)"
         }
     ],
     "variables": {

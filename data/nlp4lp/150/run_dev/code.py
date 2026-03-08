@@ -48,7 +48,7 @@ model.addConstr(SmallBouquets >= MinSmallToLargeRatio * LargeBouquets)
 
 ### Define the objective
 
-
+model.setObjective(FlowersPerSmallBouquet * SmallBouquets + FlowersPerLargeBouquet * LargeBouquets, GRB.MAXIMIZE)
 
 
 ### Optimize the model

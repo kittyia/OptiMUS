@@ -27,22 +27,23 @@ MinFish = data["MinFish"] # shape: [], definition: Minimum number of fish to be 
 
 ### Define the variables
 
-Canoes = model.addVar(vtype=GRB.INTEGER, name="Canoes")
+NumCanoes = model.addVar(vtype=GRB.INTEGER, name="NumCanoes")
 
-DieselBoats = model.addVar(vtype=GRB.INTEGER, name="DieselBoats")
+NumDieselBoats = model.addVar(vtype=GRB.INTEGER, name="NumDieselBoats")
 
 
 
 ### Define the constraints
 
-model.addConstr(CanoeCapacity * Canoes + DieselBoatCapacity * DieselBoats >= MinFish)
-model.addConstr(Canoes >= CanoeToBoatRatio * DieselBoats)
-model.addConstr(DieselBoats >= 0)
+model.addConstr(CanoeCapacity * NumCanoes + DieselBoatCapacity * NumDieselBoats >= MinFish)
+model.addConstr(NumCanoes >= CanoeToBoatRatio * NumDieselBoats)
+model.addConstr(NumCanoes >= 0)
+model.addConstr(NumDieselBoats >= 0)
 
 
 ### Define the objective
 
-model.setObjective(Canoes + DieselBoats, GRB.MINIMIZE)
+model.setObjective(NumCanoes + NumDieselBoats, GRB.MINIMIZE)
 
 
 ### Optimize the model

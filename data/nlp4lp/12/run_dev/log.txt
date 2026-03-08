@@ -1,14 +1,8 @@
 ----
-The two capacity constraints (heating and cooling) correspond to different resources, so neither is redundant and they cannot be combined.
-
-The two non-negativity constraints apply to different decision variables, but they are of the same type and can be combined into a single constraint stating that both decision variables are non-negative.
-
-Updated list of constraints:
-
 [
-    "Total heating time used for regular and tempered glass panes should not exceed the maximum available heating time per day",
-    "Total cooling time used for regular and tempered glass panes should not exceed the maximum available cooling time per day",
-    "The number of regular and tempered glass panes produced should be non-negative"
+    "3 * (number of regular glass panes) + 5 * (number of tempered glass panes) should not exceed MaxHeatingTime",
+    "5 * (number of regular glass panes) + 8 * (number of tempered glass panes) should not exceed MaxCoolingTime",
+    "The number of regular glass panes produced and the number of tempered glass panes produced should both be non-negative"
 ]
 ----
 +++++++++++++++++++
@@ -68,7 +62,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: Total heating time used for regular and tempered glass panes should not exceed the maximum available heating time per day
+Consider this potential constraint: 3 * (number of regular glass panes) + 5 * (number of tempered glass panes) should not exceed MaxHeatingTime
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -78,36 +72,32 @@ Consider this potential constraint: Total heating time used for regular and temp
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is definitely a constraint and must be included in the (MI)LP formulation.
+Yes, this is definitely a constraint and should be explicitly included in the (MI)LP formulation.
 
 Reasoning step by step:
 
-- The problem states that the heating machine is available for a maximum of 300 minutes per day.
-- Each regular pane requires 3 minutes of heating.
-- Each tempered pane requires 5 minutes of heating.
-- Since both types use the same heating machine, their total heating time consumption must not exceed the machine’s daily capacity.
+- The heating machine is available for at most **300 minutes per day**.
+- Each regular pane requires **3 minutes** of heating time.
+- Each tempered pane requires **5 minutes** of heating time.
+- If we let:
+  - \( R \) = number of regular panes  
+  - \( T \) = number of tempered panes  
 
-If we let:
-- \( x \) = number of regular panes  
-- \( y \) = number of tempered panes  
-
-Then the total heating time used is:
+  then total heating time used is:
 
 \[
-3x + 5y
+3R + 5T
 \]
 
-The machine capacity constraint is:
+Since the heating machine cannot exceed its daily capacity:
 
 \[
-3x + 5y \le 300
+3R + 5T \le \text{MaxHeatingTime}
 \]
 
-This is a classic resource capacity constraint and is essential to correctly model the feasible region of the problem. Without it, the solution could exceed available heating time, making it infeasible in practice.
+This directly models a resource capacity limitation, which is a core structural component of linear programming models. It is absolutely necessary to ensure feasibility and correctly represent the problem.
 
-✅ This is absolutely a real constraint and must be explicitly modeled.
-
-5 OUT OF 5
+Confidence level: **5 OUT OF 5**
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -166,7 +156,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: Total cooling time used for regular and tempered glass panes should not exceed the maximum available cooling time per day
+Consider this potential constraint: 5 * (number of regular glass panes) + 8 * (number of tempered glass panes) should not exceed MaxCoolingTime
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -178,31 +168,31 @@ Take a deep breath and think step by step. You will be awarded a million dollars
 ----
 Yes, this is definitely a constraint.
 
-The problem states that:
+From the problem statement:
 
-> Both machines are available for a maximum of 300 minutes per day.
-
-Since both regular and tempered panes require time on the cooling machine, and the cooling machine has a daily time limit, the total cooling time used by all panes produced must not exceed this maximum.
+- Each **regular pane** requires **5 minutes** on the cooling machine.
+- Each **tempered pane** requires **8 minutes** on the cooling machine.
+- The cooling machine is available for **at most 300 minutes per day** (i.e., `MaxCoolingTime`).
 
 If we let:
-- \( x \) = number of regular panes  
-- \( y \) = number of tempered panes  
+- \( R \) = number of regular panes  
+- \( T \) = number of tempered panes  
 
-Then the total cooling time used is:
-
-\[
-5x + 8y
-\]
-
-This must satisfy:
+then the total cooling time used is:
 
 \[
-5x + 8y \le \text{MaxCoolingTime}
+5R + 8T
 \]
 
-So yes, this is explicitly described in the problem and must be included in the (MI)LP formulation.
+Since the cooling machine has a daily limit, this must satisfy:
 
-**5 OUT OF 5**
+\[
+5R + 8T \le \text{MaxCoolingTime}
+\]
+
+This directly follows from the resource limitation described in the problem. It is a core capacity constraint and must be explicitly included in the LP/MILP model.
+
+**Confidence level: 5 OUT OF 5**
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -261,7 +251,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: The number of regular and tempered glass panes produced should be non-negative
+Consider this potential constraint: The number of regular glass panes produced and the number of tempered glass panes produced should both be non-negative
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -271,24 +261,40 @@ Consider this potential constraint: The number of regular and tempered glass pan
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is indeed a constraint.
+Yes, this **is** a real constraint and it should be explicitly modeled.
 
-In any production planning problem, the decision variables represent quantities produced. Let:
+### Why?
 
-- \( x \) = number of regular glass panes  
-- \( y \) = number of tempered glass panes  
+The decision variables in this problem are:
 
-Since it is physically impossible to produce a negative number of panes, we must impose:
+- \( x \): number of regular glass panes produced  
+- \( y \): number of tempered glass panes produced  
+
+Since these represent quantities of items produced, they:
+
+1. **Cannot be negative** (you cannot produce −5 panes).
+2. Should be at least zero.
+3. In practice, they should also be integers (since panes are indivisible), though that is a separate modeling decision.
+
+Even though many LP solvers assume non-negativity by default, from a **modeling perspective**, non-negativity constraints are fundamental feasibility constraints and should be explicitly stated unless otherwise specified.
+
+Mathematically, we include:
 
 \[
-x \ge 0, \quad y \ge 0
+x \ge 0
+\]
+\[
+y \ge 0
 \]
 
-These are standard non-negativity constraints in linear programming models. Even though they are often considered implicit in textbook formulations, they must be explicitly included in a formal (MI)LP model unless the modeling framework assumes non-negativity by default.
+Without these constraints, the model could produce negative quantities to artificially improve the objective value, which would be meaningless in the real-world context.
 
-Therefore, this **is definitely a real and necessary constraint**.
+### Conclusion
 
-**Confidence level: 5 OUT OF 5**
+✅ This is definitely a valid and necessary constraint.  
+✅ It should be explicitly included in the LP/MILP formulation.
+
+**5 OUT OF 5**
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -304,7 +310,7 @@ Extracting constraint formulations
 
 ----
 {
-    "FORMULATION": "$HeatingRegular \\cdot RegularPanes + HeatingTempered \\cdot TemperedPanes \\leq MaxHeatingTime$",
+    "FORMULATION": "$3 \\cdot RegularPanes + 5 \\cdot TemperedPanes \\leq MaxHeatingTime$",
     "NEW VARIABLES": {
         "RegularPanes": {
             "shape": [],
@@ -322,33 +328,33 @@ Extracting constraint formulations
 ----
 ----
 EXTRACTED ITEMS
-$HeatingRegular \\cdot RegularPanes + HeatingTempered \\cdot TemperedPanes \\leq MaxHeatingTime$
+$3 \\cdot RegularPanes + 5 \\cdot TemperedPanes \\leq MaxHeatingTime$
 {'RegularPanes': {'shape': [], 'type': 'integer', 'definition': 'Number of regular glass panes produced per day'}, 'TemperedPanes': {'shape': [], 'type': 'integer', 'definition': 'Number of tempered glass panes produced per day'}}
 []
 ----
 ----
 {
-    "FORMULATION": "$CoolingRegular \\cdot RegularPanes + CoolingTempered \\cdot TemperedPanes \\leq MaxCoolingTime$",
+    "FORMULATION": "$5 \\cdot RegularPanes + 8 \\cdot TemperedPanes \\leq MaxCoolingTime$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$CoolingRegular \\cdot RegularPanes + CoolingTempered \\cdot TemperedPanes \\leq MaxCoolingTime$
+$5 \\cdot RegularPanes + 8 \\cdot TemperedPanes \\leq MaxCoolingTime$
 {}
 []
 ----
 ----
 {
-    "FORMULATION": "$RegularPanes \\geq 0, \\; TemperedPanes \\geq 0$",
+    "FORMULATION": "$RegularPanes \\ge 0, \\; TemperedPanes \\ge 0$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$RegularPanes \\geq 0, \\; TemperedPanes \\geq 0$
+$RegularPanes \\ge 0, \\; TemperedPanes \\ge 0$
 {}
 []
 ----
@@ -359,25 +365,28 @@ Gurobi Optimizer version 13.0.1 build v13.0.1rc0 (linux64 - "Alibaba Cloud Linux
 CPU model: Intel(R) Xeon(R) Platinum, instruction set [SSE2|AVX|AVX2|AVX512]
 Thread count: 1 physical cores, 2 logical processors, using up to 2 threads
 
-Optimize a model with 4 rows, 2 columns and 6 nonzeros (Min)
-Model fingerprint: 0x9dfc0a27
-Model has 0 linear objective coefficients
+Optimize a model with 4 rows, 2 columns and 6 nonzeros (Max)
+Model fingerprint: 0x62f9f29e
+Model has 2 linear objective coefficients
 Variable types: 0 continuous, 2 integer (0 binary)
 Coefficient statistics:
   Matrix range     [1e+00, 8e+00]
-  Objective range  [0e+00, 0e+00]
+  Objective range  [8e+00, 1e+01]
   Bounds range     [0e+00, 0e+00]
   RHS range        [3e+02, 3e+02]
 
-Found heuristic solution: objective 0.0000000
+Found heuristic solution: objective 480.0000000
+Presolve removed 4 rows and 2 columns
+Presolve time: 0.00s
+Presolve: All rows and columns removed
 
 Explored 0 nodes (0 simplex iterations) in 0.00 seconds (0.00 work units)
 Thread count was 1 (of 2 available processors)
 
-Solution count 1: 0 
+Solution count 1: 480 
 
 Optimal solution found (tolerance 1.00e-04)
-Best objective 0.000000000000e+00, best bound 0.000000000000e+00, gap 0.0000%
-Optimal Objective Value:  0.0
-Optimal Objective Value:  0.0
+Best objective 4.800000000000e+02, best bound 4.800000000000e+02, gap 0.0000%
+Optimal Objective Value:  480.0
+Optimal Objective Value:  480.0
 

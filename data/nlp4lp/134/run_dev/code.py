@@ -37,14 +37,18 @@ WaterSoftenerUnits = model.addVar(vtype=GRB.CONTINUOUS, name="WaterSoftenerUnits
 
 ### Define the constraints
 
+model.addConstr(ChlorineUnits <= MaxChlorineToWaterSoftenerRatio * WaterSoftenerUnits)
 model.addConstr(ChlorineUnits >= MinChlorineUnits)
 model.addConstr(ChlorineUnits + WaterSoftenerUnits == TotalChemicalUnits)
-model.addConstr(ChlorineUnits <= MaxChlorineToWaterSoftenerRatio * WaterSoftenerUnits)
 
 
 ### Define the objective
 
-
+model.setObjective(
+    ChlorineEffectivenessTime * ChlorineUnits +
+    WaterSoftenerEffectivenessTime * WaterSoftenerUnits,
+    GRB.MINIMIZE
+)
 
 
 ### Optimize the model

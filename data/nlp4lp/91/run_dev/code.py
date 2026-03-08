@@ -37,23 +37,23 @@ MaxOmegaFraction = data["MaxOmegaFraction"] # shape: [], definition: Maximum pro
 
 ### Define the variables
 
-Alpha = model.addVar(vtype=GRB.INTEGER, name="Alpha")
+AlphaBottles = model.addVar(vtype=GRB.INTEGER, name="AlphaBottles")
 
-Omega = model.addVar(vtype=GRB.INTEGER, name="Omega")
+OmegaBottles = model.addVar(vtype=GRB.INTEGER, name="OmegaBottles")
 
 
 
 ### Define the constraints
 
-model.addConstr(CaloriesAlpha * Alpha + CaloriesOmega * Omega >= MinCalories)
-model.addConstr(Omega <= MaxOmegaFraction * (Alpha + Omega))
-model.addConstr(Alpha >= 0)
-model.addConstr(Omega >= 0)
+model.addConstr(CaloriesAlpha * AlphaBottles + CaloriesOmega * OmegaBottles >= MinCalories)
+model.addConstr(13 * OmegaBottles <= 7 * AlphaBottles)
+model.addConstr(AlphaBottles >= 0)
+model.addConstr(OmegaBottles >= 0)
 
 
 ### Define the objective
 
-model.setObjective(SugarAlpha * Alpha + SugarOmega * Omega, GRB.MINIMIZE)
+model.setObjective(SugarAlpha * AlphaBottles + SugarOmega * OmegaBottles, GRB.MINIMIZE)
 
 
 ### Optimize the model

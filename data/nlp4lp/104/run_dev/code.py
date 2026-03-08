@@ -33,9 +33,9 @@ MaxFolate = data["MaxFolate"] # shape: [], definition: Maximum total folate unit
 
 ### Define the variables
 
-AppleServings = model.addVar(vtype=GRB.CONTINUOUS, name="AppleServings")
+AppleServings = model.addVar(vtype=GRB.INTEGER, name="AppleServings")
 
-CarrotServings = model.addVar(vtype=GRB.CONTINUOUS, name="CarrotServings")
+CarrotServings = model.addVar(vtype=GRB.INTEGER, name="CarrotServings")
 
 
 
@@ -48,7 +48,7 @@ model.addConstr(FolateApple * AppleServings + FolateCarrot * CarrotServings <= M
 
 ### Define the objective
 
-del.setObjective(FatApple * AppleServings + FatCarrot * CarrotServings, GRB.MAXIMIZE
+model.setObjective(FatApple * AppleServings + FatCarrot * CarrotServings, GRB.MAXIMIZE)
 
 
 ### Optimize the model

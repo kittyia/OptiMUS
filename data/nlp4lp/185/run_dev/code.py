@@ -33,7 +33,7 @@ MinPigeons = data["MinPigeons"] # shape: [], definition: The minimum number of c
 
 ### Define the variables
 
-Pigeons = model.addVar(vtype=GRB.INTEGER, name="Pigeons")
+CarrierPigeons = model.addVar(vtype=GRB.INTEGER, name="CarrierPigeons")
 
 Owls = model.addVar(vtype=GRB.INTEGER, name="Owls")
 
@@ -41,15 +41,15 @@ Owls = model.addVar(vtype=GRB.INTEGER, name="Owls")
 
 ### Define the constraints
 
-model.addConstr(PigeonTreatCost * Pigeons + OwlTreatCost * Owls <= TotalTreats)
-model.addConstr(3 * Owls <= 2 * Pigeons)
-model.addConstr(Pigeons >= MinPigeons)
+model.addConstr(PigeonTreatCost * CarrierPigeons + OwlTreatCost * Owls <= TotalTreats)
+model.addConstr(3 * Owls <= 2 * CarrierPigeons)
+model.addConstr(CarrierPigeons >= MinPigeons)
 model.addConstr(Owls >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(PigeonLetterCapacity * CarrierPigeons + OwlLetterCapacity * Owls, GRB.MAXIMIZE)
 
 
 ### Optimize the model

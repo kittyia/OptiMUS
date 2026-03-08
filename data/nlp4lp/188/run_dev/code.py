@@ -27,25 +27,23 @@ MaxVanPercentage = data["MaxVanPercentage"] # shape: [], definition: Maximum per
 
 ### Define the variables
 
-NumberOfVans = model.addVar(vtype=GRB.INTEGER, name="NumberOfVans")
+numberOfVans = model.addVar(vtype=GRB.INTEGER, name="numberOfVans")
 
-NumberOfCars = model.addVar(vtype=GRB.INTEGER, name="NumberOfCars")
+numberOfCars = model.addVar(vtype=GRB.INTEGER, name="numberOfCars")
 
 
 
 ### Define the constraints
 
-model.addConstr(VoterCapacityVan * NumberOfVans + VoterCapacityCar * NumberOfCars >= MinVoters)
-model.addConstr(7 * NumberOfVans <= 3 * NumberOfCars])
-model.addConstr(NumberOfVans >= 0)
-model.addConstr(NumberOfCars >= 0)
-model.addConstr(NumberOfVans >= 0)
-model.addConstr(NumberOfCars >= 0)
+model.addConstr(VoterCapacityVan * numberOfVans + VoterCapacityCar * numberOfCars >= MinVoters)
+model.addConstr(100 * numberOfVans <= MaxVanPercentage * (numberOfVans + numberOfCars))
+model.addConstr(numberOfVans >= 0)
+model.addConstr(numberOfCars >= 0)
 
 
 ### Define the objective
 
-model.setObjective(NumberOfCars, GRB.MINIMIZE)
+model.setObjective(numberOfCars, GRB.MINIMIZE)
 
 
 ### Optimize the model

@@ -47,13 +47,11 @@ model.addConstr(WoodPerTrain * NumTrains + WoodPerPlane * NumPlanes <= Available
 model.addConstr(PaintPerTrain * NumTrains + PaintPerPlane * NumPlanes <= AvailablePaint)
 model.addConstr(NumTrains >= 0)
 model.addConstr(NumPlanes >= 0)
-model.addConstr(NumTrains >= 0)
-model.addConstr(NumPlanes >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(ProfitTrain * NumTrains + ProfitPlane * NumPlanes, GRB.MAXIMIZE)
 
 
 ### Optimize the model

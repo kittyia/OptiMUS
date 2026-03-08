@@ -29,23 +29,21 @@ ResourceAvailability = data["ResourceAvailability"] # shape: ['NumResources'], d
 
 ### Define the variables
 
-Elephants = model.addVar(vtype=GRB.INTEGER, name="Elephants")
-
-Tigers = model.addVar(vtype=GRB.INTEGER, name="Tigers")
+NumProduced = model.addVars(NumProducts, vtype=GRB.INTEGER, name="NumProduced")
 
 
 
 ### Define the constraints
 
-model.addConstr(50 * Elephants + 40 * Tigers <= 5000)
-model.addConstr(20 * Elephants + 30 * Tigers <= 4000)
-model.addConstr(Elephants >= 0)
-model.addConstr(Tigers >= 0)
+model.addConstr(50 * NumProduced[0] + 40 * NumProduced[1] <= 5000)
+model.addConstr(20 * NumProduced[0] + 30 * NumProduced[1] <= 4000)
+model.addConstr(NumProduced[0] >= 0)
+model.addConstr(NumProduced[1] >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(quicksum(Profit[i] * NumProduced[i] for i in range(NumProducts)), GRB.MAXIMIZE)
 
 
 ### Optimize the model

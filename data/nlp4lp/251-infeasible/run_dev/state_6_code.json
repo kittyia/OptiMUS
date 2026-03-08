@@ -46,28 +46,28 @@
         }
     },
     "objective": {
-        "description": "Maximize the total earnings per shift from the motorcycles and sedans purchased by the taxi company.",
+        "description": "\"Maximize the total earnings per shift from motorcycles and sedans.\"",
         "formulation": "$\\max \\sum_{i=1}^{NumVehicleTypes} Earnings_i \\, NumVehicles_i$",
-        "code": ""
+        "code": "model.setObjective(quicksum(Earnings[i] * NumVehicles[i] for i in range(NumVehicleTypes)), GRB.MAXIMIZE)"
     },
     "constraints": [
         {
-            "description": "The number of motorcycles must be less than or equal to 25% of the total number of vehicles purchased",
-            "formulation": "$NumVehicles[1] \\\\leq MaxVehiclePercentage[1] \\\\sum_{t=1}^{NumVehicleTypes} NumVehicles[t]$",
-            "code": "model.addConstr(\n    NumVehicles[0] <= MaxVehiclePercentage[0] * \n    sum(NumVehicles[t] for t in range(NumVehicleTypes))\n)"
-        },
-        {
-            "description": "The total pollution produced by all vehicles per shift must not exceed 200 units",
+            "description": "The total pollution produced by all vehicles per shift must not exceed the pollution cap of 200 units",
             "formulation": "$\\\\sum_{i=1}^{NumVehicleTypes} Pollution[i] \\\\cdot NumVehicles[i] \\\\leq PollutionCap$",
             "code": "model.addConstr(\n    sum(Pollution[i] * NumVehicles[i] for i in range(NumVehicleTypes)) <= PollutionCap\n)"
         },
         {
             "description": "The total number of people transported per shift must be at least 1200",
             "formulation": "$\\\\sum_{i=1}^{NumVehicleTypes} TransportCapacity[i] \\\\cdot NumVehicles[i] \\\\geq MinTransportCapacity$",
-            "code": "model.addConstr(\n    sum(TransportCapacity[i] * NumVehicles[i] for i in range(NumVehicleTypes))\n    >= MinTransportCapacity\n)"
+            "code": "model.addConstr(\n    sum(TransportCapacity[i] * NumVehicles[i] for i in range(NumVehicleTypes)) >= MinTransportCapacity\n)"
         },
         {
-            "description": "The number of motorcycles and sedans purchased must be non-negative",
+            "description": "The number of motorcycles must be at most 25% of the total number of vehicles",
+            "formulation": "$NumVehicles[1] \\\\leq 0.25 \\\\sum_{i=1}^{NumVehicleTypes} NumVehicles[i]$",
+            "code": "model.addConstr(NumVehicles[0] <= 0.25 * sum(NumVehicles[i] for i in range(NumVehicleTypes)))"
+        },
+        {
+            "description": "The numbers of motorcycles and sedans must be non-negative integers",
             "formulation": "$\\\\forall i = 1, \\\\dots, NumVehicleTypes:\\\\; NumVehicles[i] \\\\geq 0$",
             "code": "for i in range(NumVehicleTypes):\n    model.addConstr(NumVehicles[i] >= 0)"
         }
@@ -78,7 +78,7 @@
                 "NumVehicleTypes"
             ],
             "type": "integer",
-            "definition": "The number of vehicles purchased of each vehicle type per shift"
+            "definition": "The number of vehicles of each type to be used per shift"
         }
     }
 }

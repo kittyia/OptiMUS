@@ -1,91 +1,9 @@
 ----
-Yes, there is redundancy in the constraint list. Let’s analyze each one carefully.
-
-### Constraint-by-constraint analysis
-
-**1.**  
-> `10 * (number of small bones) + 15 * (number of large bones) ≤ TotalToothMedication`  
-
-✅ This is necessary. It enforces the tooth medication capacity limit. It cannot be removed or combined with others.
-
----
-
-**2.**  
-> `The number of small bones must be at least MinProportionSmallBones times the total number of bones made`  
-
-Mathematically:  
-\[
-s \ge p(s + l)
-\]
-
-Rewriting:
-\[
-s - ps \ge pl
-\]
-\[
-s(1 - p) \ge pl
-\]
-\[
-s \ge \frac{p}{1-p} l
-\]
-
-Since \( p = 0.5 \), this simplifies to:
-\[
-s \ge l
-\]
-
-✅ This constraint is essential and cannot be removed.
-
----
-
-**3.**  
-> `The number of large bones must be greater than or equal to MinLargeBones`
-
-✅ This is necessary. It enforces the minimum production requirement of large bones.
-
----
-
-**4.**  
-> `The number of small bones must be ≥ 0`
-
-This is implied by Constraints 2 and 3:
-
-- From Constraint 3: \( l \ge 30 \ge 0 \)
-- From Constraint 2: \( s \ge \frac{p}{1-p} l \)
-- Since \( \frac{p}{1-p} > 0 \) and \( l \ge 0 \), it follows that \( s \ge 0 \)
-
-Therefore, this constraint is redundant.
-
-❌ Can be removed.
-
----
-
-**5.**  
-> `The number of large bones must be ≥ 0`
-
-Since Constraint 3 enforces:
-\[
-l \ge 30
-\]
-
-This automatically implies:
-\[
-l \ge 0
-\]
-
-❌ This constraint is redundant.
-
----
-
-## ✅ Updated List of Constraints
-
-```
 [
-    "10 * (number of small bones) + 15 * (number of large bones) must be less than or equal to TotalToothMedication",
-    "The number of small bones must be at least MinProportionSmallBones times the total number of bones made",
-    "The number of large bones must be greater than or equal to MinLargeBones"
+    "10 * (number of small bones) + 15 * (number of large bones) <= TotalToothMedication",
+    "(1 - MinProportionSmallBones) * (number of small bones) - MinProportionSmallBones * (number of large bones) >= 0",
+    "(number of large bones) >= MinLargeBones"
 ]
-```
 ----
 +++++++++++++++++++
 ++ Constraint Qs ++
@@ -139,7 +57,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: 10 * (number of small bones) + 15 * (number of large bones) must be less than or equal to TotalToothMedication
+Consider this potential constraint: 10 * (number of small bones) + 15 * (number of large bones) <= TotalToothMedication
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -149,36 +67,24 @@ Consider this potential constraint: 10 * (number of small bones) + 15 * (number 
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is definitely a constraint and it should be explicitly included in the (MI)LP formulation.
+Yes, this is absolutely a constraint and it must be explicitly modeled.
 
-### Why?
+The problem clearly states that the hospital has **2000 units of tooth medication available**. Since:
 
-The problem clearly states:
+- Each small bone uses 10 units  
+- Each large bone uses 15 units  
 
-> "An dog hospital has 2000 units of tooth medication to make both small and large bones."
-
-This establishes a **limited resource**. Since:
-- Each small bone uses 10 units of tooth medication  
-- Each large bone uses 15 units of tooth medication  
-
-The total tooth medication used across all produced bones **cannot exceed the available 2000 units**.
-
-Therefore, the constraint:
+The total tooth medication used cannot exceed the available supply. Therefore, the constraint
 
 \[
 10 \cdot (\text{number of small bones}) + 15 \cdot (\text{number of large bones}) \le \text{TotalToothMedication}
 \]
 
-is a direct translation of the resource limitation described in the problem.
+is directly derived from the problem statement and is a standard resource capacity constraint in an LP/MILP formulation.
 
-Without this constraint:
-- The model could produce arbitrarily many bones (subject only to other constraints),
-- Which would violate the stated availability of tooth medication.
+There is no ambiguity here — this is a core feasibility constraint.
 
-This is a **core resource constraint** and absolutely must be included in the model.
-
-### Confidence Level
-5 OUT OF 5
+**5 OUT OF 5**
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -232,7 +138,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: The number of small bones must be at least MinProportionSmallBones times the total number of bones made
+Consider this potential constraint: (1 - MinProportionSmallBones) * (number of small bones) - MinProportionSmallBones * (number of large bones) >= 0
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -242,40 +148,56 @@ Consider this potential constraint: The number of small bones must be at least M
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is **definitely a constraint** and it should be explicitly modeled in the (MI)LP formulation.
-
-### Why?
+Let  
+- \( S \) = number of small bones  
+- \( L \) = number of large bones  
+- \( p = \text{MinProportionSmallBones} \)
 
 The problem states:
 
-> “At least 50% of the bones made must be small.”
+> At least 50% of the bones made must be small.
 
-This directly translates into a mathematical restriction on the decision variables.
-
-Let:
-- \( S \) = number of small bones  
-- \( L \) = number of large bones  
-
-The statement means:
+Mathematically, this means:
 
 \[
-S \ge \text{MinProportionSmallBones} \cdot (S + L)
+\frac{S}{S + L} \ge p
 \]
 
-With the given data:
+Multiply both sides by \( S + L \) (which is nonnegative):
 
 \[
-S \ge 0.5 (S + L)
+S \ge p(S + L)
 \]
 
-This is a **structural feasibility constraint**, not something implied by other constraints. It cannot be derived from:
-- the medication limit,
-- the minimum number of large bones,
-- or the objective.
+Expand the right-hand side:
 
-Without explicitly including this constraint, the model could produce a solution violating the requirement that at least half the bones be small.
+\[
+S \ge pS + pL
+\]
 
-Therefore, this constraint **must be included** in the model.
+Rearrange:
+
+\[
+S - pS - pL \ge 0
+\]
+
+\[
+(1 - p)S - pL \ge 0
+\]
+
+This exactly matches the proposed constraint:
+
+\[
+(1 - \text{MinProportionSmallBones}) \cdot S - \text{MinProportionSmallBones} \cdot L \ge 0
+\]
+
+So:
+
+- ✅ It **is** a valid linear constraint.
+- ✅ It correctly models the “at least 50% small bones” requirement.
+- ✅ It should absolutely be included in the (MI)LP formulation.
+
+This is not redundant and is essential to enforce the proportion condition.
 
 **5 OUT OF 5**
 +--+
@@ -331,7 +253,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: The number of large bones must be greater than or equal to MinLargeBones
+Consider this potential constraint: (number of large bones) >= MinLargeBones
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -341,23 +263,24 @@ Consider this potential constraint: The number of large bones must be greater th
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is explicitly a constraint in the problem description.
+The problem statement explicitly says:
 
-The statement:
+> “In addition, the hospital must make at least 30 large bones.”
 
-> “the hospital must make at least 30 large bones”
-
-directly translates to the constraint:
+This directly translates to the constraint:
 
 \[
-\text{Number of large bones} \ge \text{MinLargeBones}
+\text{number of large bones} \ge \text{MinLargeBones}
 \]
 
-This is a hard requirement (not implied, not optional, not redundant), and it must be explicitly included in the (MI)LP formulation.
+This is clearly a required feasibility condition, not something implied or redundant. It is an explicit lower bound on the decision variable representing the number of large bones.
 
-There is no ambiguity in the wording, and it is clearly separate from the proportion constraint and the resource constraints.
+Therefore:
+- ✅ Yes, this is definitely a constraint.
+- ✅ It must be explicitly included in the (MI)LP formulation.
+- ✅ It is not redundant or derivable from other constraints.
 
-**5 OUT OF 5**
+**Confidence level: 5 OUT OF 5**
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -378,12 +301,12 @@ Extracting constraint formulations
         "SmallBones": {
             "shape": [],
             "type": "integer",
-            "definition": "Number of small bones to be made"
+            "definition": "Number of small bones to be produced"
         },
         "LargeBones": {
             "shape": [],
             "type": "integer",
-            "definition": "Number of large bones to be made"
+            "definition": "Number of large bones to be produced"
         }
     },
     "AUXILIARY CONSTRAINTS": []
@@ -392,32 +315,32 @@ Extracting constraint formulations
 ----
 EXTRACTED ITEMS
 $10 \\cdot SmallBones + 15 \\cdot LargeBones \\leq TotalToothMedication$
-{'SmallBones': {'shape': [], 'type': 'integer', 'definition': 'Number of small bones to be made'}, 'LargeBones': {'shape': [], 'type': 'integer', 'definition': 'Number of large bones to be made'}}
+{'SmallBones': {'shape': [], 'type': 'integer', 'definition': 'Number of small bones to be produced'}, 'LargeBones': {'shape': [], 'type': 'integer', 'definition': 'Number of large bones to be produced'}}
 []
 ----
 ----
 {
-    "FORMULATION": "$SmallBones \\geq MinProportionSmallBones \\cdot (SmallBones + LargeBones)$",
+    "FORMULATION": "$(1 - MinProportionSmallBones) \\cdot SmallBones - MinProportionSmallBones \\cdot LargeBones \\geq 0$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$SmallBones \\geq MinProportionSmallBones \\cdot (SmallBones + LargeBones)$
+$(1 - MinProportionSmallBones) \\cdot SmallBones - MinProportionSmallBones \\cdot LargeBones \\geq 0$
 {}
 []
 ----
 ----
 {
-    "FORMULATION": "$LargeBones \\ge MinLargeBones$",
+    "FORMULATION": "$LargeBones \\geq MinLargeBones$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$LargeBones \\ge MinLargeBones$
+$LargeBones \\geq MinLargeBones$
 {}
 []
 ----
@@ -429,12 +352,12 @@ CPU model: Intel(R) Xeon(R) Platinum, instruction set [SSE2|AVX|AVX2|AVX512]
 Thread count: 1 physical cores, 2 logical processors, using up to 2 threads
 
 Optimize a model with 3 rows, 2 columns and 5 nonzeros (Min)
-Model fingerprint: 0xd1a200a9
-Model has 0 linear objective coefficients
+Model fingerprint: 0xb50d01d9
+Model has 2 linear objective coefficients
 Variable types: 0 continuous, 2 integer (0 binary)
 Coefficient statistics:
   Matrix range     [5e-01, 2e+01]
-  Objective range  [0e+00, 0e+00]
+  Objective range  [1e+01, 2e+01]
   Bounds range     [0e+00, 0e+00]
   RHS range        [3e+01, 2e+03]
 
@@ -445,10 +368,10 @@ Presolve: All rows and columns removed
 Explored 0 nodes (0 simplex iterations) in 0.00 seconds (0.00 work units)
 Thread count was 1 (of 2 available processors)
 
-Solution count 1: 0 
+Solution count 1: 810 
 
 Optimal solution found (tolerance 1.00e-04)
-Best objective 0.000000000000e+00, best bound 0.000000000000e+00, gap 0.0000%
-Optimal Objective Value:  0.0
-Optimal Objective Value:  0.0
+Best objective 8.100000000000e+02, best bound 8.100000000000e+02, gap 0.0000%
+Optimal Objective Value:  810.0
+Optimal Objective Value:  810.0
 

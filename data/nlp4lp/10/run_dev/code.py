@@ -29,32 +29,24 @@ PackageProfit = data["PackageProfit"] # shape: ['NumPackages'], definition: Prof
 
 ### Define the variables
 
-PackagesProduced = model.addVars(NumPackages, vtype=GRB.INTEGER, name="PackagesProduced")
+BananaHatersPackages = model.addVar(vtype=GRB.INTEGER, name="BananaHatersPackages")
+
+ComboPackages = model.addVar(vtype=GRB.INTEGER, name="ComboPackages")
 
 
 
 ### Define the constraints
 
-model.addConstr(
-    sum(Required[0][p] * PackagesProduced[p] for p in range(NumPackages)) 
-    <= Available[0]
-)
-model.addConstr(
-    sum(Required[banana_index][p] * PackagesProduced[p] for p in range(NumPackages))
-    <= Available[banana_index]
-)
-model.addConstr(
-    sum(Required[grapes_index][p] * PackagesProduced[p] for p in range(NumPackages))
-    <= Available[grapes_index]
-)
-model.addConstr(PackagesProduced[1] >= 0)
-model.addConstr(PackagesProduced[1] >= 0)
+model.addConstr(6 * BananaHatersPackages + 5 * ComboPackages <= 10)
+model.addConstr(BananaHatersPackages >= 0)
+model.addConstr(ComboPackages >= 0)
 
 
 ### Define the objective
 
 model.setObjective(
-    quicksum(PackageProfit[j] * PackagesProduced[j] for j in range(NumPackages)),
+    PackageProfit[0] * BananaHatersPackages + 
+    PackageProfit[1] * ComboPackages,
     GRB.MAXIMIZE
 )
 

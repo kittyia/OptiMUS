@@ -1,0 +1,63 @@
+{
+    "description": "PROBLEM TYPE: LP\nPROBLEM INFO:\n\n- A small firm specializes in making some types of spare automobile parts. \n- Each part is has to go through several shops \n- The required worker-hours for part \\var{k} in shop \\var{s} is \\var{time_{k, s}}.\n- The profit of part \\var{k} is \\var{profit_{k}}.\n- The capacity of shop \\var{s} is \\var{capacity_{s}} working hours.\n\nINPUT FORMAT:\n\n{\n\t\"time\": [[time_{k, s} for s in 1,...,S] for k in 1,...,K],\n\t\"profit\": [profit_{k} for k in 1,...,K],\n\t\"capacity\": [capacity_{s} for s in 1,...,S]\n}\n\n\nOBJECTIVE: Formulate the problem of determining the quantities of each spare part to be made during the month so as to maximize profit.\n\nOUTPUT INFO:\n\n- \\var{quantity} represents the amount of each spare part to be made\n\nOUTPUT FORMAT:\n\n{\n\t\"quantity\": [quantity_{k} for k in 1,...,K]\n}",
+    "parameters": {
+        "K": {
+            "definition": "Number of different spare parts",
+            "shape": [],
+            "type": "int"
+        },
+        "S": {
+            "definition": "Number of machines capable of making the spare parts",
+            "shape": [],
+            "type": "int"
+        },
+        "Time": {
+            "definition": "Time taken to make spare part k on machine s",
+            "shape": [
+                "K",
+                "S"
+            ],
+            "type": "string"
+        },
+        "Profit": {
+            "definition": "Profit obtained from making spare part k",
+            "shape": [
+                "K"
+            ],
+            "type": "string"
+        },
+        "Capacity": {
+            "definition": "Capacity of machine s for the spare parts",
+            "shape": [
+                "S"
+            ],
+            "type": "string"
+        }
+    },
+    "objective": {
+        "description": "\"The goal is to maximize the total profit from producing the spare automobile parts\"",
+        "formulation": "$\\max \\sum_{k=1}^{K} Profit_k \\, quantity_k$",
+        "code": "model.setObjective(quicksum(Profit[k] * quantity[k] for k in range(K)), GRB.MAXIMIZE)"
+    },
+    "constraints": [
+        {
+            "description": "For each shop s, the total worker-hours used by all spare parts cannot exceed the shop capacity: sum over k of Time[k][s] * quantity[k] <= Capacity[s]",
+            "formulation": "$\\\\forall s = 1, \\\\dots, S:\\\\; \\\\sum_{k=1}^{K} Time_{k,s} \\\\cdot quantity_k \\\\leq Capacity_s$",
+            "code": "for s in range(S):\n    model.addConstr(\n        sum(Time[k][s] * quantity[k] for k in range(K)) <= Capacity[s]\n    )"
+        },
+        {
+            "description": "The production quantity of each spare part must be non-negative: quantity[k] >= 0 for all k",
+            "formulation": "$\\\\forall k = 1, \\\\ldots, K,\\\\; quantity[k] \\\\geq 0$",
+            "code": "for k in range(K):\n    model.addConstr(quantity[k] >= 0)"
+        }
+    ],
+    "variables": {
+        "quantity": {
+            "shape": [
+                "K"
+            ],
+            "type": "continuous",
+            "definition": "The quantity of spare part k to be produced during the month"
+        }
+    }
+}

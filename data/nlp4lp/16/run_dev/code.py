@@ -51,7 +51,7 @@ model.addConstr(SunnyPills >= 0)
 
 ### Define the objective
 
-
+model.setObjective(CostZodiac * ZodiacPills + CostSunny * SunnyPills, GRB.MINIMIZE)
 
 
 ### Optimize the model

@@ -42,7 +42,7 @@ for s in range(NumShifts):
 
 ### Define the objective
 
-
+model.setObjective(quicksum(ShiftCosts[s] * officersAssigned[s] for s in range(NumShifts)), GRB.MINIMIZE)
 
 
 ### Optimize the model

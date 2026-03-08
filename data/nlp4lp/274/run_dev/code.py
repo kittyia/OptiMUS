@@ -35,10 +35,6 @@ for t in range(T):
     model.addConstr(
         sum(Start[(t - k) % T] for k in range(Period)) >= Demand[t]
     )
-for d in range(T):
-    model.addConstr(
-        sum(Start[(d - k) % T] for k in range(Period)) >= Demand[d]
-    )
 for t in range(T):
     model.addConstr(Start[t] >= 0)
 

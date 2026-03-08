@@ -50,18 +50,14 @@ model.addConstr(
     + PlasticCostStandard * StandardKeyboards
     <= TotalPlasticAvailable
 )
-model.addConstr(
-    SolderCostMechanical * MechanicalKeyboards + 
-    SolderCostStandard * StandardKeyboards 
-    <= TotalSolderAvailable
-)
+model.addConstr(SolderCostMechanical * MechanicalKeyboards + SolderCostStandard * StandardKeyboards <= TotalSolderAvailable)
 model.addConstr(MechanicalKeyboards == MechanicalToStandardRatio * StandardKeyboards)
 model.addConstr(StandardKeyboards >= MinimumStandardKeyboards)
 
 
 ### Define the objective
 
-
+model.setObjective(MechanicalKeyboards + StandardKeyboards, GRB.MAXIMIZE)
 
 
 ### Optimize the model

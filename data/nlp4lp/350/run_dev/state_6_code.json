@@ -35,28 +35,28 @@
     },
     "objective": {
         "description": "\"Minimize the total cost of selected translators while ensuring that all required languages are covered.\"",
-        "formulation": "$\\min \\sum_{i=1}^{N} Cost_i \\, Select_i$",
-        "code": ""
+        "formulation": "$\\min \\sum_{i=1}^{N} Cost_i \\, x_i$",
+        "code": "model.setObjective(quicksum(Cost[i] * x[i] for i in range(N)), GRB.MINIMIZE)"
     },
     "constraints": [
         {
-            "description": "For each required language, the sum of selected translators who can translate that language must be at least 1",
-            "formulation": "$\\\\forall m = 1, \\\\dots, M:\\\\; \\\\sum_{i \\\\in \\\\{1,\\\\dots,N\\\\}:\\\\; RequiredLanguages[m] \\\\in Languages[i]} Select[i] \\\\geq 1$",
-            "code": "for m in range(M):\n    model.addConstr(\n        sum(Select[i] for i in range(N) if RequiredLanguages[m] in Languages[i]) >= 1\n    )"
+            "description": "For each required language m in RequiredLanguages, the sum of decision variables x_i over all translators i who can translate language m must be greater than or equal to 1",
+            "formulation": "$\\\\forall m \\\\in RequiredLanguages, \\\\sum_{i : m \\\\in Languages[i]} x_i \\\\geq 1$",
+            "code": "for m in RequiredLanguages:\n    model.addConstr(sum(x[i] for i in range(N) if m in Languages[i]) >= 1)"
         },
         {
-            "description": "Each translator decision variable must be binary (0 if not selected, 1 if selected)",
-            "formulation": "$\\\\forall i = 1, \\\\dots, N, \\\\; Select[i] \\\\in \\\\{0,1\\\\}$",
-            "code": "for i in range(N):\n    model.addConstr(Select[i] >= 0)\n    model.addConstr(Select[i] <= 1)"
+            "description": "Each decision variable x_i (indicating whether translator i is selected) must be binary, i.e., x_i \u2208 {0, 1}",
+            "formulation": "$\\\\forall i = 1, \\\\dots, N,\\\\; x_i \\\\in \\\\{0,1\\\\}$",
+            "code": "for i in range(N):\n    model.addConstr(x[i] >= 0)\n    model.addConstr(x[i] <= 1)"
         }
     ],
     "variables": {
-        "Select": {
+        "x": {
             "shape": [
                 "N"
             ],
             "type": "binary",
-            "definition": "Binary variable equal to 1 if translator i is selected, 0 otherwise"
+            "definition": "Binary decision variable equal to 1 if translator i is selected, 0 otherwise"
         }
     }
 }

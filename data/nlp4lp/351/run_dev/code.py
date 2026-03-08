@@ -29,7 +29,7 @@ NumConsultants = data["NumConsultants"] # shape: [], definition: Number of consu
 
 ### Define the variables
 
-Assign = model.addVars(NumConsultants, NumProjects, vtype=GRB.BINARY, name="Assign")
+Assignments = model.addVars(NumConsultants, NumProjects, vtype=GRB.BINARY, name="Assignments")
 
 Hire = model.addVars(NumConsultants, vtype=GRB.BINARY, name="Hire")
 
@@ -39,20 +39,19 @@ Hire = model.addVars(NumConsultants, vtype=GRB.BINARY, name="Hire")
 
 for i in range(NumProjects):
     model.addConstr(
-        sum(Assign[j, i] for j in range(NumConsultants)) == 1
+        sum(Assignments[j, i] for j in range(NumConsultants)) == 1
     )
 for j in range(NumConsultants):
     model.addConstr(
-        sum(Assign[j, i] for i in range(NumProjects)) <= MaxProjectsPerConsultant
+        sum(Assignments[j, i] for i in range(NumProjects)) <= MaxProjectsPerConsultant
     )
 for j in range(NumConsultants):
     for i in range(NumProjects):
-        model.addConstr(Assign[j, i] <= Hire[j])
+        model.addConstr(Assignments[j, i] <= Hire[j])
 for j in range(NumConsultants):
     for i in range(NumProjects):
-        model.addConstr(Assign[j, i] >= 0)
-        model.addConstr(Assign[j, i] <= 1)
-
+        model.addConstr(Assignments[j, i] >= 0)
+        model.addConstr(Assignments[j, i] <= 1)
 for j in range(NumConsultants):
     model.addConstr(Hire[j] >= 0)
     model.addConstr(Hire[j] <= 1)
@@ -62,7 +61,7 @@ for j in range(NumConsultants):
 
 model.setObjective(
     quicksum(FixedCosts[j] * Hire[j] for j in range(NumConsultants)) +
-    quicksum(AdditionalCosts[i][j] * Assign[j, i]
+    quicksum(AdditionalCosts[i][j] * Assignments[j, i]
              for i in range(NumProjects)
              for j in range(NumConsultants)),
     GRB.MINIMIZE

@@ -1,9 +1,9 @@
 ----
 [
-    "45 * (Number of densely-seated ski lifts) + 20 * (Number of loosely-seated ski lifts) >= 1000",
-    "30 * (Number of densely-seated ski lifts) + 22 * (Number of loosely-seated ski lifts) <= 940",
+    "45 * (Number of densely-seated ski lifts) + 20 * (Number of loosely-seated ski lifts) >= MinimumGuestsPerMinute",
+    "30 * (Number of densely-seated ski lifts) + 22 * (Number of loosely-seated ski lifts) <= TotalElectricityAvailable",
     "Number of densely-seated ski lifts is a nonnegative integer",
-    "Number of loosely-seated ski lifts is an integer greater than or equal to 5"
+    "Number of loosely-seated ski lifts is an integer and >= MinimumLooselySeatedLifts"
 ]
 ----
 +++++++++++++++++++
@@ -58,7 +58,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: 45 * (Number of densely-seated ski lifts) + 20 * (Number of loosely-seated ski lifts) >= 1000
+Consider this potential constraint: 45 * (Number of densely-seated ski lifts) + 20 * (Number of loosely-seated ski lifts) >= MinimumGuestsPerMinute
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -68,37 +68,39 @@ Consider this potential constraint: 45 * (Number of densely-seated ski lifts) + 
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is definitely a constraint and should be explicitly included in the (MI)LP formulation.
+Yes, this is definitely a constraint and it should be explicitly included in the (MI)LP formulation.
 
-### Why?
+### Why this is a constraint
 
 The problem states:
 
 > “The ski resort needs at least 1000 guests every minute to make a profit.”
 
-We are given:
-- 45 guests/minute per densely-seated lift  
-- 20 guests/minute per loosely-seated lift  
+This is a **minimum throughput requirement**. Since:
+- Each densely-seated lift transports 45 guests per minute,
+- Each loosely-seated lift transports 20 guests per minute,
 
-If we let:
-- \( D \) = number of densely-seated lifts  
-- \( L \) = number of loosely-seated lifts  
-
-Then total guests per minute is:
+the total number of guests transported per minute is:
 
 \[
-45D + 20L
+45 \cdot (\text{Number of densely-seated lifts}) + 20 \cdot (\text{Number of loosely-seated lifts})
 \]
 
-To meet the profitability requirement:
+To satisfy the profitability requirement, this total must be **at least** `MinimumGuestsPerMinute` (which equals 1000).
+
+So the constraint:
 
 \[
-45D + 20L \ge 1000
+45D + 20L \ge \text{MinimumGuestsPerMinute}
 \]
 
-This directly translates the business requirement into a mathematical feasibility condition. Without this constraint, the model could choose too few lifts and fail to meet the minimum throughput requirement.
+is directly derived from the problem statement and is essential for feasibility.
 
-There is no ambiguity in interpretation — the constraint matches the problem statement exactly.
+### Conclusion
+
+✅ This is clearly a required model constraint.  
+✅ It directly encodes a stated operational requirement.  
+✅ It must be included in the (MI)LP formulation.
 
 **5 OUT OF 5**
 +--+
@@ -154,7 +156,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: 30 * (Number of densely-seated ski lifts) + 22 * (Number of loosely-seated ski lifts) <= 940
+Consider this potential constraint: 30 * (Number of densely-seated ski lifts) + 22 * (Number of loosely-seated ski lifts) <= TotalElectricityAvailable
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -164,36 +166,39 @@ Consider this potential constraint: 30 * (Number of densely-seated ski lifts) + 
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is **definitely a constraint** and it should be explicitly included in the (MI)LP formulation.
+Yes, this is definitely a constraint and it should be explicitly included in the (MI)LP formulation.
 
 ### Why?
 
-The problem clearly states:
+The problem states:
+
 - Each densely-seated lift uses **30 units of electricity**.
 - Each loosely-seated lift uses **22 units of electricity**.
-- The resort has **940 total electricity units available**.
+- The resort has **940 units of electricity available**.
 
-This is a classic **resource capacity constraint**: the total electricity consumption of all installed lifts cannot exceed the available electricity.
+This clearly defines a **resource limitation**. The total electricity consumed by all installed lifts cannot exceed the available supply.
 
-If we define:
+If we let:
 - \( x \) = number of densely-seated lifts  
 - \( y \) = number of loosely-seated lifts  
 
-Then the total electricity usage is:
+Then total electricity consumption is:
 
 \[
 30x + 22y
 \]
 
-Since electricity availability is limited to 940 units, we must impose:
+And since only 940 units are available, we must enforce:
 
 \[
 30x + 22y \le 940
 \]
 
-This is a standard and essential linear constraint in the model. Without it, the solution could exceed available electricity, violating the problem's conditions.
+This is a classic linear resource capacity constraint and is essential to correctly modeling the problem. Omitting it would allow infeasible solutions that exceed the available electricity.
 
-✅ This constraint is absolutely necessary and correctly formulated.
+### Conclusion
+
+✅ This is absolutely a required constraint in the model.
 
 **5 OUT OF 5**
 +--+
@@ -259,32 +264,26 @@ Consider this potential constraint: Number of densely-seated ski lifts is a nonn
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this **is** a constraint and it should be explicitly modeled in the MILP formulation.
+Yes, this **is** a constraint, specifically a **domain constraint** on the decision variable representing the number of densely-seated ski lifts.
 
-### Why?
+In an optimization model, we must define:
+- Decision variables  
+- Objective function  
+- Constraints  
+- Variable domains  
 
-The number of densely-seated ski lifts is a **decision variable** representing a count of physical units. Therefore:
+Here, the number of densely-seated ski lifts:
+- Cannot be negative (you cannot install a negative number of lifts).
+- Must be an integer (you cannot install fractional ski lifts).
 
-- It **cannot be negative** (you cannot install −3 lifts).
-- It must be an **integer** (you cannot install 2.7 lifts).
+Because this is a discrete infrastructure planning problem, integrality is essential. If we fail to explicitly model the variable as a **nonnegative integer**, the solver could return:
+- A fractional number of lifts (e.g., 12.7 lifts), or  
+- A negative value (if nonnegativity is not enforced).
 
-In mathematical optimization, these are called **domain constraints**:
-- Nonnegativity constraint:  
-  \[
-  x_D \ge 0
-  \]
-- Integrality constraint:  
-  \[
-  x_D \in \mathbb{Z}
-  \]
+Thus, this is a required and essential modeling constraint in an MILP formulation.
 
-Without explicitly enforcing integrality, a linear programming solver could return fractional values, which would be infeasible in reality.
-
-Even though nonnegativity is often implicitly assumed in some modeling contexts, it must still be explicitly enforced in a formal (MI)LP model.
-
-Therefore, this is absolutely a valid and necessary modeling constraint.
-
-**5 OUT OF 5**
+**Answer:** Yes, it is a constraint and should explicitly be modeled.  
+**Confidence:** 5 OUT OF 5
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -338,7 +337,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: Number of loosely-seated ski lifts is an integer greater than or equal to 5
+Consider this potential constraint: Number of loosely-seated ski lifts is an integer and >= MinimumLooselySeatedLifts
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -348,17 +347,32 @@ Consider this potential constraint: Number of loosely-seated ski lifts is an int
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is clearly a constraint.
+Yes, this **is definitely a constraint** and it should be explicitly included in the (MI)LP formulation.
 
-The problem statement explicitly says: “There must be at least five loosely-seated ski lifts...” This directly translates into the constraint:
+### Why?
 
-LooselySeatedLifts ≥ 5
+The problem statement clearly says:
 
-Since the number of lifts is a count decision variable, it must also be an integer variable. Therefore, this constraint should absolutely be included explicitly in the (MI)LP formulation.
+> “There must be at least five loosely-seated ski lifts because they move slower and are friendlier for beginners.”
 
-This is not implied indirectly by any other constraint (such as electricity or guest capacity), so omitting it would change the feasible region and potentially the optimal solution.
+This directly imposes a **lower bound constraint** on the number of loosely-seated lifts:
 
-5 OUT OF 5
+\[
+\text{LooselySeatedLifts} \ge \text{MinimumLooselySeatedLifts}
+\]
+
+Additionally:
+
+- The number of ski lifts is a **count**, so it must be an **integer decision variable**.
+- Since this is a minimum requirement independent of other constraints (guests or electricity), it must be explicitly modeled.
+- This is not implied by any other constraint in the problem.
+
+Therefore:
+- ✅ It is a real constraint.
+- ✅ It must be explicitly included.
+- ✅ It is essential for correctness of the model.
+
+**5 OUT OF 5**
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -398,14 +412,14 @@ $GuestsPerMinuteDenselySeatedLift \\cdot DenselySeatedLifts + GuestsPerMinuteLoo
 ----
 ----
 {
-    "FORMULATION": "$30 \\cdot DenselySeatedLifts + 22 \\cdot LooselySeatedLifts \\leq 940$",
+    "FORMULATION": "$30 \\cdot DenselySeatedLifts + 22 \\cdot LooselySeatedLifts \\leq TotalElectricityAvailable$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$30 \\cdot DenselySeatedLifts + 22 \\cdot LooselySeatedLifts \\leq 940$
+$30 \\cdot DenselySeatedLifts + 22 \\cdot LooselySeatedLifts \\leq TotalElectricityAvailable$
 {}
 []
 ----
@@ -424,14 +438,14 @@ $DenselySeatedLifts \\geq 0$
 ----
 ----
 {
-    "FORMULATION": "$LooselySeatedLifts \\ge 5$",
+    "FORMULATION": "$LooselySeatedLifts \\ge MinimumLooselySeatedLifts$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$LooselySeatedLifts \\ge 5$
+$LooselySeatedLifts \\ge MinimumLooselySeatedLifts$
 {}
 []
 ----

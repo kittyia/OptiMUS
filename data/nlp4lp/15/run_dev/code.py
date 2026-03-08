@@ -44,7 +44,11 @@ model.addConstr(InvestmentApartments >= MinInvestmentRatio * InvestmentTownhouse
 
 ### Define the objective
 
-
+model.setObjective(
+    ReturnRateApartments * InvestmentApartments +
+    ReturnRateTownhouses * InvestmentTownhouses,
+    GRB.MAXIMIZE
+)
 
 
 ### Optimize the model

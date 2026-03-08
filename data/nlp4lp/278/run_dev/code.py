@@ -45,7 +45,7 @@ for k in range(NumParts):
 
 ### Define the objective
 
-
+model.setObjective(quicksum(Profit[k] * x[k] for k in range(NumParts)), GRB.MAXIMIZE)
 
 
 ### Optimize the model

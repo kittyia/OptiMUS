@@ -41,20 +41,21 @@ AdultVaccines = model.addVar(vtype=GRB.INTEGER, name="AdultVaccines")
 
 ### Define the constraints
 
+model.addConstr(MRNAPerChildVaccine * ChildVaccines + MRNAPerAdultVaccine * AdultVaccines <= TotalMRNAAvailable)
 model.addConstr(
-    MRNAPerChildVaccine * ChildVaccines + 
-    MRNAPerAdultVaccine * AdultVaccines 
-    <= TotalMRNAAvailable
+    (1 - MinPercentageAdultVaccines / 100.0) * AdultVaccines
+    >= (MinPercentageAdultVaccines / 100.0) * ChildVaccines
 )
-model.addConstr(
-    AdultVaccines >= (MinPercentageAdultVaccines / (1 - MinPercentageAdultVaccines)) * ChildVaccines
-)
-model.addConstr(ChildVaccines >= MinChildVaccines)
+model.addConstr(ChildVaccines >= MinChildVaccines])
 
 
 ### Define the objective
 
-
+model.setObjective(
+    FeverSuppressantPerChildVaccine * ChildVaccines +
+    FeverSuppressantPerAdultVaccine * AdultVaccines,
+    GRB.MINIMIZE
+)
 
 
 ### Optimize the model

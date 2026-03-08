@@ -35,23 +35,23 @@ MinFat = data["MinFat"] # shape: [], definition: Minimum required units of fat i
 
 ### Define the variables
 
-FeedAkg = model.addVar(vtype=GRB.CONTINUOUS, name="FeedAkg")
+AmountFeedA = model.addVar(vtype=GRB.CONTINUOUS, name="AmountFeedA")
 
-FeedBkg = model.addVar(vtype=GRB.CONTINUOUS, name="FeedBkg")
+AmountFeedB = model.addVar(vtype=GRB.CONTINUOUS, name="AmountFeedB")
 
 
 
 ### Define the constraints
 
-model.addConstr(ProteinFeedA * FeedAkg + ProteinFeedB * FeedBkg >= MinProtein)
-model.addConstr(FatFeedA * FeedAkg + FatFeedB * FeedBkg >= MinFat)
-model.addConstr(FeedAkg >= 0)
-model.addConstr(FeedBkg >= 0)
+model.addConstr(ProteinFeedA * AmountFeedA + ProteinFeedB * AmountFeedB >= MinProtein)
+model.addConstr(FatFeedA * AmountFeedA + FatFeedB * AmountFeedB >= MinFat)
+model.addConstr(AmountFeedA >= 0)
+model.addConstr(AmountFeedB >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(CostFeedA * AmountFeedA + CostFeedB * AmountFeedB, GRB.MINIMIZE)
 
 
 ### Optimize the model

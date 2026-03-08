@@ -43,7 +43,7 @@ for k in range(NumObs):
 
 ### Define the objective
 
-
+model.setObjective(t, GRB.MINIMIZE)
 
 
 ### Optimize the model

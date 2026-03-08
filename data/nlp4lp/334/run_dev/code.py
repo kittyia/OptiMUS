@@ -50,7 +50,10 @@ for j in range(M):
 
 ### Define the objective
 
-
+model.setObjective(
+    quicksum((Prices[j] - Costs[j]) * amount[j] for j in range(M)),
+    GRB.MAXIMIZE
+)
 
 
 ### Optimize the model

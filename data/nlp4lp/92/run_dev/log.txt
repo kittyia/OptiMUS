@@ -1,42 +1,31 @@
 ----
 Step-by-step reasoning:
 
-1. **Flour constraint**:  
-   “Total flour used by all beakers should not exceed 150 units.”  
-   This limits flour usage and is necessary because flour is a scarce resource. It cannot be derived from any other constraint.  
-   ✅ Keep.
+1. **Flour constraint** – Necessary. It limits total flour usage and is independent of other resource constraints.
 
-2. **Special liquid constraint**:  
-   “Total special liquid used by all beakers should not exceed 100 units.”  
-   This independently limits special liquid usage. It is not implied by the flour or waste constraints.  
-   ✅ Keep.
+2. **Special liquid constraint** – Necessary. It limits a different resource and cannot be derived from the flour constraint.
 
-3. **Waste constraint**:  
-   “Total waste produced by all beakers should not exceed 30 units.”  
-   This is a separate operational restriction and is not implied by flour or liquid limits.  
-   ✅ Keep.
+3. **Waste constraint** – Necessary. Waste is a separate limiting factor and cannot be inferred from resource usage constraints.
 
-4. **Non-negativity constraints**:  
-   - “The number of times beaker 1 is used should be non-negative.”  
-   - “The number of times beaker 2 is used should be non-negative.”  
+4. **Non-negativity constraint** – Necessary to prevent physically meaningless negative production.
 
-   These are structurally identical constraints applied to different decision variables. They can be combined into a single generalized constraint:
+5. **Integer constraint** – Necessary because the number of times a beaker is used must be whole units.
 
-   “The number of times each beaker is used should be non-negative.”
+However, the last two constraints:
+- "The number of times each beaker is used must be non-negative"
+- "The number of times each beaker is used must be an integer"
 
-   ✅ Combine into one constraint.
+can be **combined into a single constraint** stating that each decision variable must be a **non-negative integer**.
 
-No constraints are redundant, and none can be removed. Only the two non-negativity constraints can be merged.
-
----
+No other constraints are redundant or combinable.
 
 Updated list of constraints:
 
 [
-    "Total flour used by all beakers should not exceed 150 units",
-    "Total special liquid used by all beakers should not exceed 100 units",
-    "Total waste produced by all beakers should not exceed 30 units",
-    "The number of times each beaker is used should be non-negative"
+    "The total flour used by all beakers should not exceed FlourAvailable",
+    "The total special liquid used by all beakers should not exceed SpecialLiquidAvailable",
+    "The total waste produced by all beakers should not exceed MaxWasteAllowed",
+    "The number of times each beaker is used must be a non-negative integer"
 ]
 ----
 +++++++++++++++++++
@@ -104,7 +93,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: Total flour used by all beakers should not exceed 150 units
+Consider this potential constraint: The total flour used by all beakers should not exceed FlourAvailable
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -114,21 +103,25 @@ Consider this potential constraint: Total flour used by all beakers should not e
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is definitely a constraint.
+Yes, this is definitely a constraint and it should be explicitly modeled in the (MI)LP formulation.
 
-The problem states that the summer camp has **150 units of flour available**. Since each beaker consumes flour (4 units for beaker 1 and 6 units for beaker 2), the total flour used across all selected beakers cannot exceed the available amount.
+The problem clearly states that the summer camp has **150 units of flour available**. Since each beaker consumes a certain amount of flour per use, the total flour consumed by all selected beaker uses cannot exceed this available amount. This is a classic **resource capacity constraint**, which is fundamental in linear programming formulations of production problems.
 
-If we let:
-- \( x_1 \) = number of times beaker 1 is used  
-- \( x_2 \) = number of times beaker 2 is used  
+Mathematically, if:
+- \( x_1 \) = number of times Beaker 1 is used  
+- \( x_2 \) = number of times Beaker 2 is used  
 
-Then the flour constraint is:
+and flour usage per beaker is:
+- 4 units for Beaker 1  
+- 6 units for Beaker 2  
+
+then the constraint is:
 
 \[
 4x_1 + 6x_2 \le 150
 \]
 
-This is a classic resource capacity constraint and must be explicitly included in the (MI)LP formulation.
+This is absolutely necessary to correctly model the limited flour supply.
 
 **Confidence: 5 OUT OF 5**
 +--+
@@ -197,7 +190,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: Total special liquid used by all beakers should not exceed 100 units
+Consider this potential constraint: The total special liquid used by all beakers should not exceed SpecialLiquidAvailable
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -207,21 +200,27 @@ Consider this potential constraint: Total special liquid used by all beakers sho
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is definitely a constraint.
+Yes, this is definitely a constraint and it should be explicitly modeled in the (MI)LP formulation.
 
-The problem explicitly states that the summer camp has **100 units of special liquid available**. Since each beaker uses some amount of special liquid, the total usage across all beakers cannot exceed this available amount.
+The problem clearly states that the summer camp has **100 units of special liquid available**. Since each beaker consumes a certain amount of special liquid per use, the total consumption across all selected beakers cannot exceed this available amount.
 
-This is a standard **resource availability constraint** in a linear programming formulation:
+Mathematically, if:
+- \( x_1 \) = number of times beaker 1 is used  
+- \( x_2 \) = number of times beaker 2 is used  
+
+and the special liquid usage per beaker is:
+- 6 units for beaker 1  
+- 3 units for beaker 2  
+
+then the constraint is:
 
 \[
-\sum_{i=1}^{2} (\text{SpecialLiquidUsagePerBeaker}_i \cdot x_i) \le 100
+6x_1 + 3x_2 \le 100
 \]
 
-where \(x_i\) is the number of times beaker \(i\) is used.
+This is a standard resource capacity constraint and is explicitly supported by the problem statement. There is no ambiguity here.
 
-Because the availability is clearly specified and directly limits feasible solutions, this constraint **must** be explicitly included in the model.
-
-**5 OUT OF 5**
+**Confidence level: 5 OUT OF 5**
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -288,7 +287,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: Total waste produced by all beakers should not exceed 30 units
+Consider this potential constraint: The total waste produced by all beakers should not exceed MaxWasteAllowed
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -298,25 +297,23 @@ Consider this potential constraint: Total waste produced by all beakers should n
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-The problem statement explicitly says:  
+Yes, this is clearly a constraint and must be explicitly included in the (MI)LP formulation.
 
-> “If at most 30 units of waste can be produced…”
+The problem statement explicitly says: **“If at most 30 units of waste can be produced”**. This directly imposes an upper bound on total waste generation. Since each beaker produces a known amount of waste per use (4 units for beaker 1 and 2 units for beaker 2), and the decision variables represent how many times each beaker is used, total waste is a linear function of the decision variables.
 
-This is a direct upper bound on total waste. Since each beaker produces a known amount of waste per use (4 units for beaker 1, 2 units for beaker 2), and we are choosing how many of each beaker to use, the total waste depends on the decision variables.
-
-Therefore, this must be modeled as a constraint:
+Thus, the constraint should be modeled as:
 
 \[
-4x_1 + 2x_2 \le 30
+4x_1 + 2x_2 \leq 30
 \]
 
 where:
 - \(x_1\) = number of times beaker 1 is used  
 - \(x_2\) = number of times beaker 2 is used  
 
-This is clearly a binding resource limitation, just like flour and special liquid availability.
+This is a classic linear resource constraint, just like the flour and special liquid limits.
 
-✅ Yes, it is definitely a constraint and must be explicitly included in the (MI)LP formulation.
+There is no ambiguity here — the wording “at most 30 units” unambiguously defines a hard constraint.
 
 **5 OUT OF 5**
 +--+
@@ -385,7 +382,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: The number of times each beaker is used should be non-negative
+Consider this potential constraint: The number of times each beaker is used must be a non-negative integer
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -395,19 +392,38 @@ Consider this potential constraint: The number of times each beaker is used shou
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this **is** a constraint.
+Yes, this **is** a constraint and it should be explicitly modeled.
 
-The decision variables in this problem are the number of times each beaker is used (let’s call them \( x_1 \) and \( x_2 \)). Since you cannot use a beaker a negative number of times, we must explicitly enforce:
+### Why?
+
+The decision variables in this problem are:
+
+- \( x_1 \): number of times beaker 1 is used  
+- \( x_2 \): number of times beaker 2 is used  
+
+From the problem context:
+
+- A beaker is either used or not used.
+- You cannot use a beaker a negative number of times.
+- You cannot realistically use a beaker 2.7 times — usage must occur in whole numbers.
+
+Therefore, we must include:
 
 \[
-x_1 \ge 0, \quad x_2 \ge 0
+x_1, x_2 \ge 0
+\]
+\[
+x_1, x_2 \in \mathbb{Z}
 \]
 
-Additionally, in a realistic modeling context, these variables would typically also be integers (since you cannot use a beaker a fractional number of times), but at minimum they must be non-negative.
+This makes the model a **Mixed-Integer Linear Program (MILP)** (or a pure Integer Program if all variables are integer).
 
-Although non-negativity is often treated as a standard domain restriction in linear programming, it **must** be explicitly included in the (MI)LP formulation to properly define the feasible region.
+Even if the LP relaxation might coincidentally yield integer solutions, that cannot be assumed in general. Since the problem describes discrete usage counts, integrality is part of the mathematical structure of the decision.
 
-So yes — this is absolutely a real and necessary constraint.
+### Conclusion
+
+✅ Yes, it is a real constraint.  
+✅ It should be explicitly included in the MILP formulation.  
 
 **5 OUT OF 5**
 +--+
@@ -425,9 +441,9 @@ Extracting constraint formulations
 
 ----
 {
-    "FORMULATION": "$\\sum_{i=1}^{NumBeakers} FlourUsagePerBeaker[i] \\cdot UseBeakers[i] \\leq FlourAvailable$",
+    "FORMULATION": "$\\sum_{i=1}^{NumBeakers} FlourUsagePerBeaker[i] \\cdot BeakersUsed[i] \\leq FlourAvailable$",
     "NEW VARIABLES": {
-        "UseBeakers": {
+        "BeakersUsed": {
             "shape": "[NumBeakers]",
             "type": "integer",
             "definition": "Number of times each beaker is used"
@@ -438,46 +454,46 @@ Extracting constraint formulations
 ----
 ----
 EXTRACTED ITEMS
-$\\sum_{i=1}^{NumBeakers} FlourUsagePerBeaker[i] \\cdot UseBeakers[i] \\leq FlourAvailable$
-{'UseBeakers': {'shape': '[NumBeakers]', 'type': 'integer', 'definition': 'Number of times each beaker is used'}}
+$\\sum_{i=1}^{NumBeakers} FlourUsagePerBeaker[i] \\cdot BeakersUsed[i] \\leq FlourAvailable$
+{'BeakersUsed': {'shape': '[NumBeakers]', 'type': 'integer', 'definition': 'Number of times each beaker is used'}}
 []
 ----
 ----
 {
-    "FORMULATION": "$\\sum_{i=1}^{NumBeakers} SpecialLiquidUsagePerBeaker[i] \\cdot UseBeakers[i] \\leq SpecialLiquidAvailable$",
+    "FORMULATION": "$\\sum_{i=1}^{NumBeakers} SpecialLiquidUsagePerBeaker[i] \\cdot BeakersUsed[i] \\leq SpecialLiquidAvailable$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$\\sum_{i=1}^{NumBeakers} SpecialLiquidUsagePerBeaker[i] \\cdot UseBeakers[i] \\leq SpecialLiquidAvailable$
+$\\sum_{i=1}^{NumBeakers} SpecialLiquidUsagePerBeaker[i] \\cdot BeakersUsed[i] \\leq SpecialLiquidAvailable$
 {}
 []
 ----
 ----
 {
-    "FORMULATION": "$\\sum_{i=1}^{NumBeakers} WasteProducedPerBeaker[i] \\cdot UseBeakers[i] \\leq MaxWasteAllowed$",
+    "FORMULATION": "$\\sum_{i=1}^{NumBeakers} WasteProducedPerBeaker[i] \\cdot BeakersUsed[i] \\leq MaxWasteAllowed$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$\\sum_{i=1}^{NumBeakers} WasteProducedPerBeaker[i] \\cdot UseBeakers[i] \\leq MaxWasteAllowed$
+$\\sum_{i=1}^{NumBeakers} WasteProducedPerBeaker[i] \\cdot BeakersUsed[i] \\leq MaxWasteAllowed$
 {}
 []
 ----
 ----
 {
-    "FORMULATION": "$\\forall i = 1, \\dots, NumBeakers,\\; UseBeakers[i] \\ge 0$",
+    "FORMULATION": "$\\forall i \\in \\{1, \\dots, NumBeakers\\},\\; BeakersUsed[i] \\in \\mathbb{Z}_{\\ge 0}$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$\\forall i = 1, \\dots, NumBeakers,\\; UseBeakers[i] \\ge 0$
+$\\forall i \\in \\{1, \\dots, NumBeakers\\},\\; BeakersUsed[i] \\in \\mathbb{Z}_{\\ge 0}$
 {}
 []
 ----
@@ -488,25 +504,28 @@ Gurobi Optimizer version 13.0.1 build v13.0.1rc0 (linux64 - "Alibaba Cloud Linux
 CPU model: Intel(R) Xeon(R) Platinum, instruction set [SSE2|AVX|AVX2|AVX512]
 Thread count: 1 physical cores, 2 logical processors, using up to 2 threads
 
-Optimize a model with 5 rows, 2 columns and 8 nonzeros (Min)
-Model fingerprint: 0x8011ef65
-Model has 0 linear objective coefficients
+Optimize a model with 5 rows, 2 columns and 8 nonzeros (Max)
+Model fingerprint: 0xc32538cd
+Model has 2 linear objective coefficients
 Variable types: 0 continuous, 2 integer (0 binary)
 Coefficient statistics:
   Matrix range     [1e+00, 6e+00]
-  Objective range  [0e+00, 0e+00]
+  Objective range  [3e+00, 5e+00]
   Bounds range     [0e+00, 0e+00]
   RHS range        [3e+01, 2e+02]
 
-Found heuristic solution: objective 0.0000000
+Found heuristic solution: objective 38.0000000
+Presolve removed 5 rows and 2 columns
+Presolve time: 0.00s
+Presolve: All rows and columns removed
 
 Explored 0 nodes (0 simplex iterations) in 0.00 seconds (0.00 work units)
 Thread count was 1 (of 2 available processors)
 
-Solution count 1: 0 
+Solution count 2: 45 38 
 
 Optimal solution found (tolerance 1.00e-04)
-Best objective 0.000000000000e+00, best bound 0.000000000000e+00, gap 0.0000%
-Optimal Objective Value:  0.0
-Optimal Objective Value:  0.0
+Best objective 4.500000000000e+01, best bound 4.500000000000e+01, gap 0.0000%
+Optimal Objective Value:  45.0
+Optimal Objective Value:  45.0
 

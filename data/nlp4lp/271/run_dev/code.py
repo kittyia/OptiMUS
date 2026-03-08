@@ -29,7 +29,7 @@ Prices = data["Prices"] # shape: ['M'], definition: Revenue earned from selling 
 
 ### Define the variables
 
-Production = model.addVars(M, vtype=GRB.CONTINUOUS, name="Production")
+Produce = model.addVars(M, vtype=GRB.CONTINUOUS, name="Produce")
 
 
 
@@ -37,15 +37,15 @@ Production = model.addVars(M, vtype=GRB.CONTINUOUS, name="Production")
 
 for i in range(N):
     model.addConstr(
-        sum(Requirements[i][j] * Production[j] for j in range(M)) <= Available[i]
+        sum(Requirements[i][j] * Produce[j] for j in range(M)) <= Available[i]
     )
 for j in range(M):
-    model.addConstr(Production[j] >= 0)
+    model.addConstr(Produce[j] >= 0)
 
 
 ### Define the objective
 
-model.setObjective(quicksum(Prices[j] * Production[j] for j in range(M)), GRB.MAXIMIZE)
+model.setObjective(quicksum(Prices[j] * Produce[j] for j in range(M)), GRB.MAXIMIZE)
 
 
 ### Optimize the model

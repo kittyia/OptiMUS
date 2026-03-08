@@ -35,9 +35,9 @@ VegetableIron = data["VegetableIron"] # shape: [], definition: Units of iron in 
 
 ### Define the variables
 
-MilkQty = model.addVar(vtype=GRB.INTEGER, name="MilkQty")
+MilkQty = model.addVar(vtype=GRB.CONTINUOUS, name="MilkQty")
 
-VegetableQty = model.addVar(vtype=GRB.INTEGER, name="VegetableQty")
+VegetableQty = model.addVar(vtype=GRB.CONTINUOUS, name="VegetableQty")
 
 
 
@@ -51,7 +51,7 @@ model.addConstr(VegetableQty >= 0)
 
 ### Define the objective
 
-
+model.setObjective(MilkCost * MilkQty + VegetableCost * VegetableQty, GRB.MINIMIZE)
 
 
 ### Optimize the model

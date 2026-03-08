@@ -33,24 +33,24 @@ RequiredCustomers = data["RequiredCustomers"] # shape: [], definition: Required 
 
 ### Define the variables
 
-LargeTrips = model.addVar(vtype=GRB.INTEGER, name="LargeTrips")
+largeTrips = model.addVar(vtype=GRB.INTEGER, name="largeTrips")
 
-SmallTrips = model.addVar(vtype=GRB.INTEGER, name="SmallTrips")
+smallTrips = model.addVar(vtype=GRB.INTEGER, name="smallTrips")
 
 
 
 ### Define the constraints
 
-model.addConstr(CapacityLarge * LargeTrips + CapacitySmall * SmallTrips >= RequiredCustomers)
-model.addConstr(LargeTrips <= MaxLargeTrips)
-model.addConstr(SmallTrips >= MinSmallTripsPercentage * (LargeTrips + SmallTrips))
-model.addConstr(LargeTrips >= 0)
-model.addConstr(SmallTrips >= 0)
+model.addConstr(largeTrips <= MaxLargeTrips)
+model.addConstr(smallTrips >= MinSmallTripsPercentage * (largeTrips + smallTrips))
+model.addConstr(CapacityLarge * largeTrips + CapacitySmall * smallTrips >= RequiredCustomers)
+model.addConstr(largeTrips >= 0)
+model.addConstr(smallTrips >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(PollutionLarge * largeTrips + PollutionSmall * smallTrips, GRB.MINIMIZE)
 
 
 ### Optimize the model

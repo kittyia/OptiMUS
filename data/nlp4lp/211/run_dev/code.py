@@ -40,18 +40,14 @@ CommercialLicenses = model.addVar(vtype=GRB.INTEGER, name="CommercialLicenses")
 ### Define the constraints
 
 model.addConstr(PersonalLicenses + CommercialLicenses <= MaxTotalLicenses)
-model.addConstr(
-    CostPersonalLicense * PersonalLicenses +
-    CostCommercialLicense * CommercialLicenses
-    <= MaxTotalExpenditure
-)
+model.addConstr(CostPersonalLicense * PersonalLicenses + CostCommercialLicense * CommercialLicenses <= MaxTotalExpenditure)
 model.addConstr(PersonalLicenses >= 0)
 model.addConstr(CommercialLicenses >= 0)
 
 
 ### Define the objective
 
-del.setObjective(ProfitPersonalLicense * PersonalLicenses + ProfitCommercialLicense * CommercialLicenses, GRB.MAXIMIZE
+model.setObjective(ProfitPersonalLicense * PersonalLicenses + ProfitCommercialLicense * CommercialLicenses, GRB.MAXIMIZE)
 
 
 ### Optimize the model

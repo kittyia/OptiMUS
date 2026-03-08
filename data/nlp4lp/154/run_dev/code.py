@@ -43,15 +43,20 @@ LargeContainers = model.addVar(vtype=GRB.INTEGER, name="LargeContainers")
 
 ### Define the constraints
 
+model.addConstr(UnloadPersonsSmall * SmallContainers + UnloadPersonsLarge * LargeContainers <= TotalPersonsAvailable)
 model.addConstr(SmallContainers == RatioSmallToLargeContainers * LargeContainers)
 model.addConstr(SmallContainers >= MinSmallContainers)
 model.addConstr(LargeContainers >= MinLargeContainers)
-model.addConstr(UnloadPersonsSmall * SmallContainers + UnloadPersonsLarge * LargeContainers <= TotalPersonsAvailable)
+model.addConstr(SmallContainers >= 0)
+model.addConstr(LargeContainers >= 0)
 
 
 ### Define the objective
 
-model.setObjective(CapacitySmall * SmallContainers + CapacityLarge * LargeContainers, GRB.MAXIMIZE)
+model.setObjective(
+    CapacitySmall * SmallContainers + CapacityLarge * LargeContainers,
+    GRB.MAXIMIZE
+)
 
 
 ### Optimize the model

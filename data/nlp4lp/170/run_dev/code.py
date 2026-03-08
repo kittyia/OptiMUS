@@ -33,25 +33,25 @@ MinLargeKegs = data["MinLargeKegs"] # shape: [], definition: Minimum number of l
 
 ### Define the variables
 
-SmallKegsUsed = model.addVar(vtype=GRB.INTEGER, name="SmallKegsUsed")
+smallKegsUsed = model.addVar(vtype=GRB.INTEGER, name="smallKegsUsed")
 
-LargeKegsUsed = model.addVar(vtype=GRB.INTEGER, name="LargeKegsUsed")
+largeKegsUsed = model.addVar(vtype=GRB.INTEGER, name="largeKegsUsed")
 
 
 
 ### Define the constraints
 
-model.addConstr(SmallKegsUsed <= MaxSmallKegsAvailable)
-model.addConstr(LargeKegsUsed >= MinLargeKegs)
-model.addConstr(LargeKegsUsed <= MaxLargeKegsAvailable)
-model.addConstr(SmallKegsUsed >= SmallKegMultiplier * LargeKegsUsed)
-model.addConstr(SmallKegsUsed + LargeKegsUsed <= MaxTotalKegs)
+model.addConstr(smallKegsUsed <= MaxSmallKegsAvailable)
+model.addConstr(largeKegsUsed <= MaxLargeKegsAvailable)
+model.addConstr(smallKegsUsed >= SmallKegMultiplier * largeKegsUsed)
+model.addConstr(smallKegsUsed + largeKegsUsed <= MaxTotalKegs)
+model.addConstr(largeKegsUsed >= MinLargeKegs)
 
 
 ### Define the objective
 
 model.setObjective(
-    SmallKegCapacity * SmallKegsUsed + LargeKegCapacity * LargeKegsUsed,
+    SmallKegCapacity * smallKegsUsed + LargeKegCapacity * largeKegesUsed,
     GRB.MAXIMIZE
 )
 

@@ -29,23 +29,27 @@ TotalResource = data["TotalResource"] # shape: ['NumResources'], definition: Tot
 
 ### Define the variables
 
-PalladiumHeavy = model.addVar(vtype=GRB.CONTINUOUS, name="PalladiumHeavy")
-
-PlatinumHeavy = model.addVar(vtype=GRB.CONTINUOUS, name="PlatinumHeavy")
+CatalystUnits = model.addVars(NumCatalysts, vtype=GRB.CONTINUOUS, name="CatalystUnits")
 
 
 
 ### Define the constraints
 
-model.addConstr(15 * PalladiumHeavy + 20 * PlatinumHeavy <= 450)
-model.addConstr(25 * PalladiumHeavy + 14 * PlatinumHeavy <= 390)
-model.addConstr(PalladiumHeavy >= 0)
-model.addConstr(PlatinumHeavy >= 0)
+model.addConstr(
+    sum(ResourceRequirement[0][c] * CatalystUnits[c] for c in range(NumCatalysts))
+    <= TotalResource[0]
+)
+model.addConstr(
+    sum(ResourceRequirement[1][c] * CatalystUnits[c] for c in range(NumCatalysts))
+    <= TotalResource[1]
+)
+for c in range(NumCatalysts):
+    model.addConstr(CatalystUnits[c] >= 0)
 
 
 ### Define the objective
 
-model.setObjective(5 * PalladiumHeavy + 4 * PlatinumHeavy, GRB.MAXIMIZE)
+model.setObjective(quicksum(ConversionRate[c] * CatalystUnits[c] for c in range(NumCatalysts)), GRB.MAXIMIZE)
 
 
 ### Optimize the model

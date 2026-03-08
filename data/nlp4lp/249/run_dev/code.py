@@ -33,24 +33,22 @@ MinElevators = data["MinElevators"] # shape: [], definition: Minimum number of e
 
 ### Define the variables
 
-numberEscalators = model.addVar(vtype=GRB.INTEGER, name="numberEscalators")
+Escalators = model.addVar(vtype=GRB.INTEGER, name="Escalators")
 
-numberElevators = model.addVar(vtype=GRB.INTEGER, name="numberElevators")
+Elevators = model.addVar(vtype=GRB.INTEGER, name="Elevators")
 
 
 
 ### Define the constraints
 
-model.addConstr(TransportRateEscalator * numberEscalators + TransportRateElevator * numberElevators >= MinPeopleTransport)
-model.addConstr(numberEscalators >= RatioEscalatorsToElevators * numberElevators)
-model.addConstr(numberElevators >= MinElevators)
-model.addConstr(numberEscalators >= 0)
-model.addConstr(numberElevators >= 0)
+model.addConstr(TransportRateEscalator * Escalators + TransportRateElevator * Elevators >= MinPeopleTransport)
+model.addConstr(Escalators >= RatioEscalatorsToElevators * Elevators)
+model.addConstr(Elevators >= MinElevators)
 
 
 ### Define the objective
 
-
+model.setObjective(SpaceEscalator * Escalators + SpaceElevator * Elevators, GRB.MINIMIZE)
 
 
 ### Optimize the model

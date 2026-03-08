@@ -41,7 +41,7 @@ model.addConstr(SmallPlanes >= 0)
 
 ### Define the objective
 
-
+model.setObjective(LargePlanes + SmallPlanes, GRB.MINIMIZE)
 
 
 ### Optimize the model

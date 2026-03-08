@@ -1,11 +1,80 @@
 ----
+Yes, there is one redundancy.
+
+### Step-by-step reasoning
+
+1. **Demand constraint**  
+   ```
+   10000 * HighVolumePipes + 5000 * LowVolumePipes >= DailyGasDemand
+   ```
+   Necessary. Cannot be removed or combined.
+
+2. **Technician constraint**  
+   ```
+   12 * HighVolumePipes + 5 * LowVolumePipes <= TotalTechnicians
+   ```
+   Necessary. Cannot be removed or combined.
+
+3. **High-volume proportion constraint**  
+   ```
+   HighVolumePipes <= MaxHighVolumeProportion * (HighVolumePipes + LowVolumePipes)
+   ```
+   Necessary. Not redundant.
+
+4. **Minimum low-volume pipes constraint**  
+   ```
+   LowVolumePipes >= MinLowVolumePipes
+   ```
+   Necessary.
+
+5. **Nonnegativity of HighVolumePipes**  
+   ```
+   HighVolumePipes >= 0
+   ```
+   Necessary. Not implied by any other constraint.
+
+6. **Nonnegativity of LowVolumePipes**  
+   ```
+   LowVolumePipes >= 0
+   ```
+   Redundant, because:
+   ```
+   LowVolumePipes >= MinLowVolumePipes
+   ```
+   and `MinLowVolumePipes = 8`, which already guarantees nonnegativity.
+
+7. **Integrality constraint**  
+   ```
+   HighVolumePipes and LowVolumePipes must be integers
+   ```
+   Necessary.
+
+The only redundancy is:
+
+```
+LowVolumePipes >= 0
+```
+
+because it is implied by:
+
+```
+LowVolumePipes >= MinLowVolumePipes
+```
+
+---
+
+### ✅ Updated list of constraints
+
+```python
 [
-    "10000 * HighVolumePipes + 5000 * LowVolumePipes >= 150000",
-    "12 * HighVolumePipes + 5 * LowVolumePipes <= 160",
-    "HighVolumePipes <= 0.35 * (HighVolumePipes + LowVolumePipes)",
-    "LowVolumePipes >= 8",
-    "HighVolumePipes >= 0"
+    "10000 * HighVolumePipes + 5000 * LowVolumePipes >= DailyGasDemand",
+    "12 * HighVolumePipes + 5 * LowVolumePipes <= TotalTechnicians",
+    "HighVolumePipes <= MaxHighVolumeProportion * (HighVolumePipes + LowVolumePipes)",
+    "LowVolumePipes >= MinLowVolumePipes",
+    "HighVolumePipes >= 0",
+    "HighVolumePipes and LowVolumePipes must be integers"
 ]
+```
 ----
 +++++++++++++++++++
 ++ Constraint Qs ++
@@ -64,7 +133,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: 10000 * HighVolumePipes + 5000 * LowVolumePipes >= 150000
+Consider this potential constraint: 10000 * HighVolumePipes + 5000 * LowVolumePipes >= DailyGasDemand
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -74,39 +143,37 @@ Consider this potential constraint: 10000 * HighVolumePipes + 5000 * LowVolumePi
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is absolutely a constraint and it should be explicitly included in the (MI)LP formulation.
+Yes, this is **definitely a constraint** and it should be explicitly included in the (MI)LP formulation.
 
 ### Why?
 
-The problem states:
-
-> "Every day, the oil and gas company needs to meet the demands of at least 150000 US gallons of gas."
-
-Each pipe contributes daily capacity:
-- High-volume pipe: 10,000 gallons
-- Low-volume pipe: 5,000 gallons
+- Each high-volume pipe provides **10,000 gallons/day**.
+- Each low-volume pipe provides **5,000 gallons/day**.
+- The company must meet a **minimum daily demand of 150,000 gallons**.
 
 If:
 - `HighVolumePipes = H`
 - `LowVolumePipes = L`
 
-Then total daily supply is:
+Then total daily capacity is:
 
 \[
 10000H + 5000L
 \]
 
-Since demand must be **at least 150,000 gallons**, this gives the constraint:
+Since demand must be **at least** 150,000 gallons, we must impose:
 
 \[
-10000H + 5000L \ge 150000
+10000H + 5000L \ge \text{DailyGasDemand}
 \]
 
-This is a **core feasibility constraint** because without it, the model would not enforce meeting demand. It directly translates the demand requirement from the problem statement into a mathematical inequality.
+This directly models the requirement:
 
-There is no ambiguity here — this is clearly required.
+> “Every day, the oil and gas company needs to meet the demands of at least 150000 US gallons of gas.”
 
-**5 OUT OF 5**
+Without this constraint, the model could choose too few pipes and fail to meet demand. Therefore, it is essential.
+
+**Confidence: 5 OUT OF 5**
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -165,7 +232,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: 12 * HighVolumePipes + 5 * LowVolumePipes <= 160
+Consider this potential constraint: 12 * HighVolumePipes + 5 * LowVolumePipes <= TotalTechnicians
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -175,137 +242,121 @@ Consider this potential constraint: 12 * HighVolumePipes + 5 * LowVolumePipes <=
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is definitely a valid constraint and it should be explicitly included in the (MI)LP formulation.
+Yes, this is definitely a constraint and it should be explicitly included in the (MI)LP formulation.
 
-### Why?
+**Reasoning:**
 
-- Each **high-volume pipe** requires **12 technicians per day**.
-- Each **low-volume pipe** requires **5 technicians per day**.
+- Each high-volume pipe requires **12 technicians per day**.
+- Each low-volume pipe requires **5 technicians per day**.
 - The company has **160 technicians available daily**.
 
-If:
+Since the total number of technicians required by all selected pipes cannot exceed the available staff, this naturally gives the resource constraint:
+
+\[
+12 \cdot \text{HighVolumePipes} + 5 \cdot \text{LowVolumePipes} \le \text{TotalTechnicians}
+\]
+
+This is a classic **resource capacity constraint**, directly derived from the problem statement. It is necessary to ensure feasibility of any solution and must be included in the model.
+
+**Confidence: 5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+An oil and gas company has two types of pipes, a high-volume and a low-volume one. Every day, the high-volume pipe allows 10000 US gallons and it is recommended that 12 technicians closely monitor the pipes to ensure that it is functioning properly. Each day, the low-volume pipe allows 5000 US gallons and 5 technicians should closely monitor for safety reasons. Every day, the oil and gas company needs to meet the demands of at least 150000 US gallons of gas and they have 160 technicians that are on their staff. Since the high-volume pipe has a higher risk of environmental damage, at most 35 percent of the pipes can be high-volume ones. Additionally, there must be a minimum of 8 low-volume pipes. How many of each pipe types should be used to reduce the total number of pipes required?
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "HighVolumeCapacity": {
+        "definition": "The daily capacity of a high-volume pipe in US gallons",
+        "shape": [],
+        "type": "int"
+    },
+    "LowVolumeCapacity": {
+        "definition": "The daily capacity of a low-volume pipe in US gallons",
+        "shape": [],
+        "type": "int"
+    },
+    "TechniciansPerHighVolumePipe": {
+        "definition": "Number of technicians required to monitor each high-volume pipe daily",
+        "shape": [],
+        "type": "int"
+    },
+    "TechniciansPerLowVolumePipe": {
+        "definition": "Number of technicians required to monitor each low-volume pipe daily",
+        "shape": [],
+        "type": "int"
+    },
+    "DailyGasDemand": {
+        "definition": "Minimum daily US gallons of gas that need to be met",
+        "shape": [],
+        "type": "int"
+    },
+    "TotalTechnicians": {
+        "definition": "Total number of technicians available daily",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxHighVolumeProportion": {
+        "definition": "Maximum allowed proportion of high-volume pipes",
+        "shape": [],
+        "type": "float"
+    },
+    "MinLowVolumePipes": {
+        "definition": "Minimum number of low-volume pipes required",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: HighVolumePipes <= MaxHighVolumeProportion * (HighVolumePipes + LowVolumePipes)
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is indeed a valid and necessary constraint.
+
+The problem states:  
+> “At most 35 percent of the pipes can be high-volume ones.”
+
+Let:
 - \( H \) = number of high-volume pipes  
 - \( L \) = number of low-volume pipes  
 
-then the total technicians required is:
+The proportion of high-volume pipes among all pipes is:
 
 \[
-12H + 5L
+\frac{H}{H + L}
 \]
 
-Since only 160 technicians are available, this must satisfy:
-
-\[
-12H + 5L \le 160
-\]
-
-This is a classic **resource capacity constraint**, directly derived from the problem statement. There is no ambiguity in interpretation.
-
-✅ It is clearly a binding operational limitation.  
-✅ It directly affects feasibility.  
-✅ It must be included in the model.
-
-**5 OUT OF 5**
-+--+
----
-The confidence score is 5, which is high enough.
----
-+--+
-
-You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
-
------
-An oil and gas company has two types of pipes, a high-volume and a low-volume one. Every day, the high-volume pipe allows 10000 US gallons and it is recommended that 12 technicians closely monitor the pipes to ensure that it is functioning properly. Each day, the low-volume pipe allows 5000 US gallons and 5 technicians should closely monitor for safety reasons. Every day, the oil and gas company needs to meet the demands of at least 150000 US gallons of gas and they have 160 technicians that are on their staff. Since the high-volume pipe has a higher risk of environmental damage, at most 35 percent of the pipes can be high-volume ones. Additionally, there must be a minimum of 8 low-volume pipes. How many of each pipe types should be used to reduce the total number of pipes required?
------
-
-Here is a list of parameters that someone has extracted from the description:
-
-{
-    "HighVolumeCapacity": {
-        "definition": "The daily capacity of a high-volume pipe in US gallons",
-        "shape": [],
-        "type": "int"
-    },
-    "LowVolumeCapacity": {
-        "definition": "The daily capacity of a low-volume pipe in US gallons",
-        "shape": [],
-        "type": "int"
-    },
-    "TechniciansPerHighVolumePipe": {
-        "definition": "Number of technicians required to monitor each high-volume pipe daily",
-        "shape": [],
-        "type": "int"
-    },
-    "TechniciansPerLowVolumePipe": {
-        "definition": "Number of technicians required to monitor each low-volume pipe daily",
-        "shape": [],
-        "type": "int"
-    },
-    "DailyGasDemand": {
-        "definition": "Minimum daily US gallons of gas that need to be met",
-        "shape": [],
-        "type": "int"
-    },
-    "TotalTechnicians": {
-        "definition": "Total number of technicians available daily",
-        "shape": [],
-        "type": "int"
-    },
-    "MaxHighVolumeProportion": {
-        "definition": "Maximum allowed proportion of high-volume pipes",
-        "shape": [],
-        "type": "float"
-    },
-    "MinLowVolumePipes": {
-        "definition": "Minimum number of low-volume pipes required",
-        "shape": [],
-        "type": "int"
-    }
-}
-
-
-Consider this potential constraint: HighVolumePipes <= 0.35 * (HighVolumePipes + LowVolumePipes)
-
-
-- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
-- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
-    
-
-Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
-
-----
-Yes, this **is definitely a valid constraint** and it should be explicitly modeled.
-
-### Why?
-
-The problem states:
-
-> “At most 35 percent of the pipes can be high-volume ones.”
-
-This is a proportional restriction. Let:
-
-- \( H \) = HighVolumePipes  
-- \( L \) = LowVolumePipes  
-
-The statement translates directly to:
+The requirement “at most 35%” translates directly to:
 
 \[
 \frac{H}{H + L} \le 0.35
 \]
 
-Multiplying both sides by \( H + L \) (which is positive since we must use pipes):
+Multiplying both sides by \( H + L \) (which is positive since we must install pipes):
 
 \[
 H \le 0.35(H + L)
 \]
 
-This matches the proposed constraint exactly.
+So yes — this is absolutely a modeling constraint, and it must be included.
 
----
-
-### Is it linear?
-
-At first glance it looks nonlinear, but we can rearrange:
+It can also be rewritten in linear form for MILP:
 
 \[
 H \le 0.35H + 0.35L
@@ -319,15 +370,11 @@ H \le 0.35H + 0.35L
 65H \le 35L
 \]
 
-This is a **linear constraint**, perfectly suitable for an LP/MILP model.
+which is fully linear and perfectly suitable for an MILP formulation.
 
----
-
-### Conclusion
-
-✅ It is absolutely a real constraint from the problem description.  
-✅ It must be explicitly included in the model.  
-✅ It can be written in linear form.  
+✅ This constraint directly enforces the environmental risk limitation described in the problem.  
+✅ It is not redundant.  
+✅ It is explicitly stated in the text.  
 
 **5 OUT OF 5**
 +--+
@@ -388,7 +435,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: LowVolumePipes >= 8
+Consider this potential constraint: LowVolumePipes >= MinLowVolumePipes
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -398,19 +445,18 @@ Consider this potential constraint: LowVolumePipes >= 8
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is explicitly a constraint.
+Yes, this is clearly a constraint.
 
-The problem statement clearly says:
-
+The problem statement explicitly says:  
 > “Additionally, there must be a minimum of 8 low-volume pipes.”
 
 This directly translates to the mathematical constraint:
 
 \[
-\text{LowVolumePipes} \ge 8
+\text{LowVolumePipes} \ge \text{MinLowVolumePipes}
 \]
 
-It is not implied, derived, or optional — it is a hard requirement stated in the description. Therefore, it absolutely must be included in the (MI)LP formulation.
+Since this requirement is explicitly stated in the description, it must be included in the (MI)LP formulation. There is no ambiguity or implicit interpretation involved — it is a hard requirement.
 
 **Confidence level:** 5 OUT OF 5
 +--+
@@ -481,24 +527,120 @@ Consider this potential constraint: HighVolumePipes >= 0
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, **HighVolumePipes ≥ 0** is indeed a valid constraint.
+Yes, **HighVolumePipes ≥ 0** is indeed a constraint.
 
-### Reasoning
+### Step-by-step reasoning:
 
-- **Decision variable meaning**: HighVolumePipes represents the number of high-volume pipes installed.
-- Since this is a count of physical objects, it **cannot be negative**.
-- Therefore, a non-negativity restriction is required.
+- **HighVolumePipes** is a decision variable representing the number of high-volume pipes.
+- In reality, you cannot have a negative number of pipes.
+- Therefore, the variable must be **nonnegative**.
+- In an (MI)LP formulation, this is typically enforced either:
+  - Explicitly as a constraint:  
+    \[
+    \text{HighVolumePipes} \ge 0
+    \]
+  - Or implicitly through the variable domain declaration (e.g., nonnegative integer variable).
 
-In a formal (MI)LP model, this would typically be enforced either:
-- Explicitly as a constraint:  
-  \[
-  \text{HighVolumePipes} \ge 0
-  \]
-- Or implicitly by declaring the variable as a **nonnegative integer variable**.
+Since the number of pipes must also be an integer, the full domain would typically be:
+\[
+\text{HighVolumePipes} \in \mathbb{Z}_{\ge 0}
+\]
 
-Even if handled via variable bounds rather than as a separate written constraint, it **must be part of the model specification**.
+Even if nonnegativity is often handled via variable bounds rather than written as a traditional constraint, it **is absolutely required in the formulation**.
 
-So yes — this is a legitimate modeling constraint and should be included (at least as a variable bound).
+### Conclusion
+Yes, this is a valid and necessary modeling constraint (even if implemented as a variable bound rather than a standalone inequality).
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+An oil and gas company has two types of pipes, a high-volume and a low-volume one. Every day, the high-volume pipe allows 10000 US gallons and it is recommended that 12 technicians closely monitor the pipes to ensure that it is functioning properly. Each day, the low-volume pipe allows 5000 US gallons and 5 technicians should closely monitor for safety reasons. Every day, the oil and gas company needs to meet the demands of at least 150000 US gallons of gas and they have 160 technicians that are on their staff. Since the high-volume pipe has a higher risk of environmental damage, at most 35 percent of the pipes can be high-volume ones. Additionally, there must be a minimum of 8 low-volume pipes. How many of each pipe types should be used to reduce the total number of pipes required?
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "HighVolumeCapacity": {
+        "definition": "The daily capacity of a high-volume pipe in US gallons",
+        "shape": [],
+        "type": "int"
+    },
+    "LowVolumeCapacity": {
+        "definition": "The daily capacity of a low-volume pipe in US gallons",
+        "shape": [],
+        "type": "int"
+    },
+    "TechniciansPerHighVolumePipe": {
+        "definition": "Number of technicians required to monitor each high-volume pipe daily",
+        "shape": [],
+        "type": "int"
+    },
+    "TechniciansPerLowVolumePipe": {
+        "definition": "Number of technicians required to monitor each low-volume pipe daily",
+        "shape": [],
+        "type": "int"
+    },
+    "DailyGasDemand": {
+        "definition": "Minimum daily US gallons of gas that need to be met",
+        "shape": [],
+        "type": "int"
+    },
+    "TotalTechnicians": {
+        "definition": "Total number of technicians available daily",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxHighVolumeProportion": {
+        "definition": "Maximum allowed proportion of high-volume pipes",
+        "shape": [],
+        "type": "float"
+    },
+    "MinLowVolumePipes": {
+        "definition": "Minimum number of low-volume pipes required",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: HighVolumePipes and LowVolumePipes must be integers
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is indeed a constraint and it should be explicitly modeled.
+
+The decision variables:
+
+- **HighVolumePipes**
+- **LowVolumePipes**
+
+represent the *number of pipes*. In reality, you cannot install a fractional pipe (e.g., 3.7 pipes), so these variables must take **non-negative integer values**.
+
+Although integrality is sometimes treated as a domain specification rather than a “functional constraint,” in an (MI)LP formulation this is explicitly enforced as:
+
+\[
+\text{HighVolumePipes} \in \mathbb{Z}_{\ge 0}
+\]
+\[
+\text{LowVolumePipes} \in \mathbb{Z}_{\ge 0}
+\]
+
+Since the problem is asking *how many pipes* to use, and the objective is to minimize the total number of pipes, failing to enforce integrality would allow fractional solutions, which are not physically meaningful.
+
+Therefore, this **must** be included in the model.
 
 **5 OUT OF 5**
 +--+
@@ -521,12 +663,12 @@ Extracting constraint formulations
         "HighVolumePipes": {
             "shape": [],
             "type": "integer",
-            "definition": "Number of high-volume pipes used per day"
+            "definition": "Number of high-volume pipes to be used"
         },
         "LowVolumePipes": {
             "shape": [],
             "type": "integer",
-            "definition": "Number of low-volume pipes used per day"
+            "definition": "Number of low-volume pipes to be used"
         }
     },
     "AUXILIARY CONSTRAINTS": []
@@ -535,7 +677,7 @@ Extracting constraint formulations
 ----
 EXTRACTED ITEMS
 $HighVolumeCapacity \\cdot HighVolumePipes + LowVolumeCapacity \\cdot LowVolumePipes \\geq DailyGasDemand$
-{'HighVolumePipes': {'shape': [], 'type': 'integer', 'definition': 'Number of high-volume pipes used per day'}, 'LowVolumePipes': {'shape': [], 'type': 'integer', 'definition': 'Number of low-volume pipes used per day'}}
+{'HighVolumePipes': {'shape': [], 'type': 'integer', 'definition': 'Number of high-volume pipes to be used'}, 'LowVolumePipes': {'shape': [], 'type': 'integer', 'definition': 'Number of low-volume pipes to be used'}}
 []
 ----
 ----
@@ -566,14 +708,14 @@ $HighVolumePipes \\leq MaxHighVolumeProportion \\cdot (HighVolumePipes + LowVolu
 ----
 ----
 {
-    "FORMULATION": "$LowVolumePipes \\geq MinLowVolumePipes$",
+    "FORMULATION": "$LowVolumePipes \\ge MinLowVolumePipes$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$LowVolumePipes \\geq MinLowVolumePipes$
+$LowVolumePipes \\ge MinLowVolumePipes$
 {}
 []
 ----
@@ -590,6 +732,19 @@ $HighVolumePipes \\geq 0$
 {}
 []
 ----
+----
+{
+    "FORMULATION": "$HighVolumePipes \\in \\mathbb{Z}_{\\ge 0}, \\; LowVolumePipes \\in \\mathbb{Z}_{\\ge 0}$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$HighVolumePipes \\in \\mathbb{Z}_{\\ge 0}, \\; LowVolumePipes \\in \\mathbb{Z}_{\\ge 0}$
+{}
+[]
+----
 Code executed successfully. Output:
 Restricted license - for non-production use only - expires 2027-11-29
 Gurobi Optimizer version 13.0.1 build v13.0.1rc0 (linux64 - "Alibaba Cloud Linux 3.2104 U12.3 (OpenAnolis Edition)")
@@ -597,8 +752,8 @@ Gurobi Optimizer version 13.0.1 build v13.0.1rc0 (linux64 - "Alibaba Cloud Linux
 CPU model: Intel(R) Xeon(R) Platinum, instruction set [SSE2|AVX|AVX2|AVX512]
 Thread count: 1 physical cores, 2 logical processors, using up to 2 threads
 
-Optimize a model with 5 rows, 2 columns and 8 nonzeros (Min)
-Model fingerprint: 0xc43bbaa9
+Optimize a model with 7 rows, 2 columns and 10 nonzeros (Min)
+Model fingerprint: 0xb19da8c9
 Model has 2 linear objective coefficients
 Variable types: 0 continuous, 2 integer (0 binary)
 Coefficient statistics:
@@ -607,7 +762,7 @@ Coefficient statistics:
   Bounds range     [0e+00, 0e+00]
   RHS range        [8e+00, 2e+05]
 
-Presolve removed 5 rows and 2 columns
+Presolve removed 7 rows and 2 columns
 Presolve time: 0.00s
 Presolve: All rows and columns removed
 

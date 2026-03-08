@@ -29,22 +29,22 @@ TotalOperatingTime = data["TotalOperatingTime"] # shape: [], definition: Total o
 
 ### Define the variables
 
-BloodTests = model.addVar(vtype=GRB.INTEGER, name="BloodTests")
+bloodTests = model.addVar(vtype=GRB.INTEGER, name="bloodTests")
 
-EarTests = model.addVar(vtype=GRB.INTEGER, name="EarTests")
+earTests = model.addVar(vtype=GRB.INTEGER, name="earTests")
 
 
 
 ### Define the constraints
 
-model.addConstr(TimePerBloodTest * BloodTests + TimePerEarTest * EarTests <= TotalOperatingTime)
-model.addConstr(BloodTests >= BloodToEarTestRatio * EarTests)
-model.addConstr(EarTests >= MinEarTests)
+model.addConstr(TimePerBloodTest * bloodTests + TimePerEarTest * earTests <= TotalOperatingTime)
+model.addConstr(bloodTests >= BloodToEarTestRatio * earTests)
+model.addConstr(earTests >= MinEarTests)
 
 
 ### Define the objective
 
-
+model.setObjective(bloodTests + earTests, GRB.MAXIMIZE)
 
 
 ### Optimize the model

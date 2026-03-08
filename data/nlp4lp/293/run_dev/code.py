@@ -44,7 +44,7 @@ model.addConstr(NumCars >= 0)
 
 ### Define the objective
 
-
+model.setObjective(NumBuses + NumCars, GRB.MINIMIZE)
 
 
 ### Optimize the model

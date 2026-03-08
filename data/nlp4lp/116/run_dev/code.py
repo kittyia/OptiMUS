@@ -37,23 +37,19 @@ HoursUsed = model.addVars(NumMachines, vtype=GRB.CONTINUOUS, name="HoursUsed")
 
 ### Define the constraints
 
-model.addConstr(
-    sum(ProductionRate[m][0] * HoursUsed[m] for m in range(NumMachines)) >= 1300
-)
-model.addConstr(
-    quicksum(ProductionRate[m][1] * HoursUsed[m] for m in range(NumMachines)) >= 1500
-)
+model.addConstr(30 * HoursUsed[0] + 45 * HoursUsed[1] >= 1300)
+model.addConstr(60 * HoursUsed[0] + 30 * HoursUsed[1] >= 1500)
 model.addConstr(
     sum(WaterUsage[m] * HoursUsed[m] for m in range(NumMachines)) 
     <= TotalWaterAvailable
 )
-for m in range(NumMachines):
-    model.addConstr(HoursUsed[m] >= 0)
+model.addConstr(HoursUsed[0] >= 0)
+model.addConstr(HoursUsed[1] >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(quicksum(HoursUsed[m] for m in range(NumMachines)), GRB.MINIMIZE)
 
 
 ### Optimize the model

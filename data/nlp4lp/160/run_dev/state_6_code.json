@@ -40,35 +40,45 @@
     "objective": {
         "description": "\"Maximize the total number of snacks delivered in the suitcases\"",
         "formulation": "$\\max \\; SmallSuitcaseCapacity \\cdot SmallSuitcases \\;+\\; LargeSuitcaseCapacity \\cdot LargeSuitcases$",
-        "code": "del.setObjective(SmallSuitcaseCapacity * SmallSuitcases + LargeSuitcaseCapacity * LargeSuitcases, GRB.MAXIMIZE"
+        "code": "model.setObjective(\n    SmallSuitcaseCapacity * SmallSuitcases +\n    LargeSuitcaseCapacity * LargeSuitcases,\n    GRB.MAXIMIZE\n)"
     },
     "constraints": [
         {
-            "description": "The number of small suitcases must be at least twice the number of large suitcases",
-            "formulation": "$SmallSuitcases \\\\ge MinSmallToLargeRatio \\\\cdot LargeSuitcases$",
+            "description": "Number of small suitcases used must be at least twice the number of large suitcases used",
+            "formulation": "$SmallSuitcases \\\\geq MinSmallToLargeRatio \\\\cdot LargeSuitcases$",
             "code": "model.addConstr(SmallSuitcases >= MinSmallToLargeRatio * LargeSuitcases)"
         },
         {
-            "description": "The number of large suitcases must be at least MinLargeSuitcases",
-            "formulation": "$LargeSuitcases \\\\geq MinLargeSuitcases$",
-            "code": "model.addConstr(LargeSuitcases >= MinLargeSuitcases)"
+            "description": "Number of small suitcases used must not exceed MaxSmallSuitcases",
+            "formulation": "$SmallSuitcases \\\\leq MaxSmallSuitcases$",
+            "code": "model.addConstr(SmallSuitcases <= MaxSmallSuitcases)"
         },
         {
-            "description": "The total number of suitcases (small and large combined) must not exceed MaxTotalSuitcases",
+            "description": "Number of large suitcases used must be between MinLargeSuitcases and MaxLargeSuitcases",
+            "formulation": "$MinLargeSuitcases \\\\leq LargeSuitcases \\\\leq MaxLargeSuitcases$",
+            "code": "model.addConstr(LargeSuitcases >= MinLargeSuitcases)\nmodel.addConstr(LargeSuitcases <= MaxLargeSuitcases)"
+        },
+        {
+            "description": "Total number of suitcases used must not exceed MaxTotalSuitcases",
             "formulation": "$SmallSuitcases + LargeSuitcases \\\\leq MaxTotalSuitcases$",
             "code": "model.addConstr(SmallSuitcases + LargeSuitcases <= MaxTotalSuitcases)"
+        },
+        {
+            "description": "Number of small and large suitcases used must be integers",
+            "formulation": "$SmallSuitcases \\\\in \\\\mathbb{Z}_{\\\\geq 0}, \\\\; LargeSuitcases \\\\in \\\\mathbb{Z}_{\\\\geq 0}$",
+            "code": "model.addConstr(SmallSuitcases >= 0)\nmodel.addConstr(LargeSuitcases >= 0)"
         }
     ],
     "variables": {
         "SmallSuitcases": {
             "shape": [],
             "type": "integer",
-            "definition": "Number of small suitcases to send"
+            "definition": "Number of small suitcases used"
         },
         "LargeSuitcases": {
             "shape": [],
             "type": "integer",
-            "definition": "Number of large suitcases to send"
+            "definition": "Number of large suitcases used"
         }
     }
 }

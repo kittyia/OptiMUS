@@ -4,64 +4,50 @@ Yes, there is **one redundant constraint**.
 ### Step-by-step reasoning
 
 1. **Vitamin C constraint**  
-   \[
-   30s + 50p \le 1200
-   \]  
-   Necessary — limits vitamin C usage.
+   \( 30s + 50p \le \text{AvailableVitaminC} \)  
+   Necessary — limits production based on vitamin C availability.
 
 2. **Vitamin D constraint**  
-   \[
-   40s + 30p \le 1500
-   \]  
-   Necessary — limits vitamin D usage.
+   \( 40s + 30p \le \text{AvailableVitaminD} \)  
+   Necessary — limits production based on vitamin D availability.
 
-3. **Pills must exceed shots constraint**  
-   \[
-   p \ge s + \text{MinBatchDifference}
-   \]  
-   Necessary — enforces popularity requirement.
+3. **Popularity constraint**  
+   \( p \ge s + \text{MinBatchDifference} \)  
+   From the description, pills must be *strictly more* than shots, so  
+   \( \text{MinBatchDifference} = 1 \).  
+   This constraint is necessary.
 
 4. **Maximum shots constraint**  
-   \[
-   s \le 10
-   \]  
-   Necessary — explicitly stated upper bound.
+   \( s \le \text{MaxBatchesShots} \)  
+   Necessary — resource constraints alone would allow more than 10 shots, so this is not redundant.
 
 5. **Nonnegativity of shots**  
-   \[
-   s \ge 0
-   \]  
-   Necessary — cannot produce negative batches.
+   \( s \ge 0 \)  
+   Necessary for feasibility.
 
 6. **Nonnegativity of pills**  
+   \( p \ge 0 \)  
+   This is **redundant** because:
+   - We already have \( s \ge 0 \)
+   - We also have \( p \ge s + 1 \)
+
+   Since \( s \ge 0 \), then:
    \[
-   p \ge 0
-   \]  
-   ✅ **Redundant**
-
-   Since:
-   - \( s \ge 0 \)
-   - \( \text{MinBatchDifference} \ge 0 \) (by definition: pills must be at least as many as shots, and typically strictly more)
-
-   From constraint (3):
-
-   \[
-   p \ge s + \text{MinBatchDifference} \ge 0
+   p \ge s + 1 \ge 1
    \]
-
-   Therefore, \( p \ge 0 \) is already implied and can be removed.
+   Therefore \( p \ge 0 \) is automatically satisfied and can be removed.
 
 ---
 
-### ✅ Updated List of Constraints
+### ✅ Updated list of constraints
 
 ```python
 [
-    "30 * (batches of vitamin shots) + 50 * (batches of vitamin pills) <= 1200",
-    "40 * (batches of vitamin shots) + 30 * (batches of vitamin pills) <= 1500",
-    "(batches of vitamin pills) >= (batches of vitamin shots) + MinBatchDifference",
-    "(batches of vitamin shots) <= 10",
-    "(batches of vitamin shots) >= 0"
+    "30 * (batches of vitamin shots) + 50 * (batches of vitamin pills) ≤ AvailableVitaminC",
+    "40 * (batches of vitamin shots) + 30 * (batches of vitamin pills) ≤ AvailableVitaminD",
+    "(batches of vitamin pills) ≥ (batches of vitamin shots) + MinBatchDifference",
+    "(batches of vitamin shots) ≤ MaxBatchesShots",
+    "(batches of vitamin shots) ≥ 0"
 ]
 ```
 ----
@@ -132,7 +118,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: 30 * (batches of vitamin shots) + 50 * (batches of vitamin pills) <= 1200
+Consider this potential constraint: 30 * (batches of vitamin shots) + 50 * (batches of vitamin pills) ≤ AvailableVitaminC
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -142,40 +128,41 @@ Consider this potential constraint: 30 * (batches of vitamin shots) + 50 * (batc
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is **definitely a valid constraint**, and it should be explicitly included in the (MI)LP formulation.
+Yes, this is definitely a valid constraint and should be explicitly included in the (MI)LP formulation.
 
-### Why?
+**Reasoning:**
 
-From the problem description:
+- Each batch of vitamin shots requires **30 units of vitamin C**.
+- Each batch of vitamin pills requires **50 units of vitamin C**.
+- The clinic has **1200 units of vitamin C available**.
 
-- Each batch of vitamin shots requires **30 units of vitamin C**
-- Each batch of vitamin pills requires **50 units of vitamin C**
-- The clinic has **1200 units of vitamin C available**
+Therefore, the total vitamin C consumed by all produced batches cannot exceed the available supply. If we let:
 
-If we define:
 - \( x \) = batches of vitamin shots  
 - \( y \) = batches of vitamin pills  
 
-Then total vitamin C used is:
+Then total vitamin C usage is:
 
 \[
 30x + 50y
 \]
 
-Since available vitamin C is limited to 1200 units, we must enforce:
+This must satisfy:
 
 \[
 30x + 50y \le 1200
 \]
 
-This is a **direct translation of a resource capacity constraint**, which is fundamental in linear programming models.
+This directly corresponds to the proposed constraint:
 
-There is no ambiguity here — this constraint is explicitly supported by the problem statement and must be included.
+\[
+30 \cdot (\text{batches of vitamin shots}) + 50 \cdot (\text{batches of vitamin pills}) \le \text{AvailableVitaminC}
+\]
 
-### ✅ Conclusion  
-Yes, this is absolutely a constraint and should be modeled.
+This is a standard resource capacity constraint and is essential to correctly modeling the problem.
 
-**5 OUT OF 5**
+**Confidence level:**  
+5 OUT OF 5
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -244,7 +231,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: 40 * (batches of vitamin shots) + 30 * (batches of vitamin pills) <= 1500
+Consider this potential constraint: 40 * (batches of vitamin shots) + 30 * (batches of vitamin pills) ≤ AvailableVitaminD
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -254,31 +241,32 @@ Consider this potential constraint: 40 * (batches of vitamin shots) + 30 * (batc
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is indeed a valid constraint and it should be explicitly included in the (MI)LP formulation.
+Yes, this is definitely a valid constraint and should be explicitly included in the (MI)LP formulation.
 
-### Step-by-step reasoning:
+From the problem description:
 
-- Each batch of **vitamin shots** requires **40 units of vitamin D**.
-- Each batch of **vitamin pills** requires **30 units of vitamin D**.
+- Each batch of vitamin shots requires **40 units of vitamin D**.
+- Each batch of vitamin pills requires **30 units of vitamin D**.
 - The clinic has **1500 units of vitamin D available**.
 
-If we let:
+Therefore, the total vitamin D used by all produced batches cannot exceed the available amount. If we let:
+
 - \( x \) = number of batches of vitamin shots  
 - \( y \) = number of batches of vitamin pills  
 
-Then total vitamin D used is:
+then the total vitamin D usage is:
 
 \[
 40x + 30y
 \]
 
-Since the total available vitamin D is 1500 units, we must enforce:
+and the availability constraint is:
 
 \[
-40x + 30y \le 1500
+40x + 30y \le \text{AvailableVitaminD}
 \]
 
-This directly models the vitamin D resource limitation described in the problem. Therefore, this is unquestionably a required constraint in the formulation.
+This directly matches the proposed constraint structure. It is a standard resource capacity constraint and is clearly required to correctly model the problem.
 
 **5 OUT OF 5**
 +--+
@@ -349,7 +337,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: (batches of vitamin pills) >= (batches of vitamin shots) + MinBatchDifference
+Consider this potential constraint: (batches of vitamin pills) ≥ (batches of vitamin shots) + MinBatchDifference
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -363,39 +351,37 @@ The problem statement says:
 
 > “Since pills are more popular, the number of batches of vitamin pills must be larger than the number of batches of vitamin shots.”
 
-This is clearly a structural requirement, not something implied by the objective or resource limits. It directly imposes a relationship between the two decision variables:
+This is clearly a **logical requirement** relating the two decision variables:
+- Let \( x \) = batches of vitamin shots  
+- Let \( y \) = batches of vitamin pills  
 
-Let:
-- \( x_s \) = batches of vitamin shots  
-- \( x_p \) = batches of vitamin pills  
-
-The statement “must be larger than” means:
+“Must be larger than” means:
 
 \[
-x_p > x_s
+y > x
 \]
 
-Since batches are integer variables, this can be modeled as:
+Since the number of batches is integer, this is equivalent to:
 
 \[
-x_p \ge x_s + 1
+y \ge x + 1
 \]
 
-This matches the proposed constraint:
+The proposed constraint:
 
 \[
 \text{(batches of vitamin pills)} \ge \text{(batches of vitamin shots)} + \text{MinBatchDifference}
 \]
 
-with:
+is a general form of this requirement. If `MinBatchDifference = 1`, then it exactly models the statement in the problem.
 
-\[
-\text{MinBatchDifference} = 1
-\]
+Therefore:
 
-This is absolutely a real constraint from the problem description and should be explicitly included in the (MI)LP formulation.
+- ✅ This **is indeed a constraint**.
+- ✅ It should be **explicitly included** in the (MI)LP formulation.
+- ✅ It directly encodes a logical condition from the problem text.
 
-**Confidence level: 5 OUT OF 5**
+Confidence level: **5 OUT OF 5**
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -464,7 +450,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: (batches of vitamin shots) <= 10
+Consider this potential constraint: (batches of vitamin shots) ≤ MaxBatchesShots
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -474,24 +460,21 @@ Consider this potential constraint: (batches of vitamin shots) <= 10
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is clearly a constraint and should be explicitly included in the (MI)LP formulation.
+Yes, this is definitely a constraint.
 
 The problem statement explicitly says:
 
 > “Further, the clinic can make at most 10 batches of vitamin shots.”
 
-The phrase “at most 10” directly translates to the inequality:
+This directly translates to:
 
 \[
-\text{batches of vitamin shots} \le 10
+\text{batches of vitamin shots} \le \text{MaxBatchesShots}
 \]
 
-This is an explicit upper bound on the decision variable representing the number of batches of vitamin shots. It is not implied by other constraints (such as resource limits), so it must be modeled separately.
+This is a hard production limit and must be explicitly included in the (MI)LP formulation. It restricts the feasible region and could be binding at optimality, so omitting it would change the solution.
 
-✅ It is definitely a constraint.  
-✅ It must be explicitly included in the formulation.  
-
-**5 OUT OF 5**
+**Confidence:** 5 OUT OF 5
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -560,7 +543,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: (batches of vitamin shots) >= 0
+Consider this potential constraint: (batches of vitamin shots) ≥ 0
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -572,33 +555,17 @@ Take a deep breath and think step by step. You will be awarded a million dollars
 ----
 Yes, **(batches of vitamin shots) ≥ 0** is indeed a constraint.
 
-### Why?
+### Step-by-step reasoning:
 
-The number of batches produced is a **decision variable**. In any realistic production setting:
+- The number of batches of vitamin shots is a **decision variable**.
+- In reality, it is impossible to produce a negative number of batches.
+- Therefore, nonnegativity is a **necessary feasibility condition**.
+- In an LP or MILP formulation, nonnegativity constraints must be explicitly stated unless the modeling framework assumes nonnegativity by default.
+- Since this is a production quantity, it should also typically be modeled as an integer variable, but regardless of integrality, it must satisfy ≥ 0.
 
-- You cannot produce a negative number of batches.
-- Therefore, the variable must be constrained to be **nonnegative**.
+Thus, this is a **fundamental and necessary modeling constraint**, not something redundant or removable.
 
-Even if not explicitly stated in the text, nonnegativity is an **implicit logical requirement** in nearly all production/quantity optimization models.
-
-### Should it be explicitly modeled?
-
-Yes. In a formal LP/MILP formulation, this would appear as either:
-
-- A nonnegativity constraint:
-  
-  \[
-  x_{\text{shots}} \ge 0
-  \]
-
-- Or as a variable bound (which is standard practice).
-
-Additionally, since batches are whole units, the variable would typically also be declared as an integer variable.
-
-### Conclusion
-
-This is a **valid and necessary constraint**, even if it is standard and implicit in most models.
-
+### Confidence Level:
 **5 OUT OF 5**
 +--+
 ---
@@ -615,17 +582,17 @@ Extracting constraint formulations
 
 ----
 {
-    "FORMULATION": "$30 \\cdot batchesShots + 50 \\cdot batchesPills \\leq 1200$",
+    "FORMULATION": "$30 \\cdot batchesShots + 50 \\cdot batchesPills \\leq AvailableVitaminC$",
     "NEW VARIABLES": {
         "batchesShots": {
             "shape": [],
             "type": "integer",
-            "definition": "Number of batches of vitamin shots to produce"
+            "definition": "Number of batches of vitamin shots to be produced"
         },
         "batchesPills": {
             "shape": [],
             "type": "integer",
-            "definition": "Number of batches of vitamin pills to produce"
+            "definition": "Number of batches of vitamin pills to be produced"
         }
     },
     "AUXILIARY CONSTRAINTS": []
@@ -633,8 +600,8 @@ Extracting constraint formulations
 ----
 ----
 EXTRACTED ITEMS
-$30 \\cdot batchesShots + 50 \\cdot batchesPills \\leq 1200$
-{'batchesShots': {'shape': [], 'type': 'integer', 'definition': 'Number of batches of vitamin shots to produce'}, 'batchesPills': {'shape': [], 'type': 'integer', 'definition': 'Number of batches of vitamin pills to produce'}}
+$30 \\cdot batchesShots + 50 \\cdot batchesPills \\leq AvailableVitaminC$
+{'batchesShots': {'shape': [], 'type': 'integer', 'definition': 'Number of batches of vitamin shots to be produced'}, 'batchesPills': {'shape': [], 'type': 'integer', 'definition': 'Number of batches of vitamin pills to be produced'}}
 []
 ----
 ----
@@ -696,13 +663,13 @@ Gurobi Optimizer version 13.0.1 build v13.0.1rc0 (linux64 - "Alibaba Cloud Linux
 CPU model: Intel(R) Xeon(R) Platinum, instruction set [SSE2|AVX|AVX2|AVX512]
 Thread count: 1 physical cores, 2 logical processors, using up to 2 threads
 
-Optimize a model with 5 rows, 2 columns and 8 nonzeros (Min)
-Model fingerprint: 0x6aa8801e
-Model has 0 linear objective coefficients
+Optimize a model with 5 rows, 2 columns and 8 nonzeros (Max)
+Model fingerprint: 0xe723236f
+Model has 2 linear objective coefficients
 Variable types: 0 continuous, 2 integer (0 binary)
 Coefficient statistics:
   Matrix range     [1e+00, 5e+01]
-  Objective range  [0e+00, 0e+00]
+  Objective range  [7e+00, 1e+01]
   Bounds range     [0e+00, 0e+00]
   RHS range        [1e+00, 2e+03]
 
@@ -713,10 +680,10 @@ Presolve: All rows and columns removed
 Explored 0 nodes (0 simplex iterations) in 0.00 seconds (0.00 work units)
 Thread count was 1 (of 2 available processors)
 
-Solution count 1: 0 
+Solution count 1: 226 
 
 Optimal solution found (tolerance 1.00e-04)
-Best objective 0.000000000000e+00, best bound 0.000000000000e+00, gap 0.0000%
-Optimal Objective Value:  0.0
-Optimal Objective Value:  0.0
+Best objective 2.260000000000e+02, best bound 2.260000000000e+02, gap 0.0000%
+Optimal Objective Value:  226.0
+Optimal Objective Value:  226.0
 

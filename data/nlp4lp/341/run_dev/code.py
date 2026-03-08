@@ -63,9 +63,9 @@ model.setObjective(
     quicksum(Prices[p] * batches[p] for p in range(P))
     - quicksum(
         MachineCosts[m] * quicksum(TimeRequired[m][p] * batches[p] for p in range(P))
-        + ExtraCosts[m] * extraTime[m]
         for m in range(M)
-    ),
+    )
+    - quicksum(ExtraCosts[m] * extraTime[m] for m in range(M)),
     GRB.MAXIMIZE
 )
 

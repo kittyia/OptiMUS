@@ -33,24 +33,24 @@ ProfitNightLamp = data["ProfitNightLamp"] # shape: [], definition: Profit per ni
 
 ### Define the variables
 
-deskLampsProduced = model.addVar(vtype=GRB.INTEGER, name="deskLampsProduced")
+DeskLamps = model.addVar(vtype=GRB.INTEGER, name="DeskLamps")
 
-nightLampsProduced = model.addVar(vtype=GRB.INTEGER, name="nightLampsProduced")
+NightLamps = model.addVar(vtype=GRB.INTEGER, name="NightLamps")
 
 
 
 ### Define the constraints
 
-model.addConstr(deskLampsProduced >= DemandDeskLamps)
-model.addConstr(deskLampsProduced <= MaxDeskLamps)
-model.addConstr(nightLampsProduced >= DemandNightLamps)
-model.addConstr(nightLampsProduced <= MaxNightLamps)
-model.addConstr(deskLampsProduced + nightLampsProduced >= MinTotalLamps)
+model.addConstr(DeskLamps >= DemandDeskLamps)
+model.addConstr(DeskLamps <= MaxDeskLamps)
+model.addConstr(NightLamps >= DemandNightLamps)
+model.addConstr(NightLamps <= MaxNightLamps)
+model.addConstr(DeskLamps + NightLamps >= MinTotalLamps)
 
 
 ### Define the objective
 
-
+model.setObjective(ProfitDeskLamp * DeskLamps + ProfitNightLamp * NightLamps, GRB.MAXIMIZE)
 
 
 ### Optimize the model

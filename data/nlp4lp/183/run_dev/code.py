@@ -31,23 +31,23 @@ MaxBuses = data["MaxBuses"] # shape: [], definition: The maximum number of buses
 
 ### Define the variables
 
-Cars = model.addVar(vtype=GRB.INTEGER, name="Cars")
+NumCars = model.addVar(vtype=GRB.INTEGER, name="NumCars")
 
-Buses = model.addVar(vtype=GRB.INTEGER, name="Buses")
+NumBuses = model.addVar(vtype=GRB.INTEGER, name="NumBuses")
 
 
 
 ### Define the constraints
 
-model.addConstr(CarCapacity * Cars + BusCapacity * Buses >= MinEmployeesToTransport)
-model.addConstr(Buses <= MaxBuses)
-model.addConstr(Cars >= 0)
-model.addConstr(Buses >= 0)
+model.addConstr(CarCapacity * NumCars + BusCapacity * NumBuses >= MinEmployeesToTransport)
+model.addConstr(NumBuses <= MaxBuses)
+model.addConstr(NumCars >= 0)
+model.addConstr(NumBuses >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(CarPollution * NumCars + BusPollution * NumBuses, GRB.MINIMIZE)
 
 
 ### Optimize the model

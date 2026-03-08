@@ -1,39 +1,45 @@
 ----
-Step-by-step reasoning:
+**Step-by-step reasoning**
 
-1. **Lower-bound and non-negativity constraints**  
-   - We have:
-     - “The number of desk-lamps produced per day must be at least DemandDeskLamps”
-     - “The number of desk-lamps produced per day must be non-negative”
-   - Since DemandDeskLamps represents a minimum expected demand, it is naturally nonnegative.  
-   - Therefore, if desk-lamps ≥ DemandDeskLamps and DemandDeskLamps ≥ 0, then desk-lamps ≥ 0 is automatically satisfied.  
-   - The same reasoning applies to night-lamps.  
-   ✅ The two non-negativity constraints are redundant and can be removed.
+1. **Non-negativity constraints**  
+   - We already require:
+     - Desk-lamps ≥ DemandDeskLamps  
+     - Night-lamps ≥ DemandNightLamps  
+   - Since demand represents a *minimum expected demand*, it is logically nonnegative.
+   - Therefore, the non-negativity constraints are redundant because:
+     - If DeskLamps ≥ DemandDeskLamps and DemandDeskLamps ≥ 0, then DeskLamps ≥ 0 automatically.
+     - Similarly for NightLamps.
 
-2. **Lower and upper bounds for each product**  
-   - For desk-lamps, we have:
-     - desk-lamps ≥ DemandDeskLamps  
-     - desk-lamps ≤ MaxDeskLamps  
-   - These can be combined into a single range constraint:
-     - DemandDeskLamps ≤ desk-lamps ≤ MaxDeskLamps  
-   - The same applies to night-lamps.
+   ✅ Both non-negativity constraints can be removed.
 
-3. **Total production constraint**  
-   - “The total number of lamps produced per day must be at least MinTotalLamps”  
-   - This constraint is independent and cannot be derived from the others.  
-   ✅ It must remain as is.
+2. **Lower and upper bounds for each lamp type**  
+   - We currently have separate lower and upper bound constraints for each variable.
+   - These can be combined into a single double-sided inequality per lamp type:
+     - DemandDeskLamps ≤ DeskLamps ≤ MaxDeskLamps
+     - DemandNightLamps ≤ NightLamps ≤ MaxNightLamps
 
-So the only changes are:
-- Remove the two non-negativity constraints (redundant).
-- Combine lower and upper bounds for each lamp type.
+   ✅ These pairs can be combined.
 
-Updated list of constraints:
+3. **Minimum total production constraint**  
+   - The total production constraint:
+     - DeskLamps + NightLamps ≥ MinTotalLamps  
+   - This is **not redundant**, because:
+     - The sum of minimum demands does not necessarily satisfy the contract minimum.
+     - The contract minimum may be stricter than individual demands.
 
+   ✅ This constraint must remain.
+
+---
+
+### ✅ Updated List of Constraints
+
+```python
 [
-    "DemandDeskLamps ≤ number of desk-lamps produced per day ≤ MaxDeskLamps",
-    "DemandNightLamps ≤ number of night-lamps produced per day ≤ MaxNightLamps",
+    "The number of desk-lamps produced per day must be between DemandDeskLamps and MaxDeskLamps",
+    "The number of night-lamps produced per day must be between DemandNightLamps and MaxNightLamps",
     "The total number of lamps produced per day must be at least MinTotalLamps"
 ]
+```
 ----
 +++++++++++++++++++
 ++ Constraint Qs ++
@@ -87,7 +93,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: DemandDeskLamps ≤ number of desk-lamps produced per day ≤ MaxDeskLamps
+Consider this potential constraint: The number of desk-lamps produced per day must be between DemandDeskLamps and MaxDeskLamps
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -97,27 +103,30 @@ Consider this potential constraint: DemandDeskLamps ≤ number of desk-lamps pro
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is clearly a valid constraint and should be explicitly modeled.
+Yes, this is definitely a constraint and it should be explicitly modeled.
 
-From the description:
+From the problem description:
 
 - “There is an expected demand of at least DemandDeskLamps desk-lamps each day.”  
-  → This implies a lower bound constraint:  
-  number of desk-lamps produced ≥ DemandDeskLamps.
+  → This implies a lower bound:  
+  \[
+  \text{DeskLamps} \ge \text{DemandDeskLamps}
+  \]
 
 - “They can make at most MaxDeskLamps desk-lamps per day.”  
-  → This implies an upper bound constraint:  
-  number of desk-lamps produced ≤ MaxDeskLamps.
+  → This implies an upper bound:  
+  \[
+  \text{DeskLamps} \le \text{MaxDeskLamps}
+  \]
 
-Combining both gives:
-
+Together, these form the bound constraint:
 \[
-\text{DemandDeskLamps} \le \text{DeskLampsProduced} \le \text{MaxDeskLamps}
+\text{DemandDeskLamps} \le \text{DeskLamps} \le \text{MaxDeskLamps}
 \]
 
-This directly reflects two explicit statements in the problem description (minimum demand requirement and production capacity limit), so it absolutely belongs in the (MI)LP formulation.
+This is a core structural constraint of the model (production must respect both demand and capacity), so it absolutely belongs in the (MI)LP formulation.
 
-Confidence: 5 OUT OF 5
+**5 OUT OF 5**
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -171,7 +180,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: DemandNightLamps ≤ number of night-lamps produced per day ≤ MaxNightLamps
+Consider this potential constraint: The number of night-lamps produced per day must be between DemandNightLamps and MaxNightLamps
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -181,23 +190,28 @@ Consider this potential constraint: DemandNightLamps ≤ number of night-lamps p
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is clearly a valid and necessary constraint.
+Yes, this is clearly a constraint and it should be explicitly modeled.
 
-From the description:
+From the problem statement:
 
 - “There is an expected demand of at least DemandNightLamps night-lamps each day.”  
-  → This implies:  
-  number of night-lamps produced ≥ DemandNightLamps  
+  → This implies a lower bound:  
+  \[
+  \text{NightLamps} \ge \text{DemandNightLamps}
+  \]
 
-- “They can make at most MaxNightLamps night-lamps per day.”  
-  → This implies:  
-  number of night-lamps produced ≤ MaxNightLamps  
+- “Due to the size of their factory, they can make at most MaxNightLamps night-lamps per day.”  
+  → This implies an upper bound:  
+  \[
+  \text{NightLamps} \le \text{MaxNightLamps}
+  \]
 
-Combining both gives:
+Together, these form the bounded production constraint:
+\[
+\text{DemandNightLamps} \le \text{NightLamps} \le \text{MaxNightLamps}
+\]
 
-DemandNightLamps ≤ number of night-lamps produced ≤ MaxNightLamps  
-
-This is explicitly supported by the problem statement and must be included in the (MI)LP formulation.
+This is a standard production lower- and upper-bound constraint and must be explicitly included in the (MI)LP formulation.
 
 **5 OUT OF 5**
 +--+
@@ -263,22 +277,25 @@ Consider this potential constraint: The total number of lamps produced per day m
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is clearly a constraint and should be explicitly modeled.
+Yes, this is definitely a constraint and should be explicitly modeled.
 
-The problem statement says: *“To satisfy a contract, a minimum of MinTotalLamps lamps must be made each day.”* This directly imposes a lower bound on total production. If we let:
+The problem statement clearly says:  
+> “To satisfy a contract, a minimum of **MinTotalLamps** lamps must be made each day.”
 
-- \( x \) = number of desk-lamps produced per day  
-- \( y \) = number of night-lamps produced per day  
-
-then the constraint is:
+This directly translates to the constraint:
 
 \[
-x + y \ge \text{MinTotalLamps}
+\text{DeskLamps} + \text{NightLamps} \ge \text{MinTotalLamps}
 \]
 
-This is independent of the individual demand constraints and production capacity limits. Even if minimum demand requirements are satisfied, it is still possible that their sum is less than `MinTotalLamps`, so this aggregate constraint must be explicitly included.
+This requirement is separate from the individual demand constraints:
 
-Therefore, this is unquestionably a required constraint in the (MI)LP formulation.
+- DeskLamps ≥ DemandDeskLamps  
+- NightLamps ≥ DemandNightLamps  
+
+Even if both individual demand constraints are satisfied, their sum may still be less than **MinTotalLamps**, so this contract constraint is not redundant and must be explicitly included in the model.
+
+Therefore, it is clearly a valid and necessary constraint in the (MI)LP formulation.
 
 **5 OUT OF 5**
 +--+
@@ -296,9 +313,9 @@ Extracting constraint formulations
 
 ----
 {
-    "FORMULATION": "$DemandDeskLamps \\leq deskLampsProduced \\leq MaxDeskLamps$",
+    "FORMULATION": "$DemandDeskLamps \\leq DeskLamps \\leq MaxDeskLamps$",
     "NEW VARIABLES": {
-        "deskLampsProduced": {
+        "DeskLamps": {
             "shape": [],
             "type": "integer",
             "definition": "Number of desk-lamps produced per day"
@@ -309,15 +326,15 @@ Extracting constraint formulations
 ----
 ----
 EXTRACTED ITEMS
-$DemandDeskLamps \\leq deskLampsProduced \\leq MaxDeskLamps$
-{'deskLampsProduced': {'shape': [], 'type': 'integer', 'definition': 'Number of desk-lamps produced per day'}}
+$DemandDeskLamps \\leq DeskLamps \\leq MaxDeskLamps$
+{'DeskLamps': {'shape': [], 'type': 'integer', 'definition': 'Number of desk-lamps produced per day'}}
 []
 ----
 ----
 {
-    "FORMULATION": "$DemandNightLamps \\leq nightLampsProduced \\leq MaxNightLamps$",
+    "FORMULATION": "$DemandNightLamps \\leq NightLamps \\leq MaxNightLamps$",
     "NEW VARIABLES": {
-        "nightLampsProduced": {
+        "NightLamps": {
             "shape": [],
             "type": "integer",
             "definition": "Number of night-lamps produced per day"
@@ -328,20 +345,20 @@ $DemandDeskLamps \\leq deskLampsProduced \\leq MaxDeskLamps$
 ----
 ----
 EXTRACTED ITEMS
-$DemandNightLamps \\leq nightLampsProduced \\leq MaxNightLamps$
-{'nightLampsProduced': {'shape': [], 'type': 'integer', 'definition': 'Number of night-lamps produced per day'}}
+$DemandNightLamps \\leq NightLamps \\leq MaxNightLamps$
+{'NightLamps': {'shape': [], 'type': 'integer', 'definition': 'Number of night-lamps produced per day'}}
 []
 ----
 ----
 {
-    "FORMULATION": "$deskLampsProduced + nightLampsProduced \\geq MinTotalLamps$",
+    "FORMULATION": "$DeskLamps + NightLamps \\geq MinTotalLamps$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$deskLampsProduced + nightLampsProduced \\geq MinTotalLamps$
+$DeskLamps + NightLamps \\geq MinTotalLamps$
 {}
 []
 ----
@@ -352,13 +369,13 @@ Gurobi Optimizer version 13.0.1 build v13.0.1rc0 (linux64 - "Alibaba Cloud Linux
 CPU model: Intel(R) Xeon(R) Platinum, instruction set [SSE2|AVX|AVX2|AVX512]
 Thread count: 1 physical cores, 2 logical processors, using up to 2 threads
 
-Optimize a model with 5 rows, 2 columns and 6 nonzeros (Min)
-Model fingerprint: 0x497af56b
-Model has 0 linear objective coefficients
+Optimize a model with 5 rows, 2 columns and 6 nonzeros (Max)
+Model fingerprint: 0xdbd7e4c9
+Model has 2 linear objective coefficients
 Variable types: 0 continuous, 2 integer (0 binary)
 Coefficient statistics:
   Matrix range     [1e+00, 1e+00]
-  Objective range  [0e+00, 0e+00]
+  Objective range  [5e+00, 8e+00]
   Bounds range     [0e+00, 0e+00]
   RHS range        [3e+01, 2e+02]
 
@@ -369,10 +386,10 @@ Presolve: All rows and columns removed
 Explored 0 nodes (0 simplex iterations) in 0.00 seconds (0.00 work units)
 Thread count was 1 (of 2 available processors)
 
-Solution count 1: 0 
+Solution count 1: 2190 
 
 Optimal solution found (tolerance 1.00e-04)
-Best objective 0.000000000000e+00, best bound 0.000000000000e+00, gap 0.0000%
-Optimal Objective Value:  0.0
-Optimal Objective Value:  0.0
+Best objective 2.190000000000e+03, best bound 2.190000000000e+03, gap 0.0000%
+Optimal Objective Value:  2190.0
+Optimal Objective Value:  2190.0
 

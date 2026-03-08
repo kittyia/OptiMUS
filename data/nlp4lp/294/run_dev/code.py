@@ -29,22 +29,22 @@ MaxCoconutToLavenderRatio = data["MaxCoconutToLavenderRatio"] # shape: [], defin
 
 ### Define the variables
 
-coconutOilUnits = model.addVar(vtype=GRB.CONTINUOUS, name="coconutOilUnits")
+CoconutOilUnits = model.addVar(vtype=GRB.CONTINUOUS, name="CoconutOilUnits")
 
-lavenderUnits = model.addVar(vtype=GRB.CONTINUOUS, name="lavenderUnits")
+LavenderUnits = model.addVar(vtype=GRB.CONTINUOUS, name="LavenderUnits")
 
 
 
 ### Define the constraints
 
-model.addConstr(coconutOilUnits >= MinCoconutOil)
-model.addConstr(coconutOilUnits + lavenderUnits <= MaxTotalUnits)
-model.addConstr(coconutOilUnits <= MaxCoconutToLavenderRatio * lavenderUnits)
+model.addConstr(CoconutOilUnits >= MinCoconutOil)
+model.addConstr(CoconutOilUnits + LavenderUnits <= MaxTotalUnits)
+model.addConstr(CoconutOilUnits <= MaxCoconutToLavenderRatio * LavenderUnits)
 
 
 ### Define the objective
 
-model.setObjective(TimeCoconutOil * coconutOilUnits + TimeLavender * lavenderUnits, GRB.MINIMIZE)
+model.setObjective(TimeCoconutOil * CoconutOilUnits + TimeLavender * LavenderUnits, GRB.MINIMIZE)
 
 
 ### Optimize the model

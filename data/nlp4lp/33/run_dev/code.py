@@ -35,22 +35,22 @@ MinProtein = data["MinProtein"] # shape: [], definition: Minimum daily protein r
 
 ### Define the variables
 
-Rice = model.addVar(vtype=GRB.CONTINUOUS, name="Rice")
+RiceServings = model.addVar(vtype=GRB.CONTINUOUS, name="RiceServings")
 
-Kebab = model.addVar(vtype=GRB.CONTINUOUS, name="Kebab")
+KebabServings = model.addVar(vtype=GRB.CONTINUOUS, name="KebabServings")
 
 
 
 ### Define the constraints
 
-model.addConstr(CaloriesRice * Rice + CaloriesKebab * Kebab >= MinCalories)
-model.addConstr(Rice >= 0)
-model.addConstr(Kebab >= 0)
+model.addConstr(CaloriesRice * RiceServings + CaloriesKebab * KebabServings >= MinCalories)
+model.addConstr(RiceServings >= 0)
+model.addConstr(KebabServings >= 0)
 
 
 ### Define the objective
 
-model.setObjective(CostRice * Rice + CostKebab * Kebab, GRB.MINIMIZE)
+model.setObjective(CostRice * RiceServings + CostKebab * KebabServings, GRB.MINIMIZE)
 
 
 ### Optimize the model

@@ -29,9 +29,9 @@ MinTotalChemicals = data["MinTotalChemicals"] # shape: [], definition: Minimum t
 
 ### Define the variables
 
-ChemicalAUnits = model.addVar(vtype=GRB.CONTINUOUS, name="ChemicalAUnits")
+ChemicalAUnits = model.addVar(vtype=GRB.INTEGER, name="ChemicalAUnits")
 
-ChemicalBUnits = model.addVar(vtype=GRB.CONTINUOUS, name="ChemicalBUnits")
+ChemicalBUnits = model.addVar(vtype=GRB.INTEGER, name="ChemicalBUnits")
 
 
 
@@ -44,7 +44,7 @@ model.addConstr(ChemicalAUnits <= MaxRatioAtoB * ChemicalBUnits)
 
 ### Define the objective
 
-
+model.setObjective(TimeChemicalA * ChemicalAUnits + TimeChemicalB * ChemicalBUnits, GRB.MINIMIZE)
 
 
 ### Optimize the model

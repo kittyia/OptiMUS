@@ -33,23 +33,24 @@ MaxTotalCalories = data["MaxTotalCalories"] # shape: [], definition: Maximum tot
 
 ### Define the variables
 
-numCheesecakeSlices = model.addVar(vtype=GRB.INTEGER, name="numCheesecakeSlices")
+CaramelSlices = model.addVar(vtype=GRB.INTEGER, name="CaramelSlices")
 
-numCaramelSlices = model.addVar(vtype=GRB.INTEGER, name="numCaramelSlices")
+CheesecakeSlices = model.addVar(vtype=GRB.INTEGER, name="CheesecakeSlices")
 
 
 
 ### Define the constraints
 
-model.addConstr(CaloriesCheesecake * numCheesecakeSlices + CaloriesCaramelCake * numCaramelSlices <= MaxTotalCalories)
-model.addConstr(numCheesecakeSlices >= MinCheesecakeToCaramelRatio * numCaramelSlices)
-model.addConstr(numCaramelSlices >= MinCaramelSlices)
+model.addConstr(CaramelSlices >= MinCaramelSlices)
+model.addConstr(CheesecakeSlices >= MinCheesecakeToCaramelRatio * CaramelSlices)
+model.addConstr(CaloriesCheesecake * CheesecakeSlices + CaloriesCaramelCake * CaramelSlices <= MaxTotalCalories)
 
 
 ### Define the objective
 
 model.setObjective(
-    SugarCheesecake * numCheesecakeSlices + SugarCaramelCake * numCaramelSlices,
+    SugarCheesecake * CheesecakeSlices + 
+    SugarCaramelCake * CaramelSlices,
     GRB.MAXIMIZE
 )
 

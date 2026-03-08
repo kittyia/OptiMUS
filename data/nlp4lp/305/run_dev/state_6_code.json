@@ -55,19 +55,19 @@
         }
     },
     "objective": {
-        "description": "\"The goal is to maximize the total profit for the next month by determining how many times to execute each production process.\"",
-        "formulation": "$\\max \\sum_{l=1}^{L} \\left( \\sum_{p=1}^{P} price_p \\, output_{l,p} - cost_l \\sum_{p=1}^{P} output_{l,p} \\right) execute_l$",
+        "description": "Maximize the total profit for the next month by choosing how many times to execute each production process (total product revenue minus total process costs).",
+        "formulation": "$\\max \\sum_{l=1}^{L} \\left( \\sum_{p=1}^{P} Price_p \\, Output_{l,p} \\right) execute_l \\;-\\; \\sum_{l=1}^{L} Cost_l \\left( \\sum_{p=1}^{P} Output_{l,p} \\right) execute_l$",
         "code": "model.setObjective(\n    quicksum(\n        (\n            quicksum(Price[p] * Output[l][p] for p in range(P))\n            - Cost[l] * quicksum(Output[l][p] for p in range(P))\n        ) * execute[l]\n        for l in range(L)\n    ),\n    GRB.MAXIMIZE\n)"
     },
     "constraints": [
         {
-            "description": "For each crude oil type i, the total amount used across all processes cannot exceed the allocated amount: sum over l of (input_l_i * execute_l) <= allocated_i",
-            "formulation": "$\\\\forall i = 1, \\\\dots, O:\\\\; \\\\sum_{l=1}^{L} Input[l,i] \\\\cdot execute[l] \\\\leq Allocated[i]$",
+            "description": "For each crude oil type i, the total amount used by all processes cannot exceed the allocated amount: sum over l of (input_l_i * execute_l) \u2264 allocated_i",
+            "formulation": "$\\\\forall i = 1, \\\\dots, O, \\\\; \\\\sum_{l=1}^{L} Input[l,i] \\\\cdot execute[l] \\\\le Allocated[i]$",
             "code": "for i in range(O):\n    model.addConstr(\n        sum(Input[l][i] * execute[l] for l in range(L)) <= Allocated[i]\n    )"
         },
         {
-            "description": "For each process l, the number of times it is executed must be non-negative: execute_l >= 0",
-            "formulation": "$\\\\forall l \\\\in \\\\{1, \\\\dots, L\\\\},\\\\; execute[l] \\\\geq 0$",
+            "description": "The number of times each process is executed must be non-negative: execute_l \u2265 0 for all l",
+            "formulation": "$\\\\forall l = 1, \\\\dots, L,\\\\; execute_l \\\\ge 0$",
             "code": "for l in range(L):\n    model.addConstr(execute[l] >= 0)"
         }
     ],

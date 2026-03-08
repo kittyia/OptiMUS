@@ -49,7 +49,7 @@ model.addConstr(JuniorAccountants >= 0)
 
 ### Define the objective
 
-
+model.setObjective(SeniorWage * SeniorAccountants + JuniorWage * JuniorAccountants, GRB.MINIMIZE)
 
 
 ### Optimize the model

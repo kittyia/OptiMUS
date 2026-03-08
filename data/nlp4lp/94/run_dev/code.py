@@ -33,16 +33,16 @@ MaxVitaminC = data["MaxVitaminC"] # shape: [], definition: Maximum allowed units
 
 ### Define the variables
 
-OrangeBoxes = model.addVar(vtype=GRB.INTEGER, name="OrangeBoxes")
-
 AppleBoxes = model.addVar(vtype=GRB.INTEGER, name="AppleBoxes")
+
+OrangeBoxes = model.addVar(vtype=GRB.INTEGER, name="OrangeBoxes")
 
 
 
 ### Define the constraints
 
-model.addConstr(OrangeBoxes >= MinimumOrangeBoxes)
 model.addConstr(AppleBoxes >= PreferenceRatio * OrangeBoxes)
+model.addConstr(OrangeBoxes >= MinimumOrangeBoxes)
 model.addConstr(VitaminCOrange * OrangeBoxes + VitaminCApple * AppleBoxes <= MaxVitaminC)
 
 

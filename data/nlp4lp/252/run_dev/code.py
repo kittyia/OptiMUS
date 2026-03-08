@@ -43,14 +43,15 @@ MotorboatTrips = model.addVar(vtype=GRB.INTEGER, name="MotorboatTrips")
 
 model.addConstr(KayakCapacity * KayakTrips + MotorboatCapacity * MotorboatTrips >= MinLocals)
 model.addConstr(MotorboatTrips <= MaxMotorboatTrips)
-model.addConstr(KayakTrips >= MinKayakTripPercentage * (KayakTrips + MotorboatTrips))
+model.addConstr(KayakTrips >= 3 * MotorboatTrips)
 model.addConstr(MotorboatTrips >= 0)
 model.addConstr(KayakTrips >= 0)
+model.addConstr(MotorboatTrips >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(KayakTime * KayakTrips + MotorboatTime * MotorboatTrips, GRB.MINIMIZE)
 
 
 ### Optimize the model

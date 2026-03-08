@@ -35,26 +35,25 @@ MinLargeCarts = data["MinLargeCarts"] # shape: [], definition: Minimum number of
 
 ### Define the variables
 
-MediumCarts = model.addVar(vtype=GRB.INTEGER, name="MediumCarts")
+mediumCarts = model.addVar(vtype=GRB.INTEGER, name="mediumCarts")
 
-LargeCarts = model.addVar(vtype=GRB.INTEGER, name="LargeCarts")
+largeCarts = model.addVar(vtype=GRB.INTEGER, name="largeCarts")
 
 
 
 ### Define the constraints
 
-model.addConstr(HorsesPerMediumCart * MediumCarts + HorsesPerLargeCart * LargeCarts <= TotalHorsesAvailable)
-model.addConstr(MediumCarts == MediumToLargeCartRatio * LargeCarts)
-model.addConstr(MediumCarts >= MinMediumCarts)
-model.addConstr(LargeCarts >= MinLargeCarts)
-model.addConstr(MediumCarts >= 0)
-model.addConstr(LargeCarts >= 0)
+model.addConstr(HorsesPerMediumCart * mediumCarts + HorsesPerLargeCart * largeCarts <= TotalHorsesAvailable)
+model.addConstr(mediumCarts == MediumToLargeCartRatio * largeCarts)
+model.addConstr(largeCarts >= MinLargeCarts)
+# mediumCarts and largeCarts are defined as integer variables (vtype=GRB.INTEGER),
+# so no additional constraint is required here.
 
 
 ### Define the objective
 
 model.setObjective(
-    CapacityMediumCart * MediumCarts + CapacityLargeCart * LargeCarts,
+    CapacityMediumCart * mediumCarts + CapacityLargeCart * largeCarts,
     GRB.MAXIMIZE
 )
 

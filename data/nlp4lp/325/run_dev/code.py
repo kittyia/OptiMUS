@@ -45,7 +45,7 @@ for k in range(K):
 
 ### Define the objective
 
-del.setObjective(quicksum(Price[k] * quantity[k] for k in range(K)), GRB.MINIMIZE
+model.setObjective(quicksum(Price[k] * quantity[k] for k in range(K)), GRB.MINIMIZE)
 
 
 ### Optimize the model

@@ -31,23 +31,25 @@ CleaningPerUnit = data["CleaningPerUnit"] # shape: ['NumProducts'], definition: 
 
 ### Define the variables
 
-LiquidSanitizers = model.addVar(vtype=GRB.INTEGER, name="LiquidSanitizers")
+Liquid = model.addVar(vtype=GRB.INTEGER, name="Liquid")
 
-FoamSanitizers = model.addVar(vtype=GRB.INTEGER, name="FoamSanitizers")
+Foam = model.addVar(vtype=GRB.INTEGER, name="Foam")
 
 
 
 ### Define the constraints
 
-model.addConstr(40 * LiquidSanitizers + 60 * FoamSanitizers <= 2000)
-model.addConstr(50 * LiquidSanitizers + 40 * FoamSanitizers <= 2100)
-model.addConstr(FoamSanitizers >= LiquidSanitizers)
-model.addConstr(LiquidSanitizers >= 0)
+model.addConstr(40 * Liquid + 60 * Foam <= 2000)
+model.addConstr(50 * Liquid + 40 * Foam <= 2100)
+model.addConstr(Foam >= Liquid)
+model.addConstr(Liquid <= MaxLiquidSanitizers)
+model.addConstr(Liquid >= 0)
+model.addConstr(Foam >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(30 * Liquid + 20 * Foam, GRB.MAXIMIZE)
 
 
 ### Optimize the model

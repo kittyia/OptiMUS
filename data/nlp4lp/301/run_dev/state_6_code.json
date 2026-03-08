@@ -30,25 +30,25 @@
         }
     },
     "objective": {
-        "description": "Maximize the final amount of currency N held at the end of the day after performing allowable currency exchanges",
-        "formulation": "$\\max \\; Start_{N} - \\sum_{j=1}^{N} x_{N,j} + \\sum_{i=1}^{N} Rate_{i,N}\\, x_{i,N}$",
-        "code": ""
+        "description": "\"Maximize the final amount of currency N held at the end of the day after all allowed currency exchanges.\"",
+        "formulation": "$\\max \\; \\text{Start}_N \\;-\\; \\sum_{j=1}^{N} x_{N,j} \\;+\\; \\sum_{i=1}^{N} \\text{Rate}_{i,N}\\, x_{i,N}$",
+        "code": "model.setObjective(\n    Start[N-1]\n    - quicksum(x[N-1, j] for j in range(N))\n    + quicksum(Rate[i][N-1] * x[i, N-1] for i in range(N)),\n    GRB.MAXIMIZE\n)"
     },
     "constraints": [
         {
-            "description": "For each pair of currencies (i, j), the transaction amount x_{i,j} must be non-negative",
-            "formulation": "$\\\\forall i = 1, \\\\dots, N, \\\\; \\\\forall j = 1, \\\\dots, N:\\\\; x_{i,j} \\\\geq 0$",
+            "description": "For each pair of currencies (i, j), the amount exchanged from currency i to currency j must be non-negative, i.e., x_{i,j} \u2265 0",
+            "formulation": "$\\\\forall i = 1, \\\\dots, N,\\\\; \\\\forall j = 1, \\\\dots, N:\\\\; x_{i,j} \\\\geq 0$",
             "code": "for i in range(N):\n    for j in range(N):\n        model.addConstr(x[i, j] >= 0)"
         },
         {
-            "description": "For each currency i, Start_i + sum_j (Rate_{j,i} * x_{j,i}) - sum_j (x_{i,j}) >= 0",
-            "formulation": "$\\\\forall i = 1, \\\\dots, N:\\\\; Start_i + \\\\sum_{j=1}^{N} Rate_{j,i} \\\\, x_{j,i} - \\\\sum_{j=1}^{N} x_{i,j} \\\\geq 0$",
-            "code": "for i in range(N):\n    model.addConstr(\n        Start[i] + sum(Rate[j][i] * x[j, i] for j in range(N)) - sum(x[i, j] for j in range(N)) >= 0\n    )"
+            "description": "For each currency i, the net balance after exchanges must be non-negative, i.e., start_i - sum_j x_{i,j} + sum_j (rate_{j,i} * x_{j,i}) \u2265 0",
+            "formulation": "$\\\\forall i = 1, \\\\dots, N:\\\\; Start_i - \\\\sum_{j=1}^{N} x_{i,j} + \\\\sum_{j=1}^{N} Rate_{j,i} \\\\, x_{j,i} \\\\geq 0$",
+            "code": "for i in range(N):\n    model.addConstr(\n        Start[i] \n        - sum(x[i, j] for j in range(N)) \n        + sum(Rate[j][i] * x[j, i] for j in range(N)) \n        >= 0\n    )"
         },
         {
-            "description": "For each currency i, the total amount of currency i exchanged (both outgoing and incoming) cannot exceed its daily limit, i.e., sum_j (x_{i,j}) + sum_j (Rate_{j,i} * x_{j,i}) <= Limit_i",
-            "formulation": "$\\\\forall i = 1, \\\\dots, N,\\\\; \\\\sum_{j=1}^{N} x_{i,j} + \\\\sum_{j=1}^{N} Rate_{j,i} \\\\, x_{j,i} \\\\le Limit_i$",
-            "code": "for i in range(N):\n    model.addConstr(\n        sum(x[i, j] for j in range(N)) +\n        sum(Rate[j][i] * x[j, i] for j in range(N))\n        <= Limit[i]\n    )"
+            "description": "For each currency i, the total amount of currency i exchanged (both sent and received) must not exceed its daily limit, i.e., sum_j x_{i,j} + sum_j x_{j,i} \u2264 limit_i",
+            "formulation": "$\\\\forall i = 1, \\\\dots, N, \\\\; \\\\sum_{j=1}^{N} x_{i,j} + \\\\sum_{j=1}^{N} x_{j,i} \\\\leq Limit_i$",
+            "code": "for i in range(N):\n    model.addConstr(\n        sum(x[i, j] for j in range(N)) + sum(x[j, i] for j in range(N)) <= Limit[i]\n    )"
         }
     ],
     "variables": {

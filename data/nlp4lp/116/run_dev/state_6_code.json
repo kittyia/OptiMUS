@@ -40,30 +40,35 @@
         }
     },
     "objective": {
-        "description": "\"Minimize the total number of hours that the two machines are operated\"",
-        "formulation": "$\\min \\sum_{m=1}^{NumMachines} HoursUsed_m$",
-        "code": ""
+        "description": "\"Minimize the total operating time of the machines needed to meet the required amounts of eye cream and foot cream.\"",
+        "formulation": "$\\min \\sum_{m=1}^{NumMachines} HoursUsed_{m}$",
+        "code": "model.setObjective(quicksum(HoursUsed[m] for m in range(NumMachines)), GRB.MINIMIZE)"
     },
     "constraints": [
         {
-            "description": "Total eye cream produced by all machines must be at least 1300 ml",
-            "formulation": "$\\\\sum_{m=1}^{NumMachines} ProductionRate[m,1] \\\\cdot HoursUsed[m] \\\\geq 1300$",
-            "code": "model.addConstr(\n    sum(ProductionRate[m][0] * HoursUsed[m] for m in range(NumMachines)) >= 1300\n)"
+            "description": "30 times the hours used on machine 1 plus 45 times the hours used on machine 2 must be at least 1300 ml (eye cream requirement)",
+            "formulation": "$30 \\\\cdot HoursUsed[1] + 45 \\\\cdot HoursUsed[2] \\\\geq 1300$",
+            "code": "model.addConstr(30 * HoursUsed[0] + 45 * HoursUsed[1] >= 1300)"
         },
         {
-            "description": "Total foot cream produced by all machines must be at least 1500 ml",
-            "formulation": "$\\\\sum_{m=1}^{NumMachines} ProductionRate[m,2] \\\\cdot HoursUsed[m] \\\\ge 1500$",
-            "code": "model.addConstr(\n    quicksum(ProductionRate[m][1] * HoursUsed[m] for m in range(NumMachines)) >= 1500\n)"
+            "description": "60 times the hours used on machine 1 plus 30 times the hours used on machine 2 must be at least 1500 ml (foot cream requirement)",
+            "formulation": "$60 \\\\cdot HoursUsed[1] + 30 \\\\cdot HoursUsed[2] \\\\geq 1500$",
+            "code": "model.addConstr(60 * HoursUsed[0] + 30 * HoursUsed[1] >= 1500)"
         },
         {
-            "description": "Total distilled water used by all machines must not exceed 1200 ml",
+            "description": "20 times the hours used on machine 1 plus 15 times the hours used on machine 2 must not exceed 1200 ml (distilled water availability constraint)",
             "formulation": "$\\\\sum_{m=1}^{NumMachines} WaterUsage[m] \\\\cdot HoursUsed[m] \\\\leq TotalWaterAvailable$",
             "code": "model.addConstr(\n    sum(WaterUsage[m] * HoursUsed[m] for m in range(NumMachines)) \n    <= TotalWaterAvailable\n)"
         },
         {
-            "description": "Number of hours each machine is used must be non-negative",
-            "formulation": "$\\\\forall m = 1, \\\\dots, NumMachines, \\\\; HoursUsed[m] \\\\geq 0$",
-            "code": "for m in range(NumMachines):\n    model.addConstr(HoursUsed[m] >= 0)"
+            "description": "The hours used on machine 1 must be non-negative",
+            "formulation": "$HoursUsed[1] \\\\ge 0$",
+            "code": "model.addConstr(HoursUsed[0] >= 0)"
+        },
+        {
+            "description": "The hours used on machine 2 must be non-negative",
+            "formulation": "$HoursUsed[2] \\\\geq 0$",
+            "code": "model.addConstr(HoursUsed[1] >= 0)"
         }
     ],
     "variables": {

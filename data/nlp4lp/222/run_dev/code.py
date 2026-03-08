@@ -41,33 +41,38 @@ AvailableSpace = data["AvailableSpace"] # shape: [], definition: Total available
 
 ### Define the variables
 
-CircularTables = model.addVar(vtype=GRB.INTEGER, name="CircularTables")
+NumCircularTables = model.addVar(vtype=GRB.INTEGER, name="NumCircularTables")
 
-RectangularTables = model.addVar(vtype=GRB.INTEGER, name="RectangularTables")
+NumRectangularTables = model.addVar(vtype=GRB.INTEGER, name="NumRectangularTables")
 
 
 
 ### Define the constraints
 
+model.addConstr(5 * NumCircularTables + 4 * NumRectangularTables >= MinimumParticipants)
 model.addConstr(
-    ParticipantsPerCircularTable * CircularTables +
-    ParticipantsPerRectangularTable * RectangularTables
-    >= MinimumParticipants
+    PosterBoardsPerCircularTable * NumCircularTables
+    + PosterBoardsPerRectangularTable * NumRectangularTables
+    >= MinimumPosterBoards
 )
 model.addConstr(
-    SpacePerCircularTable * CircularTables +
-    SpacePerRectangularTable * RectangularTables
+    SpacePerCircularTable * NumCircularTables +
+    SpacePerRectangularTable * NumRectangularTables
     <= AvailableSpace
 )
-model.addConstr(CircularTables >= 0)
-model.addConstr(RectangularTables >= 0)
-model.addConstr(CircularTables >= 0)
-model.addConstr(RectangularTables >= 0)
+model.addConstr(NumCircularTables >= 0)
+model.addConstr(NumRectangularTables >= 0)
+model.addConstr(NumCircularTables >= 0)
+model.addConstr(NumRectangularTables >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(
+    GuestsPerCircularTable * NumCircularTables +
+    GuestsPerRectangularTable * NumRectangularTables,
+    GRB.MAXIMIZE
+)
 
 
 ### Optimize the model

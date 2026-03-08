@@ -29,23 +29,20 @@ ProfitPerProduct = data["ProfitPerProduct"] # shape: ['NumProducts'], definition
 
 ### Define the variables
 
-GraphReams = model.addVar(vtype=GRB.CONTINUOUS, name="GraphReams")
-
-MusicReams = model.addVar(vtype=GRB.CONTINUOUS, name="MusicReams")
+Production = model.addVars(NumProducts, vtype=GRB.CONTINUOUS, name="Production")
 
 
 
 ### Define the constraints
 
-model.addConstr(3 * GraphReams + 1.5 * MusicReams <= 350)
-model.addConstr(5.5 * GraphReams + 3 * MusicReams <= 350)
-model.addConstr(GraphReams >= 0)
-model.addConstr(MusicReams >= 0)
+model.addConstr(5.5 * Production[0] + 3 * Production[1] <= 350)
+model.addConstr(Production[0] >= 0)
+model.addConstr(Production[1] >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(quicksum(ProfitPerProduct[p] * Production[p] for p in range(NumProducts)), GRB.MAXIMIZE)
 
 
 ### Optimize the model

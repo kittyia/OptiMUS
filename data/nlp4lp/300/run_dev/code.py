@@ -43,8 +43,6 @@ model.addConstr(CapacityAmbulance * AmbulanceShifts + CapacityVan * VanShifts >=
 model.addConstr(VanShifts <= MaxVanShiftsPercent * (AmbulanceShifts + VanShifts))
 model.addConstr(AmbulanceShifts >= 0)
 model.addConstr(VanShifts >= 0)
-model.addConstr(AmbulanceShifts >= 0)
-model.addConstr(VanShifts >= 0)
 
 
 ### Define the objective

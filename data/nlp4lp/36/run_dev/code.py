@@ -43,15 +43,14 @@ FruitServings = model.addVar(vtype=GRB.CONTINUOUS, name="FruitServings")
 
 ### Define the constraints
 
-model.addConstr(VegetableVitamins * VegetableServings + FruitVitamins * FruitServings >= MinimumVitamins)
-model.addConstr(3 * VegetableServings + 1 * FruitServings >= 30)
+model.addConstr(VegetableMinerals * VegetableServings + FruitMinerals * FruitServings >= MinimumMinerals)
 model.addConstr(VegetableServings >= 0)
 model.addConstr(FruitServings >= 0)
 
 
 ### Define the objective
 
-del.setObjective(VegetableCost * VegetableServings + FruitCost * FruitServings, GRB.MINIMIZE
+model.setObjective(VegetableCost * VegetableServings + FruitCost * FruitServings, GRB.MINIMIZE)
 
 
 ### Optimize the model

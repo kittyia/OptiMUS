@@ -41,16 +41,18 @@ CanoeTrips = model.addVar(vtype=GRB.INTEGER, name="CanoeTrips")
 
 ### Define the constraints
 
+model.addConstr(BoatCapacity * BoatTrips + CanoeCapacity * CanoeTrips >= MinDucks)
+model.addConstr(BoatTrips <= MaxBoatTrips)
+model.addConstr(2 * CanoeTrips >= 3 * BoatTrips)
 model.addConstr(BoatTrips >= 0)
 model.addConstr(CanoeTrips >= 0)
-model.addConstr(BoatTrips <= MaxBoatTrips)
-model.addConstr(CanoeTrips >= MinCanoeTripFraction * (BoatTrips + CanoeTrips))
-model.addConstr(BoatCapacity * BoatTrips + CanoeCapacity * CanoeTrips >= MinDucks)
+model.addConstr(BoatTrips >= 0)
+model.addConstr(CanoeTrips >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(BoatTripTime * BoatTrips + CanoeTripTime * CanoeTrips, GRB.MINIMIZE)
 
 
 ### Optimize the model

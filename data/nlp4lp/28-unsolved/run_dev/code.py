@@ -37,7 +37,6 @@ xB = model.addVar(vtype=GRB.CONTINUOUS, name="xB")
 
 ### Define the constraints
 
-model.addConstr(8 * xA + 15 * xB >= 150)
 model.addConstr(6 * xA + 2 * xB >= 300)
 model.addConstr(10 * xA + 20 * xB <= 400)
 model.addConstr(xA >= 0)
@@ -46,7 +45,7 @@ model.addConstr(xB >= 0)
 
 ### Define the objective
 
-
+model.setObjective(4 * xA + 12 * xB, GRB.MINIMIZE)
 
 
 ### Optimize the model

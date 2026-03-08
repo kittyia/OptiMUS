@@ -33,22 +33,23 @@ MaxPollution = data["MaxPollution"]
 
 ### Define the variables
 
-areaHeavyDuty = model.addVar(vtype=GRB.CONTINUOUS, name="areaHeavyDuty")
-areaGasMower = model.addVar(vtype=GRB.CONTINUOUS, name="areaGasMower")
+HeavyArea = model.addVar(vtype=GRB.CONTINUOUS, name="HeavyArea")
+
+GasArea = model.addVar(vtype=GRB.CONTINUOUS, name="GasArea")
 
 
 ### Define the constraints
 
-model.addConstr(areaHeavyDuty + areaGasMower == TotalArea)
-model.addConstr(FuelHeavyDuty * areaHeavyDuty + FuelGasMower * areaGasMower <= TotalFuel)
-model.addConstr(PollutionHeavyDuty * areaHeavyDuty + PollutionGasMower * areaGasMower <= MaxPollution)
-model.addConstr(areaHeavyDuty >= 0)
-model.addConstr(areaGasMower >= 0)
+model.addConstr(HeavyArea + GasArea == TotalArea)
+model.addConstr(FuelHeavyDuty * HeavyArea + FuelGasMower * GasArea <= TotalFuel)
+model.addConstr(PollutionHeavyDuty * HeavyArea + PollutionGasMower * GasArea <= MaxPollution)
+model.addConstr(HeavyArea >= 0)
+model.addConstr(GasArea >= 0)
 
 
 ### Define the objective
 
-model.setObjective(TimeHeavyDuty * areaHeavyDuty + TimeGasMower * areaGasMower, GRB.MINIMIZE)
+model.setObjective(TimeHeavyDuty * HeavyArea + TimeGasMower * GasArea, GRB.MINIMIZE)
 
 
 ### Optimize the model

@@ -33,28 +33,28 @@ MinProtein = data["MinProtein"] # shape: [], definition: Minimum total protein r
 
 ### Define the variables
 
-Meals = model.addVars(NumFoodTypes, vtype=GRB.CONTINUOUS, name="Meals")
+NumBowls = model.addVars(NumFoodTypes, vtype=GRB.INTEGER, name="NumBowls")
 
 
 
 ### Define the constraints
 
 model.addConstr(
-    sum(CaloriePerBowl[i] * Meals[i] for i in range(NumFoodTypes)) >= MinCalories
+    sum(CaloriePerBowl[i] * NumBowls[i] for i in range(NumFoodTypes)) >= MinCalories
 )
 model.addConstr(
-    sum(ProteinPerBowl[i] * Meals[i] for i in range(NumFoodTypes)) >= MinProtein
+    sum(ProteinPerBowl[i] * NumBowls[i] for i in range(NumFoodTypes)) >= MinProtein
 )
 model.addConstr(
-    Meals[1] <= MaxMealProportionEggs * sum(Meals[i] for i in range(NumFoodTypes))
+    NumBowls[1] <= MaxMealProportionEggs * sum(NumBowls[f] for f in range(NumFoodTypes))
 )
-for i in range(NumFoodTypes):
-    model.addConstr(Meals[i] >= 0)
+model.addConstr(NumBowls[1] >= 0)
+model.addConstr(NumBowls[1] >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(quicksum(SodiumPerBowl[i] * NumBowls[i] for i in range(NumFoodTypes)), GRB.MINIMIZE)
 
 
 ### Optimize the model

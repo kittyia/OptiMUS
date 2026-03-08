@@ -37,9 +37,9 @@ MaximumLobsterFraction = data["MaximumLobsterFraction"] # shape: [], definition:
 
 ### Define the variables
 
-CrabCakes = model.addVar(vtype=GRB.INTEGER, name="CrabCakes")
+CrabCakes = model.addVar(vtype=GRB.CONTINUOUS, name="CrabCakes")
 
-LobsterRolls = model.addVar(vtype=GRB.INTEGER, name="LobsterRolls")
+LobsterRolls = model.addVar(vtype=GRB.CONTINUOUS, name="LobsterRolls")
 
 
 
@@ -54,10 +54,7 @@ model.addConstr(LobsterRolls >= 0)
 
 ### Define the objective
 
-del.setObjective(
-    UnsaturatedFatPerCrabCake * CrabCakes + 
-    UnsaturatedFatPerLobsterRoll * LobsterRolls,
-    GRB.MINIMIZE
+model.setObjective(UnsaturatedFatPerCrabCake * CrabCakes + UnsaturatedFatPerLobsterRoll * LobsterRolls, GRB.MINIMIZE)
 
 
 ### Optimize the model

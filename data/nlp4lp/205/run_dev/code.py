@@ -35,27 +35,29 @@ EarningsPerFreezer = data["EarningsPerFreezer"] # shape: [], definition: Earning
 
 ### Define the variables
 
-NumberWashingMachines = model.addVar(vtype=GRB.INTEGER, name="NumberWashingMachines")
+WashingMachinesRepaired = model.addVar(vtype=GRB.INTEGER, name="WashingMachinesRepaired")
 
-NumberFreezers = model.addVar(vtype=GRB.INTEGER, name="NumberFreezers")
+FreezersRepaired = model.addVar(vtype=GRB.INTEGER, name="FreezersRepaired")
 
 
 
 ### Define the constraints
 
+model.addConstr(InspectionTimeWashingMachine * WashingMachinesRepaired + InspectionTimeFreezer * FreezersRepaired <= TotalInspectionTime)
 model.addConstr(
-    InspectionTimeWashingMachine * NumberWashingMachines
-    + InspectionTimeFreezer * NumberFreezers
-    <= TotalInspectionTime
+    FixingTimeWashingMachine * WashingMachinesRepaired
+    + FixingTimeFreezer * FreezersRepaired
+    <= TotalScheduleTime
 )
-model.addConstr(FixingTimeWashingMachine * NumberWashingMachines + FixingTimeFreezer * NumberFreezers <= TotalScheduleTime)
-model.addConstr(NumberWashingMachines >= 0)
-model.addConstr(NumberFreezers >= 0)
+model.addConstr(WashingMachinesRepaired >= 0)
+model.addConstr(FreezersRepaired >= 0)
+model.addConstr(WashingMachinesRepaired >= 0)
+model.addConstr(FreezersRepaired >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(EarningsPerWashingMachine * WashingMachinesRepaired + EarningsPerFreezer * FreezersRepaired, GRB.MAXIMIZE)
 
 
 ### Optimize the model

@@ -48,7 +48,7 @@ model.addConstr(TruckTrips >= 0)
 
 ### Define the objective
 
-
+model.setObjective(VanTrips + TruckTrips, GRB.MINIMIZE)
 
 
 ### Optimize the model

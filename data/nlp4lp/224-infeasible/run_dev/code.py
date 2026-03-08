@@ -52,15 +52,13 @@ model.addConstr(
     <= TotalBudget
 )
 model.addConstr(UltrasoundTechnicianShifts == ShiftRatio * GraduateResearcherShifts)
-model.addConstr(UltrasoundTechnicianShifts >= 0)
 model.addConstr(GraduateResearcherShifts >= 0)
-model.addConstr(UltrasoundTechnicianShifts >= 0)
 model.addConstr(GraduateResearcherShifts >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(UltrasoundTechnicianShifts + GraduateResearcherShifts, GRB.MINIMIZE)
 
 
 ### Optimize the model

@@ -42,12 +42,11 @@ ProteinBars = model.addVar(vtype=GRB.INTEGER, name="ProteinBars")
 model.addConstr(ProteinBars == BarToSmoothieRatio * Smoothies)
 model.addConstr(CaloriesPerSmoothie * Smoothies + CaloriesPerBar * ProteinBars <= MaxCalories)
 model.addConstr(Smoothies >= 0)
-model.addConstr(ProteinBars >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(ProteinPerSmoothie * Smoothies + ProteinPerBar * ProteinBars, GRB.MAXIMIZE)
 
 
 ### Optimize the model

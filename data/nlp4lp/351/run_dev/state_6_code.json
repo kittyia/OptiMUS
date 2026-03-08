@@ -33,40 +33,45 @@
         }
     },
     "objective": {
-        "description": "\"Minimize the total cost of hiring consultants and assigning projects to them\"",
-        "formulation": "$\\min \\left( \\sum_{j=1}^{\\text{NumConsultants}} \\text{FixedCosts}_j \\, \\text{Hire}_j \\;+\\; \\sum_{i=1}^{\\text{NumProjects}} \\sum_{j=1}^{\\text{NumConsultants}} \\text{AdditionalCosts}_{i,j} \\, \\text{Assign}_{j,i} \\right)$",
-        "code": "model.setObjective(\n    quicksum(FixedCosts[j] * Hire[j] for j in range(NumConsultants)) +\n    quicksum(AdditionalCosts[i][j] * Assign[j, i]\n             for i in range(NumProjects)\n             for j in range(NumConsultants)),\n    GRB.MINIMIZE\n)"
+        "description": "\"Minimize the total cost of hiring consultants and assigning projects to them, including both fixed hiring costs and project assignment costs.\"",
+        "formulation": "$\\min \\sum_{j=1}^{NumConsultants} FixedCosts_{j}\\, Hire_{j} \\;+\\; \\sum_{i=1}^{NumProjects} \\sum_{j=1}^{NumConsultants} AdditionalCosts_{i,j}\\, Assignments_{j,i}$",
+        "code": "model.setObjective(\n    quicksum(FixedCosts[j] * Hire[j] for j in range(NumConsultants)) +\n    quicksum(AdditionalCosts[i][j] * Assignments[j, i]\n             for i in range(NumProjects)\n             for j in range(NumConsultants)),\n    GRB.MINIMIZE\n)"
     },
     "constraints": [
         {
             "description": "Each project must be assigned to exactly one consultant",
-            "formulation": "$\\\\forall i = 1, \\\\dots, NumProjects:\\\\; \\\\sum_{j=1}^{NumConsultants} Assign[j,i] = 1$",
-            "code": "for i in range(NumProjects):\n    model.addConstr(\n        sum(Assign[j, i] for j in range(NumConsultants)) == 1\n    )"
+            "formulation": "$\\\\forall i \\\\in \\\\{1, \\\\dots, NumProjects\\\\}, \\\\; \\\\sum_{j=1}^{NumConsultants} Assignments[j,i] = 1$",
+            "code": "for i in range(NumProjects):\n    model.addConstr(\n        sum(Assignments[j, i] for j in range(NumConsultants)) == 1\n    )"
         },
         {
-            "description": "The total number of projects assigned to each consultant must not exceed MaxProjectsPerConsultant",
-            "formulation": "$\\\\forall j \\\\in \\\\{1, \\\\dots, NumConsultants\\\\}, \\\\; \\\\sum_{i=1}^{NumProjects} Assign[j,i] \\\\le MaxProjectsPerConsultant$",
-            "code": "for j in range(NumConsultants):\n    model.addConstr(\n        sum(Assign[j, i] for i in range(NumProjects)) <= MaxProjectsPerConsultant\n    )"
+            "description": "Each consultant can be assigned to at most MaxProjectsPerConsultant projects",
+            "formulation": "$\\\\forall j = 1, \\\\ldots, NumConsultants:\\\\; \\\\sum_{i=1}^{NumProjects} Assignments[j,i] \\\\leq MaxProjectsPerConsultant$",
+            "code": "for j in range(NumConsultants):\n    model.addConstr(\n        sum(Assignments[j, i] for i in range(NumProjects)) <= MaxProjectsPerConsultant\n    )"
         },
         {
             "description": "A project can only be assigned to a consultant if that consultant is hired",
-            "formulation": "$\\\\forall j \\\\in \\\\{1,\\\\dots,\\\\text{NumConsultants}\\\\},\\\\ \\\\forall i \\\\in \\\\{1,\\\\dots,\\\\text{NumProjects}\\\\}:\\\\ Assign[j,i] \\\\leq Hire[j]$",
-            "code": "for j in range(NumConsultants):\n    for i in range(NumProjects):\n        model.addConstr(Assign[j, i] <= Hire[j])"
+            "formulation": "$\\\\forall j \\\\in \\\\{1, \\\\dots, \\\\text{NumConsultants}\\\\}, \\\\; \\\\forall i \\\\in \\\\{1, \\\\dots, \\\\text{NumProjects}\\\\}: \\\\; Assignments[j,i] \\\\leq Hire[j]$",
+            "code": "for j in range(NumConsultants):\n    for i in range(NumProjects):\n        model.addConstr(Assignments[j, i] <= Hire[j])"
         },
         {
-            "description": "All assignment and consultant hiring variables must be binary (0 or 1)",
-            "formulation": "$\\\\forall j = 1, \\\\dots, NumConsultants,\\\\ \\\\forall i = 1, \\\\dots, NumProjects:\\\\ Assign[j,i] \\\\in \\\\{0,1\\\\} \\\\quad \\\\text{and} \\\\quad \\\\forall j = 1, \\\\dots, NumConsultants:\\\\ Hire[j] \\\\in \\\\{0,1\\\\}$",
-            "code": "for j in range(NumConsultants):\n    for i in range(NumProjects):\n        model.addConstr(Assign[j, i] >= 0)\n        model.addConstr(Assign[j, i] <= 1)\n\nfor j in range(NumConsultants):\n    model.addConstr(Hire[j] >= 0)\n    model.addConstr(Hire[j] <= 1)"
+            "description": "Assignment variables must be binary (0 or 1)",
+            "formulation": "$\\\\forall j = 1, \\\\dots, \\\\text{NumConsultants}, \\\\; \\\\forall i = 1, \\\\dots, \\\\text{NumProjects}, \\\\; Assignments[j,i] \\\\in \\\\{0,1\\\\}$",
+            "code": "for j in range(NumConsultants):\n    for i in range(NumProjects):\n        model.addConstr(Assignments[j, i] >= 0)\n        model.addConstr(Assignments[j, i] <= 1)"
+        },
+        {
+            "description": "Consultant hiring variables must be binary (0 or 1)",
+            "formulation": "$\\\\forall j = 1, \\\\dots, NumConsultants,\\\\; Hire[j] \\\\in \\\\{0,1\\\\}$",
+            "code": "for j in range(NumConsultants):\n    model.addConstr(Hire[j] >= 0)\n    model.addConstr(Hire[j] <= 1)"
         }
     ],
     "variables": {
-        "Assign": {
+        "Assignments": {
             "shape": [
                 "NumConsultants",
                 "NumProjects"
             ],
             "type": "binary",
-            "definition": "Assign[j,i] equals 1 if consultant j is assigned to project i, and 0 otherwise"
+            "definition": "Assignments[j,i] equals 1 if project i is assigned to consultant j, and 0 otherwise"
         },
         "Hire": {
             "shape": [

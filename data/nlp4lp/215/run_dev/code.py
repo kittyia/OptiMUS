@@ -40,12 +40,13 @@ NarrowPipes = model.addVar(vtype=GRB.INTEGER, name="NarrowPipes")
 model.addConstr(WidePipeCapacity * WidePipes + NarrowPipeCapacity * NarrowPipes >= MinTransportRequired)
 model.addConstr(WidePipes <= MaxWideToNarrowRatio * NarrowPipes)
 model.addConstr(WidePipes >= MinWidePipes)
+model.addConstr(WidePipes >= 0)
 model.addConstr(NarrowPipes >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(WidePipes + NarrowPipes, GRB.MINIMIZE)
 
 
 ### Optimize the model

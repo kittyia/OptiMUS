@@ -41,17 +41,15 @@ BananaSmoothies = model.addVar(vtype=GRB.INTEGER, name="BananaSmoothies")
 
 ### Define the constraints
 
-model.addConstr(AcaiBerriesPerAcaiSmoothie * AcaiSmoothies <= AcaiBerriesAvailable)
-model.addConstr(6 * BananaSmoothies <= 3200)
+model.addConstr(7 * AcaiSmoothies <= AcaiBerriesAvailable)
+model.addConstr(6 * BananaSmoothies <= BananaChocolateAvailable)
 model.addConstr(BananaSmoothies >= AcaiSmoothies)
 model.addConstr(AcaiSmoothies >= MinAcaiProportion * (AcaiSmoothies + BananaSmoothies))
-model.addConstr(AcaiSmoothies >= 0)
-model.addConstr(BananaSmoothies >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(WaterPerAcaiSmoothie * AcaiSmoothies + WaterPerBananaSmoothie * BananaSmoothies, GRB.MINIMIZE)
 
 
 ### Optimize the model

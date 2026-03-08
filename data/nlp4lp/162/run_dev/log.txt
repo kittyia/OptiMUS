@@ -1,10 +1,32 @@
 ----
+There is no logical redundancy (no constraint is implied by others), but two pairs of constraints can be **combined** because they both describe the domain of the same variable:
+
+- “The number of bus trips must be non-negative”  
+- “The number of bus trips must be an integer”  
+
+can be combined into:
+
+- “The number of bus trips must be a non-negative integer”
+
+Similarly:
+
+- “The number of car trips must be non-negative”  
+- “The number of car trips must be an integer”  
+
+can be combined into:
+
+- “The number of car trips must be a non-negative integer”
+
+No other constraints are redundant or safely removable.
+
+Updated list of constraints:
+
 [
-    "100 * (number of bus trips) + 40 * (number of car trips) must be greater than or equal to 1200",
-    "Number of bus trips must be less than or equal to 10",
-    "Number of car trips must be greater than or equal to 1.5 * (number of bus trips)",
-    "Number of bus trips must be greater than or equal to 0",
-    "Number of bus trips and number of car trips must be integers"
+    "The total number of chickens transported by bus and car must be at least TotalChickens",
+    "The number of bus trips must not exceed MaxBusTrips",
+    "At least MinCarTripPercentage of the total trips must be made by car",
+    "The number of bus trips must be a non-negative integer",
+    "The number of car trips must be a non-negative integer"
 ]
 ----
 +++++++++++++++++++
@@ -59,7 +81,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: 100 * (number of bus trips) + 40 * (number of car trips) must be greater than or equal to 1200
+Consider this potential constraint: The total number of chickens transported by bus and car must be at least TotalChickens
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -69,235 +91,199 @@ Consider this potential constraint: 100 * (number of bus trips) + 40 * (number o
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is definitely a constraint and it must be explicitly modeled.
-
-### Why?
-
-The farmer needs to transport **1200 chickens** in total.  
-Each:
-
-- Bus trip transports **100 chickens**
-- Car trip transports **40 chickens**
-
-If we let:
-
-- \( B \) = number of bus trips  
-- \( C \) = number of car trips  
-
-then the total number of transported chickens is:
-
-\[
-100B + 40C
-\]
-
-Since all 1200 chickens must be transported, we need:
-
-\[
-100B + 40C \ge 1200
-\]
-
-This is a **core feasibility constraint**. Without it, the model could minimize time by choosing zero trips, which would violate the problem requirement.
-
-It is directly implied by the sentence:
-
-> "If the farmer needs to transport 1200 chicken..."
-
-This makes it an essential structural constraint in the MILP formulation.
-
-### Conclusion
-
-✅ This is absolutely a constraint.  
-✅ It must be explicitly modeled.  
-✅ It is fundamental to feasibility.
-
-**5 OUT OF 5**
-+--+
----
-The confidence score is 5, which is high enough.
----
-+--+
-
-You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
-
------
-A chicken farmer has sold his chicken and they need to be transported either by bus or by car. A bus can take 100 chicken and takes 2 hours per trip. A car can take 40 chicken and takes 1.5 hours per trip. There can be at most 10 bus trips and at least 60% of the trips must be by car. If the farmer needs to transport 1200 chicken, how many trips of each should be done to minimize the total time needed to transport the chicken?
------
-
-Here is a list of parameters that someone has extracted from the description:
-
-{
-    "BusCapacity": {
-        "definition": "Number of chickens that a bus can carry per trip",
-        "shape": [],
-        "type": "int"
-    },
-    "BusTripTime": {
-        "definition": "Time taken by a bus per trip in hours",
-        "shape": [],
-        "type": "int"
-    },
-    "CarCapacity": {
-        "definition": "Number of chickens that a car can carry per trip",
-        "shape": [],
-        "type": "int"
-    },
-    "CarTripTime": {
-        "definition": "Time taken by a car per trip in hours",
-        "shape": [],
-        "type": "float"
-    },
-    "MaxBusTrips": {
-        "definition": "Maximum allowed number of bus trips",
-        "shape": [],
-        "type": "int"
-    },
-    "MinCarTripPercentage": {
-        "definition": "Minimum required percentage of total trips that must be by car",
-        "shape": [],
-        "type": "float"
-    },
-    "TotalChickens": {
-        "definition": "Total number of chickens that need to be transported",
-        "shape": [],
-        "type": "int"
-    }
-}
-
-
-Consider this potential constraint: Number of bus trips must be less than or equal to 10
-
-
-- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
-- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
-    
-
-Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
-
-----
-Yes, this is explicitly a constraint.
-
-The problem statement clearly says: *“There can be at most 10 bus trips.”*  
-This directly translates to the mathematical constraint:
-
-\[
-\text{Number of bus trips} \le 10
-\]
-
-This is a hard upper bound on a decision variable and must be explicitly included in the (MI)LP formulation. It is not implied or derivable from other conditions — it is directly stated and structurally important.
-
-**Confidence: 5 OUT OF 5**
-+--+
----
-The confidence score is 5, which is high enough.
----
-+--+
-
-You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
-
------
-A chicken farmer has sold his chicken and they need to be transported either by bus or by car. A bus can take 100 chicken and takes 2 hours per trip. A car can take 40 chicken and takes 1.5 hours per trip. There can be at most 10 bus trips and at least 60% of the trips must be by car. If the farmer needs to transport 1200 chicken, how many trips of each should be done to minimize the total time needed to transport the chicken?
------
-
-Here is a list of parameters that someone has extracted from the description:
-
-{
-    "BusCapacity": {
-        "definition": "Number of chickens that a bus can carry per trip",
-        "shape": [],
-        "type": "int"
-    },
-    "BusTripTime": {
-        "definition": "Time taken by a bus per trip in hours",
-        "shape": [],
-        "type": "int"
-    },
-    "CarCapacity": {
-        "definition": "Number of chickens that a car can carry per trip",
-        "shape": [],
-        "type": "int"
-    },
-    "CarTripTime": {
-        "definition": "Time taken by a car per trip in hours",
-        "shape": [],
-        "type": "float"
-    },
-    "MaxBusTrips": {
-        "definition": "Maximum allowed number of bus trips",
-        "shape": [],
-        "type": "int"
-    },
-    "MinCarTripPercentage": {
-        "definition": "Minimum required percentage of total trips that must be by car",
-        "shape": [],
-        "type": "float"
-    },
-    "TotalChickens": {
-        "definition": "Total number of chickens that need to be transported",
-        "shape": [],
-        "type": "int"
-    }
-}
-
-
-Consider this potential constraint: Number of car trips must be greater than or equal to 1.5 * (number of bus trips)
-
-
-- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
-- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
-    
-
-Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
-
-----
-Yes, this **is** a valid constraint and it should be explicitly modeled (or an equivalent form of it should be).
+Yes, this is definitely a constraint and it must be explicitly included in the (MI)LP formulation.
 
 Let:
 - \( B \) = number of bus trips  
 - \( C \) = number of car trips  
 
-The problem states:
-
-> At least 60% of the trips must be by car.
-
-Mathematically:
+Each bus carries 100 chickens and each car carries 40 chickens. The farmer must transport 1200 chickens. Therefore, the total transported must satisfy:
 
 \[
-\frac{C}{B + C} \ge 0.6
+100B + 40C \ge 1200
 \]
 
-Multiply both sides by \( B + C \):
+This is a core feasibility constraint. Without it, the model would have no requirement to transport all chickens and would minimize time by choosing zero trips.
+
+Since the objective is to minimize total time (which increases with each trip), the model will naturally avoid transporting more than necessary, so using “≥” is appropriate and standard.
+
+This constraint is essential and unquestionably belongs in the formulation.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+A chicken farmer has sold his chicken and they need to be transported either by bus or by car. A bus can take 100 chicken and takes 2 hours per trip. A car can take 40 chicken and takes 1.5 hours per trip. There can be at most 10 bus trips and at least 60% of the trips must be by car. If the farmer needs to transport 1200 chicken, how many trips of each should be done to minimize the total time needed to transport the chicken?
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "BusCapacity": {
+        "definition": "Number of chickens that a bus can carry per trip",
+        "shape": [],
+        "type": "int"
+    },
+    "BusTripTime": {
+        "definition": "Time taken by a bus per trip in hours",
+        "shape": [],
+        "type": "int"
+    },
+    "CarCapacity": {
+        "definition": "Number of chickens that a car can carry per trip",
+        "shape": [],
+        "type": "int"
+    },
+    "CarTripTime": {
+        "definition": "Time taken by a car per trip in hours",
+        "shape": [],
+        "type": "float"
+    },
+    "MaxBusTrips": {
+        "definition": "Maximum allowed number of bus trips",
+        "shape": [],
+        "type": "int"
+    },
+    "MinCarTripPercentage": {
+        "definition": "Minimum required percentage of total trips that must be by car",
+        "shape": [],
+        "type": "float"
+    },
+    "TotalChickens": {
+        "definition": "Total number of chickens that need to be transported",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: The number of bus trips must not exceed MaxBusTrips
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is **definitely a constraint** and must be explicitly included in the MILP formulation.
+
+The problem statement clearly says:
+
+> “There can be at most 10 bus trips.”
+
+This directly translates to the constraint:
+
+\[
+\text{BusTrips} \le \text{MaxBusTrips}
+\]
+
+Since this is an explicit upper bound on a decision variable, it is a hard feasibility constraint and not something that can be omitted or derived indirectly from other constraints.
+
+### Conclusion:
+✅ It is a constraint.  
+✅ It must be explicitly modeled.  
+✅ It directly corresponds to a parameter provided in the data.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+A chicken farmer has sold his chicken and they need to be transported either by bus or by car. A bus can take 100 chicken and takes 2 hours per trip. A car can take 40 chicken and takes 1.5 hours per trip. There can be at most 10 bus trips and at least 60% of the trips must be by car. If the farmer needs to transport 1200 chicken, how many trips of each should be done to minimize the total time needed to transport the chicken?
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "BusCapacity": {
+        "definition": "Number of chickens that a bus can carry per trip",
+        "shape": [],
+        "type": "int"
+    },
+    "BusTripTime": {
+        "definition": "Time taken by a bus per trip in hours",
+        "shape": [],
+        "type": "int"
+    },
+    "CarCapacity": {
+        "definition": "Number of chickens that a car can carry per trip",
+        "shape": [],
+        "type": "int"
+    },
+    "CarTripTime": {
+        "definition": "Time taken by a car per trip in hours",
+        "shape": [],
+        "type": "float"
+    },
+    "MaxBusTrips": {
+        "definition": "Maximum allowed number of bus trips",
+        "shape": [],
+        "type": "int"
+    },
+    "MinCarTripPercentage": {
+        "definition": "Minimum required percentage of total trips that must be by car",
+        "shape": [],
+        "type": "float"
+    },
+    "TotalChickens": {
+        "definition": "Total number of chickens that need to be transported",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: At least MinCarTripPercentage of the total trips must be made by car
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is definitely a constraint.
+
+The problem explicitly states:  
+> “At least 60% of the trips must be by car.”
+
+This is a policy restriction on the composition of trips, not something derived from the objective. It directly restricts the feasible region of the optimization problem.
+
+If we let:
+- \( B \) = number of bus trips  
+- \( C \) = number of car trips  
+
+Then the constraint is:
+
+\[
+C \ge \text{MinCarTripPercentage} \cdot (B + C)
+\]
+
+With MinCarTripPercentage = 0.6, this becomes:
 
 \[
 C \ge 0.6(B + C)
 \]
 
-Expand:
+This is a linear constraint and must be explicitly included in the (MI)LP formulation.
 
-\[
-C \ge 0.6B + 0.6C
-\]
-
-Rearrange:
-
-\[
-C - 0.6C \ge 0.6B
-\]
-
-\[
-0.4C \ge 0.6B
-\]
-
-\[
-C \ge 1.5B
-\]
-
-This is **exactly equivalent** to the proposed constraint:
-
-\[
-\text{Number of car trips} \ge 1.5 \times \text{number of bus trips}
-\]
-
-So yes — this constraint correctly represents the 60% minimum car-trip requirement in linear form and absolutely belongs in the MILP formulation (unless you instead include the original percentage formulation, which is algebraically identical).
+✅ It is clearly a modeling constraint.  
+✅ It directly affects feasibility.  
+✅ It is explicitly stated in the problem description.  
 
 **5 OUT OF 5**
 +--+
@@ -353,7 +339,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: Number of bus trips must be greater than or equal to 0
+Consider this potential constraint: The number of bus trips must be a non-negative integer
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -363,25 +349,25 @@ Consider this potential constraint: Number of bus trips must be greater than or 
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, **“Number of bus trips ≥ 0”** is indeed a constraint.
+Yes, this **is** a constraint and it should be explicitly modeled in the (MI)LP formulation.
 
-### Step-by-step reasoning:
+Reasoning:
 
 - The number of bus trips is a **decision variable**.
-- Since it represents a count of trips, it **cannot be negative**.
-- In mathematical optimization models (LP/MILP), non-negativity is typically enforced either:
-  - Explicitly as a constraint:  
-    \[
-    \text{BusTrips} \ge 0
-    \]
-  - Or implicitly through the variable domain (e.g., declaring it as a nonnegative integer variable).
+- Trips cannot be fractional (you cannot take 3.7 bus trips), so the variable must be **integer**.
+- Trips cannot be negative, so it must be **non-negative**.
+- This is not implied automatically unless explicitly stated in the model. In an LP formulation, variables are continuous by default, so integrality must be enforced.
+- Since this is a discrete transportation-count problem, the model is naturally a **mixed-integer linear program (MILP)**.
 
-Even though this is a *standard domain restriction*, it is still a valid and necessary modeling condition. Without it, the solver could theoretically choose negative trips, which would make no physical sense.
+Thus, the constraint should be modeled as:
 
-So yes — this is a legitimate constraint and should be represented in the model (either explicitly or via the variable domain).
+\[
+\text{BusTrips} \in \mathbb{Z}_{\ge 0}
+\]
 
-**Confidence level:**  
-5 OUT OF 5
+This is a fundamental structural constraint of the model.
+
+**5 OUT OF 5**
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -435,7 +421,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: Number of bus trips and number of car trips must be integers
+Consider this potential constraint: The number of car trips must be a non-negative integer
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -445,30 +431,27 @@ Consider this potential constraint: Number of bus trips and number of car trips 
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is indeed a constraint, and it should be explicitly modeled in the (Mixed-Integer) Linear Programming formulation.
+Yes, this **is** a constraint and it must be explicitly modeled.
 
-### Step-by-step reasoning:
+### Why?
 
-- The decision variables in this problem are:
-  - Number of bus trips
-  - Number of car trips  
+The number of car trips is a **decision variable**. Since trips represent actual physical journeys:
 
-- A “trip” is a discrete action. You cannot take 3.7 bus trips or 5.2 car trips in reality.
-- Therefore, both variables must be **non-negative integers**.
+- ✅ They **cannot be negative** → non-negativity is required.
+- ✅ They **cannot be fractional** → you cannot take 3.7 trips.
+- ✅ Therefore, the variable must be an **integer decision variable with a lower bound of 0**.
 
-If we do not enforce integrality, a standard LP solver could return fractional values (e.g., 6.4 bus trips), which would be infeasible in practice and physically meaningless.
+In an MILP formulation, this would typically be written as:
 
-Because:
-- Trips are indivisible,
-- The problem involves counting discrete transportation actions,
-- The objective and constraints are linear,
+\[
+\text{CarTrips} \in \mathbb{Z}_{\ge 0}
+\]
 
-this becomes a **Mixed-Integer Linear Program (MILP)** specifically due to the integrality requirement.
+If we do not enforce integrality, the solver might return fractional trips, which would not make sense in the real-world context of the problem.
 
-### Conclusion:
-Yes, this is a real and necessary modeling constraint, and it must be explicitly included.
+This is a fundamental structural constraint of the model, not just a modeling preference.
 
-**5 OUT OF 5**
+**Confidence level: 5 OUT OF 5**
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -484,17 +467,17 @@ Extracting constraint formulations
 
 ----
 {
-    "FORMULATION": "$100 \\cdot busTrips + 40 \\cdot carTrips \\geq 1200$",
+    "FORMULATION": "$BusCapacity \\cdot BusTrips + CarCapacity \\cdot CarTrips \\geq TotalChickens$",
     "NEW VARIABLES": {
-        "busTrips": {
+        "BusTrips": {
             "shape": [],
             "type": "integer",
-            "definition": "Number of bus trips used to transport the chickens"
+            "definition": "Number of trips made by bus"
         },
-        "carTrips": {
+        "CarTrips": {
             "shape": [],
             "type": "integer",
-            "definition": "Number of car trips used to transport the chickens"
+            "definition": "Number of trips made by car"
         }
     },
     "AUXILIARY CONSTRAINTS": []
@@ -502,59 +485,59 @@ Extracting constraint formulations
 ----
 ----
 EXTRACTED ITEMS
-$100 \\cdot busTrips + 40 \\cdot carTrips \\geq 1200$
-{'busTrips': {'shape': [], 'type': 'integer', 'definition': 'Number of bus trips used to transport the chickens'}, 'carTrips': {'shape': [], 'type': 'integer', 'definition': 'Number of car trips used to transport the chickens'}}
+$BusCapacity \\cdot BusTrips + CarCapacity \\cdot CarTrips \\geq TotalChickens$
+{'BusTrips': {'shape': [], 'type': 'integer', 'definition': 'Number of trips made by bus'}, 'CarTrips': {'shape': [], 'type': 'integer', 'definition': 'Number of trips made by car'}}
 []
 ----
 ----
 {
-    "FORMULATION": "$busTrips \\leq MaxBusTrips$",
+    "FORMULATION": "$BusTrips \\leq MaxBusTrips$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$busTrips \\leq MaxBusTrips$
+$BusTrips \\leq MaxBusTrips$
 {}
 []
 ----
 ----
 {
-    "FORMULATION": "$carTrips \\geq 1.5 \\cdot busTrips$",
+    "FORMULATION": "$CarTrips \\geq MinCarTripPercentage \\cdot (BusTrips + CarTrips)$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$carTrips \\geq 1.5 \\cdot busTrips$
+$CarTrips \\geq MinCarTripPercentage \\cdot (BusTrips + CarTrips)$
 {}
 []
 ----
 ----
 {
-    "FORMULATION": "$busTrips \\geq 0$",
+    "FORMULATION": "$BusTrips \\geq 0$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$busTrips \\geq 0$
+$BusTrips \\geq 0$
 {}
 []
 ----
 ----
 {
-    "FORMULATION": "$busTrips \\in \\mathbb{Z}, \\quad carTrips \\in \\mathbb{Z}$",
+    "FORMULATION": "$CarTrips \\geq 0$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$busTrips \\in \\mathbb{Z}, \\quad carTrips \\in \\mathbb{Z}$
+$CarTrips \\geq 0$
 {}
 []
 ----
@@ -565,25 +548,38 @@ Gurobi Optimizer version 13.0.1 build v13.0.1rc0 (linux64 - "Alibaba Cloud Linux
 CPU model: Intel(R) Xeon(R) Platinum, instruction set [SSE2|AVX|AVX2|AVX512]
 Thread count: 1 physical cores, 2 logical processors, using up to 2 threads
 
-Optimize a model with 4 rows, 2 columns and 6 nonzeros (Min)
-Model fingerprint: 0x3d6209d3
-Model has 0 linear objective coefficients
+Optimize a model with 5 rows, 2 columns and 7 nonzeros (Min)
+Model fingerprint: 0x6eeeb5ea
+Model has 2 linear objective coefficients
 Variable types: 0 continuous, 2 integer (0 binary)
 Coefficient statistics:
-  Matrix range     [1e+00, 1e+02]
-  Objective range  [0e+00, 0e+00]
+  Matrix range     [4e-01, 1e+02]
+  Objective range  [2e+00, 2e+00]
   Bounds range     [0e+00, 0e+00]
   RHS range        [1e+01, 1e+03]
 
-Found heuristic solution: objective 0.0000000
+Found heuristic solution: objective 45.0000000
+Presolve removed 3 rows and 0 columns
+Presolve time: 0.00s
+Presolved: 2 rows, 2 columns, 4 nonzeros
+Variable types: 0 continuous, 2 integer (0 binary)
 
-Explored 0 nodes (0 simplex iterations) in 0.00 seconds (0.00 work units)
-Thread count was 1 (of 2 available processors)
+Root relaxation: objective 3.240000e+01, 1 iterations, 0.00 seconds (0.00 work units)
 
-Solution count 1: 0 
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0   32.40000    0    1   45.00000   32.40000  28.0%     -    0s
+H    0     0                      33.5000000   32.40000  3.28%     -    0s
+     0     0   32.40000    0    1   33.50000   32.40000  3.28%     -    0s
+
+Explored 1 nodes (1 simplex iterations) in 0.00 seconds (0.00 work units)
+Thread count was 2 (of 2 available processors)
+
+Solution count 2: 33.5 45 
 
 Optimal solution found (tolerance 1.00e-04)
-Best objective 0.000000000000e+00, best bound 0.000000000000e+00, gap 0.0000%
-Optimal Objective Value:  0.0
-Optimal Objective Value:  0.0
+Best objective 3.350000000000e+01, best bound 3.350000000000e+01, gap 0.0000%
+Optimal Objective Value:  33.5
+Optimal Objective Value:  33.5
 

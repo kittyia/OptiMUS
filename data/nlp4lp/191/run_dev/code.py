@@ -31,27 +31,27 @@ TotalSetupTime = data["TotalSetupTime"] # shape: [], definition: Total available
 
 ### Define the variables
 
-UnitsSold = model.addVars(NumProducts, vtype=GRB.INTEGER, name="UnitsSold")
+Quantity = model.addVars(NumProducts, vtype=GRB.INTEGER, name="Quantity")
 
 
 
 ### Define the constraints
 
 model.addConstr(
-    sum(MoverTimePerProduct[p] * UnitsSold[p] for p in range(NumProducts))
+    sum(MoverTimePerProduct[i] * Quantity[i] for i in range(NumProducts))
     <= TotalMoverTime
 )
 model.addConstr(
-    sum(SetupTimePerProduct[i] * UnitsSold[i] for i in range(NumProducts)) 
+    sum(SetupTimePerProduct[i] * Quantity[i] for i in range(NumProducts))
     <= TotalSetupTime
 )
-for p in range(NumProducts):
-    model.addConstr(UnitsSold[p] >= 0)
+for i in range(NumProducts):
+    model.addConstr(Quantity[i] >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(quicksum(ProfitPerProduct[i] * Quantity[i] for i in range(NumProducts)), GRB.MAXIMIZE)
 
 
 ### Optimize the model

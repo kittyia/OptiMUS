@@ -29,22 +29,22 @@ PollutionProduction = data["PollutionProduction"] # shape: ['NumProcesses'], def
 
 ### Define the variables
 
-numProcessJ = model.addVar(vtype=GRB.CONTINUOUS, name="numProcessJ")
+NumProcessJ = model.addVar(vtype=GRB.INTEGER, name="NumProcessJ")
 
-numProcessP = model.addVar(vtype=GRB.CONTINUOUS, name="numProcessP")
+NumProcessP = model.addVar(vtype=GRB.INTEGER, name="NumProcessP")
 
 
 
 ### Define the constraints
 
-model.addConstr(8 * numProcessJ + 6 * numProcessP <= MaxWater)
-model.addConstr(numProcessJ >= 0)
-model.addConstr(numProcessP >= 0)
+model.addConstr(8 * NumProcessJ + 6 * NumProcessP <= MaxWater)
+model.addConstr(NumProcessJ >= 0)
+model.addConstr(NumProcessP >= 0)
 
 
 ### Define the objective
 
-del.setObjective(5 * numProcessJ + 9 * numProcessP, GRB.MAXIMIZE
+model.setObjective(5 * NumProcessJ + 9 * NumProcessP, GRB.MAXIMIZE)
 
 
 ### Optimize the model

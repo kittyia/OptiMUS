@@ -56,7 +56,7 @@ model.addConstr(batchesShots >= 0)
 
 ### Define the objective
 
-
+model.setObjective(SupplyShots * batchesShots + SupplyPills * batchesPills, GRB.MAXIMIZE)
 
 
 ### Optimize the model

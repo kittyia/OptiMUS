@@ -35,25 +35,26 @@ MaxMess = data["MaxMess"] # shape: [], definition: Maximum allowable units of me
 
 ### Define the variables
 
-TablesSetup = model.addVars(NumTables, vtype=GRB.INTEGER, name="TablesSetup")
+NumSetups = model.addVars(NumTables, vtype=GRB.INTEGER, name="NumSetups")
 
 
 
 ### Define the constraints
 
-model.addConstr(sum(GlueUsed[i] * TablesSetup[i] for i in range(NumTables)) <= AvailableGlue)
+model.addConstr(sum(PowderUsed[i] * NumSetups[i] for i in range(NumTables)) <= AvailablePowder)
+model.addConstr(sum(GlueUsed[i] * NumSetups[i] for i in range(NumTables)) <= AvailableGlue)
 model.addConstr(
-    sum(MessProduced[i] * TablesSetup[i] for i in range(NumTables)) <= MaxMess
+    sum(MessProduced[i] * NumSetups[i] for i in range(NumTables)) <= MaxMess
 )
-model.addConstr(TablesSetup[0] >= 0)
-model.addConstr(TablesSetup[1] >= 0)
 for i in range(NumTables):
-    model.addConstr(TablesSetup[i] >= 0)
+    model.addConstr(NumSetups[i] >= 0)
+# NumSetups[i] are defined as integer variables (vtype=GRB.INTEGER) when created,
+# so no additional constraints are required to enforce integrality.
 
 
 ### Define the objective
 
-
+model.setObjective(quicksum(SlimeProduced[i] * NumSetups[i] for i in range(NumTables)), GRB.MAXIMIZE)
 
 
 ### Optimize the model

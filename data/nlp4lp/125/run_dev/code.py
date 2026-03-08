@@ -29,22 +29,22 @@ MaxSulfateToGingerRatio = data["MaxSulfateToGingerRatio"] # shape: [], definitio
 
 ### Define the variables
 
-SulfateUnits = model.addVar(vtype=GRB.CONTINUOUS, name="SulfateUnits")
+sulfateUnits = model.addVar(vtype=GRB.CONTINUOUS, name="sulfateUnits")
 
-GingerUnits = model.addVar(vtype=GRB.CONTINUOUS, name="GingerUnits")
+gingerUnits = model.addVar(vtype=GRB.CONTINUOUS, name="gingerUnits")
 
 
 
 ### Define the constraints
 
-model.addConstr(SulfateUnits >= MinSulfateUnits)
-model.addConstr(SulfateUnits + GingerUnits == TotalUnits)
-model.addConstr(SulfateUnits <= MaxSulfateToGingerRatio * GingerUnits)
+model.addConstr(sulfateUnits >= MinSulfateUnits)
+model.addConstr(sulfateUnits + gingerUnits == TotalUnits)
+model.addConstr(sulfateUnits <= MaxSulfateToGingerRatio * gingerUnits)
 
 
 ### Define the objective
 
-model.setObjective(TimePerUnitSulfate * SulfateUnits + TimePerUnitGinger * GingerUnits, GRB.MINIMIZE)
+model.setObjective(TimePerUnitSulfate * sulfateUnits + TimePerUnitGinger * gingerUnits, GRB.MINIMIZE)
 
 
 ### Optimize the model

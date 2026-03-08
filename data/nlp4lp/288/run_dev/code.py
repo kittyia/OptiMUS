@@ -40,6 +40,7 @@ PotatoHectares = model.addVar(vtype=GRB.CONTINUOUS, name="PotatoHectares")
 ### Define the constraints
 
 model.addConstr(TomatoHectares + PotatoHectares <= TotalHectares)
+model.addConstr(PotatoHectares <= TomatoHectares)
 model.addConstr(TomatoHectares <= MaxTomatoesToPotatoesRatio * PotatoHectares)
 model.addConstr(TomatoHectares >= MinTomatoes)
 model.addConstr(PotatoHectares >= MinPotatoes)
@@ -47,7 +48,11 @@ model.addConstr(PotatoHectares >= MinPotatoes)
 
 ### Define the objective
 
-del.setObjective(ProfitPerHectareTomatoes * TomatoHectares + ProfitPerHectarePotatoes * PotatoHectares, GRB.MAXIMIZE
+model.setObjective(
+    ProfitPerHectareTomatoes * TomatoHectares +
+    ProfitPerHectarePotatoes * PotatoHectares,
+    GRB.MAXIMIZE
+)
 
 
 ### Optimize the model

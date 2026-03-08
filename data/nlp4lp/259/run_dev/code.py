@@ -33,25 +33,25 @@ MinRunners = data["MinRunners"] # shape: [], definition: Minimum number of runne
 
 ### Define the variables
 
-runnerTrips = model.addVar(vtype=GRB.INTEGER, name="runnerTrips")
+RunnerTrips = model.addVar(vtype=GRB.INTEGER, name="RunnerTrips")
 
-canoeTrips = model.addVar(vtype=GRB.INTEGER, name="canoeTrips")
+CanoeTrips = model.addVar(vtype=GRB.INTEGER, name="CanoeTrips")
 
 
 
 ### Define the constraints
 
-model.addConstr(RunnerTime * runnerTrips + CanoeTime * canoeTrips <= MaxTotalHours)
-model.addConstr(canoeTrips <= MaxCanoePercentage * (runnerTrips + canoeTrips))
-model.addConstr(runnerTrips >= MinRunners)
-model.addConstr(canoeTrips >= 0)
-model.addConstr(runnerTrips >= 0)
-model.addConstr(canoeTrips >= 0)
+model.addConstr(RunnerTime * RunnerTrips + CanoeTime * CanoeTrips <= MaxTotalHours)
+model.addConstr(67 * CanoeTrips <= 33 * RunnerTrips)
+model.addConstr(RunnerTrips >= MinRunners)
+model.addConstr(CanoeTrips >= 0)
+model.addConstr(RunnerTrips >= 0)
+model.addConstr(CanoeTrips >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(RunnerCapacity * RunnerTrips + CanoeCapacity * CanoeTrips, GRB.MAXIMIZE)
 
 
 ### Optimize the model

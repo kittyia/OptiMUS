@@ -37,6 +37,7 @@ amount = model.addVars(NumAlloys, vtype=GRB.CONTINUOUS, name="amount")
 
 ### Define the constraints
 
+model.addConstr(sum(amount[k] for k in range(NumAlloys)) == AlloyQuantity)
 for m in range(NumMetals):
     model.addConstr(
         sum(Ratio[k][m] * amount[k] for k in range(NumAlloys)) == Target[m]

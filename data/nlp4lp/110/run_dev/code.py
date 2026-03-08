@@ -35,23 +35,27 @@ BrainMedicineMin = data["BrainMedicineMin"] # shape: [], definition: Minimum uni
 
 ### Define the variables
 
-x1 = model.addVar(vtype=GRB.CONTINUOUS, name="x1")
+Machine1Minutes = model.addVar(vtype=GRB.CONTINUOUS, name="Machine1Minutes")
 
-x2 = model.addVar(vtype=GRB.CONTINUOUS, name="x2")
+Machine2Minutes = model.addVar(vtype=GRB.CONTINUOUS, name="Machine2Minutes")
 
 
 
 ### Define the constraints
 
-model.addConstr(Machine1HeartDeliveryRate * x1 + Machine2HeartDeliveryRate * x2 <= HeartMedicineMax)
-model.addConstr(Machine1BrainDeliveryRate * x1 + Machine2BrainDeliveryRate * x2 >= BrainMedicineMin)
-model.addConstr(x1 >= 0)
-model.addConstr(x2 >= 0)
+model.addConstr(Machine1HeartDeliveryRate * Machine1Minutes + Machine2HeartDeliveryRate * Machine2Minutes <= HeartMedicineMax)
+model.addConstr(Machine1BrainDeliveryRate * Machine1Minutes + Machine2BrainDeliveryRate * Machine2Minutes >= BrainMedicineMin)
+model.addConstr(Machine1Minutes >= 0)
+model.addConstr(Machine2Minutes >= 0)
 
 
 ### Define the objective
 
-model.setObjective(Machine1WasteRate * x1 + Machine2WasteRate * x2, GRB.MINIMIZE)
+model.setObjective(
+    Machine1WasteRate * Machine1Minutes +
+    Machine2WasteRate * Machine2Minutes,
+    GRB.MINIMIZE
+)
 
 
 ### Optimize the model

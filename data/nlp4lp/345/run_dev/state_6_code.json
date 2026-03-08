@@ -66,21 +66,59 @@
         }
     },
     "objective": {
-        "description": "\"Maximize the total monthly profit, defined as total revenue from selling batches of parts minus all machine operating and labor (including overtime) costs.\"",
-        "formulation": "$\\max \\; \\sum_{p=1}^{\\text{NumParts}} \\text{Prices}_p \\, \\text{batches}_p \n\\;-\\; \\sum_{m=1}^{\\text{NumMachines}} \\text{MachineCosts}_m \\left( \\sum_{p=1}^{\\text{NumParts}} \\text{TimeRequired}_{m,p} \\, \\text{batches}_p \\right)\n\\;-\\; (\\text{OvertimeCost} - \\text{StandardCost}) \\, \\text{overtime}_1$",
-        "code": "model.setObjective(\n    quicksum(Prices[p] * batches[p] for p in range(NumParts))\n    - quicksum(\n        MachineCosts[m] * quicksum(TimeRequired[m][p] * batches[p] for p in range(NumParts))\n        for m in range(NumMachines)\n    )\n    - (OvertimeCost - StandardCost) * overtime_1,\n    GRB.MAXIMIZE\n)"
+        "description": "\"Maximize the total monthly profit, defined as total revenue from selling all produced batches minus the operating and labor costs of the machines (including standard and overtime costs).\"",
+        "formulation": "$\\max \\;\\; \\sum_{p=1}^{\\text{NumParts}} \\text{Prices}_p \\,\\text{batches}_p \n\\;-\\; \\sum_{m=2}^{\\text{NumMachines}} \\text{MachineCosts}_m \\left( \\sum_{p=1}^{\\text{NumParts}} \\text{TimeRequired}_{m,p} \\,\\text{batches}_p \\right)\n\\;-\\; \\text{StandardCost} \\cdot \\text{regularHours1}\n\\;-\\; \\text{OvertimeCost} \\cdot \\text{overtimeHours1}$",
+        "code": "model.setObjective(\n    quicksum(Prices[p] * batches[p] for p in range(NumParts))\n    - quicksum(\n        MachineCosts[m] * quicksum(TimeRequired[m][p] * batches[p] for p in range(NumParts))\n        for m in range(1, NumMachines)\n    )\n    - StandardCost * regularHours1\n    - OvertimeCost * overtimeHours1,\n    GRB.MAXIMIZE\n)"
     },
     "constraints": [
         {
-            "description": "For each machine m \u2260 1, the total time used by all produced batches cannot exceed its monthly availability: sum over p of (TimeRequired[m][p] * batches[p]) \u2264 Availability[m]",
-            "formulation": "$\\\\forall m \\\\in \\\\{2, \\\\dots, \\\\text{NumMachines}\\\\}, \\\\; \\\\sum_{p=1}^{\\\\text{NumParts}} \\\\text{TimeRequired}[m,p] \\\\cdot batches[p] \\\\leq \\\\text{Availability}[m]$",
+            "description": "For each machine m \u2260 1: sum over all parts p of (TimeRequired[m,p] * batches_p) must be less than or equal to Availability[m]",
+            "formulation": "$\\\\forall m \\\\in \\\\{2, \\\\dots, \\\\text{NumMachines}\\\\}: \\\\sum_{p=1}^{\\\\text{NumParts}} TimeRequired[m,p] \\\\cdot batches[p] \\\\leq Availability[m]$",
             "code": "for m in range(1, NumMachines):\n    model.addConstr(\n        sum(TimeRequired[m][p] * batches[p] for p in range(NumParts)) \n        <= Availability[m]\n    )"
         },
         {
-            "description": "For each part p, the number of batches produced must be at least the minimum required: batches[p] \u2265 MinBatches[p]",
-            "formulation": "$\\\\forall p = 1, \\\\dots, \\\\text{NumParts},\\\\; batches[p] \\\\ge MinBatches[p]$",
+            "description": "For machine 1: regular_hours + overtime_hours = sum over all parts p of (TimeRequired[1,p] * batches_p)",
+            "formulation": "$regularHours1 + overtimeHours1 = \\\\sum_{p=1}^{NumParts} TimeRequired[1,p] \\\\cdot batches_p$",
+            "code": "model.addConstr(\n    regularHours1 + overtimeHours1 ==\n    sum(TimeRequired[0][p] * batches[p] for p in range(NumParts))\n)"
+        },
+        {
+            "description": "For machine 1: regular_hours must be less than or equal to OvertimeHour[1]",
+            "formulation": "$regularHours1 \\\\leq OvertimeHour[1]$",
+            "code": "model.addConstr(regularHours1 <= OvertimeHour[0])"
+        },
+        {
+            "description": "For each part p: batches_p must be greater than or equal to MinBatches[p]",
+            "formulation": "$\\\\forall p = 1, \\\\dots, \\\\text{NumParts},\\\\; batches[p] \\\\geq MinBatches[p]$",
             "code": "for p in range(NumParts):\n    model.addConstr(batches[p] >= MinBatches[p])"
+        },
+        {
+            "description": "regular_hours must be greater than or equal to 0",
+            "formulation": "$regularHours1 \\\\geq 0$",
+            "code": "model.addConstr(regularHours1 >= 0)"
+        },
+        {
+            "description": "overtime_hours must be greater than or equal to 0",
+            "formulation": "$overtimeHours1 \\\\ge 0$",
+            "code": "model.addConstr(overtimeHours1 >= 0)"
         }
     ],
-    "variables": {}
+    "variables": {
+        "batches": {
+            "shape": [
+                "NumParts"
+            ],
+            "type": "continuous",
+            "definition": "Number of batches of part p produced per month"
+        },
+        "regularHours1": {
+            "shape": [],
+            "type": "continuous",
+            "definition": "Number of regular operating hours used on machine 1"
+        },
+        "overtimeHours1": {
+            "shape": [],
+            "type": "continuous",
+            "definition": "Number of overtime operating hours used on machine 1"
+        }
+    }
 }

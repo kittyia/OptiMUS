@@ -35,20 +35,23 @@ MaxBlackTarAllowed = data["MaxBlackTarAllowed"] # shape: [], definition: Maximum
 
 ### Define the variables
 
-NumDemos = model.addVars(NumDemonstrations, vtype=GRB.INTEGER, name="NumDemos")
+DemoCount = model.addVars(NumDemonstrations, vtype=GRB.INTEGER, name="DemoCount")
 
 
 
 ### Define the constraints
 
-model.addConstr(sum(ActiveIngredientUsed[i] * NumDemos[i] for i in range(NumDemonstrations)) <= TotalActiveIngredientAvailable)
-model.addConstr(NumDemos[0] >= 0)
-model.addConstr(NumDemos[1] >= 0)
+model.addConstr(
+    sum(ActiveIngredientUsed[i] * DemoCount[i] for i in range(NumDemonstrations))
+    <= TotalActiveIngredientAvailable
+)
+model.addConstr(DemoCount[0] >= 0)
+model.addConstr(DemoCount[1] >= 0)
 
 
 ### Define the objective
 
-model.setObjective(quicksum(FoamProduced[i] * NumDemos[i] for i in range(NumDemonstrations)), GRB.MAXIMIZE)
+model.setObjective(quicksum(FoamProduced[i] * DemoCount[i] for i in range(NumDemonstrations)), GRB.MAXIMIZE)
 
 
 ### Optimize the model

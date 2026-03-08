@@ -29,24 +29,24 @@ MaxCarsTotal = data["MaxCarsTotal"] # shape: [], definition: Maximum number of c
 
 ### Define the variables
 
-x1 = model.addVar(vtype=GRB.INTEGER, name="x1")
+x1 = model.addVar(vtype=GRB.CONTINUOUS, name="x1")
 
-x2 = model.addVar(vtype=GRB.INTEGER, name="x2")
+x2 = model.addVar(vtype=GRB.CONTINUOUS, name="x2")
 
 
 
 ### Define the constraints
 
 model.addConstr(x1 >= 0)
-model.addConstr(x1 <= DemandRegular)
 model.addConstr(x2 >= 0)
+model.addConstr(x1 <= DemandRegular)
 model.addConstr(x2 <= DemandPremium)
 model.addConstr(x1 + x2 <= MaxCarsTotal)
 
 
 ### Define the objective
 
-
+model.setObjective(ProfitRegular * x1 + ProfitPremium * x2, GRB.MAXIMIZE)
 
 
 ### Optimize the model

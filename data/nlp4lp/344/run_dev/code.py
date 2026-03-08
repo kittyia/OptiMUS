@@ -37,20 +37,25 @@ amount = model.addVars(NumTerminals, NumDestinations, vtype=GRB.CONTINUOUS, name
 
 for k in range(NumTerminals):
     model.addConstr(
-        sum(amount[k, j] for j in range(NumDestinations)) == Supply[k]
+        sum(amount[k, j] for j in range(NumDestinations)) <= Supply[k]
     )
-for j in range(NumDestinations):
+for l in range(NumDestinations):
     model.addConstr(
-        sum(amount[i, j] for i in range(NumTerminals)) == Demand[j]
+        sum(amount[k, l] for k in range(NumTerminals)) >= Demand[l]
     )
-for i in range(NumTerminals):
+for k in range(NumTerminals):
     for j in range(NumDestinations):
-        model.addConstr(amount[i, j]] >= 0)
+        model.addConstr(amount[k, j] >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(
+    quicksum(Cost[i][j] * amount[i, j] 
+             for i in range(NumTerminals) 
+             for j in range(NumDestinations)),
+    GRB.MINIMIZE
+)
 
 
 ### Optimize the model

@@ -41,8 +41,16 @@ LooselySeatedLifts = model.addVar(vtype=GRB.INTEGER, name="LooselySeatedLifts")
 
 ### Define the constraints
 
-model.addConstr(GuestsPerMinuteDenselySeatedLift * DenselySeatedLifts + GuestsPerMinuteLooselySeatedLift * LooselySeatedLifts >= MinimumGuestsPerMinute)
-model.addConstr(ElectricityPerDenselySeatedLift * DenselySeatedLifts + ElectricityPerLooselySeatedLift * LooselySeatedLifts <= TotalElectricityAvailable)
+model.addConstr(
+    GuestsPerMinuteDenselySeatedLift * DenselySeatedLifts
+    + GuestsPerMinuteLooselySeatedLift * LooselySeatedLifts
+    >= MinimumGuestsPerMinute
+)
+model.addConstr(
+    ElectricityPerDenselySeatedLift * DenselySeatedLifts
+    + ElectricityPerLooselySeatedLift * LooselySeatedLifts
+    <= TotalElectricityAvailable
+)
 model.addConstr(DenselySeatedLifts >= 0)
 model.addConstr(LooselySeatedLifts >= MinimumLooselySeatedLifts)
 

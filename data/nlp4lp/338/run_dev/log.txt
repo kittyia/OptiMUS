@@ -1,14 +1,20 @@
 ----
-Yes, there is a small redundancy in the sense that Constraints 2 and 3 both describe domain restrictions on the same decision variables. They can be combined into a single constraint specifying that the variables are nonnegative integers.
+The first constraint enforces **coverage requirements** for each shift, taking into account that each officer works two consecutive shifts (including wrap-around between the last and first shift).  
 
-- Constraint 1 (coverage constraint) is essential and cannot be removed.
-- Constraints 2 and 3 both restrict the domain of the decision variables and can be combined into one: the number of officers assigned to start at each shift must be a nonnegative integer.
+The second constraint enforces the **domain of the decision variables** (non-negative integers).  
 
-Updated list of constraints:
+These constraints serve fundamentally different purposes:
+- The first ensures feasibility with respect to staffing requirements.
+- The second ensures valid decision variable values.
+
+They are **not redundant**, and neither can be removed without changing the meaning of the model.  
+They also cannot be meaningfully combined, since one is a structural coverage constraint and the other is a domain restriction.
+
+Therefore, the updated constraint list remains unchanged:
 
 [
-    "For each shift s, the number of officers starting at shift s plus the number of officers starting at shift s-1 (with wrap-around between the last and first shift) must be greater than or equal to OfficersNeeded[s]",
-    "The number of officers assigned to start at each shift s must be a nonnegative integer"
+    "For each shift s, the total number of officers covering shift s (officers_assigned_s plus officers_assigned_{s-1}, with wrap-around between the last and first shift) must be greater than or equal to OfficersNeeded_s",
+    "The number of officers assigned to each shift s (officers_assigned_s) must be a non-negative integer"
 ]
 ----
 +++++++++++++++++++
@@ -75,7 +81,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: For each shift s, the number of officers starting at shift s plus the number of officers starting at shift s-1 (with wrap-around between the last and first shift) must be greater than or equal to OfficersNeeded[s]
+Consider this potential constraint: For each shift s, the total number of officers covering shift s (officers_assigned_s plus officers_assigned_{s-1}, with wrap-around between the last and first shift) must be greater than or equal to OfficersNeeded_s
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -85,38 +91,41 @@ Consider this potential constraint: For each shift s, the number of officers sta
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is definitely a constraint and it is essential to the correct formulation of the problem.
+Yes, this is definitely a constraint, and it is a core structural constraint of the model.
 
-Reasoning step by step:
+Reasoning:
 
-- Decision variable: Let \( x_s \) be the number of officers who **start** at shift \( s \).
-- Each officer works **two consecutive shifts**.
-- Therefore, officers who start at shift \( s \) cover:
-  - Shift \( s \)
-  - Shift \( s+1 \) (with wrap-around from \( S \) to 1)
+- Decision variable:  
+  Let \( \text{officers\_assigned}_s \) be the number of officers who **start** working at shift \( s \).
 
-Now consider coverage of a particular shift \( s \):
+- Each officer works **two consecutive shifts**.  
+  Therefore, an officer who starts at shift \( s \) covers:
+  - shift \( s \), and  
+  - shift \( s+1 \) (with wrap-around from the last shift back to shift 1).
 
-- Officers who started at shift \( s \) are working during shift \( s \).
-- Officers who started at shift \( s-1 \) are also working during shift \( s \).
+- Coverage of shift \( s \):  
+  Shift \( s \) is covered by:
+  - officers who start at shift \( s \), and  
+  - officers who started at shift \( s-1 \) (since they work two consecutive shifts).
 
-Thus, total officers available during shift \( s \) is:
-
-\[
-x_s + x_{s-1}
-\]
-
-(with wrap-around so that when \( s = 1 \), \( s-1 = S \)).
-
-Since each shift requires at least \( \text{OfficersNeeded}_s \), we must impose:
+Thus, the total number of officers covering shift \( s \) is:
 
 \[
-x_s + x_{s-1} \ge \text{OfficersNeeded}_s \quad \forall s = 1, \dots, S
+\text{officers\_assigned}_s + \text{officers\_assigned}_{s-1}
 \]
 
-This is not optional — it directly encodes the coverage requirement implied by the problem description. Without it, the model would not ensure staffing feasibility.
+(with wrap-around between shift \( S \) and shift 1).
 
-✅ It is absolutely a required constraint in the (MI)LP formulation.
+Since each shift requires at least \( \text{OfficersNeeded}_s \) officers, we must impose:
+
+\[
+\text{officers\_assigned}_s + \text{officers\_assigned}_{s-1} \ge \text{OfficersNeeded}_s
+\quad \forall s
+\]
+
+This constraint directly enforces feasibility of the staffing requirements and is absolutely necessary in the LP/MILP formulation.
+
+✅ It is unquestionably a required constraint.
 
 **5 OUT OF 5**
 +--+
@@ -184,7 +193,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: The number of officers assigned to start at each shift s must be a nonnegative integer
+Consider this potential constraint: The number of officers assigned to each shift s (officers_assigned_s) must be a non-negative integer
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -194,31 +203,40 @@ Consider this potential constraint: The number of officers assigned to start at 
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this **is** a necessary constraint and it should be explicitly modeled.
+Yes, this **is** a necessary constraint.
 
 ### Why?
 
-- The decision variable is the number of officers **starting** at shift \( s \).
-- This represents a **count of people**, which:
-  - Cannot be negative → must be **nonnegative**
-  - Cannot be fractional → must be an **integer**
+- The decision variable is the **number of officers assigned to start at shift s**.
+- Officers are indivisible units (you cannot assign 2.7 officers).
+- You also cannot assign a negative number of officers.
 
-Without explicitly enforcing:
+Therefore, each decision variable:
+
 \[
-x_s \ge 0 \quad \text{and} \quad x_s \in \mathbb{Z}
+\text{officers\_assigned}_s \ge 0
 \]
-the solver could:
-- Assign negative officers (nonsensical),
-- Assign fractional officers (physically impossible),
-- Turn the model into a continuous LP instead of the correct MILP.
 
-Because officers work two consecutive shifts, coverage constraints will couple variables across shifts, but **integrality and nonnegativity are fundamental domain constraints** for the decision variables themselves.
+and
 
-Therefore:
-- This is absolutely a real constraint.
-- It must be explicitly included in the formulation.
+\[
+\text{officers\_assigned}_s \in \mathbb{Z}
+\]
 
-**Confidence level: 5 OUT OF 5**
+must be explicitly modeled.
+
+Without the **non-negativity constraint**, the model could assign negative officers to reduce cost.
+
+Without the **integrality constraint**, the model could produce fractional officers, which is infeasible in practice.
+
+Since the problem naturally requires integer counts, this makes the model a **MILP**, not a pure LP.
+
+### Conclusion
+
+✅ This is absolutely a real and necessary modeling constraint.  
+✅ It must be explicitly included in the formulation.
+
+**5 OUT OF 5**
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -234,7 +252,7 @@ Extracting constraint formulations
 
 ----
 {
-    "FORMULATION": "$\\forall s \\in \\{1, \\dots, NumShifts\\},\\; officersAssigned[s] + officersAssigned[((s-2) \\bmod NumShifts) + 1] \\geq OfficersNeeded[s]$",
+    "FORMULATION": "$\\forall s = 1, \\dots, \\text{NumShifts}: \\; officersAssigned_s + officersAssigned_{((s-2) \\bmod \\text{NumShifts}) + 1} \\geq OfficersNeeded_s$",
     "NEW VARIABLES": {
         "officersAssigned": {
             "shape": "[NumShifts]",
@@ -247,20 +265,20 @@ Extracting constraint formulations
 ----
 ----
 EXTRACTED ITEMS
-$\\forall s \\in \\{1, \\dots, NumShifts\\},\\; officersAssigned[s] + officersAssigned[((s-2) \\bmod NumShifts) + 1] \\geq OfficersNeeded[s]$
+$\\forall s = 1, \\dots, \\text{NumShifts}: \\; officersAssigned_s + officersAssigned_{((s-2) \\bmod \\text{NumShifts}) + 1} \\geq OfficersNeeded_s$
 {'officersAssigned': {'shape': '[NumShifts]', 'type': 'integer', 'definition': 'Number of officers starting their two-shift duty at shift s'}}
 []
 ----
 ----
 {
-    "FORMULATION": "$\\forall s = 1, \\dots, \\text{NumShifts}: \\; officersAssigned_s \\in \\mathbb{Z}_{\\ge 0}$",
+    "FORMULATION": "$\\forall s = 1, \\dots, NumShifts, \\; officersAssigned[s] \\in \\mathbb{Z}_{\\geq 0}$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$\\forall s = 1, \\dots, \\text{NumShifts}: \\; officersAssigned_s \\in \\mathbb{Z}_{\\ge 0}$
+$\\forall s = 1, \\dots, NumShifts, \\; officersAssigned[s] \\in \\mathbb{Z}_{\\geq 0}$
 {}
 []
 ----
@@ -272,24 +290,35 @@ CPU model: Intel(R) Xeon(R) Platinum, instruction set [SSE2|AVX|AVX2|AVX512]
 Thread count: 1 physical cores, 2 logical processors, using up to 2 threads
 
 Optimize a model with 12 rows, 6 columns and 18 nonzeros (Min)
-Model fingerprint: 0x5a37dd5b
-Model has 0 linear objective coefficients
+Model fingerprint: 0xc09270c8
+Model has 6 linear objective coefficients
 Variable types: 0 continuous, 6 integer (0 binary)
 Coefficient statistics:
   Matrix range     [1e+00, 1e+00]
-  Objective range  [0e+00, 0e+00]
+  Objective range  [4e+02, 5e+02]
   Bounds range     [0e+00, 0e+00]
   RHS range        [7e+00, 2e+01]
 
-Found heuristic solution: objective 0.0000000
+Found heuristic solution: objective 18650.000000
+Presolve removed 6 rows and 0 columns
+Presolve time: 0.00s
+Presolved: 6 rows, 6 columns, 12 nonzeros
+Variable types: 0 continuous, 6 integer (0 binary)
 
-Explored 0 nodes (0 simplex iterations) in 0.00 seconds (0.00 work units)
-Thread count was 1 (of 2 available processors)
+Root relaxation: objective 1.662000e+04, 5 iterations, 0.00 seconds (0.00 work units)
 
-Solution count 1: 0 
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+*    0     0               0    16620.000000 16620.0000  0.00%     -    0s
+
+Explored 1 nodes (5 simplex iterations) in 0.00 seconds (0.00 work units)
+Thread count was 2 (of 2 available processors)
+
+Solution count 2: 16620 18650 
 
 Optimal solution found (tolerance 1.00e-04)
-Best objective 0.000000000000e+00, best bound 0.000000000000e+00, gap 0.0000%
-Optimal Objective Value:  0.0
-Optimal Objective Value:  0.0
+Best objective 1.662000000000e+04, best bound 1.662000000000e+04, gap 0.0000%
+Optimal Objective Value:  16620.0
+Optimal Objective Value:  16620.0
 

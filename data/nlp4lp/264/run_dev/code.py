@@ -46,7 +46,7 @@ model.addConstr(SecondDose >= MinimumSecondDose)
 
 ### Define the objective
 
-
+model.setObjective(GelatineFirstDose * FirstDose + GelatineSecondDose * SecondDose, GRB.MINIMIZE)
 
 
 ### Optimize the model

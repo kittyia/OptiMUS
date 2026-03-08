@@ -38,42 +38,37 @@
         }
     },
     "objective": {
-        "description": "\"Minimize the total number of refills per hour from both cart and hand delivery servers\"",
-        "formulation": "$\\min \\left( \\text{RefillsCart} \\cdot \\text{NumberCartServers} + \\text{RefillsHand} \\cdot \\text{NumberHandServers} \\right)$",
-        "code": ""
+        "description": "\"Minimize the total number of food refills per hour from all delivery servers (cart and hand combined)\"",
+        "formulation": "$\\min \\; RefillsCart \\cdot NumberCart \\;+\\; RefillsHand \\cdot NumberHand$",
+        "code": "model.setObjective(RefillsCart * NumberCart + RefillsHand * NumberHand, GRB.MINIMIZE)"
     },
     "constraints": [
         {
-            "description": "CustomerInteractionsCart * NumberCartServers + CustomerInteractionsHand * NumberHandServers >= TargetCustomerInteractions",
-            "formulation": "$CustomerInteractionsCart \\\\cdot NumberCartServers + CustomerInteractionsHand \\\\cdot NumberHandServers \\\\geq TargetCustomerInteractions$",
-            "code": "model.addConstr(\n    CustomerInteractionsCart * NumberCartServers\n    + CustomerInteractionsHand * NumberHandServers\n    >= TargetCustomerInteractions\n)"
+            "description": "CustomerInteractionsCart * NumberCart + CustomerInteractionsHand * NumberHand >= TargetCustomerInteractions",
+            "formulation": "$CustomerInteractionsCart \\\\cdot NumberCart + CustomerInteractionsHand \\\\cdot NumberHand \\\\geq TargetCustomerInteractions$",
+            "code": "model.addConstr(\n    CustomerInteractionsCart * NumberCart + CustomerInteractionsHand * NumberHand\n    >= TargetCustomerInteractions\n)"
         },
         {
-            "description": "NumberCartServers / (NumberCartServers + NumberHandServers) >= MinFractionCart",
-            "formulation": "$NumberCartServers \\\\geq MinFractionCart \\\\,(NumberCartServers + NumberHandServers)$",
-            "code": "model.addConstr(NumberCartServers >= MinFractionCart * (NumberCartServers + NumberHandServers))"
+            "description": "NumberCart >= MinFractionCart * (NumberCart + NumberHand)",
+            "formulation": "$NumberCart \\\\ge MinFractionCart \\\\cdot (NumberCart + NumberHand)$",
+            "code": "model.addConstr(NumberCart >= MinFractionCart * (NumberCart + NumberHand))"
         },
         {
-            "description": "NumberHandServers >= MinServersHand",
-            "formulation": "$NumberHandServers \\\\ge MinServersHand$",
-            "code": "model.addConstr(NumberHandServers >= MinServersHand)"
-        },
-        {
-            "description": "NumberCartServers and NumberHandServers are nonnegative integers",
-            "formulation": "$NumberCartServers \\\\in \\\\mathbb{Z}_{\\\\ge 0}, \\\\quad NumberHandServers \\\\in \\\\mathbb{Z}_{\\\\ge 0}$",
-            "code": "model.addConstr(NumberCartServers >= 0)\nmodel.addConstr(NumberHandServers >= 0)"
+            "description": "NumberHand >= MinServersHand",
+            "formulation": "$NumberHand \\\\ge MinServersHand$",
+            "code": "model.addConstr(NumberHand >= MinServersHand)"
         }
     ],
     "variables": {
-        "NumberCartServers": {
+        "NumberCart": {
             "shape": [],
             "type": "integer",
-            "definition": "Number of servers delivering food by cart per hour"
+            "definition": "Number of servers delivering by cart"
         },
-        "NumberHandServers": {
+        "NumberHand": {
             "shape": [],
             "type": "integer",
-            "definition": "Number of servers delivering food by hand per hour"
+            "definition": "Number of servers delivering by hand"
         }
     }
 }

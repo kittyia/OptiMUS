@@ -29,22 +29,25 @@ MaxPHtoSalinityRatio = data["MaxPHtoSalinityRatio"] # shape: [], definition: Max
 
 ### Define the variables
 
-NumPHTests = model.addVar(vtype=GRB.INTEGER, name="NumPHTests")
+PHTests = model.addVar(vtype=GRB.INTEGER, name="PHTests")
 
-NumSalinityTests = model.addVar(vtype=GRB.INTEGER, name="NumSalinityTests")
+SalinityTests = model.addVar(vtype=GRB.INTEGER, name="SalinityTests")
 
 
 
 ### Define the constraints
 
-model.addConstr(NumPHTests >= MinPHTests)
-model.addConstr(NumPHTests + NumSalinityTests >= MinTotalTests)
-model.addConstr(NumPHTests <= MaxPHtoSalinityRatio * NumSalinityTests)
+model.addConstr(PHTests >= MinPHTests)
+model.addConstr(PHTests + SalinityTests >= MinTotalTests)
+model.addConstr(PHTests <= MaxPHtoSalinityRatio * SalinityTests)
 
 
 ### Define the objective
 
-
+model.setObjective(
+    ProbesPerSalinityTest * SalinityTests + ProbesPerPHTest * PHTests,
+    GRB.MINIMIZE
+)
 
 
 ### Optimize the model

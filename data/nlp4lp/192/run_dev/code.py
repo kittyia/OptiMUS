@@ -44,14 +44,15 @@ NumDrawers = model.addVar(vtype=GRB.INTEGER, name="NumDrawers")
 ### Define the constraints
 
 model.addConstr(AssemblyTimeDesk * NumDesks + AssemblyTimeDrawer * NumDrawers <= TotalAssemblyTime)
-model.addConstr(SandingTimeDesk * NumDesks + SandingTimeDrawer * NumDrawers <= TotalSandingTime)
+model.addConstr(NumDesks >= 0)
+model.addConstr(NumDrawers >= 0)
 model.addConstr(NumDesks >= 0)
 model.addConstr(NumDrawers >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(ProfitPerDesk * NumDesks + ProfitPerDrawer * NumDrawers, GRB.MAXIMIZE)
 
 
 ### Optimize the model

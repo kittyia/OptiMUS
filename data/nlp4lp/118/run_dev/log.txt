@@ -1,9 +1,11 @@
 ----
 [
-    "40 * (Number of liquid sanitizers) + 60 * (Number of foam sanitizers) ≤ 2000 (Total available water)",
-    "50 * (Number of liquid sanitizers) + 40 * (Number of foam sanitizers) ≤ 2100 (Total available alcohol)",
-    "Number of foam sanitizers produced ≥ Number of liquid sanitizers produced",
-    "Number of liquid sanitizers produced ≥ 0"
+    "40 * Liquid + 60 * Foam <= 2000",
+    "50 * Liquid + 40 * Foam <= 2100",
+    "Foam >= Liquid",
+    "Liquid <= 30",
+    "Liquid >= 0",
+    "Foam >= 0"
 ]
 ----
 +++++++++++++++++++
@@ -60,7 +62,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: 40 * (Number of liquid sanitizers) + 60 * (Number of foam sanitizers) ≤ 2000 (Total available water)
+Consider this potential constraint: 40 * Liquid + 60 * Foam <= 2000
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -70,20 +72,21 @@ Consider this potential constraint: 40 * (Number of liquid sanitizers) + 60 * (N
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is definitely a constraint and it should be explicitly modeled.
+Yes, this **is definitely a valid constraint** and should be explicitly included in the (MI)LP formulation.
 
-Step-by-step reasoning:
+### Why?
 
-- Each liquid sanitizer requires 40 units of water.
-- Each foam sanitizer requires 60 units of water.
-- The company has 2000 units of water available in total.
-- Therefore, the total water used by all production cannot exceed 2000 units.
+From the problem statement:
 
-If we let:
+- Liquid sanitizer requires **40 units of water**
+- Foam sanitizer requires **60 units of water**
+- Total available water = **2000 units**
+
+If:
 - \( L \) = number of liquid sanitizers  
 - \( F \) = number of foam sanitizers  
 
-then total water usage is:
+Then total water used is:
 
 \[
 40L + 60F
@@ -95,7 +98,10 @@ Since water availability is limited to 2000 units, we must impose:
 40L + 60F \le 2000
 \]
 
-This is a standard resource capacity constraint and is clearly required by the problem description.
+This is a **standard resource capacity constraint**, directly derived from the problem description. There is no ambiguity here — this constraint is necessary for the model to correctly reflect the water limitation.
+
+### Conclusion
+✅ This is absolutely a required constraint in the optimization model.
 
 **5 OUT OF 5**
 +--+
@@ -153,7 +159,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: 50 * (Number of liquid sanitizers) + 40 * (Number of foam sanitizers) ≤ 2100 (Total available alcohol)
+Consider this potential constraint: 50 * Liquid + 40 * Foam <= 2100
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -163,23 +169,196 @@ Consider this potential constraint: 50 * (Number of liquid sanitizers) + 40 * (N
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is definitely a valid constraint and should be explicitly included in the (MI)LP formulation.
+Yes, this is indeed a valid and necessary constraint.
 
-From the problem statement:
+Step-by-step reasoning:
 
-- Each **liquid** sanitizer requires **50 units of alcohol**.
-- Each **foam** sanitizer requires **40 units of alcohol**.
+- Each **liquid** hand sanitizer requires **50 units of alcohol**.
+- Each **foam** hand sanitizer requires **40 units of alcohol**.
 - The company has **2100 units of alcohol available**.
 
-Since alcohol is a limited resource, total alcohol used cannot exceed 2100 units. Therefore, the constraint
+Therefore, the total alcohol used in production cannot exceed 2100 units. If we let:
+
+- `Liquid` = number of liquid sanitizers  
+- `Foam` = number of foam sanitizers  
+
+then total alcohol consumption is:
 
 \[
-50 \cdot (\text{Number of liquid sanitizers}) + 40 \cdot (\text{Number of foam sanitizers}) \le 2100
+50 \cdot Liquid + 40 \cdot Foam
 \]
 
-is directly derived from the resource limitation and must be included in the model.
+Since alcohol is limited to 2100 units, we must enforce:
 
-This is a core resource constraint, not optional or implied elsewhere, and is essential for correctly modeling the feasible region.
+\[
+50 \cdot Liquid + 40 \cdot Foam \le 2100
+\]
+
+This is a standard resource capacity constraint and is essential to correctly model the problem.
+
+✅ It should absolutely be included in the (MI)LP formulation.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+A company make both liquid and foam hand sanitizer. Liquid hand sanitizer requires 40 units of water and 50 units of alcohol. Foam hand sanitizer requires 60 units of water and 40 units of alcohol. The company has available 2000 units of water and 2100 units of alcohol. The number of foam hand sanitizers made must exceed the number of liquid hand sanitizers. In addition, at most 30 liquid hand sanitizers can be made. If each liquid hand sanitizer can clean 30 hands and each foam hand sanitizer can clean 20 hands, how many of each should the company make to maximize the number of hands that can be cleaned?
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "NumProducts": {
+        "definition": "Number of different products",
+        "shape": [],
+        "type": "int"
+    },
+    "NumResources": {
+        "definition": "Number of different resources",
+        "shape": [],
+        "type": "int"
+    },
+    "ResourceRequired": {
+        "definition": "Amount of each resource required to produce one unit of each product",
+        "shape": [
+            "NumResources",
+            "NumProducts"
+        ],
+        "type": "string"
+    },
+    "TotalAvailableResources": {
+        "definition": "Total available units of each resource",
+        "shape": [
+            "NumResources"
+        ],
+        "type": "string"
+    },
+    "MaxLiquidSanitizers": {
+        "definition": "Maximum number of liquid hand sanitizers that can be produced",
+        "shape": [],
+        "type": "int"
+    },
+    "CleaningPerUnit": {
+        "definition": "Number of hands cleaned by each unit of each product",
+        "shape": [
+            "NumProducts"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: Foam >= Liquid
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is clearly a constraint.
+
+The problem statement explicitly says:  
+> "The number of foam hand sanitizers made must exceed the number of liquid hand sanitizers."
+
+This is a direct logical restriction on the decision variables. Therefore, it must be explicitly modeled in the optimization formulation.
+
+Mathematically, this translates to:
+
+- If variables are continuous:  
+  Foam ≥ Liquid  
+
+- If variables are integer (which makes more sense here):  
+  Foam ≥ Liquid + 1  
+
+Since the condition is explicitly stated and materially affects the feasible region, it absolutely belongs in the constraint set.
+
+5 OUT OF 5
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+A company make both liquid and foam hand sanitizer. Liquid hand sanitizer requires 40 units of water and 50 units of alcohol. Foam hand sanitizer requires 60 units of water and 40 units of alcohol. The company has available 2000 units of water and 2100 units of alcohol. The number of foam hand sanitizers made must exceed the number of liquid hand sanitizers. In addition, at most 30 liquid hand sanitizers can be made. If each liquid hand sanitizer can clean 30 hands and each foam hand sanitizer can clean 20 hands, how many of each should the company make to maximize the number of hands that can be cleaned?
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "NumProducts": {
+        "definition": "Number of different products",
+        "shape": [],
+        "type": "int"
+    },
+    "NumResources": {
+        "definition": "Number of different resources",
+        "shape": [],
+        "type": "int"
+    },
+    "ResourceRequired": {
+        "definition": "Amount of each resource required to produce one unit of each product",
+        "shape": [
+            "NumResources",
+            "NumProducts"
+        ],
+        "type": "string"
+    },
+    "TotalAvailableResources": {
+        "definition": "Total available units of each resource",
+        "shape": [
+            "NumResources"
+        ],
+        "type": "string"
+    },
+    "MaxLiquidSanitizers": {
+        "definition": "Maximum number of liquid hand sanitizers that can be produced",
+        "shape": [],
+        "type": "int"
+    },
+    "CleaningPerUnit": {
+        "definition": "Number of hands cleaned by each unit of each product",
+        "shape": [
+            "NumProducts"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: Liquid <= 30
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is explicitly a constraint.
+
+The problem statement clearly says:  
+> "In addition, at most 30 liquid hand sanitizers can be made."
+
+The phrase *"at most 30"* directly translates to the inequality:
+
+\[
+\text{Liquid} \le 30
+\]
+
+This is a production upper bound constraint and must be included in the (MI)LP formulation. It is not implied by other constraints and cannot be derived from the resource limits, so it must be modeled explicitly.
 
 **Confidence: 5 OUT OF 5**
 +--+
@@ -237,7 +416,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: Number of foam sanitizers produced ≥ Number of liquid sanitizers produced
+Consider this potential constraint: Liquid >= 0
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -247,21 +426,17 @@ Consider this potential constraint: Number of foam sanitizers produced ≥ Numbe
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-The problem statement explicitly says:
+Yes, **Liquid ≥ 0** is a constraint.
 
-> “The number of foam hand sanitizers made must exceed the number of liquid hand sanitizers.”
+In an optimization model, decision variables representing production quantities must be nonnegative unless otherwise specified. Producing a negative number of liquid sanitizers is not physically meaningful, so this non-negativity condition is required.
 
-This is a direct production relationship requirement between the two decision variables. Therefore:
+In most (MI)LP formulations, non-negativity is either:
+- Explicitly written as a constraint (e.g., \( L \ge 0 \)), or  
+- Imposed through variable domain declarations (e.g., \( L \in \mathbb{R}_{\ge 0} \) or \( L \in \mathbb{Z}_{\ge 0} \)).
 
-- It is **definitely a constraint**, not something implied or optional.
-- It must be explicitly modeled in the (MI)LP formulation.
-- In a linear model, this would typically be written as:  
-  \[
-  \text{Foam} \ge \text{Liquid}
-  \]
-  (If strict inequality is required, it is usually modeled as ≥ in LP formulations unless integrality is being leveraged.)
+Even though it may sometimes be treated as a default domain restriction rather than a “structural” constraint like resource limits, it **must** be enforced in the model.
 
-There is no ambiguity in the wording — it clearly imposes a structural restriction on feasible solutions.
+Therefore, it should be included (either explicitly or through variable domain specification).
 
 **5 OUT OF 5**
 +--+
@@ -319,7 +494,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: Number of liquid sanitizers produced ≥ 0
+Consider this potential constraint: Foam >= 0
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -329,23 +504,20 @@ Consider this potential constraint: Number of liquid sanitizers produced ≥ 0
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, **“Number of liquid sanitizers produced ≥ 0”** is indeed a constraint.
+Yes, **Foam ≥ 0** is indeed a constraint.
 
-### Why?
+### Step-by-step reasoning:
 
-The number of liquid sanitizers produced is a **decision variable**. In a real-world production setting, producing a negative quantity is not meaningful. Therefore, non-negativity is a fundamental feasibility requirement.
+- The decision variable representing the number of foam sanitizers produced cannot logically be negative.
+- In linear and mixed-integer linear programming formulations, **non-negativity constraints are standard and necessary** unless variables are explicitly defined as free.
+- Without this constraint, the solver could assign a negative value to Foam, which would:
+  - Potentially help satisfy resource constraints artificially,
+  - Increase the objective improperly,
+  - And produce an infeasible real-world solution.
 
-Even if it may seem “obvious,” in an LP or MILP formulation decision variables must either:
+Even though non-negativity is often implicitly assumed in LP modeling environments, it **must be explicitly enforced in a proper mathematical formulation** unless variable bounds are otherwise specified.
 
-- Be explicitly constrained as nonnegative, or  
-- Be declared as nonnegative by definition in the modeling framework.
-
-Since this problem does not explicitly state that the variable domain is nonnegative, this constraint **should be included explicitly in the mathematical model**.
-
-The same logic would also apply to the number of foam sanitizers produced.
-
-### Conclusion
-This is a legitimate and necessary modeling constraint.
+Therefore, this *is* a legitimate and necessary constraint.
 
 **5 OUT OF 5**
 +--+
@@ -363,14 +535,14 @@ Extracting constraint formulations
 
 ----
 {
-    "FORMULATION": "$40 \\cdot LiquidSanitizers + 60 \\cdot FoamSanitizers \\leq 2000$",
+    "FORMULATION": "$40 \\, Liquid + 60 \\, Foam \\leq 2000$",
     "NEW VARIABLES": {
-        "LiquidSanitizers": {
+        "Liquid": {
             "shape": [],
             "type": "integer",
             "definition": "Number of liquid hand sanitizers produced"
         },
-        "FoamSanitizers": {
+        "Foam": {
             "shape": [],
             "type": "integer",
             "definition": "Number of foam hand sanitizers produced"
@@ -381,46 +553,72 @@ Extracting constraint formulations
 ----
 ----
 EXTRACTED ITEMS
-$40 \\cdot LiquidSanitizers + 60 \\cdot FoamSanitizers \\leq 2000$
-{'LiquidSanitizers': {'shape': [], 'type': 'integer', 'definition': 'Number of liquid hand sanitizers produced'}, 'FoamSanitizers': {'shape': [], 'type': 'integer', 'definition': 'Number of foam hand sanitizers produced'}}
+$40 \\, Liquid + 60 \\, Foam \\leq 2000$
+{'Liquid': {'shape': [], 'type': 'integer', 'definition': 'Number of liquid hand sanitizers produced'}, 'Foam': {'shape': [], 'type': 'integer', 'definition': 'Number of foam hand sanitizers produced'}}
 []
 ----
 ----
 {
-    "FORMULATION": "$50 \\cdot LiquidSanitizers + 40 \\cdot FoamSanitizers \\leq 2100$",
+    "FORMULATION": "$50 \\, Liquid + 40 \\, Foam \\leq 2100$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$50 \\cdot LiquidSanitizers + 40 \\cdot FoamSanitizers \\leq 2100$
+$50 \\, Liquid + 40 \\, Foam \\leq 2100$
 {}
 []
 ----
 ----
 {
-    "FORMULATION": "$FoamSanitizers \\geq LiquidSanitizers$",
+    "FORMULATION": "$Foam \\geq Liquid$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$FoamSanitizers \\geq LiquidSanitizers$
+$Foam \\geq Liquid$
 {}
 []
 ----
 ----
 {
-    "FORMULATION": "$LiquidSanitizers \\geq 0$",
+    "FORMULATION": "$Liquid \\leq 30$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$LiquidSanitizers \\geq 0$
+$Liquid \\leq 30$
+{}
+[]
+----
+----
+{
+    "FORMULATION": "$Liquid \\geq 0$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$Liquid \\geq 0$
+{}
+[]
+----
+----
+{
+    "FORMULATION": "$Foam \\geq 0$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$Foam \\geq 0$
 {}
 []
 ----
@@ -431,25 +629,36 @@ Gurobi Optimizer version 13.0.1 build v13.0.1rc0 (linux64 - "Alibaba Cloud Linux
 CPU model: Intel(R) Xeon(R) Platinum, instruction set [SSE2|AVX|AVX2|AVX512]
 Thread count: 1 physical cores, 2 logical processors, using up to 2 threads
 
-Optimize a model with 4 rows, 2 columns and 7 nonzeros (Min)
-Model fingerprint: 0xc0412cb5
-Model has 0 linear objective coefficients
+Optimize a model with 6 rows, 2 columns and 9 nonzeros (Max)
+Model fingerprint: 0xff1b84c9
+Model has 2 linear objective coefficients
 Variable types: 0 continuous, 2 integer (0 binary)
 Coefficient statistics:
   Matrix range     [1e+00, 6e+01]
-  Objective range  [0e+00, 0e+00]
+  Objective range  [2e+01, 3e+01]
   Bounds range     [0e+00, 0e+00]
-  RHS range        [2e+03, 2e+03]
+  RHS range        [3e+01, 2e+03]
 
-Found heuristic solution: objective 0.0000000
+Found heuristic solution: objective 660.0000000
+Presolve removed 4 rows and 0 columns
+Presolve time: 0.00s
+Presolved: 2 rows, 2 columns, 4 nonzeros
+Variable types: 0 continuous, 2 integer (0 binary)
 
-Explored 0 nodes (0 simplex iterations) in 0.00 seconds (0.00 work units)
-Thread count was 1 (of 2 available processors)
+Root relaxation: objective 1.000000e+03, 1 iterations, 0.00 seconds (0.00 work units)
 
-Solution count 1: 0 
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+*    0     0               0    1000.0000000 1000.00000  0.00%     -    0s
+
+Explored 1 nodes (1 simplex iterations) in 0.00 seconds (0.00 work units)
+Thread count was 2 (of 2 available processors)
+
+Solution count 2: 1000 660 
 
 Optimal solution found (tolerance 1.00e-04)
-Best objective 0.000000000000e+00, best bound 0.000000000000e+00, gap 0.0000%
-Optimal Objective Value:  0.0
-Optimal Objective Value:  0.0
+Best objective 1.000000000000e+03, best bound 1.000000000000e+03, gap 0.0000%
+Optimal Objective Value:  1000.0
+Optimal Objective Value:  1000.0
 

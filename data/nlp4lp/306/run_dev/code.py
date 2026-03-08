@@ -35,8 +35,6 @@ K = data["K"] # shape: [], definition: Amount of money the investor needs to rai
 
 ### Define the variables
 
-sell = model.addVars(N, vtype=GRB.CONTINUOUS, name="sell")
-
 
 
 ### Define the constraints
@@ -46,10 +44,8 @@ for i in range(N):
     model.addConstr(sell[i] <= Bought[i])
 model.addConstr(
     sum(
-        sell[i] * (
-            CurrentPrice[i] * (1 - TransactionRate / 100.0)
-            - (TaxRate / 100.0) * max(CurrentPrice[i] - BuyPrice[i], 0)
-        )
+        sell[i] * CurrentPrice[i] * (1 - TransactionRate / 100.0)
+        - (TaxRate / 100.0) * sell[i] * max(CurrentPrice[i] - BuyPrice[i], 0)
         for i in range(N)
     ) >= K
 )
@@ -57,7 +53,10 @@ model.addConstr(
 
 ### Define the objective
 
-
+model.setObjective(
+    quicksum(FuturePrice[i] * (Bought[i] - sell[i]) for i in range(N)),
+    GRB.MAXIMIZE
+)
 
 
 ### Optimize the model

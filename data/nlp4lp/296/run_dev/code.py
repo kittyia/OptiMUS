@@ -43,11 +43,13 @@ model.addConstr(PartTimeHours * PartTimeStaff + FullTimeHours * FullTimeStaff >=
 model.addConstr(PartTimeWage * PartTimeStaff + FullTimeWage * FullTimeStaff <= TotalBudget)
 model.addConstr(PartTimeStaff >= 0)
 model.addConstr(FullTimeStaff >= 0)
+model.addConstr(PartTimeStaff >= 0)
+model.addConstr(FullTimeStaff >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(PartTimeStaff + FullTimeStaff, GRB.MINIMIZE)
 
 
 ### Optimize the model

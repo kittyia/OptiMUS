@@ -39,14 +39,16 @@ SpaceAllocated = model.addVars(NumberOfProducts, vtype=GRB.CONTINUOUS, name="Spa
 
 ### Define the constraints
 
-model.addConstr(sum(SpaceAllocated[i] for i in range(NumberOfProducts)) <= TotalSpace)
+model.addConstr(
+    sum(SpaceAllocated[p] for p in range(NumberOfProducts)) <= TotalSpace
+)
 for i in range(NumberOfProducts):
     model.addConstr(SpaceAllocated[i] >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(quicksum(RevenuePerSqFt[i] * SpaceAllocated[i] for i in range(NumberOfProducts)), GRB.MAXIMIZE)
 
 
 ### Optimize the model

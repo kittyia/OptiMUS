@@ -46,7 +46,11 @@ model.addConstr(InvestmentDetachedHouses >= MinimumInvestmentDetachedHouses)
 
 ### Define the objective
 
-
+model.setObjective(
+    ProfitPerDollarCondos * InvestmentCondos +
+    ProfitPerDollarDetachedHouses * InvestmentDetachedHouses,
+    GRB.MAXIMIZE
+)
 
 
 ### Optimize the model

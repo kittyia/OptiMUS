@@ -27,6 +27,10 @@ X = data["X"] # shape: ['K'], definition: Observed values of the independent var
 
 d = model.addVars(K, vtype=GRB.CONTINUOUS, name="d")
 
+slope = model.addVar(vtype=GRB.CONTINUOUS, name="slope")
+
+intercept = model.addVar(vtype=GRB.CONTINUOUS, name="intercept")
+
 
 
 ### Define the constraints
@@ -35,8 +39,6 @@ for k in range(K):
     model.addConstr(Y[k] - (slope * X[k] + intercept) <= d[k])
 for k in range(K):
     model.addConstr(slope * X[k] + intercept - Y[k] <= d[k])
-for k in range(K):
-    model.addConstr(d[k] >= 0)
 
 
 ### Define the objective

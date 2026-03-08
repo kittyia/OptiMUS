@@ -31,14 +31,16 @@ MinRequiredPills = data["MinRequiredPills"] # shape: [2], definition: MinRequire
 
 ### Define the variables
 
-HoursRun = model.addVars(NumLabs, vtype=GRB.CONTINUOUS, name="HoursRun")
+HoursRun = model.addVars(2, vtype=GRB.CONTINUOUS, name="HoursRun")
 
 
 
 ### Define the constraints
 
-model.addConstr(sum(WorkerLaborPerLab[i] * HoursRun[i] for i in range(NumLabs)) <= TotalWorkerHours)
-model.addConstr(20 * HoursRun[0] + 30 * HoursRun[1] >= 20000)
+model.addConstr(
+    sum(WorkerLaborPerLab[i] * HoursRun[i] for i in range(NumLabs)) 
+    <= TotalWorkerHours
+)
 model.addConstr(30 * HoursRun[0] + 40 * HoursRun[1] >= 30000)
 model.addConstr(HoursRun[0] >= 0)
 model.addConstr(HoursRun[1] >= 0)
@@ -46,7 +48,7 @@ model.addConstr(HoursRun[1] >= 0)
 
 ### Define the objective
 
-del.setObjective(quicksum(HoursRun[l] for l in range(NumLabs)), GRB.MINIMIZE
+model.setObjective(quicksum(HoursRun[i] for i in range(NumLabs)), GRB.MINIMIZE)
 
 
 ### Optimize the model

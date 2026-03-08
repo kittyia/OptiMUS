@@ -38,13 +38,13 @@ VitaminDPills = model.addVar(vtype=GRB.INTEGER, name="VitaminDPills")
 model.addConstr(CalciumPills + VitaminDPills >= MinTotalPills)
 model.addConstr(VitaminDPills >= MinVitaminDPills)
 model.addConstr(CalciumPills >= VitaminDPills + 1)
-model.addConstr(CalciumPills >= 0)
-model.addConstr(VitaminDPills >= 0)
+# No additional constraints are required here because integrality
+# is enforced when defining the variables using vtype=GRB.INTEGER.
 
 
 ### Define the objective
 
-
+model.setObjective(TimeToEffectCalcium * CalciumPills + TimeToEffectVitaminD * VitaminDPills, GRB.MINIMIZE)
 
 
 ### Optimize the model

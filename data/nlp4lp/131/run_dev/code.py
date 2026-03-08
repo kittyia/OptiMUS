@@ -37,9 +37,9 @@ MaxTurkeyFraction = data["MaxTurkeyFraction"] # shape: [], definition: Maximum f
 
 ### Define the variables
 
-TurkeyMeals = model.addVar(vtype=GRB.INTEGER, name="TurkeyMeals")
+TurkeyMeals = model.addVar(vtype=GRB.CONTINUOUS, name="TurkeyMeals")
 
-TunaMeals = model.addVar(vtype=GRB.INTEGER, name="TunaMeals")
+TunaMeals = model.addVar(vtype=GRB.CONTINUOUS, name="TunaMeals")
 
 
 
@@ -54,7 +54,7 @@ model.addConstr(TunaMeals >= 0)
 
 ### Define the objective
 
-
+model.setObjective(FatTurkey * TurkeyMeals + FatTuna * TunaMeals, GRB.MINIMIZE)
 
 
 ### Optimize the model

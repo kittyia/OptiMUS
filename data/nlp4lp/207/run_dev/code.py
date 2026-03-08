@@ -39,11 +39,7 @@ Mix2Kg = model.addVar(vtype=GRB.CONTINUOUS, name="Mix2Kg")
 
 ### Define the constraints
 
-model.addConstr(
-    (PercentageCatPawMix1 / 100) * Mix1Kg +
-    (PercentageCatPawMix2 / 100) * Mix2Kg
-    <= AvailableCatPawKg
-)
+model.addConstr((PercentageCatPawMix1 / 100.0) * Mix1Kg + (PercentageCatPawMix2 / 100.0) * Mix2Kg <= AvailableCatPawKg)
 model.addConstr(0.80 * Mix1Kg + 0.65 * Mix2Kg <= AvailableGoldSharkKg)
 model.addConstr(Mix1Kg >= 0)
 model.addConstr(Mix2Kg >= 0)
@@ -51,7 +47,7 @@ model.addConstr(Mix2Kg >= 0)
 
 ### Define the objective
 
-
+model.setObjective(ProfitPerKgMix1 * Mix1Kg + ProfitPerKgMix2 * Mix2Kg, GRB.MAXIMIZE)
 
 
 ### Optimize the model

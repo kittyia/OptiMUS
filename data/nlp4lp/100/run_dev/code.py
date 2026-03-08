@@ -38,11 +38,11 @@ Servings = model.addVars(NumSyrups, vtype=GRB.CONTINUOUS, name="Servings")
 ### Define the constraints
 
 model.addConstr(
-    sum(MedicineThroatPerServing[i] * Servings[i] for i in range(NumSyrups))
+    sum(MedicineThroatPerServing[s] * Servings[s] for s in range(NumSyrups))
     <= MaxMedicineThroat
 )
 model.addConstr(
-    sum(MedicineLungsPerServing[i] * Servings[i] for i in range(NumSyrups)) 
+    sum(MedicineLungsPerServing[i] * Servings[i] for i in range(NumSyrups))
     >= MinMedicineLungs
 )
 for i in range(NumSyrups):
@@ -51,7 +51,7 @@ for i in range(NumSyrups):
 
 ### Define the objective
 
-
+model.setObjective(quicksum(SugarPerServing[i] * Servings[i] for i in range(NumSyrups)), GRB.MINIMIZE)
 
 
 ### Optimize the model

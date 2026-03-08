@@ -35,23 +35,31 @@ MinDoseTumor = data["MinDoseTumor"] # shape: [], definition: Minimum required do
 
 ### Define the variables
 
-Beam1Minutes = model.addVar(vtype=GRB.CONTINUOUS, name="Beam1Minutes")
+minutesBeam1 = model.addVar(vtype=GRB.CONTINUOUS, name="minutesBeam1")
 
-Beam2Minutes = model.addVar(vtype=GRB.CONTINUOUS, name="Beam2Minutes")
+minutesBeam2 = model.addVar(vtype=GRB.CONTINUOUS, name="minutesBeam2")
 
 
 
 ### Define the constraints
 
-model.addConstr(DoseRateBeam1BenignSkin * Beam1Minutes + DoseRateBeam2BenignSkin * Beam2Minutes <= MaxDoseSkin)
-model.addConstr(DoseRateBeam1Tumor * Beam1Minutes + DoseRateBeam2Tumor * Beam2Minutes >= MinDoseTumor)
-model.addConstr(Beam1Minutes >= 0)
-model.addConstr(Beam2Minutes >= 0)
+model.addConstr(
+    DoseRateBeam1BenignSkin * minutesBeam1 +
+    DoseRateBeam2BenignSkin * minutesBeam2
+    <= MaxDoseSkin
+)
+model.addConstr(DoseRateBeam1Tumor * minutesBeam1 + DoseRateBeam2Tumor * minutesBeam2 >= MinDoseTumor)
+model.addConstr(minutesBeam1 >= 0)
+model.addConstr(minutesBeam2 >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(
+    DoseRateBeam1BenignPancreas * minutesBeam1 +
+    DoseRateBeam2BenignPancreas * minutesBeam2,
+    GRB.MINIMIZE
+)
 
 
 ### Optimize the model

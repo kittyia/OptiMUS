@@ -1,6 +1,6 @@
 import os
 import numpy as np
-import json
+import json 
 from gurobipy import Model, GRB, quicksum
 
 
@@ -15,10 +15,15 @@ with open("data.json", "r") as f:
 NumVehicleTypes = data["NumVehicleTypes"]
 
 TransportCapacity = data["TransportCapacity"]
+
 Pollution = data["Pollution"]
+
 Earnings = data["Earnings"]
+
 MaxVehiclePercentage = data["MaxVehiclePercentage"]
+
 PollutionCap = data["PollutionCap"]
+
 MinTransportCapacity = data["MinTransportCapacity"]
 
 
@@ -29,29 +34,24 @@ NumVehicles = model.addVars(NumVehicleTypes, vtype=GRB.INTEGER, name="NumVehicle
 
 ### Define the constraints
 
-# At most 25% (or given percentage) of total vehicles can be of each type (as specified)
-model.addConstr(
-    NumVehicles[0] <= MaxVehiclePercentage[0] *
-    quicksum(NumVehicles[t] for t in range(NumVehicleTypes))
-)
-
-# Pollution constraint
 model.addConstr(
     quicksum(Pollution[i] * NumVehicles[i] for i in range(NumVehicleTypes)) <= PollutionCap
 )
 
-# Minimum transport capacity constraint
 model.addConstr(
-    quicksum(TransportCapacity[i] * NumVehicles[i] for i in range(NumVehicleTypes))
-    >= MinTransportCapacity
+    quicksum(TransportCapacity[i] * NumVehicles[i] for i in range(NumVehicleTypes)) >= MinTransportCapacity
 )
 
-# Non-negativity (redundant since INTEGER defaults to lb=0, but kept for clarity)
+# At most 25% of vehicles can be motorcycles (assumed index 0)
+model.addConstr(
+    NumVehicles[0] <= 0.25 * quicksum(NumVehicles[i] for i in range(NumVehicleTypes))
+)
+
 for i in range(NumVehicleTypes):
     model.addConstr(NumVehicles[i] >= 0)
 
 
-### Define the objective (maximize earnings)
+### Define the objective
 
 model.setObjective(
     quicksum(Earnings[i] * NumVehicles[i] for i in range(NumVehicleTypes)),

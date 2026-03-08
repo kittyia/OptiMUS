@@ -44,15 +44,14 @@ LargeCratesUsed = model.addVar(vtype=GRB.INTEGER, name="LargeCratesUsed")
 model.addConstr(SmallCratesUsed >= MinimumSmallToLargeRatio * LargeCratesUsed)
 model.addConstr(SmallCratesUsed + LargeCratesUsed <= MaxTotalCrates)
 model.addConstr(LargeCratesUsed >= MinLargeCrates)
-# SmallCratesUsed is defined as an integer variable when created (vtype=GRB.INTEGER),
-# so no additional constraint is required to enforce integrality.
-# LargeCratesUsed is defined as an integer variable (vtype=GRB.INTEGER),
-# so no additional constraint is required to enforce integrality.
 
 
 ### Define the objective
 
-del.setObjective(SmallCrateCapacity * SmallCratesUsed + LargeCrateCapacity * LargeCratesUsed, GRB.MAXIMIZE
+model.setObjective(
+    SmallCrateCapacity * SmallCratesUsed + LargeCrateCapacity * LargeCratesUsed,
+    GRB.MAXIMIZE
+)
 
 
 ### Optimize the model

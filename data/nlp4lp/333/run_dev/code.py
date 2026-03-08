@@ -31,16 +31,20 @@ NumPort = data["NumPort"] # shape: ['J'], definition: Container requirement in p
 
 ### Define the variables
 
-number = model.addVars(I, J, vtype=GRB.INTEGER, name="number")
+number = model.addVars(I, J, vtype=GRB.CONTINUOUS, name="number")
 
 
 
 ### Define the constraints
 
 for i in range(I):
-    model.addConstr(sum(number[i, j] for j in range(J)) <= NumDepot[i])
+    model.addConstr(
+        sum(number[i, j] for j in range(J)) <= NumDepot[i]
+    )
 for j in range(J):
-    model.addConstr(sum(number[i, j] for i in range(I)) == NumPort[j])
+    model.addConstr(
+        sum(number[i, j] for i in range(I)) == NumPort[j]
+    )
 for i in range(I):
     for j in range(J):
         model.addConstr(number[i, j] >= 0)
@@ -49,7 +53,7 @@ for i in range(I):
 ### Define the objective
 
 model.setObjective(
-    quicksum((Price * Distance[i][j] / 2) * number[i, j]
+    quicksum((Price * Distance[i][j] / 2.0) * number[i, j]
              for i in range(I)
              for j in range(J)),
     GRB.MINIMIZE

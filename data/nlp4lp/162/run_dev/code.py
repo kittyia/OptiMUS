@@ -33,25 +33,24 @@ TotalChickens = data["TotalChickens"] # shape: [], definition: Total number of c
 
 ### Define the variables
 
-busTrips = model.addVar(vtype=GRB.INTEGER, name="busTrips")
+BusTrips = model.addVar(vtype=GRB.INTEGER, name="BusTrips")
 
-carTrips = model.addVar(vtype=GRB.INTEGER, name="carTrips")
+CarTrips = model.addVar(vtype=GRB.INTEGER, name="CarTrips")
 
 
 
 ### Define the constraints
 
-model.addConstr(BusCapacity * busTrips + CarCapacity * carTrips >= TotalChickens)
-model.addConstr(busTrips <= MaxBusTrips)
-model.addConstr(carTrips >= 1.5 * busTrips)
-model.addConstr(busTrips >= 0)
-# No additional constraints are needed here because integrality
-# is enforced when defining the variables with vtype=GRB.INTEGER.
+model.addConstr(BusCapacity * BusTrips + CarCapacity * CarTrips >= TotalChickens)
+model.addConstr(BusTrips <= MaxBusTrips)
+model.addConstr(CarTrips >= MinCarTripPercentage * (BusTrips + CarTrips))
+model.addConstr(BusTrips >= 0)
+model.addConstr(CarTrips >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(BusTripTime * BusTrips + CarTripTime * CarTrips, GRB.MINIMIZE)
 
 
 ### Optimize the model

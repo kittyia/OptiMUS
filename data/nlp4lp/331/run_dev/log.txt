@@ -1,9 +1,9 @@
 ----
 [
-    "Sum of the amounts of all minerals melted plus the amount of directly added manganese must equal the total steel quantity to be produced",
-    "The percentage of silicon in the final steel, computed as the total silicon contributed by all minerals divided by the total steel quantity, must be between the minimum and maximum silicon percentages required",
-    "The percentage of manganese in the final steel, computed as the total manganese contributed by all minerals plus the directly added manganese divided by the total steel quantity, must be greater than or equal to the required minimum manganese percentage",
-    "The amount of each mineral melted and the amount of directly added manganese must be non-negative"
+    "Sum of the amounts of all minerals melted plus the amount of directly added manganese must equal the required steel quantity",
+    "The total manganese content from minerals and directly added manganese divided by the steel quantity must be at least the required manganese percentage",
+    "The total silicon content from minerals divided by the steel quantity must be between the minimum and maximum required silicon percentages",
+    "All decision variables (mineral amounts and directly added manganese) must be non-negative"
 ]
 ----
 +++++++++++++++++++
@@ -124,7 +124,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: Sum of the amounts of all minerals melted plus the amount of directly added manganese must equal the total steel quantity to be produced
+Consider this potential constraint: Sum of the amounts of all minerals melted plus the amount of directly added manganese must equal the required steel quantity
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -134,37 +134,39 @@ Consider this potential constraint: Sum of the amounts of all minerals melted pl
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this **is definitely a necessary constraint**.
+Yes, this **is definitely a constraint**, and it should be explicitly modeled.
 
-### Why?
+### Reasoning
 
-- The foundry must produce exactly `n_steel_quant` tons of steel.
-- Steel is produced from:
-  - Melted minerals (decision variables `amount_k`)
-  - Directly added manganese (`num_mang`)
-- There are no other material inputs mentioned.
-- Therefore, total material input must equal total steel output.
+- The foundry must produce exactly `n_steel_quant` tons of steel (the order is fixed).
+- Steel is produced by:
+  - Melting selected amounts of minerals  
+  - Directly adding manganese  
 
-This is a classic **mass balance constraint**, and it is essential in blending/production LP models.
+There is no indication of:
+- Material losses,
+- Scrap,
+- Additional inputs,
+- Or any nonlinear transformation of mass.
 
-Mathematically:
+Thus, this is a **mass balance constraint**:
 
 \[
-\sum_{k=1}^{K} amount_k + num\_mang = n\_steel\_quant
+\sum_{k=1}^{K} \text{amount}_k + \text{num\_mang} = \text{SteelQuantity}
 \]
 
 Without this constraint:
-- The model could produce less or more than the required steel quantity.
-- The composition constraints (percent Mn and Si) would not be properly anchored to the required production amount.
-- The revenue term (which depends on total steel sold) would become inconsistent.
+- The model could produce less or more steel than required.
+- The silicon and manganese percentage constraints would not be properly normalized.
+- Profit maximization could become unbounded or unrealistic.
 
-Since the problem explicitly states the foundry **receives a specific order for** `n_steel_quant` tons, production quantity is fixed — not a decision variable.
+This is a **core structural constraint** in blending problems and is essential for correctness.
 
 ### Conclusion
 
-✅ This is absolutely a required modeling constraint.  
+✅ It is a real and necessary constraint.  
 ✅ It must be explicitly included in the LP formulation.  
-✅ I am fully confident about this.
+✅ Confidence is maximal.
 
 **5 OUT OF 5**
 +--+
@@ -286,7 +288,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: The percentage of silicon in the final steel, computed as the total silicon contributed by all minerals divided by the total steel quantity, must be between the minimum and maximum silicon percentages required
+Consider this potential constraint: The total manganese content from minerals and directly added manganese divided by the steel quantity must be at least the required manganese percentage
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -296,41 +298,199 @@ Consider this potential constraint: The percentage of silicon in the final steel
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is **definitely a constraint**, and it must be explicitly modeled in the LP formulation.
+Yes, this is definitely a constraint and must be explicitly modeled.
+
+The problem clearly states:
+
+> “This steel must contain at least **mn_percent** percentage of manganese (Mn).”
+
+Since manganese can come from:
+- the melted minerals (each contributing according to its manganese content), and  
+- the directly added manganese,
+
+the total manganese in the final steel is:
+
+\[
+\sum_{k=1}^{K} (\text{ManganeseContent}_k \cdot \text{amount}_k) + \text{num\_mang}
+\]
+
+Because the total steel produced is fixed at **SteelQuantity**, the manganese percentage in the final product is:
+
+\[
+\frac{\sum_{k} (\text{ManganeseContent}_k \cdot \text{amount}_k) + \text{num\_mang}}{\text{SteelQuantity}}
+\]
+
+The requirement “at least mn_percent” translates directly into the constraint:
+
+\[
+\frac{\sum_{k} (\text{ManganeseContent}_k \cdot \text{amount}_k) + \text{num\_mang}}{\text{SteelQuantity}} \ge \text{ManganesePercent}
+\]
+
+Since SteelQuantity is a constant parameter, this is a linear constraint (after multiplying both sides by SteelQuantity).
+
+This is a core feasibility constraint — without it, the steel would not meet the required specification. It absolutely must be included in the LP formulation.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+PROBLEM INFO:
+
+- A foundry receives a specific order for \var{n_steel_quant} tons of steel. 
+- This steel must meet the following characteristics: it must contain at least \var{mn_percent} percentage of manganese (Mn) while its percentage of silicon (SI) must be between \var{si_min} and \var{si_max}.
+- To cast this steel, the foundry has limited quantities of several types of minerals.
+- The contents expressed in percentage per mineral \var{k} are \var{contsi_{k}} for Si and \var{contmn_{k}} for Mn.
+- The process for producing steel is such that direct addition of Mn is possible.
+- This Manganese is available at a price of \var{mang_price} million euros per ton. 
+- As for the minerals, it costs \var{cost_{k}} million euros per thousand tons for mineral \var{k}.
+- The foundry plans to sell the steel produced at \var{sell_price} million euros per ton.
+- The cost of smelting a ton of mineral is \var{melt_price} million euros.
+
+INPUT FORMAT:
+
+{
+	"n_steel_quant": n_steel_quant,
+	"mn_percent": mn_percent,
+	"si_min": si_min,
+	"si_max": si_max,
+	"contsi": [contsi_{k} for k in 1,...,K]
+	"contmn": [contmn_{k} for k in 1,...,K]
+	"mang_price": mang_price,
+	"cost": [cost_{k} for k in 1,...,K]
+	"sell_price": sell_price,
+	"melt_price": melt_price
+}
+
+OBJECTIVE: How should the manufacture manage the steel to maximize profit?
+
+OUTPUT INFO:
+
+- \var{amount} represents the amount of each mineral melted
+- \var{num_mang} represents the amount of Manganese directly added
+
+OUTPUT FORMAT:
+
+{
+	"amount": [amount_{k} for k in 1,...,K]
+	"num_mang": [num_mang]
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "SteelQuantity": {
+        "definition": "Amount of steel to produce in tons",
+        "shape": [],
+        "type": "int"
+    },
+    "ManganesePercent": {
+        "definition": "Percentage of manganese in the steel required",
+        "shape": [],
+        "type": "float"
+    },
+    "SiliconMinPercent": {
+        "definition": "Minimum percentage of silicon in the steel required",
+        "shape": [],
+        "type": "float"
+    },
+    "SiliconMaxPercent": {
+        "definition": "Maximum percentage of silicon in the steel allowed",
+        "shape": [],
+        "type": "float"
+    },
+    "NumMinerals": {
+        "definition": "Number of different types of minerals available",
+        "shape": [],
+        "type": "int"
+    },
+    "SiliconContent": {
+        "definition": "Silicon content in the k-th stock",
+        "shape": [
+            "NumMinerals"
+        ],
+        "type": "string"
+    },
+    "ManganeseContent": {
+        "definition": "Manganese content in the k-th stock",
+        "shape": [
+            "NumMinerals"
+        ],
+        "type": "string"
+    },
+    "ManganesePrice": {
+        "definition": "Price of manganese per ton",
+        "shape": [],
+        "type": "float"
+    },
+    "MaterialCost": {
+        "definition": "Cost of the k-th stock material per ton",
+        "shape": [
+            "NumMinerals"
+        ],
+        "type": "string"
+    },
+    "SellingPrice": {
+        "definition": "Selling price of steel per ton",
+        "shape": [],
+        "type": "float"
+    },
+    "MeltingPrice": {
+        "definition": "Price to melt one ton of steel",
+        "shape": [],
+        "type": "float"
+    }
+}
+
+
+Consider this potential constraint: The total silicon content from minerals divided by the steel quantity must be between the minimum and maximum required silicon percentages
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is definitely a constraint and it must be explicitly modeled.
 
 ### Why?
 
 The problem statement clearly says:
 
-> "its percentage of silicon (Si) must be between si_min and si_max."
+> *“its percentage of silicon (Si) must be between* \( \text{si\_min} \) *and* \( \text{si\_max} \).”*
 
 This is a **quality requirement** on the final steel composition. Since:
 
-- Steel production quantity is fixed at `n_steel_quant`,
-- Silicon content comes only from the melted minerals (no direct Si addition is mentioned),
+- Silicon comes only from the minerals (no direct silicon addition is mentioned),
+- The total steel quantity is fixed at `n_steel_quant`,
+- Each mineral contributes silicon proportionally to its content,
 
-the silicon percentage in the final steel is:
-
-\[
-\frac{\sum_k (\text{amount}_k \cdot \text{contsi}_k)}{\text{n\_steel\_quant}}
-\]
-
-This must satisfy:
+the silicon requirement must be enforced through a constraint of the form:
 
 \[
-\text{si\_min} \;\le\; 
-\frac{\sum_k (\text{amount}_k \cdot \text{contsi}_k)}{\text{n\_steel\_quant}}
-\;\le\; \text{si\_max}
+\text{si\_min} 
+\;\le\;
+\frac{\sum_k \text{contsi}_k \cdot \text{amount}_k}{\text{n\_steel\_quant}}
+\;\le\;
+\text{si\_max}
 \]
 
-Since `n_steel_quant` is a constant parameter, this is a **linear constraint** and must be included in the LP.
+This is a standard blending constraint and is essential for feasibility. Without it, the model could produce steel that violates the required silicon specifications.
 
-### Conclusion
+Therefore:
 
-- ✅ It is explicitly required by the problem statement.
-- ✅ It enforces a chemical composition requirement.
-- ✅ It is linear and directly modelable.
-- ✅ It is essential for feasibility.
+- ✅ It is absolutely a constraint.
+- ✅ It must be explicitly included in the LP formulation.
+- ✅ It is central to the problem structure.
 
 **5 OUT OF 5**
 +--+
@@ -452,7 +612,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: The percentage of manganese in the final steel, computed as the total manganese contributed by all minerals plus the directly added manganese divided by the total steel quantity, must be greater than or equal to the required minimum manganese percentage
+Consider this potential constraint: All decision variables (mineral amounts and directly added manganese) must be non-negative
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -462,180 +622,18 @@ Consider this potential constraint: The percentage of manganese in the final ste
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is definitely a constraint and must be explicitly included in the LP formulation.
+Yes, this **is truly a constraint**, and it should definitely be included in the LP formulation.
 
 ### Why?
 
-The problem statement clearly specifies:
-
-> The steel must contain **at least** `mn_percent` percentage of manganese (Mn).
-
-This is a **quality requirement** on the final product. Therefore, the manganese content in the produced steel must satisfy:
-
-\[
-\frac{\sum_{k=1}^{K} (\text{ManganeseContent}_k \cdot \text{amount}_k) + \text{num\_mang}}{\text{SteelQuantity}} \;\ge\; \text{ManganesePercent}
-\]
-
-This directly enforces the required minimum manganese proportion in the final steel mixture.
-
-Since:
-- The steel quantity is fixed,
-- Manganese comes from both minerals and direct addition,
-- The requirement is stated explicitly in the problem,
-
-this is unquestionably a necessary modeling constraint.
-
-There is no ambiguity here — without this constraint, the steel might not meet the required specification.
-
-### Confidence Level
-
-✅ This is clearly a required constraint in the LP model.
-
-**5 OUT OF 5**
-+--+
----
-The confidence score is 5, which is high enough.
----
-+--+
-
-You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
-
------
-PROBLEM TYPE: LP
-PROBLEM INFO:
-
-- A foundry receives a specific order for \var{n_steel_quant} tons of steel. 
-- This steel must meet the following characteristics: it must contain at least \var{mn_percent} percentage of manganese (Mn) while its percentage of silicon (SI) must be between \var{si_min} and \var{si_max}.
-- To cast this steel, the foundry has limited quantities of several types of minerals.
-- The contents expressed in percentage per mineral \var{k} are \var{contsi_{k}} for Si and \var{contmn_{k}} for Mn.
-- The process for producing steel is such that direct addition of Mn is possible.
-- This Manganese is available at a price of \var{mang_price} million euros per ton. 
-- As for the minerals, it costs \var{cost_{k}} million euros per thousand tons for mineral \var{k}.
-- The foundry plans to sell the steel produced at \var{sell_price} million euros per ton.
-- The cost of smelting a ton of mineral is \var{melt_price} million euros.
-
-INPUT FORMAT:
-
-{
-	"n_steel_quant": n_steel_quant,
-	"mn_percent": mn_percent,
-	"si_min": si_min,
-	"si_max": si_max,
-	"contsi": [contsi_{k} for k in 1,...,K]
-	"contmn": [contmn_{k} for k in 1,...,K]
-	"mang_price": mang_price,
-	"cost": [cost_{k} for k in 1,...,K]
-	"sell_price": sell_price,
-	"melt_price": melt_price
-}
-
-OBJECTIVE: How should the manufacture manage the steel to maximize profit?
-
-OUTPUT INFO:
-
-- \var{amount} represents the amount of each mineral melted
-- \var{num_mang} represents the amount of Manganese directly added
-
-OUTPUT FORMAT:
-
-{
-	"amount": [amount_{k} for k in 1,...,K]
-	"num_mang": [num_mang]
-}
------
-
-Here is a list of parameters that someone has extracted from the description:
-
-{
-    "SteelQuantity": {
-        "definition": "Amount of steel to produce in tons",
-        "shape": [],
-        "type": "int"
-    },
-    "ManganesePercent": {
-        "definition": "Percentage of manganese in the steel required",
-        "shape": [],
-        "type": "float"
-    },
-    "SiliconMinPercent": {
-        "definition": "Minimum percentage of silicon in the steel required",
-        "shape": [],
-        "type": "float"
-    },
-    "SiliconMaxPercent": {
-        "definition": "Maximum percentage of silicon in the steel allowed",
-        "shape": [],
-        "type": "float"
-    },
-    "NumMinerals": {
-        "definition": "Number of different types of minerals available",
-        "shape": [],
-        "type": "int"
-    },
-    "SiliconContent": {
-        "definition": "Silicon content in the k-th stock",
-        "shape": [
-            "NumMinerals"
-        ],
-        "type": "string"
-    },
-    "ManganeseContent": {
-        "definition": "Manganese content in the k-th stock",
-        "shape": [
-            "NumMinerals"
-        ],
-        "type": "string"
-    },
-    "ManganesePrice": {
-        "definition": "Price of manganese per ton",
-        "shape": [],
-        "type": "float"
-    },
-    "MaterialCost": {
-        "definition": "Cost of the k-th stock material per ton",
-        "shape": [
-            "NumMinerals"
-        ],
-        "type": "string"
-    },
-    "SellingPrice": {
-        "definition": "Selling price of steel per ton",
-        "shape": [],
-        "type": "float"
-    },
-    "MeltingPrice": {
-        "definition": "Price to melt one ton of steel",
-        "shape": [],
-        "type": "float"
-    }
-}
-
-
-Consider this potential constraint: The amount of each mineral melted and the amount of directly added manganese must be non-negative
-
-
-- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
-- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
-    
-
-Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
-
-----
-Yes, this is indeed a constraint, and it should be explicitly modeled in the LP formulation.
-
-### Reasoning
-
-The decision variables in this problem are:
+The decision variables are:
 
 - \( \text{amount}_k \): tons of mineral \(k\) melted  
 - \( \text{num\_mang} \): tons of manganese directly added  
 
-These represent **physical quantities of material**. In reality:
+Both represent **physical quantities**. Negative tons of material or negative manganese addition are physically meaningless in this context.
 
-- You cannot melt a negative quantity of mineral.
-- You cannot add a negative quantity of manganese.
-
-Therefore, these variables must satisfy:
+Even if non-negativity is often assumed by default in LP solvers, it is still a **modeling constraint** and must be explicitly defined in the mathematical formulation:
 
 \[
 \text{amount}_k \ge 0 \quad \forall k
@@ -644,16 +642,19 @@ Therefore, these variables must satisfy:
 \text{num\_mang} \ge 0
 \]
 
-### Modeling Perspective
+There is nothing in the problem statement suggesting that:
+- minerals can be “removed,”
+- manganese can be extracted negatively,
+- or reverse flow is possible.
 
-In linear programming, unless otherwise specified, variables may be unrestricted in sign. So if we do not explicitly impose non-negativity constraints, the solver could assign negative values, which would be physically meaningless and economically distort the model (e.g., artificially increasing profit).
-
-Thus, these are standard but **essential feasibility constraints** in the formulation.
+Therefore, non-negativity is both:
+- **structurally required**, and  
+- **physically necessary**.
 
 ### Conclusion
 
-✅ This is definitely a real and necessary constraint.  
-✅ It must be explicitly included in the LP formulation.  
+✅ This is absolutely a real constraint.  
+✅ It must be included in the LP model.  
 
 **5 OUT OF 5**
 +--+
@@ -676,12 +677,12 @@ Extracting constraint formulations
         "amount": {
             "shape": "[NumMinerals]",
             "type": "continuous",
-            "definition": "Amount of mineral k melted in tons"
+            "definition": "Amount of mineral k melted (in tons)"
         },
         "numMang": {
-            "shape": [],
+            "shape": "[]",
             "type": "continuous",
-            "definition": "Amount of manganese directly added in tons"
+            "definition": "Amount of manganese directly added (in tons)"
         }
     },
     "AUXILIARY CONSTRAINTS": []
@@ -690,45 +691,45 @@ Extracting constraint formulations
 ----
 EXTRACTED ITEMS
 $\\sum_{k=1}^{NumMinerals} amount_k + numMang = SteelQuantity$
-{'amount': {'shape': '[NumMinerals]', 'type': 'continuous', 'definition': 'Amount of mineral k melted in tons'}, 'numMang': {'shape': [], 'type': 'continuous', 'definition': 'Amount of manganese directly added in tons'}}
+{'amount': {'shape': '[NumMinerals]', 'type': 'continuous', 'definition': 'Amount of mineral k melted (in tons)'}, 'numMang': {'shape': '[]', 'type': 'continuous', 'definition': 'Amount of manganese directly added (in tons)'}}
 []
 ----
 ----
 {
-    "FORMULATION": "$SiliconMinPercent \\cdot SteelQuantity \\leq \\sum_{k=1}^{NumMinerals} SiliconContent_k \\cdot amount_k \\leq SiliconMaxPercent \\cdot SteelQuantity$",
+    "FORMULATION": "$\\sum_{k=1}^{NumMinerals} ManganeseContent_k \\cdot amount_k + numMang \\geq ManganesePercent \\cdot SteelQuantity$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$SiliconMinPercent \\cdot SteelQuantity \\leq \\sum_{k=1}^{NumMinerals} SiliconContent_k \\cdot amount_k \\leq SiliconMaxPercent \\cdot SteelQuantity$
+$\\sum_{k=1}^{NumMinerals} ManganeseContent_k \\cdot amount_k + numMang \\geq ManganesePercent \\cdot SteelQuantity$
 {}
 []
 ----
 ----
 {
-    "FORMULATION": "$\\sum_{k=1}^{NumMinerals} ManganeseContent[k] \\cdot amount[k] + numMang \\geq ManganesePercent \\cdot SteelQuantity$",
+    "FORMULATION": "$\\frac{SiliconMinPercent}{100} \\cdot SteelQuantity \\leq \\sum_{k=1}^{NumMinerals} \\frac{SiliconContent[k]}{100} \\cdot amount[k] \\leq \\frac{SiliconMaxPercent}{100} \\cdot SteelQuantity$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$\\sum_{k=1}^{NumMinerals} ManganeseContent[k] \\cdot amount[k] + numMang \\geq ManganesePercent \\cdot SteelQuantity$
+$\\frac{SiliconMinPercent}{100} \\cdot SteelQuantity \\leq \\sum_{k=1}^{NumMinerals} \\frac{SiliconContent[k]}{100} \\cdot amount[k] \\leq \\frac{SiliconMaxPercent}{100} \\cdot SteelQuantity$
 {}
 []
 ----
 ----
 {
-    "FORMULATION": "$\\forall k = 1, \\dots, \\text{NumMinerals},\\; amount[k] \\ge 0 \\;\\; \\text{and} \\;\\; numMang \\ge 0$",
+    "FORMULATION": "$\\forall k = 1, \\dots, NumMinerals,\\; amount[k] \\ge 0 \\quad \\text{and} \\quad numMang \\ge 0$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$\\forall k = 1, \\dots, \\text{NumMinerals},\\; amount[k] \\ge 0 \\;\\; \\text{and} \\;\\; numMang \\ge 0$
+$\\forall k = 1, \\dots, NumMinerals,\\; amount[k] \\ge 0 \\quad \\text{and} \\quad numMang \\ge 0$
 {}
 []
 ----
@@ -740,13 +741,13 @@ CPU model: Intel(R) Xeon(R) Platinum, instruction set [SSE2|AVX|AVX2|AVX512]
 Thread count: 1 physical cores, 2 logical processors, using up to 2 threads
 
 Optimize a model with 8 rows, 4 columns and 18 nonzeros (Max)
-Model fingerprint: 0xe102f6d7
+Model fingerprint: 0x8b252ed6
 Model has 4 linear objective coefficients and an objective constant of -450
 Coefficient statistics:
-  Matrix range     [4e-01, 4e+00]
+  Matrix range     [6e-03, 1e+00]
   Objective range  [8e+00, 3e+01]
   Bounds range     [0e+00, 0e+00]
-  RHS range        [4e+02, 5e+03]
+  RHS range        [3e+01, 1e+03]
 
 Presolve removed 6 rows and 1 columns
 Presolve time: 0.00s

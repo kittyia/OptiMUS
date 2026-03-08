@@ -40,12 +40,17 @@ TechInvestment = model.addVar(vtype=GRB.CONTINUOUS, name="TechInvestment")
 model.addConstr(ClothingInvestment + TechInvestment == TotalInvestment)
 model.addConstr(ClothingInvestment >= ClothingToTechRatio * TechInvestment)
 model.addConstr(TechInvestment <= MaxTechInvestment)
+model.addConstr(ClothingInvestment >= 0)
 model.addConstr(TechInvestment >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(
+    ClothingInterestRate * ClothingInvestment + 
+    TechInterestRate * TechInvestment,
+    GRB.MAXIMIZE
+)
 
 
 ### Optimize the model

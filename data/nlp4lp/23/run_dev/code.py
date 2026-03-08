@@ -37,19 +37,17 @@ NumDesks = model.addVars(NumDeskTypes, vtype=GRB.INTEGER, name="NumDesks")
 
 ### Define the constraints
 
-model.addConstr(
-    sum(Price[i] * NumDesks[i] for i in range(NumDeskTypes)) <= MaxBudget
-)
+model.addConstr(sum(Price[i] * NumDesks[i] for i in range(NumDeskTypes)) <= MaxBudget)
 model.addConstr(
     sum(Space[i] * NumDesks[i] for i in range(NumDeskTypes)) <= MaxSpace
 )
-for i in range(NumDeskTypes):
+for i in range(NumDeskTypes):  
     model.addConstr(NumDesks[i] >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(quicksum(Seats[i] * NumDesks[i] for i in range(NumDeskTypes)), GRB.MAXIMIZE)
 
 
 ### Optimize the model

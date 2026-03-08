@@ -33,24 +33,27 @@ TotalPeople = data["TotalPeople"] # shape: [], definition: Total number of peopl
 
 ### Define the variables
 
-NumberOfLargeUnits = model.addVar(vtype=GRB.INTEGER, name="NumberOfLargeUnits")
+LargeUnits = model.addVar(vtype=GRB.INTEGER, name="LargeUnits")
 
-NumberOfSmallUnits = model.addVar(vtype=GRB.INTEGER, name="NumberOfSmallUnits")
+SmallUnits = model.addVar(vtype=GRB.INTEGER, name="SmallUnits")
 
 
 
 ### Define the constraints
 
-model.addConstr(CapacityLargeUnit * NumberOfLargeUnits + CapacitySmallUnit * NumberOfSmallUnits >= TotalPeople)
-model.addConstr(NumberOfSmallUnits >= MinSmallUnits)
-model.addConstr(NumberOfLargeUnits >= 3 * NumberOfSmallUnits)
-model.addConstr(NumberOfLargeUnits >= 0)
-model.addConstr(NumberOfSmallUnits >= 0)
+model.addConstr(CapacityLargeUnit * LargeUnits + CapacitySmallUnit * SmallUnits >= TotalPeople)
+model.addConstr(SmallUnits >= MinSmallUnits)
+model.addConstr((1 - MinLargeUnitProportion) * LargeUnits - MinLargeUnitProportion * SmallUnits >= 0)
+model.addConstr(LargeUnits >= 0)
+model.addConstr(SmallUnits >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(
+    ParkingLargeUnit * LargeUnits + ParkingSmallUnit * SmallUnits,
+    GRB.MINIMIZE
+)
 
 
 ### Optimize the model

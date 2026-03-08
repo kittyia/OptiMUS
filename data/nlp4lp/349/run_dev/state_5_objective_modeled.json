@@ -49,33 +49,33 @@
         }
     },
     "objective": {
-        "description": "\"Maximize the total monthly profit from producing and selling batches of parts, accounting for machine operating costs and setup times.\"",
-        "formulation": "$\\max \\left( \\sum_{p=1}^{P} Prices_{p}\\, batches_{p} \\;-\\; \\sum_{m=1}^{M} MachineCosts_{m} \\left( \\sum_{p=1}^{P} TimeRequired_{m,p}\\, batches_{p} \\right) \\;-\\; MachineCosts_{1} \\sum_{p=1}^{P} SetupTime_{p}\\, setupFlags_{p} \\right)$"
+        "description": "\"The goal is to maximize the total monthly profit from producing and selling batches of parts, calculated as total sales revenue minus machine operating and setup costs.\"",
+        "formulation": "$\\max \\left( \\sum_{p=1}^{P} Prices_{p}\\, batches_{p} \\;-\\; \\sum_{m=1}^{M} \\sum_{p=1}^{P} MachineCosts_{m}\\, TimeRequired_{m,p}\\, batches_{p} \\;-\\; \\sum_{p=1}^{P} MachineCosts_{1}\\, SetupTime_{p}\\, setupFlags_{p} \\right)$"
     },
     "constraints": [
         {
-            "description": "For each machine m \u2260 1: sum over all parts p of (TimeRequired[m,p] * batches_p) must be less than or equal to Availability[m]",
-            "formulation": "$\\\\forall m \\\\in \\\\{2, \\\\dots, M\\\\}, \\\\; \\\\sum_{p=1}^{P} TimeRequired_{m,p} \\\\cdot batches_p \\\\leq Availability_m$",
+            "description": "For each machine m \u2260 1, the total processing time used by all batches on machine m cannot exceed its availability: sum over p of (TimeRequired[m,p] * batches_p) \u2264 Availability[m]",
+            "formulation": "$\\\\forall m = 2, \\\\dots, M:\\\\; \\\\sum_{p=1}^{P} TimeRequired_{m,p} \\\\cdot batches_p \\\\leq Availability_m$",
             "code": null
         },
         {
-            "description": "For machine 1: sum over all parts p of (TimeRequired[1,p] * batches_p + SetupTime[p] * setup_flags_p) must be less than or equal to Availability[1]",
-            "formulation": "$\\\\sum_{p=1}^{P} \\\\left( TimeRequired[1,p] \\\\cdot batches[p] + SetupTime[p] \\\\cdot setupFlags[p] \\\\right) \\\\leq Availability[1]$",
+            "description": "For machine 1, the total processing time including setup times cannot exceed its availability: sum over p of (TimeRequired[1,p] * batches_p + SetupTime[p] * setup_flag_p) \u2264 Availability[1]",
+            "formulation": "$\\\\sum_{p=1}^{P} \\\\left( \\\\text{TimeRequired}_{1,p} \\\\cdot batches_p + \\\\text{SetupTime}_p \\\\cdot setupFlags_p \\\\right) \\\\leq \\\\text{Availability}_1$",
             "code": null
         },
         {
-            "description": "For each part p: batches_p must be less than or equal to a sufficiently large constant times setup_flags_p (linking constraint between production and setup decision)",
-            "formulation": "$\\\\forall p = 1, \\\\dots, P:\\\\; batches[p] \\\\leq BigM \\\\cdot setupFlags[p]$",
-            "code": null
-        },
-        {
-            "description": "batches_p must be a nonnegative integer for all p",
+            "description": "For each part p, batches_p must be a non-negative integer",
             "formulation": "$\\\\forall p = 1, \\\\dots, P,\\\\; batches_p \\\\in \\\\mathbb{Z}_{\\\\ge 0}$",
             "code": null
         },
         {
-            "description": "setup_flags_p must be binary (0 or 1) for all p",
-            "formulation": "$\\\\forall p = 1, \\\\dots, P, \\\\; setupFlags_p \\\\in \\\\{0,1\\\\}$",
+            "description": "For each part p, setup_flag_p is a binary variable (0 or 1)",
+            "formulation": "$\\\\forall p = 1, \\\\dots, P:\\\\; setupFlags_p \\\\in \\\\{0,1\\\\}$",
+            "code": null
+        },
+        {
+            "description": "For each part p, batches_p can only be positive if setup_flag_p = 1 (linking constraint between batches_p and setup_flag_p)",
+            "formulation": "$\\\\forall p = 1, \\\\dots, P:\\\\; batches_p \\\\leq M \\\\cdot setupFlags_p$",
             "code": null
         }
     ],
@@ -92,7 +92,7 @@
                 "P"
             ],
             "type": "binary",
-            "definition": "Binary variable equal to 1 if part p is set up on machine 1, and 0 otherwise"
+            "definition": "Binary variable equal to 1 if machine 1 is set up for part p, and 0 otherwise"
         }
     }
 }

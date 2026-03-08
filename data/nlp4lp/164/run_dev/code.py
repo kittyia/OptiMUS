@@ -46,13 +46,13 @@ LargeBins = model.addVar(vtype=GRB.INTEGER, name="LargeBins")
 model.addConstr(WorkersPerSmallBin * SmallBins + WorkersPerLargeBin * LargeBins <= TotalWorkers)
 model.addConstr(SmallBins == SmallBinToLargeBinRatio * LargeBins)
 model.addConstr(LargeBins >= MinimumLargeBins)
-# Integrality is enforced through variable type definitions (vtype=GRB.INTEGER),
-# so no additional model.addConstr() call is required here.
+model.addConstr(SmallBins >= 0)
+model.addConstr(LargeBins >= 0)
 
 
 ### Define the objective
 
-del.setObjective(CapacitySmallBin * SmallBins + CapacityLargeBin * LargeBins, GRB.MAXIMIZE
+model.setObjective(CapacitySmallBin * SmallBins + CapacityLargeBin * LargeBins, GRB.MAXIMIZE)
 
 
 ### Optimize the model

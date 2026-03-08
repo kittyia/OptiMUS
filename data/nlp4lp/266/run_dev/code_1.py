@@ -1,63 +1,49 @@
-import os
-import numpy as np
-import json
-from gurobipy import Model, GRB, quicksum
+import os  
+import numpy as np  
+import json  
+from gurobipy import Model, GRB, quicksum  
 
+model = Model("OptimizationProblem")  
 
-model = Model("OptimizationProblem")
+with open("data.json", "r") as f:  
+    data = json.load(f)  
 
-with open("data.json", "r") as f:
-    data = json.load(f)
+### Define the parameters  
 
+FiberSpinach = data["FiberSpinach"]  
+IronSpinach = data["IronSpinach"]  
+CaloriesSpinach = data["CaloriesSpinach"]  
+FiberSoybeans = data["FiberSoybeans"]  
+IronSoybeans = data["IronSoybeans"]  
+CaloriesSoybeans = data["CaloriesSoybeans"]  
+MinFiber = data["MinFiber"]  
+MinIron = data["MinIron"]  
 
-### Define the parameters
+### Define the variables  
 
-FiberSpinach = data["FiberSpinach"]
-IronSpinach = data["IronSpinach"]
-CaloriesSpinach = data["CaloriesSpinach"]
+cupsSpinach = model.addVar(vtype=GRB.CONTINUOUS, name="cupsSpinach", lb=0)  
+cupsSoybeans = model.addVar(vtype=GRB.CONTINUOUS, name="cupsSoybeans", lb=0)  
 
-FiberSoybeans = data["FiberSoybeans"]
-IronSoybeans = data["IronSoybeans"]
-CaloriesSoybeans = data["CaloriesSoybeans"]
+### Define the constraints  
 
-MinFiber = data["MinFiber"]
-MinIron = data["MinIron"]
+model.addConstr(FiberSpinach * cupsSpinach + FiberSoybeans * cupsSoybeans >= MinFiber)  
+model.addConstr(IronSpinach * cupsSpinach + IronSoybeans * cupsSoybeans >= MinIron)  
+model.addConstr(cupsSpinach >= cupsSoybeans)  
 
+### Define the objective  
 
-### Define the variables
+model.setObjective(CaloriesSpinach * cupsSpinach + CaloriesSoybeans * cupsSoybeans, GRB.MAXIMIZE)  
 
-SpinachCups = model.addVar(vtype=GRB.CONTINUOUS, name="SpinachCups")
-SoybeanCups = model.addVar(vtype=GRB.CONTINUOUS, name="SoybeanCups")
+### Optimize the model  
 
+model.optimize()  
 
-### Define the constraints
+### Output optimal objective value  
 
-model.addConstr(FiberSpinach * SpinachCups + FiberSoybeans * SoybeanCups >= MinFiber)
-model.addConstr(IronSpinach * SpinachCups + IronSoybeans * SoybeanCups >= MinIron)
-model.addConstr(SpinachCups >= SoybeanCups)
-model.addConstr(SpinachCups >= 0)
-model.addConstr(SoybeanCups >= 0)
-
-
-### Define the objective
-
-model.setObjective(
-    CaloriesSpinach * SpinachCups + CaloriesSoybeans * SoybeanCups,
-    GRB.MAXIMIZE
-)
-
-
-### Optimize the model
-
-model.optimize()
-
-
-### Output optimal objective value
-
-if model.status == GRB.OPTIMAL:
-    print("Optimal Objective Value: ", model.objVal)
-    with open("output_solution.txt", "w") as f:
-        f.write(str(model.objVal))
-else:
-    with open("output_solution.txt", "w") as f:
+if model.status == GRB.OPTIMAL:  
+    print("Optimal Objective Value: ", model.ObjVal)  
+    with open("output_solution.txt", "w") as f:  
+        f.write(str(model.ObjVal))  
+else:  
+    with open("output_solution.txt", "w") as f:  
         f.write(str(model.status))

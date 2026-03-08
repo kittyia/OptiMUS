@@ -64,54 +64,39 @@
         }
     },
     "objective": {
-        "description": "\"Maximize the total manpower requirement over five years\"",
+        "description": "Maximize the total manpower requirement over five years",
         "formulation": null,
         "code": null
     },
     "constraints": [
         {
-            "description": "Production of industry k in year t must not exceed the available productive capacity of industry k in year t",
-            "formulation": "$\\\\forall k = 1,\\\\dots,\\\\text{NumIndustries},\\\\; \\\\forall t = 1,\\\\dots,K:\\\\; produce[k,t] \\\\leq capacityLevel[k,t]$",
+            "description": "Production of each industry k in each year t must not exceed the available productive capacity of industry k in year t",
+            "formulation": "$\\\\forall k = 1, \\\\dots, \\\\text{NumIndustries}, \\\\; \\\\forall t = 1, \\\\dots, K:\\\\; produce_{k,t} \\\\leq capacityAvail_{k,t}$",
             "code": null
         },
         {
-            "description": "Available productive capacity of industry k in year t equals initial capacity plus all capacity additions decided in years up to t-2 (since capacity built in year \u03c4 becomes available in year \u03c4+2)",
-            "formulation": "$\\\\forall k=1,\\\\dots,\\\\text{NumIndustries},\\\\; \\\\forall t=1,\\\\dots,K:\\\\; capacityLevel_{k,t} = Capacity_k + \\\\sum_{\\\\tau=1}^{t-2} buildcapa_{k,\\\\tau}$",
+            "description": "Productive capacity of industry k in year t equals initial capacity plus all capacity increases decided in years up to t-2",
+            "formulation": "$\\\\forall k = 1,\\\\dots,\\\\text{NumIndustries},\\\\; \\\\forall t = 1,\\\\dots,K:\\\\; capacityAvail_{k,t} = Capacity_k + \\\\sum_{\\\\tau=1}^{t-2} buildcapa_{k,\\\\tau}$",
             "code": null
         },
         {
-            "description": "For each industry k and year t, total available stock equals stock carried over from year t-1 plus production in year t minus amounts used as intermediate inputs for production in year t+1 minus amounts used for capacity building in year t minus demand in year t (for t \u2265 1)",
-            "formulation": "$\\\\forall k,\\\\; stockhold[k,1] = Stock[k] + produce[k,1] - \\\\sum_{i=1}^{NumIndustries} InputOne[i,k] \\\\cdot produce[i,2] - \\\\sum_{i=1}^{NumIndustries} InputTwo[i,k] \\\\cdot buildcapa[i,1] - Demand[k]$ \\n\\n$\\\\forall k,\\\\; \\\\forall t = 2,\\\\dots,K-1,\\\\; stockhold[k,t] = stockhold[k,t-1] + produce[k,t] - \\\\sum_{i=1}^{NumIndustries} InputOne[i,k] \\\\cdot produce[i,t+1] - \\\\sum_{i=1}^{NumIndustries} InputTwo[i,k] \\\\cdot buildcapa[i,t] - Demand[k]$ \\n\\n$\\\\forall k,\\\\; stockhold[k,K] = stockhold[k,K-1] + produce[k,K] - \\\\sum_{i=1}^{NumIndustries} InputTwo[i,k] \\\\cdot buildcapa[i,K] - Demand[k]$",
+            "description": "For each industry k and year t \u2265 1, stock balance must hold: stockhold_{k,t} = (initial stock_{k} if t=1 else stockhold_{k,t-1}) + produce_{k,t} \u2212 total intermediate input of product k used in year t+1 for production and capacity building \u2212 demand_{k}",
+            "formulation": "$\\\\forall k=1,\\\\dots,\\\\text{NumIndustries}:$ \\n$\\\\quad \\\\text{stockhold}_{k,1} = \\\\text{Stock}_k + \\\\text{produce}_{k,1} - \\\\sum_{j=1}^{\\\\text{NumIndustries}} \\\\left( \\\\text{InputOne}_{j,k} \\\\cdot \\\\text{produce}_{j,2} + \\\\text{InputTwo}_{j,k} \\\\cdot \\\\text{buildcapa}_{j,2} \\\\right) - \\\\text{Demand}_k,$\\n\\n$\\\\forall k=1,\\\\dots,\\\\text{NumIndustries},\\\\; t=2,\\\\dots,K-1:$\\n$\\\\quad \\\\text{stockhold}_{k,t} = \\\\text{stockhold}_{k,t-1} + \\\\text{produce}_{k,t} - \\\\sum_{j=1}^{\\\\text{NumIndustries}} \\\\left( \\\\text{InputOne}_{j,k} \\\\cdot \\\\text{produce}_{j,t+1} + \\\\text{InputTwo}_{j,k} \\\\cdot \\\\text{buildcapa}_{j,t+1} \\\\right) - \\\\text{Demand}_k,$\\n\\n$\\\\forall k=1,\\\\dots,\\\\text{NumIndustries}:$\\n$\\\\quad \\\\text{stockhold}_{k,K} = \\\\text{stockhold}_{k,K-1} + \\\\text{produce}_{k,K} - \\\\text{Demand}_k.$",
             "code": null
         },
         {
-            "description": "For each industry j and year t, the total amount of product j used as intermediate input in year t equals the sum over all industries k of InputOne[k,j] multiplied by production of industry k in year t+1 (due to one-year time lag)",
-            "formulation": "$\\\\forall j = 1, \\\\dots, \\\\text{NumIndustries}, \\\\; \\\\forall t = 1, \\\\dots, K-1:\\\\; \\\\text{(Total intermediate use of product } j \\\\text{ in year } t) = \\\\sum_{k=1}^{\\\\text{NumIndustries}} InputOne[k,j] \\\\cdot produce[k,t+1]$",
+            "description": "Stock levels for each industry k and year t must be nonnegative",
+            "formulation": "$\\\\forall k = 1, \\\\dots, \\\\text{NumIndustries}, \\\\; \\\\forall t = 1, \\\\dots, K:\\\\; stockhold_{k,t} \\\\geq 0$",
             "code": null
         },
         {
-            "description": "Initial production capacity of industry k in year 1 equals the given Capacity[k]",
-            "formulation": "$\\\\forall k = 1, \\\\dots, \\\\text{NumIndustries},\\\\; capacityLevel_{k,1} = Capacity_{k}$",
+            "description": "Production levels produce_{k,t} must be nonnegative for all industries and years",
+            "formulation": "$\\\\forall k = 1,\\\\dots,\\\\text{NumIndustries},\\\\; \\\\forall t = 1,\\\\dots,K:\\\\; produce[k,t] \\\\geq 0$",
             "code": null
         },
         {
-            "description": "Total manpower used in each year equals the sum over all industries k of ManpowerOne[k] times production in year t plus ManpowerTwo[k] times buildcapa in year t",
-            "formulation": "$\\\\forall t = 1, \\\\dots, K:\\\\; totalManpower[t] = \\\\sum_{k=1}^{NumIndustries} \\\\left( ManpowerOne[k] \\\\cdot produce[k,t] + ManpowerTwo[k] \\\\cdot buildcapa[k,t] \\\\right)$",
-            "code": null
-        },
-        {
-            "description": "All production variables produce[k,t] must be nonnegative",
-            "formulation": "$\\\\forall k = 1, \\\\ldots, \\\\text{NumIndustries}, \\\\; \\\\forall t = 1, \\\\ldots, K:\\\\; produce_{k,t} \\\\geq 0$",
-            "code": null
-        },
-        {
-            "description": "All capacity-building variables buildcapa[k,t] must be nonnegative",
-            "formulation": "$\\\\forall k = 1,\\\\dots,\\\\text{NumIndustries},\\\\; \\\\forall t = 1,\\\\dots, K:\\\\; buildcapa[k,t] \\\\geq 0$",
-            "code": null
-        },
-        {
-            "description": "All stockholding variables stockhold[k,t] must be nonnegative",
-            "formulation": "$\\\\forall k = 1, \\\\dots, \\\\text{NumIndustries},\\\\; \\\\forall t = 1, \\\\dots, K:\\\\; stockhold[k,t] \\\\geq 0$",
+            "description": "Capacity expansion decisions buildcapa_{k,t} must be nonnegative for all industries and years",
+            "formulation": "$\\\\forall k = 1, \\\\dots, \\\\text{NumIndustries},\\\\; \\\\forall t = 1, \\\\dots, K:\\\\; buildcapa_{k,t} \\\\geq 0$",
             "code": null
         }
     ],
@@ -122,15 +107,15 @@
                 "K"
             ],
             "type": "continuous",
-            "definition": "Amount of units produced by each industry k in each year t"
+            "definition": "Amount produced by each industry in each year"
         },
-        "capacityLevel": {
+        "capacityAvail": {
             "shape": [
                 "NumIndustries",
                 "K"
             ],
             "type": "continuous",
-            "definition": "Available productive capacity of each industry k in each year t"
+            "definition": "Available productive capacity of each industry in each year"
         },
         "buildcapa": {
             "shape": [
@@ -138,7 +123,7 @@
                 "K"
             ],
             "type": "continuous",
-            "definition": "Amount of units used to build productive capacity for each industry k in each year t"
+            "definition": "Amount of units used to build productive capacity for each industry in each year"
         },
         "stockhold": {
             "shape": [
@@ -146,14 +131,7 @@
                 "K"
             ],
             "type": "continuous",
-            "definition": "Amount of stock of each industry k held at the end of each year t"
-        },
-        "totalManpower": {
-            "shape": [
-                "K"
-            ],
-            "type": "continuous",
-            "definition": "Total manpower used in each year t"
+            "definition": "Amount of stock of each industry held at the end of each year"
         }
     }
 }

@@ -1,41 +1,9 @@
 ----
-Step-by-step reasoning:
-
-1. **Capacity constraint**  
-   “30 times the number of large planes plus 10 times the number of small planes must be at least 300”  
-   - This enforces the minimum delivery requirement.
-   - It is necessary and not implied by any other constraint.
-   - ✅ Keep.
-
-2. **Pollution constraint**  
-   “The number of large planes must be less than the number of small planes”  
-   - This enforces the environmental requirement.
-   - It is independent of the capacity constraint.
-   - ✅ Keep.
-
-3. **Non-negativity and integrality constraints**  
-   - “The number of large planes must be a non-negative integer”  
-   - “The number of small planes must be a non-negative integer”  
-   These two constraints:
-   - Are structurally identical except for the variable.
-   - Can be cleanly combined into a single constraint stating both variables are non-negative integers.
-   - Neither is redundant, but they can be merged.
-
-✅ Combine constraints 3 and 4.
-
-There are no redundant constraints, but the last two can be merged.
-
----
-
-Updated list of constraints:
-
-```python
 [
-    "30 times the number of large planes plus 10 times the number of small planes must be at least 300",
-    "The number of large planes must be less than the number of small planes",
-    "The number of large planes and the number of small planes must be non-negative integers"
+    "The total number of cars delivered by large and small planes must be at least MinCars",
+    "The number of large planes used must be less than the number of small planes used",
+    "The number of large planes and small planes used must be non-negative integers"
 ]
-```
 ----
 +++++++++++++++++++
 ++ Constraint Qs ++
@@ -69,7 +37,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: 30 times the number of large planes plus 10 times the number of small planes must be at least 300
+Consider this potential constraint: The total number of cars delivered by large and small planes must be at least MinCars
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -79,32 +47,31 @@ Consider this potential constraint: 30 times the number of large planes plus 10 
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is absolutely a constraint and it must be explicitly included in the (MI)LP formulation.
+Yes, this is definitely a constraint and it must be explicitly modeled.
 
-Reasoning step by step:
+The problem states: *“If the manufacturer wants to deliver at least 300 cars…”* This directly imposes a requirement on the total number of cars transported. Since the number of cars delivered depends on the number of large and small planes used, this requirement translates into a mathematical constraint linking the decision variables (number of large and small planes) to the parameter **MinCars**.
 
-- The problem states that the manufacturer wants to deliver **at least 300 cars**.
-- Each large plane carries **30 cars**.
-- Each small plane carries **10 cars**.
-- If we let:
-  - \( L \) = number of large planes  
-  - \( S \) = number of small planes  
+If we let:
+- \( x_L \) = number of large planes  
+- \( x_S \) = number of small planes  
 
-  then the total number of cars delivered is:
+then the total number of cars delivered is:
 
-  \[
-  30L + 10S
-  \]
+\[
+30x_L + 10x_S
+\]
 
-- The phrase *“at least 300 cars”* translates directly into the inequality:
+The phrase *“at least 300 cars”* clearly translates to:
 
-  \[
-  30L + 10S \ge 300
-  \]
+\[
+30x_L + 10x_S \ge \text{MinCars}
+\]
 
-This is a core feasibility constraint. Without it, the model would not enforce the delivery requirement, and the optimizer could choose zero planes to minimize the objective.
+This is not optional or implied elsewhere — it is a core feasibility requirement of the problem. Without it, the model would not enforce the delivery target and would be incorrect.
 
-Therefore, this constraint is essential and must be included.
+✅ It is absolutely a constraint.  
+✅ It must be explicitly modeled.  
+✅ It is central to the formulation.
 
 **5 OUT OF 5**
 +--+
@@ -140,7 +107,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: The number of large planes must be less than the number of small planes
+Consider this potential constraint: The number of large planes used must be less than the number of small planes used
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -150,31 +117,31 @@ Consider this potential constraint: The number of large planes must be less than
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is clearly a constraint and should be explicitly modeled.
+Yes, this is clearly a constraint and should be explicitly included in the (MI)LP formulation.
 
 The problem statement explicitly says:
 
 > "Since large planes cause more pollution, the number of large planes must be less than the number of small planes."
 
-This is a policy restriction, not just contextual information. It directly limits the feasible set of solutions. Therefore, it must be included in the (MI)LP formulation.
+The phrase *"must be less than"* indicates a hard requirement, not a preference or soft condition. Therefore, this is a structural constraint of the optimization problem.
 
 If we define:
 - \( L \) = number of large planes  
 - \( S \) = number of small planes  
 
-then the constraint should be modeled as:
+Then the constraint is:
 
 \[
 L < S
 \]
 
-Since this is a mixed-integer model (plane counts must be integers), this can be written as:
+Since this is an integer program, this would typically be modeled as:
 
 \[
 L \le S - 1
 \]
 
-This is a structural feasibility constraint and is essential to correctly model the problem.
+This constraint is essential to correctly reflect the problem’s requirements and cannot be omitted.
 
 **5 OUT OF 5**
 +--+
@@ -210,7 +177,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: The number of large planes and the number of small planes must be non-negative integers
+Consider this potential constraint: The number of large planes and small planes used must be non-negative integers
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -220,35 +187,27 @@ Consider this potential constraint: The number of large planes and the number of
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this **is** a constraint and it should be explicitly modeled in the (MI)LP formulation.
+Yes, this is indeed a constraint, specifically a **domain constraint** on the decision variables.
 
-### Why?
+Step by step reasoning:
 
-The numbers of large and small planes are **decision variables**. Since planes cannot be fractional and cannot be negative, we must explicitly enforce:
+- The decision variables (implicitly) are:
+  - \( x_L \): number of large planes  
+  - \( x_S \): number of small planes  
 
-- **Non-negativity** (you cannot use a negative number of planes)
-- **Integrality** (you cannot use fractional planes)
+- Since planes are physical objects:
+  - You cannot use a negative number of planes → **non-negativity is required**
+  - You cannot use fractional planes → **integrality is required**
 
-In a mixed-integer linear program (MILP), this is typically written as:
-
-\[
-L \ge 0,\quad S \ge 0
-\]
-\[
-L, S \in \mathbb{Z}
-\]
+- In an (MI)LP formulation:
+  - Non-negativity constraints (e.g., \( x_L \ge 0 \), \( x_S \ge 0 \)) are typically written explicitly unless non-negativity is assumed by default.
+  - Integrality constraints (e.g., \( x_L, x_S \in \mathbb{Z} \)) **must be explicitly modeled** in a MILP.
 
 Without these constraints:
-- The solver could assign fractional values (e.g., 3.7 planes).
-- The solver could assign negative values if not otherwise restricted.
-- The problem would no longer correctly represent the real-world situation.
+- The solver might assign fractional values (e.g., 2.7 planes), which is infeasible in reality.
+- It might even assign negative values if not otherwise restricted.
 
-Although non-negativity and integrality are often treated as **variable domain constraints** rather than "functional constraints," they are absolutely essential and must be explicitly specified in the model.
-
-### Conclusion
-
-✅ Yes, this is a necessary modeling constraint.  
-✅ It should explicitly appear in the MILP formulation.  
+Therefore, this is absolutely a valid and necessary constraint to include in the model.
 
 **5 OUT OF 5**
 +--+
@@ -266,17 +225,17 @@ Extracting constraint formulations
 
 ----
 {
-    "FORMULATION": "$30 \\cdot LargePlanes + 10 \\cdot SmallPlanes \\geq 300$",
+    "FORMULATION": "$CapacityLarge \\cdot LargePlanes + CapacitySmall \\cdot SmallPlanes \\geq MinCars$",
     "NEW VARIABLES": {
         "LargePlanes": {
             "shape": [],
             "type": "integer",
-            "definition": "Number of large planes used"
+            "definition": "Number of large planes used to ship cars"
         },
         "SmallPlanes": {
             "shape": [],
             "type": "integer",
-            "definition": "Number of small planes used"
+            "definition": "Number of small planes used to ship cars"
         }
     },
     "AUXILIARY CONSTRAINTS": []
@@ -284,8 +243,8 @@ Extracting constraint formulations
 ----
 ----
 EXTRACTED ITEMS
-$30 \\cdot LargePlanes + 10 \\cdot SmallPlanes \\geq 300$
-{'LargePlanes': {'shape': [], 'type': 'integer', 'definition': 'Number of large planes used'}, 'SmallPlanes': {'shape': [], 'type': 'integer', 'definition': 'Number of small planes used'}}
+$CapacityLarge \\cdot LargePlanes + CapacitySmall \\cdot SmallPlanes \\geq MinCars$
+{'LargePlanes': {'shape': [], 'type': 'integer', 'definition': 'Number of large planes used to ship cars'}, 'SmallPlanes': {'shape': [], 'type': 'integer', 'definition': 'Number of small planes used to ship cars'}}
 []
 ----
 ----
@@ -303,14 +262,14 @@ $LargePlanes \\leq SmallPlanes - 1$
 ----
 ----
 {
-    "FORMULATION": "$LargePlanes \\in \\mathbb{Z}_{\\ge 0}, \\; SmallPlanes \\in \\mathbb{Z}_{\\ge 0}$",
+    "FORMULATION": "$LargePlanes, SmallPlanes \\in \\mathbb{Z}_{\\geq 0}$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$LargePlanes \\in \\mathbb{Z}_{\\ge 0}, \\; SmallPlanes \\in \\mathbb{Z}_{\\ge 0}$
+$LargePlanes, SmallPlanes \\in \\mathbb{Z}_{\\geq 0}$
 {}
 []
 ----
@@ -322,24 +281,35 @@ CPU model: Intel(R) Xeon(R) Platinum, instruction set [SSE2|AVX|AVX2|AVX512]
 Thread count: 1 physical cores, 2 logical processors, using up to 2 threads
 
 Optimize a model with 4 rows, 2 columns and 6 nonzeros (Min)
-Model fingerprint: 0x958a5768
-Model has 0 linear objective coefficients
+Model fingerprint: 0xc488e9fe
+Model has 2 linear objective coefficients
 Variable types: 0 continuous, 2 integer (0 binary)
 Coefficient statistics:
   Matrix range     [1e+00, 3e+01]
-  Objective range  [0e+00, 0e+00]
+  Objective range  [1e+00, 1e+00]
   Bounds range     [0e+00, 0e+00]
   RHS range        [1e+00, 3e+02]
 
-Found heuristic solution: objective 0.0000000
+Found heuristic solution: objective 30.0000000
+Presolve removed 2 rows and 0 columns
+Presolve time: 0.00s
+Presolved: 2 rows, 2 columns, 4 nonzeros
+Variable types: 0 continuous, 2 integer (0 binary)
 
-Explored 0 nodes (0 simplex iterations) in 0.00 seconds (0.00 work units)
-Thread count was 1 (of 2 available processors)
+Root relaxation: objective 1.600000e+01, 1 iterations, 0.00 seconds (0.00 work units)
 
-Solution count 1: 0 
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+*    0     0               0      16.0000000   16.00000  0.00%     -    0s
+
+Explored 1 nodes (1 simplex iterations) in 0.00 seconds (0.00 work units)
+Thread count was 2 (of 2 available processors)
+
+Solution count 2: 16 30 
 
 Optimal solution found (tolerance 1.00e-04)
-Best objective 0.000000000000e+00, best bound 0.000000000000e+00, gap 0.0000%
-Optimal Objective Value:  0.0
-Optimal Objective Value:  0.0
+Best objective 1.600000000000e+01, best bound 1.600000000000e+01, gap 0.0000%
+Optimal Objective Value:  16.0
+Optimal Objective Value:  16.0
 

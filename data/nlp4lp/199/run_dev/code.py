@@ -57,7 +57,7 @@ model.addConstr(PremiumBags >= 0)
 
 ### Define the objective
 
-
+model.setObjective(PriceRegular * RegularBags + PricePremium * PremiumBags, GRB.MINIMIZE)
 
 
 ### Optimize the model

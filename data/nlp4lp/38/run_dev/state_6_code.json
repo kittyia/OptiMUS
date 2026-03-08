@@ -35,24 +35,34 @@
         }
     },
     "objective": {
-        "description": "\"Minimize the total cost of running the factories to produce the teddy bears\"",
-        "formulation": "$\\min \\sum_{i=1}^{NumFactories} FactoryRunningCost_i \\, factoryHours_i$",
-        "code": ""
+        "description": "\"The goal is to minimize the total cost of production by determining how many hours to run each factory while meeting teddy bear demand requirements\"",
+        "formulation": "$\\min \\sum_{i=1}^{NumFactories} FactoryRunningCost_i \\, FactoryHours_i$",
+        "code": "model.setObjective(quicksum(FactoryRunningCost[i] * FactoryHours[i] for i in range(NumFactories)), GRB.MINIMIZE)"
     },
     "constraints": [
         {
-            "description": "For each color, the total number of teddy bears produced by all factories must be at least equal to the demand for that color",
-            "formulation": "$\\\\forall c \\\\in \\\\{1,\\\\dots,\\\\text{NumColors}\\\\}, \\\\sum_{f=1}^{\\\\text{NumFactories}} ProductionRate[f,c] \\\\cdot factoryHours[f] \\\\geq Demand[c]$",
-            "code": "for c in range(NumColors):\n    model.addConstr(\n        sum(ProductionRate[f][c] * factoryHours[f] for f in range(NumFactories)) \n        >= Demand[c]\n    )"
+            "description": "Total black teddy bears produced by both factories must be at least 20",
+            "formulation": "$\\\\sum_{f=1}^{NumFactories} ProductionRate[f,1] \\\\cdot FactoryHours[f] \\\\geq 20$",
+            "code": "model.addConstr(\n    sum(ProductionRate[f][0] * FactoryHours[f] for f in range(NumFactories)) >= 20\n)"
         },
         {
-            "description": "The number of hours each factory is run must be non-negative",
-            "formulation": "$\\\\forall f = 1, \\\\dots, NumFactories,\\\\; factoryHours[f] \\\\geq 0$",
-            "code": "for f in range(NumFactories):\n    model.addConstr(factoryHours[f] >= 0)"
+            "description": "Total white teddy bears produced by both factories must be at least 5",
+            "formulation": "$\\\\sum_{f=1}^{NumFactories} ProductionRate[f,2] \\\\cdot FactoryHours[f] \\\\geq 5$",
+            "code": "model.addConstr(\n    sum(ProductionRate[f][1] * FactoryHours[f] for f in range(NumFactories)) >= 5\n)"
+        },
+        {
+            "description": "Total brown teddy bears produced by both factories must be at least 15",
+            "formulation": "$\\\\sum_{f=1}^{NumFactories} ProductionRate[f, \\\\text{brown}] \\\\cdot FactoryHours[f] \\\\geq 15$",
+            "code": "model.addConstr(\n    sum(ProductionRate[f][2] * FactoryHours[f] for f in range(NumFactories)) >= 15\n)"
+        },
+        {
+            "description": "Number of hours each factory is run must be non-negative",
+            "formulation": "$\\\\forall i = 1, \\\\dots, NumFactories,\\\\; FactoryHours[i] \\\\ge 0$",
+            "code": "for i in range(NumFactories):\n    model.addConstr(FactoryHours[i] >= 0)"
         }
     ],
     "variables": {
-        "factoryHours": {
+        "FactoryHours": {
             "shape": [
                 "NumFactories"
             ],

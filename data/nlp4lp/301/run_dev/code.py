@@ -38,19 +38,25 @@ for i in range(N):
         model.addConstr(x[i, j] >= 0)
 for i in range(N):
     model.addConstr(
-        Start[i] + sum(Rate[j][i] * x[j, i] for j in range(N)) - sum(x[i, j] for j in range(N)) >= 0
+        Start[i] 
+        - sum(x[i, j] for j in range(N)) 
+        + sum(Rate[j][i] * x[j, i] for j in range(N)) 
+        >= 0
     )
 for i in range(N):
     model.addConstr(
-        sum(x[i, j] for j in range(N)) +
-        sum(Rate[j][i] * x[j, i] for j in range(N))
-        <= Limit[i]
+        sum(x[i, j] for j in range(N)) + sum(x[j, i] for j in range(N)) <= Limit[i]
     )
 
 
 ### Define the objective
 
-
+model.setObjective(
+    Start[N-1]
+    - quicksum(x[N-1, j] for j in range(N))
+    + quicksum(Rate[i][N-1] * x[i, N-1] for i in range(N)),
+    GRB.MAXIMIZE
+)
 
 
 ### Optimize the model

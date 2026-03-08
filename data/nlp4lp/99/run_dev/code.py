@@ -48,7 +48,7 @@ model.addConstr(AutomaticPatients >= AutomaticMachineMinimumPatients)
 
 ### Define the objective
 
-
+model.setObjective(AutomaticPatients + ManualPatients, GRB.MAXIMIZE)
 
 
 ### Optimize the model

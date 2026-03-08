@@ -38,12 +38,14 @@ NumLights = model.addVars(NumTypes, vtype=GRB.INTEGER, name="NumLights")
 ### Define the constraints
 
 model.addConstr(sum(NumLights[t] for t in range(NumTypes)) >= MinNumFixtures)
-model.addConstr(sum(ElectricityUsage[t] * NumLights[t] for t in range(NumTypes)) <= MaxElectricity)
+model.addConstr(
+    sum(ElectricityUsage[i] * NumLights[i] for i in range(NumTypes)) <= MaxElectricity
+)
 model.addConstr(
     NumLights[1] >= MinPercentageFluorescence * sum(NumLights[t] for t in range(NumTypes))
 )
-for i in range(NumTypes):
-    model.addConstr(NumLights[i] >= 0)
+for t in range(NumTypes):
+    model.addConstr(NumLights[t] >= 0)
 
 
 ### Define the objective

@@ -1,25 +1,8 @@
 ----
-- **Constraint 1 (Antibiotics limit)**: Necessary. It enforces the resource limitation and cannot be removed or combined.
-
-- **Constraint 2 (First-dose ≥ Second-dose)**: Necessary. It captures the requirement that more first-dose vaccines than second-dose vaccines must be produced.
-
-- **Constraint 3 (Second-dose ≥ 40)**: Necessary. It enforces the minimum production requirement for second-dose vaccines.
-
-- **Constraint 4 (First-dose ≥ 0)**: Redundant. Since:
-  - Second-dose ≥ 40  
-  - First-dose ≥ Second-dose  
-  it follows that First-dose ≥ 40, which already implies First-dose ≥ 0. Therefore, this constraint is unnecessary.
-
-- **Constraint 5 (Second-dose ≥ 0)**: Redundant. Since Second-dose ≥ 40, non-negativity is automatically satisfied. This constraint can be removed.
-
-No constraints can be meaningfully combined without reducing clarity. The two non-negativity constraints are implied by the other constraints and can be removed.
-
-Updated list of constraints:
-
 [
-    "The total antibiotics used for first-dose and second-dose vaccines should not exceed 35,000 units",
-    "The number of first-dose vaccines produced must be greater than or equal to the number of second-dose vaccines produced",
-    "At least 40 second-dose vaccines must be produced"
+    "30 * (number of first-dose vaccines) + 65 * (number of second-dose vaccines) ≤ TotalAntibiotics",
+    "The number of first-dose vaccines manufactured must be greater than or equal to the number of second-dose vaccines manufactured",
+    "The number of second-dose vaccines manufactured must be at least MinimumSecondDose"
 ]
 ----
 +++++++++++++++++++
@@ -69,7 +52,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: The total antibiotics used for first-dose and second-dose vaccines should not exceed 35,000 units
+Consider this potential constraint: 30 * (number of first-dose vaccines) + 65 * (number of second-dose vaccines) ≤ TotalAntibiotics
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -79,14 +62,16 @@ Consider this potential constraint: The total antibiotics used for first-dose an
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is clearly a constraint and it must be explicitly modeled.
+Yes, this is definitely a constraint and it should be explicitly included in the (MI)LP formulation.
 
-The problem states that the company has **35,000 units of antibiotics available**, and both vaccine types consume antibiotics:
+**Reasoning:**
 
-- First-dose: 30 units per vaccine  
-- Second-dose: 65 units per vaccine  
+- The company has **35,000 units of antibiotics available**.
+- Each first-dose vaccine uses **30 units**.
+- Each second-dose vaccine uses **65 units**.
+- The total antibiotic usage from all vaccines cannot exceed the available supply.
 
-Since the total available supply is limited, the total antibiotics used cannot exceed 35,000 units. This is a classic resource capacity constraint in linear programming.
+This is a classic **resource capacity constraint**, which is fundamental to the model. Without it, the problem would ignore a key limitation in production.
 
 Mathematically, if:
 - \( x_1 \) = number of first-dose vaccines  
@@ -98,11 +83,9 @@ Then the constraint is:
 30x_1 + 65x_2 \le 35000
 \]
 
-This constraint is directly implied by the wording “has 35,000 units of antibiotics available,” which unambiguously signals a resource limitation.
+This is absolutely necessary for a correct formulation.
 
-✅ This should absolutely be included in the model.
-
-**5 OUT OF 5**
+**Confidence level:** 5 OUT OF 5
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -151,7 +134,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: The number of first-dose vaccines produced must be greater than or equal to the number of second-dose vaccines produced
+Consider this potential constraint: The number of first-dose vaccines manufactured must be greater than or equal to the number of second-dose vaccines manufactured
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -165,39 +148,37 @@ Yes, this is definitely a constraint and it should be explicitly modeled.
 
 The problem statement clearly says:
 
-> “Since the first-dose vaccine is required before the second-dose vaccine, there must be more first-dose than second-dose vaccines manufactured.”
+> "Since the first-dose vaccine is required before the second-dose vaccine, there must be more first-dose than second-dose vaccines manufactured."
 
-This is not just contextual information — it imposes a structural relationship between the decision variables.
+This directly imposes a relationship between the two decision variables. It is not descriptive background — it is a structural requirement on the feasible solution set.
 
-If we let:
-- \( x_1 \) = number of first-dose vaccines  
-- \( x_2 \) = number of second-dose vaccines  
+However, note an important nuance:
 
-Then the statement “there must be more first-dose than second-dose vaccines” translates mathematically to:
+- The text says **“more first-dose than second-dose”**, which implies a **strict inequality**:
+  
+  \[
+  \text{FirstDose} > \text{SecondDose}
+  \]
 
-\[
-x_1 > x_2
-\]
+- The proposed constraint uses **greater than or equal to**:
 
-In an MILP (since vaccine counts are integers), this can be modeled as:
+  \[
+  \text{FirstDose} \ge \text{SecondDose}
+  \]
 
-\[
-x_1 \ge x_2 + 1
-\]
-
-The proposed constraint:
+If the variables are integers (which they should be, since vaccines are counted in whole units), the correct linear modeling would be:
 
 \[
-x_1 \ge x_2
+\text{FirstDose} \ge \text{SecondDose} + 1
 \]
 
-is slightly weaker than the wording (“more than”), but it is clearly attempting to model this required relationship. So conceptually, yes — this is absolutely a real constraint from the problem description and must be included in the formulation.
+So:
 
-✅ It is a genuine structural constraint.  
-✅ It is explicitly stated in the text.  
-✅ It directly restricts feasible solutions.
+- ✅ It is absolutely a constraint.
+- ✅ It must be included in the (MI)LP.
+- ⚠️ But it should be modeled as a strict inequality via an integer offset.
 
-**5 OUT OF 5**
+**Confidence level:** 5 OUT OF 5
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -246,7 +227,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: At least 40 second-dose vaccines must be produced
+Consider this potential constraint: The number of second-dose vaccines manufactured must be at least MinimumSecondDose
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -256,27 +237,21 @@ Consider this potential constraint: At least 40 second-dose vaccines must be pro
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is **explicitly a constraint** in the problem statement.
+Yes, this is explicitly a constraint in the problem description.
 
-The sentence:
+The statement:
 
 > “However, at least 40 second-dose vaccines must be made.”
 
-clearly imposes a **minimum production requirement** on the second-dose vaccines.
-
-In mathematical form, if  
-- \( x_1 \) = number of first-dose vaccines  
-- \( x_2 \) = number of second-dose vaccines  
-
-then the constraint is:
+clearly imposes a lower bound on the number of second-dose vaccines produced. This directly translates to the constraint:
 
 \[
-x_2 \ge 40
+\text{SecondDose} \ge \text{MinimumSecondDose}
 \]
 
-This is not implied indirectly — it is directly stated as a requirement. Therefore, it must be explicitly included in the (MI)LP model.
+Since this requirement is explicitly stated and not implied or redundant, it must be included in the (MI)LP formulation.
 
-**Confidence:** 5 OUT OF 5
+**Confidence level: 5 OUT OF 5**
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -292,17 +267,17 @@ Extracting constraint formulations
 
 ----
 {
-    "FORMULATION": "$AntibioticsFirstDose \\cdot FirstDose + AntibioticsSecondDose \\cdot SecondDose \\leq TotalAntibiotics$",
+    "FORMULATION": "$30 \\cdot FirstDose + 65 \\cdot SecondDose \\leq TotalAntibiotics$",
     "NEW VARIABLES": {
         "FirstDose": {
             "shape": [],
             "type": "integer",
-            "definition": "Number of first-dose vaccines to be manufactured"
+            "definition": "Number of first-dose vaccines produced"
         },
         "SecondDose": {
             "shape": [],
             "type": "integer",
-            "definition": "Number of second-dose vaccines to be manufactured"
+            "definition": "Number of second-dose vaccines produced"
         }
     },
     "AUXILIARY CONSTRAINTS": []
@@ -310,8 +285,8 @@ Extracting constraint formulations
 ----
 ----
 EXTRACTED ITEMS
-$AntibioticsFirstDose \\cdot FirstDose + AntibioticsSecondDose \\cdot SecondDose \\leq TotalAntibiotics$
-{'FirstDose': {'shape': [], 'type': 'integer', 'definition': 'Number of first-dose vaccines to be manufactured'}, 'SecondDose': {'shape': [], 'type': 'integer', 'definition': 'Number of second-dose vaccines to be manufactured'}}
+$30 \\cdot FirstDose + 65 \\cdot SecondDose \\leq TotalAntibiotics$
+{'FirstDose': {'shape': [], 'type': 'integer', 'definition': 'Number of first-dose vaccines produced'}, 'SecondDose': {'shape': [], 'type': 'integer', 'definition': 'Number of second-dose vaccines produced'}}
 []
 ----
 ----
@@ -348,12 +323,12 @@ CPU model: Intel(R) Xeon(R) Platinum, instruction set [SSE2|AVX|AVX2|AVX512]
 Thread count: 1 physical cores, 2 logical processors, using up to 2 threads
 
 Optimize a model with 3 rows, 2 columns and 5 nonzeros (Min)
-Model fingerprint: 0x57916f1b
-Model has 0 linear objective coefficients
+Model fingerprint: 0xb7d1766c
+Model has 2 linear objective coefficients
 Variable types: 0 continuous, 2 integer (0 binary)
 Coefficient statistics:
   Matrix range     [1e+00, 6e+01]
-  Objective range  [0e+00, 0e+00]
+  Objective range  [2e+01, 6e+01]
   Bounds range     [0e+00, 0e+00]
   RHS range        [4e+01, 4e+04]
 
@@ -364,10 +339,10 @@ Presolve: All rows and columns removed
 Explored 0 nodes (0 simplex iterations) in 0.00 seconds (0.00 work units)
 Thread count was 1 (of 2 available processors)
 
-Solution count 1: 0 
+Solution count 1: 3200 
 
 Optimal solution found (tolerance 1.00e-04)
-Best objective 0.000000000000e+00, best bound 0.000000000000e+00, gap 0.0000%
-Optimal Objective Value:  0.0
-Optimal Objective Value:  0.0
+Best objective 3.200000000000e+03, best bound 3.200000000000e+03, gap 0.0000%
+Optimal Objective Value:  3200.0
+Optimal Objective Value:  3200.0
 

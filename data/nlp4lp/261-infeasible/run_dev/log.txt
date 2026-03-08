@@ -1,38 +1,93 @@
 ----
-There is **no redundancy** in the constraint list. Here is the reasoning:
+Let the decision variables be:
 
-1. **Production constraints**
-   - \(800N + 650W \ge \text{MinimumAntiItchProduction}\)
-   - \(700N + 750W \ge \text{MinimumTopicalCreamProduction}\)
+- \( \text{NorthernFactoryHours} = N \)
+- \( \text{WesternFactoryHours} = W \)
 
-   These constraints correspond to two *different products* with different production rates. Neither constraint can be derived from the other because the coefficients differ and the right-hand sides differ. Therefore, neither is redundant, and they cannot be combined.
+We analyze each constraint:
 
-2. **Plastic constraint**
-   - \(40N + 35W \le \text{TotalPlasticAvailable}\)
+### 1️⃣ Anti-itch production constraint  
+\[
+800N + 650W \ge 800000
+\]
 
-   This is an upper-bound resource constraint, whereas the production constraints are lower bounds. It is not implied by the production requirements. Even though the minimum production levels do not exhaust the plastic supply, the constraint still limits feasible solutions and is therefore necessary.
+This ensures the minimum required anti-itch production.  
+It cannot be derived from any other constraint because:
+- The topical cream constraint has different coefficients.
+- The plastic constraint limits inputs, not production.
+- Nonnegativity does not imply production minimums.
 
-3. **Nonnegativity constraints**
-   - \(N \ge 0\)
-   - \(W \ge 0\)
+✅ Not redundant.
 
-   These are essential to define the feasible region properly. They are not implied by the other constraints and cannot be removed.
+---
 
-4. **Combining constraints**
-   No pair of constraints can be meaningfully combined because:
-   - They represent different resources or requirements.
-   - They involve different coefficients.
-   - They impose different directional bounds (≥ vs ≤).
+### 2️⃣ Topical cream production constraint  
+\[
+700N + 750W \ge 700000
+\]
 
-Therefore, the constraint list remains unchanged.
+This ensures the minimum required topical cream production.  
+It is not implied by the anti-itch constraint because:
+- The two products have different production trade-offs.
+- Satisfying one does not guarantee satisfying the other.
 
+✅ Not redundant.
+
+---
+
+### 3️⃣ Plastic usage constraint  
+\[
+40N + 35W \le 60000
+\]
+
+This restricts total available plastic.  
+It cannot be derived from the production constraints because:
+- The production constraints enforce minimum outputs.
+- The plastic constraint enforces a maximum resource limit.
+- These operate in different directions (≥ vs ≤).
+
+✅ Not redundant.
+
+---
+
+### 4️⃣ Nonnegativity constraints  
+\[
+N \ge 0
+\]
+\[
+W \ge 0
+\]
+
+These are necessary because negative operating hours are not physically meaningful.  
+They are not implied by other constraints.
+
+✅ Not redundant.
+
+---
+
+### ✅ Can Any Constraints Be Combined?
+
+No.
+
+- The two production constraints cannot be combined because they represent different product requirements.
+- The plastic constraint cannot be merged with production constraints due to opposite inequality directions.
+- Nonnegativity constraints must remain separate.
+
+There is **no redundancy** and **no combinable constraints**.
+
+---
+
+### ✅ Updated Constraint List
+
+```python
 [
-    "800 * NorthernFactoryHours + 650 * WesternFactoryHours >= MinimumAntiItchProduction",
-    "700 * NorthernFactoryHours + 750 * WesternFactoryHours >= MinimumTopicalCreamProduction",
-    "40 * NorthernFactoryHours + 35 * WesternFactoryHours <= TotalPlasticAvailable",
+    "800 * NorthernFactoryHours + 650 * WesternFactoryHours >= 800000",
+    "700 * NorthernFactoryHours + 750 * WesternFactoryHours >= 700000",
+    "40 * NorthernFactoryHours + 35 * WesternFactoryHours <= 60000",
     "NorthernFactoryHours >= 0",
     "WesternFactoryHours >= 0"
 ]
+```
 ----
 +++++++++++++++++++
 ++ Constraint Qs ++
@@ -96,7 +151,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: 800 * NorthernFactoryHours + 650 * WesternFactoryHours >= MinimumAntiItchProduction
+Consider this potential constraint: 800 * NorthernFactoryHours + 650 * WesternFactoryHours >= 800000
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -106,39 +161,33 @@ Consider this potential constraint: 800 * NorthernFactoryHours + 650 * WesternFa
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is clearly a constraint and it should be explicitly included in the (MI)LP formulation.
+Yes, this is clearly a valid constraint and should be explicitly included in the LP formulation.
 
-### Why?
+### Reasoning
 
-The problem states:
+- The northern factory produces **800 g/hour** of anti-itch injections.
+- The western factory produces **650 g/hour** of anti-itch injections.
+- The firm must produce **at least 800,000 g** of anti-itch injections.
 
-> "they must make at least 800,000 g of anti-itch injections"
+If we let:
+- `NorthernFactoryHours` = hours northern factory runs  
+- `WesternFactoryHours` = hours western factory runs  
 
-This is a **minimum production requirement**, which directly translates into a constraint.
-
-Let:
-- \( N \) = NorthernFactoryHours  
-- \( W \) = WesternFactoryHours  
-
-Since:
-- Northern factory produces **800 g/hour**
-- Western factory produces **650 g/hour**
-
-Total anti-itch production is:
+Then total anti-itch production is:
 
 \[
-800N + 650W
+800 \cdot \text{NorthernFactoryHours} + 650 \cdot \text{WesternFactoryHours}
 \]
 
-Because production must be **at least** the required minimum, the correct constraint is:
+Since the minimum required production is 800,000 g, the constraint:
 
 \[
-800N + 650W \ge \text{MinimumAntiItchProduction}
+800 \cdot \text{NorthernFactoryHours} + 650 \cdot \text{WesternFactoryHours} \ge 800000
 \]
 
-This matches the proposed constraint exactly.
+correctly enforces the minimum anti-itch production requirement.
 
-There is no ambiguity in the problem statement — this is a required production threshold, so it must be enforced in the optimization model.
+This is a fundamental production requirement constraint and must be included in the model.
 
 **5 OUT OF 5**
 +--+
@@ -204,7 +253,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: 700 * NorthernFactoryHours + 750 * WesternFactoryHours >= MinimumTopicalCreamProduction
+Consider this potential constraint: 700 * NorthernFactoryHours + 750 * WesternFactoryHours >= 700000
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -214,38 +263,29 @@ Consider this potential constraint: 700 * NorthernFactoryHours + 750 * WesternFa
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is definitely a constraint and it should be explicitly included in the (MI)LP formulation.
+Yes, this is indeed a valid constraint.
 
-### Why?
+- The northern factory produces **700 g of topical cream per hour**.
+- The western factory produces **750 g of topical cream per hour**.
+- The firm must produce **at least 700,000 g of topical cream**.
 
-From the problem statement:
+If we let:
+- `NorthernFactoryHours = x`
+- `WesternFactoryHours = y`
 
-- Northern factory produces **700 g of topical cream per hour**
-- Western factory produces **750 g of topical cream per hour**
-- The firm must produce **at least 700,000 g of topical cream**
-
-If we define:
-- \( N \) = NorthernFactoryHours  
-- \( W \) = WesternFactoryHours  
-
-Then total topical cream production is:
+then total topical cream production is:
 
 \[
-700N + 750W
+700x + 750y
 \]
 
-Since they must produce *at least* the required minimum, we get the constraint:
+Since the requirement is **at least 700,000 g**, the correct constraint is:
 
 \[
-700N + 750W \geq \text{MinimumTopicalCreamProduction}
+700x + 750y \ge 700000
 \]
 
-This is directly implied by the problem statement and is essential for feasibility. Without it, the model could choose hours that fail to meet the topical cream requirement.
-
-### Conclusion
-
-✅ Yes, this is a valid and necessary constraint.  
-✅ It must be explicitly modeled.
+This directly models the minimum topical cream production requirement stated in the problem, so it absolutely belongs in the LP formulation.
 
 **5 OUT OF 5**
 +--+
@@ -311,7 +351,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: 40 * NorthernFactoryHours + 35 * WesternFactoryHours <= TotalPlasticAvailable
+Consider this potential constraint: 40 * NorthernFactoryHours + 35 * WesternFactoryHours <= 60000
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -321,18 +361,15 @@ Consider this potential constraint: 40 * NorthernFactoryHours + 35 * WesternFact
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is **definitely a valid constraint** and it should be explicitly included in the (MI)LP formulation.
+Yes, this is absolutely a valid and necessary constraint.
 
 ### Why?
 
-- The problem states:
-  - Northern factory uses **40 units of plastic per hour**.
-  - Western factory uses **35 units of plastic per hour**.
-  - The firm has **60,000 units of plastic available total**.
-
-If:
-- \( N \) = NorthernFactoryHours  
-- \( W \) = WesternFactoryHours  
+- The northern factory uses **40 units of plastic per hour**.
+- The western factory uses **35 units of plastic per hour**.
+- Let:
+  - \( N \) = NorthernFactoryHours  
+  - \( W \) = WesternFactoryHours  
 
 Then total plastic consumption is:
 
@@ -340,17 +377,17 @@ Then total plastic consumption is:
 40N + 35W
 \]
 
-Since plastic is a limited resource, total usage **cannot exceed** availability:
+Since the firm has **at most 60,000 units of plastic available**, we must enforce:
 
 \[
 40N + 35W \le 60000
 \]
 
-This is a classic **resource capacity constraint**, and it is clearly implied by the problem statement. Omitting it would make the model incorrect.
+This is a classic **resource capacity constraint**, and it is directly implied by the problem statement. It must be explicitly included in the LP/MILP model.
 
-### Confidence
+There is no ambiguity in interpretation here — the wording clearly establishes a total plastic availability limit.
 
-This is explicitly stated in the description and directly translates into a linear constraint.
+✅ This constraint is necessary and correctly formulated.
 
 **5 OUT OF 5**
 +--+
@@ -426,15 +463,20 @@ Consider this potential constraint: NorthernFactoryHours >= 0
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, **NorthernFactoryHours ≥ 0** is indeed a constraint.
+Yes, **NorthernFactoryHours ≥ 0** is indeed a valid and necessary constraint.
 
 ### Why?
-- The decision variable **NorthernFactoryHours** represents the number of hours the northern factory operates.
-- Negative operating hours are physically impossible.
-- In linear programming formulations, non-negativity constraints on decision variables are standard and necessary unless variables are explicitly defined as free.
-- Even if some solvers assume non-negativity by default, it must be explicitly modeled in a formal mathematical formulation.
 
-Therefore, this is a legitimate and required constraint in the model.
+- The decision variable represents the **number of hours** the northern factory operates.
+- Negative operating hours are physically impossible and have no meaningful interpretation in this context.
+- In linear programming models, **non-negativity constraints are standard and essential** unless otherwise specified.
+- Even if some modeling frameworks assume non-negativity by default, from a mathematical formulation standpoint, it is absolutely a real constraint on the decision variable.
+
+Therefore, it **should be explicitly included** in the LP (or at least enforced via variable bounds).
+
+### Conclusion  
+✅ This is a real constraint.  
+✅ It should be modeled (either explicitly or via variable lower bounds).  
 
 **5 OUT OF 5**
 +--+
@@ -512,28 +554,23 @@ Take a deep breath and think step by step. You will be awarded a million dollars
 ----
 Yes, **WesternFactoryHours ≥ 0** is indeed a constraint.
 
-### Why?
+### Step-by-step reasoning:
 
-- **WesternFactoryHours** is a decision variable representing the number of hours the western factory operates.
-- In real life, a factory cannot operate for a negative number of hours.
-- Therefore, non-negativity is a **logical and physical requirement** of the model.
+- The decision variables in this problem are:
+  - `NorthernFactoryHours`
+  - `WesternFactoryHours`
 
-### Should it be explicitly modeled?
+- These represent the number of hours each factory operates.
+- Negative operating hours would have no physical meaning.
+- In linear programming (LP/MILP), **nonnegativity constraints are standard and required unless explicitly stated otherwise**.
+- Even if not written explicitly in the natural language description, they are mathematically necessary for a well-defined and realistic model.
 
-Yes. In linear and mixed-integer programming formulations:
+Therefore, this **must be included explicitly** in the LP/MILP formulation (unless your modeling framework automatically assumes nonnegativity).
 
-- Non-negativity constraints are typically included explicitly (e.g., \( x \ge 0 \)).
-- Even if a modeling language assumes non-negativity by default, conceptually it is still a constraint of the model.
-- It defines the feasible region and ensures meaningful solutions.
+✅ It *is* a real constraint.  
+✅ It *should* be explicitly modeled (unless implicitly enforced by the solver).
 
-There is no ambiguity here — this is a standard structural constraint for decision variables representing time.
-
-### Conclusion
-
-✅ It **is** a constraint.  
-✅ It **should be explicitly modeled** (or at least clearly specified as a non-negative variable).  
-
-**5 OUT OF 5**
+**Confidence: 5 OUT OF 5**
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -549,7 +586,7 @@ Extracting constraint formulations
 
 ----
 {
-    "FORMULATION": "$800 \\cdot NorthernFactoryHours + 650 \\cdot WesternFactoryHours \\geq MinimumAntiItchProduction$",
+    "FORMULATION": "$800 \\cdot NorthernFactoryHours + 650 \\cdot WesternFactoryHours \\geq 800000$",
     "NEW VARIABLES": {
         "NorthernFactoryHours": {
             "shape": [],
@@ -567,33 +604,33 @@ Extracting constraint formulations
 ----
 ----
 EXTRACTED ITEMS
-$800 \\cdot NorthernFactoryHours + 650 \\cdot WesternFactoryHours \\geq MinimumAntiItchProduction$
+$800 \\cdot NorthernFactoryHours + 650 \\cdot WesternFactoryHours \\geq 800000$
 {'NorthernFactoryHours': {'shape': [], 'type': 'continuous', 'definition': 'Number of hours the northern factory is operated'}, 'WesternFactoryHours': {'shape': [], 'type': 'continuous', 'definition': 'Number of hours the western factory is operated'}}
 []
 ----
 ----
 {
-    "FORMULATION": "$700 \\cdot NorthernFactoryHours + 750 \\cdot WesternFactoryHours \\ge MinimumTopicalCreamProduction$",
+    "FORMULATION": "$700 \\cdot NorthernFactoryHours + 750 \\cdot WesternFactoryHours \\ge 700000$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$700 \\cdot NorthernFactoryHours + 750 \\cdot WesternFactoryHours \\ge MinimumTopicalCreamProduction$
+$700 \\cdot NorthernFactoryHours + 750 \\cdot WesternFactoryHours \\ge 700000$
 {}
 []
 ----
 ----
 {
-    "FORMULATION": "$NorthernFactoryPlasticUsage \\cdot NorthernFactoryHours + WesternFactoryPlasticUsage \\cdot WesternFactoryHours \\leq TotalPlasticAvailable$",
+    "FORMULATION": "$40 \\cdot NorthernFactoryHours + 35 \\cdot WesternFactoryHours \\leq 60000$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$NorthernFactoryPlasticUsage \\cdot NorthernFactoryHours + WesternFactoryPlasticUsage \\cdot WesternFactoryHours \\leq TotalPlasticAvailable$
+$40 \\cdot NorthernFactoryHours + 35 \\cdot WesternFactoryHours \\leq 60000$
 {}
 []
 ----
@@ -612,14 +649,14 @@ $NorthernFactoryHours \\ge 0$
 ----
 ----
 {
-    "FORMULATION": "$WesternFactoryHours \\geq 0$",
+    "FORMULATION": "$WesternFactoryHours \\ge 0$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$WesternFactoryHours \\geq 0$
+$WesternFactoryHours \\ge 0$
 {}
 []
 ----
@@ -631,22 +668,24 @@ CPU model: Intel(R) Xeon(R) Platinum, instruction set [SSE2|AVX|AVX2|AVX512]
 Thread count: 1 physical cores, 2 logical processors, using up to 2 threads
 
 Optimize a model with 5 rows, 2 columns and 8 nonzeros (Min)
-Model fingerprint: 0xeb93966c
-Model has 0 linear objective coefficients
+Model fingerprint: 0xd3e0627a
+Model has 2 linear objective coefficients
 Coefficient statistics:
   Matrix range     [1e+00, 8e+02]
-  Objective range  [0e+00, 0e+00]
+  Objective range  [1e+00, 1e+00]
   Bounds range     [0e+00, 0e+00]
   RHS range        [6e+04, 8e+05]
 
-Presolve removed 5 rows and 2 columns
+Presolve removed 2 rows and 0 columns
 Presolve time: 0.00s
-Presolve: All rows and columns removed
-Iteration    Objective       Primal Inf.    Dual Inf.      Time
-       0    0.0000000e+00   0.000000e+00   0.000000e+00      0s
+Presolved: 3 rows, 2 columns, 6 nonzeros
 
-Solved in 0 iterations and 0.00 seconds (0.00 work units)
-Optimal objective  0.000000000e+00
-Optimal Objective Value:  0.0
-Optimal Objective Value:  0.0
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0    0.0000000e+00   1.171875e+04   0.000000e+00      0s
+       1    1.0000000e+03   0.000000e+00   0.000000e+00      0s
+
+Solved in 1 iterations and 0.00 seconds (0.00 work units)
+Optimal objective  1.000000000e+03
+Optimal Objective Value:  1000.0
+Optimal Objective Value:  1000.0
 

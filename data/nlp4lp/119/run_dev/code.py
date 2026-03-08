@@ -44,7 +44,7 @@ model.addConstr(ThroatSwabs >= ThroatToNasalRatio * NasalSwabs)
 
 ### Define the objective
 
-
+model.setObjective(ThroatSwabs + NasalSwabs, GRB.MAXIMIZE)
 
 
 ### Optimize the model

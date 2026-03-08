@@ -1,50 +1,9 @@
 ----
-Yes, there is redundancy in the list of constraints. Let's analyze each one carefully.
-
-### Step-by-step reasoning
-
-1. **"Number of pH tests performed must be at least MinPHTests"**  
-   This constraint enforces \( \text{pH} \ge 250 \).  
-   Since 250 is already nonnegative, this automatically guarantees that the number of pH tests is nonnegative.  
-   ✅ Therefore, the separate non-negativity constraint on pH tests is redundant.
-
-2. **"Number of pH tests performed must be non-negative"**  
-   This is implied by constraint (1), since \( \text{pH} \ge 250 \).  
-   ❌ This constraint can be removed.
-
-3. **"Number of pH tests performed must be less than or equal to MaxPHtoSalinityRatio times the number of salinity tests performed"**  
-   This constraint enforces \( \text{pH} \le 1.5 \times \text{salinity} \).  
-   Since pH must be at least 250, this implies:
-   \[
-   250 \le 1.5 \times \text{salinity}
-   \]
-   \[
-   \text{salinity} \ge \frac{250}{1.5} \approx 166.67
-   \]
-   Therefore, salinity must be strictly positive in any feasible solution.
-
-4. **"Number of salinity tests performed must be non-negative"**  
-   As shown above, this is implied by constraints (1) and (3).  
-   ❌ This constraint is redundant and can be removed.
-
-5. **"Total number of tests performed must be at least MinTotalTests"**  
-   This is independent and cannot be derived from other constraints.  
-   ✅ Must be kept.
-
-6. **Combining constraints?**  
-   None of the remaining constraints can be combined without changing structure or meaning. Each plays a distinct role.
-
----
-
-### ✅ Updated list of constraints
-
-```python
 [
-    "Number of pH tests performed must be at least MinPHTests",
-    "Total number of tests performed (pH tests plus salinity tests) must be at least MinTotalTests",
-    "Number of pH tests performed must be less than or equal to MaxPHtoSalinityRatio times the number of salinity tests performed"
+    "The number of pH tests performed must be at least 250",
+    "The total number of tests performed (salinity tests plus pH tests) must be at least 400",
+    "The number of pH tests must be at most 1.5 times the number of salinity tests"
 ]
-```
 ----
 +++++++++++++++++++
 ++ Constraint Qs ++
@@ -88,7 +47,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: Number of pH tests performed must be at least MinPHTests
+Consider this potential constraint: The number of pH tests performed must be at least 250
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -98,23 +57,20 @@ Consider this potential constraint: Number of pH tests performed must be at leas
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is clearly a constraint and must be explicitly included in the (MI)LP formulation.
+Yes, this is explicitly a constraint.
 
-The problem statement explicitly says:
-
+The problem statement clearly says:  
 > “The chemical company must perform at least 250 pH tests.”
 
-This directly translates into the constraint:
+The phrase “must perform at least” directly translates into a lower bound constraint in an optimization model:
 
 \[
-\text{Number of pH tests} \ge \text{MinPHTests}
+\text{Number of pH tests} \ge 250
 \]
 
-This is not implied by any other constraint (such as the total minimum tests or the ratio constraint), so it must be modeled explicitly. Without it, the solution could violate the stated requirement.
+This is not implied or derived — it is explicitly stated and therefore must be included in the (MI)LP formulation.
 
-There is no ambiguity in the language — “must perform at least 250 pH tests” is a hard lower bound constraint.
-
-5 OUT OF 5
+**Confidence level:** 5 OUT OF 5
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -158,7 +114,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: Total number of tests performed (pH tests plus salinity tests) must be at least MinTotalTests
+Consider this potential constraint: The total number of tests performed (salinity tests plus pH tests) must be at least 400
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -168,22 +124,24 @@ Consider this potential constraint: Total number of tests performed (pH tests pl
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is clearly a constraint and should be explicitly modeled.
+Yes, this is clearly a constraint and should absolutely be included in the (MI)LP formulation.
 
-The problem statement says:  
+The problem statement explicitly says:
+
 > “In total, at least 400 tests must be performed.”
 
-This directly translates into a linear constraint:
+This directly translates to the mathematical constraint:
 
 \[
-\text{pH tests} + \text{salinity tests} \ge \text{MinTotalTests}
+\text{SalinityTests} + \text{PHTests} \ge 400
 \]
 
-This is not implied by the other constraints:
-- The minimum number of pH tests (≥ 250) alone does not guarantee the total will reach 400.
-- The ratio constraint does not enforce a minimum total either.
+It is:
+- Explicitly stated in the description.
+- Independent of the other constraints (minimum pH tests and ratio constraint).
+- Necessary to correctly define the feasible region.
 
-Therefore, this constraint is necessary and must be included in the (MI)LP formulation.
+Therefore, it must be explicitly modeled.
 
 **5 OUT OF 5**
 +--+
@@ -229,7 +187,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: Number of pH tests performed must be less than or equal to MaxPHtoSalinityRatio times the number of salinity tests performed
+Consider this potential constraint: The number of pH tests must be at most 1.5 times the number of salinity tests
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -239,21 +197,29 @@ Consider this potential constraint: Number of pH tests performed must be less th
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is definitely a constraint and it should be explicitly included in the (MI)LP formulation.
+Yes, this is definitely a constraint and must be explicitly modeled.
 
 The statement:
 
 > “there must be at most 1.5 times more pH tests than salinity tests”
 
-directly translates to:
+directly imposes a restriction on the relationship between the decision variables:
+
+Let:
+- \( x \) = number of salinity tests  
+- \( y \) = number of pH tests  
+
+The condition translates to:
 
 \[
-\text{Number of pH tests} \le 1.5 \times \text{Number of salinity tests}
+y \le 1.5x
 \]
 
-This is a structural requirement relating the two decision variables. It is not implied by the other constraints (minimum pH tests and minimum total tests), so omitting it would change the feasible region and potentially the optimal solution.
+This is a structural feasibility requirement, not a derived implication of other constraints. Without it, the model could choose arbitrarily many pH tests (as long as other minimums are met), which would violate the stated policy requirement.
 
-Therefore, it must be explicitly modeled.
+Therefore:
+- ✅ It is clearly a constraint.
+- ✅ It must be explicitly included in the (MI)LP formulation.
 
 **5 OUT OF 5**
 +--+
@@ -271,9 +237,9 @@ Extracting constraint formulations
 
 ----
 {
-    "FORMULATION": "$NumPHTests \\geq MinPHTests$",
+    "FORMULATION": "$PHTests \\geq MinPHTests$",
     "NEW VARIABLES": {
-        "NumPHTests": {
+        "PHTests": {
             "shape": [],
             "type": "integer",
             "definition": "Number of pH tests performed"
@@ -284,15 +250,15 @@ Extracting constraint formulations
 ----
 ----
 EXTRACTED ITEMS
-$NumPHTests \\geq MinPHTests$
-{'NumPHTests': {'shape': [], 'type': 'integer', 'definition': 'Number of pH tests performed'}}
+$PHTests \\geq MinPHTests$
+{'PHTests': {'shape': [], 'type': 'integer', 'definition': 'Number of pH tests performed'}}
 []
 ----
 ----
 {
-    "FORMULATION": "$NumPHTests + NumSalinityTests \\geq MinTotalTests$",
+    "FORMULATION": "$PHTests + SalinityTests \\geq MinTotalTests$",
     "NEW VARIABLES": {
-        "NumSalinityTests": {
+        "SalinityTests": {
             "shape": [],
             "type": "integer",
             "definition": "Number of salinity tests performed"
@@ -303,20 +269,20 @@ $NumPHTests \\geq MinPHTests$
 ----
 ----
 EXTRACTED ITEMS
-$NumPHTests + NumSalinityTests \\geq MinTotalTests$
-{'NumSalinityTests': {'shape': [], 'type': 'integer', 'definition': 'Number of salinity tests performed'}}
+$PHTests + SalinityTests \\geq MinTotalTests$
+{'SalinityTests': {'shape': [], 'type': 'integer', 'definition': 'Number of salinity tests performed'}}
 []
 ----
 ----
 {
-    "FORMULATION": "$NumPHTests \\leq MaxPHtoSalinityRatio \\cdot NumSalinityTests$",
+    "FORMULATION": "$PHTests \\leq MaxPHtoSalinityRatio \\cdot SalinityTests$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$NumPHTests \\leq MaxPHtoSalinityRatio \\cdot NumSalinityTests$
+$PHTests \\leq MaxPHtoSalinityRatio \\cdot SalinityTests$
 {}
 []
 ----
@@ -328,12 +294,12 @@ CPU model: Intel(R) Xeon(R) Platinum, instruction set [SSE2|AVX|AVX2|AVX512]
 Thread count: 1 physical cores, 2 logical processors, using up to 2 threads
 
 Optimize a model with 3 rows, 2 columns and 5 nonzeros (Min)
-Model fingerprint: 0x01107a6e
-Model has 0 linear objective coefficients
+Model fingerprint: 0xfcbdd46d
+Model has 2 linear objective coefficients
 Variable types: 0 continuous, 2 integer (0 binary)
 Coefficient statistics:
   Matrix range     [1e+00, 2e+00]
-  Objective range  [0e+00, 0e+00]
+  Objective range  [2e+00, 3e+00]
   Bounds range     [0e+00, 0e+00]
   RHS range        [2e+02, 4e+02]
 
@@ -344,10 +310,10 @@ Presolve: All rows and columns removed
 Explored 0 nodes (0 simplex iterations) in 0.00 seconds (0.00 work units)
 Thread count was 1 (of 2 available processors)
 
-Solution count 1: 0 
+Solution count 1: 1001 
 
 Optimal solution found (tolerance 1.00e-04)
-Best objective 0.000000000000e+00, best bound 0.000000000000e+00, gap 0.0000%
-Optimal Objective Value:  0.0
-Optimal Objective Value:  0.0
+Best objective 1.001000000000e+03, best bound 1.001000000000e+03, gap 0.0000%
+Optimal Objective Value:  1001.0
+Optimal Objective Value:  1001.0
 

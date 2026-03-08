@@ -1,23 +1,18 @@
 ----
-The two constraints serve fundamentally different purposes:
+The two constraints serve different and necessary purposes:
 
-1. **Resource constraints (by crude type)** ensure that the total usage of each crude oil across all processes does not exceed its allocated amount.
-2. **Non-negativity constraints (by process)** ensure that process execution levels are feasible (you cannot execute a process a negative number of times).
+1. **Resource constraints (one per crude oil type)** ensure that total crude usage across all processes does not exceed the allocated availability. These constraints are indexed by crude type \( i \), and each one limits a different resource. None of them are redundant, since each crude oil type has its own allocation limit.
 
-### Redundancy Check
-- The non-negativity constraints cannot be derived from the resource constraints.
-- The resource constraints cannot be inferred from non-negativity.
-- The constraints are indexed differently (one over crude types, one over processes), so they cannot be merged.
-- No constraint is redundant.
+2. **Non-negativity constraints (one per process)** ensure that the execution level of each process is not negative. These are standard feasibility constraints in LP models and cannot be removed unless non-negativity is assumed implicitly. They also cannot be combined with the resource constraints, as they apply to different structural aspects of the model.
 
-### Updated Constraint List
+There is no redundancy, and no constraints can be removed or meaningfully combined.
 
-```python
+Updated list of constraints:
+
 [
-    "For each crude oil type i, the total amount used across all processes cannot exceed the allocated amount: sum over l of (input_l_i * execute_l) <= allocated_i",
-    "For each process l, the number of times it is executed must be non-negative: execute_l >= 0"
+    "For each crude oil type i, the total amount used by all processes cannot exceed the allocated amount: sum over l of (input_l_i * execute_l) ≤ allocated_i",
+    "The number of times each process is executed must be non-negative: execute_l ≥ 0 for all l"
 ]
-```
 ----
 +++++++++++++++++++
 ++ Constraint Qs ++
@@ -122,7 +117,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: For each crude oil type i, the total amount used across all processes cannot exceed the allocated amount: sum over l of (input_l_i * execute_l) <= allocated_i
+Consider this potential constraint: For each crude oil type i, the total amount used by all processes cannot exceed the allocated amount: sum over l of (input_l_i * execute_l) ≤ allocated_i
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -132,33 +127,33 @@ Consider this potential constraint: For each crude oil type i, the total amount 
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is definitely a constraint and it must be explicitly included in the LP formulation.
+Yes, this is definitely a constraint and it must be explicitly modeled.
 
-### Reasoning
+### Why?
 
-- The problem states that a fixed amount of each crude oil type \( i \), denoted as `allocated_i`, is available for production during the month.
-- Each process \( l \) consumes `input_l_i` barrels of crude \( i \) per execution.
-- If we execute process \( l \) a fractional number of times `execute_l`, then the total usage of crude \( i \) across all processes is:
-
-\[
-\sum_{l=1}^{L} input_{l,i} \cdot execute_l
-\]
-
-- Since the crude oil has already been allocated and no additional supply is available (and no cost is modeled for exceeding it), we cannot use more than what is allocated.
-
-Therefore, the constraint
+- The problem states that a fixed amount of each crude oil type \( i \), namely \( \text{allocated}_i \), has been allocated for production.
+- Each process \( l \) consumes \( \text{input}_{l,i} \) barrels of crude \( i \) per unit of execution.
+- If process \( l \) is executed \( \text{execute}_l \) times, then the total usage of crude \( i \) across all processes is:
 
 \[
-\sum_{l=1}^{L} input_{l,i} \cdot execute_l \le allocated_i \quad \forall i = 1, \dots, O
+\sum_{l=1}^{L} \text{input}_{l,i} \cdot \text{execute}_l
 \]
 
-is a **core resource capacity constraint** and is absolutely required in the LP model.
+- Since the crude oil has already been allocated and there is no mention of purchasing more, total usage **cannot exceed** the allocated amount.
 
-Without it, the model could use unlimited crude and generate unbounded profit (if processes are profitable), which would be incorrect.
+This is a classic resource capacity constraint in linear programming.
 
-### Confidence
+Therefore, for each crude oil type \( i \), we must include:
 
-This is a fundamental material balance/resource limitation constraint in production planning.
+\[
+\sum_{l=1}^{L} \text{input}_{l,i} \cdot \text{execute}_l \le \text{allocated}_i
+\]
+
+Without this constraint, the model could unrealistically use unlimited crude oil, leading to an infeasible or unbounded solution.
+
+### Confidence Level
+
+✅ This is clearly a required constraint directly implied by the problem statement.
 
 **5 OUT OF 5**
 +--+
@@ -265,7 +260,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: For each process l, the number of times it is executed must be non-negative: execute_l >= 0
+Consider this potential constraint: The number of times each process is executed must be non-negative: execute_l ≥ 0 for all l
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -275,34 +270,17 @@ Consider this potential constraint: For each process l, the number of times it i
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is indeed a constraint, and it should be explicitly modeled in the LP formulation.
+Yes, this is indeed a necessary constraint.
 
-### Reasoning
+The decision variable \( \text{execute}_l \) represents the number of times process \( l \) is executed. Since executing a process a negative number of times has no physical or practical meaning, the variable must be constrained to be non-negative.
 
-The decision variables are:
-\[
-\text{execute}_l \quad \text{for } l = 1, \dots, L
-\]
-which represent how many times process \( l \) is executed.
-
-From a physical and operational standpoint:
-
-- A process cannot be executed a negative number of times.
-- A negative value would imply “undoing” a process — consuming products to regenerate crude — which is not described or allowed in the problem.
-- The problem explicitly states that the execution count can be a floating-point number, but it does **not** say it can be negative.
-
-Therefore, we must impose:
+Although many LP formulations assume non-negativity by default, it is still conceptually and mathematically a required constraint in the model. Therefore, it should explicitly (or implicitly, via default variable bounds) be included in the formulation:
 
 \[
 \text{execute}_l \ge 0 \quad \forall l
 \]
 
-This is a standard non-negativity constraint in linear programming and is required to ensure the solution is physically meaningful.
-
-### Conclusion
-
-✅ Yes, this is a real and necessary constraint.  
-✅ It must be explicitly included in the LP formulation.
+This is a fundamental feasibility requirement for the model.
 
 **5 OUT OF 5**
 +--+
@@ -320,7 +298,7 @@ Extracting constraint formulations
 
 ----
 {
-    "FORMULATION": "$\\forall i = 1, \\dots, O:\\; \\sum_{l=1}^{L} Input[l,i] \\cdot execute[l] \\leq Allocated[i]$",
+    "FORMULATION": "$\\forall i = 1, \\dots, O, \\; \\sum_{l=1}^{L} Input[l,i] \\cdot execute[l] \\le Allocated[i]$",
     "NEW VARIABLES": {
         "execute": {
             "shape": "[L]",
@@ -333,20 +311,20 @@ Extracting constraint formulations
 ----
 ----
 EXTRACTED ITEMS
-$\\forall i = 1, \\dots, O:\\; \\sum_{l=1}^{L} Input[l,i] \\cdot execute[l] \\leq Allocated[i]$
+$\\forall i = 1, \\dots, O, \\; \\sum_{l=1}^{L} Input[l,i] \\cdot execute[l] \\le Allocated[i]$
 {'execute': {'shape': '[L]', 'type': 'continuous', 'definition': 'Number of times each process l is executed during the month'}}
 []
 ----
 ----
 {
-    "FORMULATION": "$\\forall l \\in \\{1, \\dots, L\\},\\; execute[l] \\geq 0$",
+    "FORMULATION": "$\\forall l = 1, \\dots, L,\\; execute_l \\ge 0$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$\\forall l \\in \\{1, \\dots, L\\},\\; execute[l] \\geq 0$
+$\\forall l = 1, \\dots, L,\\; execute_l \\ge 0$
 {}
 []
 ----

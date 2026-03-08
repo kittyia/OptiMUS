@@ -39,13 +39,11 @@ InputTwo = data["InputTwo"] # shape: ['NumIndustries', 'NumIndustries'], definit
 
 produce = model.addVars(NumIndustries, K, vtype=GRB.CONTINUOUS, name="produce")
 
-capacityLevel = model.addVars(NumIndustries, K, vtype=GRB.CONTINUOUS, name="capacityLevel")
+capacityAvail = model.addVars(NumIndustries, K, vtype=GRB.CONTINUOUS, name="capacityAvail")
 
 buildcapa = model.addVars(NumIndustries, K, vtype=GRB.CONTINUOUS, name="buildcapa")
 
 stockhold = model.addVars(NumIndustries, K, vtype=GRB.CONTINUOUS, name="stockhold")
-
-totalManpower = model.addVars(K, vtype=GRB.CONTINUOUS, name="totalManpower")
 
 
 
@@ -53,76 +51,74 @@ totalManpower = model.addVars(K, vtype=GRB.CONTINUOUS, name="totalManpower")
 
 for k in range(NumIndustries):
     for t in range(K):
-        model.addConstr(produce[k, t] <= capacityLevel[k, t])
+        model.addConstr(produce[k, t] <= capacityAvail[k, t])
 for k in range(NumIndustries):
     for t in range(K):
-        if t >= 2:
-            model.addConstr(
-                capacityLevel[k, t] == Capacity[k] + sum(buildcapa[k, tau] for tau in range(t-1))
-            )
-        else:
-            model.addConstr(
-                capacityLevel[k, t] == Capacity[k]
-            )
-for k in range(NumIndustries):
-    # Year 1 (t = 0 in Python indexing)
-    model.addConstr(
-        stockhold[k, 0] ==
-        Stock[k]
-        + produce[k, 0]
-        - sum(InputOne[i][k] * produce[i, 1] for i in range(NumIndustries))
-        - sum(InputTwo[i][k] * buildcapa[i, 0] for i in range(NumIndustries))
-        - Demand[k]
-    )
-
-    # Years 2 to K-1 (t = 1 to K-2 in Python indexing)
-    for t in range(1, K - 1):
         model.addConstr(
-            stockhold[k, t] ==
-            stockhold[k, t - 1]
-            + produce[k, t]
-            - sum(InputOne[i][k] * produce[i, t + 1] for i in range(NumIndustries))
-            - sum(InputTwo[i][k] * buildcapa[i, t] for i in range(NumIndustries))
+            capacityAvail[k, t] == Capacity[k] + 
+            sum(buildcapa[k, tau] for tau in range(0, t-1))
+        )
+for k in range(NumIndustries):
+    if K > 1:
+        # t = 1 (index 0)
+        model.addConstr(
+            stockhold[k, 0] ==
+            Stock[k] + produce[k, 0]
+            - sum(
+                InputOne[j][k] * produce[j, 1] +
+                InputTwo[j][k] * buildcapa[j, 1]
+                for j in range(NumIndustries)
+            )
             - Demand[k]
         )
 
-    # Year K (t = K-1 in Python indexing)
-    model.addConstr(
-        stockhold[k, K - 1] ==
-        stockhold[k, K - 2]
-        + produce[k, K - 1]
-        - sum(InputTwo[i][k] * buildcapa[i, K - 1] for i in range(NumIndustries))
-        - Demand[k]
-    )
-for j in range(NumIndustries):
-    for t in range(K-1):
+        # t = 2, ..., K-1 (indices 1 to K-2)
+        for t in range(1, K - 1):
+            model.addConstr(
+                stockhold[k, t] ==
+                stockhold[k, t - 1] + produce[k, t]
+                - sum(
+                    InputOne[j][k] * produce[j, t + 1] +
+                    InputTwo[j][k] * buildcapa[j, t + 1]
+                    for j in range(NumIndustries)
+                )
+                - Demand[k]
+            )
+
+        # t = K (index K-1)
         model.addConstr(
-            sum(InputOne[k][j] * produce[k, t+1] for k in range(NumIndustries))
-            == sum(InputOne[k][j] * produce[k, t+1] for k in range(NumIndustries))
+            stockhold[k, K - 1] ==
+            stockhold[k, K - 2] + produce[k, K - 1]
+            - Demand[k]
+        )
+    else:
+        # Special case when K = 1
+        model.addConstr(
+            stockhold[k, 0] ==
+            Stock[k] + produce[k, 0]
+            - Demand[k]
         )
 for k in range(NumIndustries):
-    model.addConstr(capacityLevel[k, 0] == Capacity[k])
-for t in range(K):
-    model.addConstr(
-        totalManpower[t] == sum(
-            ManpowerOne[k] * produce[k, t] + ManpowerTwo[k] * buildcapa[k, t]
-            for k in range(NumIndustries)
-        )
-    )
+    for t in range(K):
+        model.addConstr(stockhold[k, t] >= 0)
 for k in range(NumIndustries):
     for t in range(K):
         model.addConstr(produce[k, t] >= 0)
 for k in range(NumIndustries):
     for t in range(K):
         model.addConstr(buildcapa[k, t] >= 0)
-for k in range(NumIndustries):
-    for t in range(K):
-        model.addConstr(stockhold[k, t] >= 0)
 
 
 ### Define the objective
 
-model.setObjective(quicksum(totalManpower[t] for t in range(K)), GRB.MAXIMIZE)
+model.setObjective(
+    quicksum(
+        ManpowerOne[k] * produce[k, t] + ManpowerTwo[k] * buildcapa[k, t]
+        for k in range(NumIndustries)
+        for t in range(K)
+    ),
+    GRB.MAXIMIZE
+)
 
 
 ### Optimize the model

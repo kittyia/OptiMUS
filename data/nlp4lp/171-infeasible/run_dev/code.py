@@ -41,16 +41,18 @@ BoatTrips = model.addVar(vtype=GRB.INTEGER, name="BoatTrips")
 
 ### Define the constraints
 
-model.addConstr(SubmarineTrips <= MaxSubmarineTrips)
-model.addConstr(100 * BoatTrips >= MinBoatTripPercentage * (SubmarineTrips + BoatTrips))
 model.addConstr(SubmarineCapacity * SubmarineTrips + BoatCapacity * BoatTrips >= MailRequired)
+model.addConstr(SubmarineTrips <= MaxSubmarineTrips)
+model.addConstr(BoatTrips >= SubmarineTrips)
+model.addConstr(SubmarineTrips >= 0)
+model.addConstr(BoatTrips >= 0)
 model.addConstr(SubmarineTrips >= 0)
 model.addConstr(BoatTrips >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(SubmarineGasUsage * SubmarineTrips + BoatGasUsage * BoatTrips, GRB.MINIMIZE)
 
 
 ### Optimize the model

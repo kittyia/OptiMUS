@@ -31,25 +31,25 @@ MinimumDemand = data["MinimumDemand"] # shape: ['NumProducts'], definition: Mini
 
 ### Define the variables
 
-HoursFactory = model.addVars(NumFactories, vtype=GRB.CONTINUOUS, name="HoursFactory")
+HoursRun = model.addVars(NumFactories, vtype=GRB.CONTINUOUS, name="HoursRun")
 
 
 
 ### Define the constraints
 
-model.addConstr(12 * HoursFactory[0] + 20 * HoursFactory[1] >= 800)
-model.addConstr(15 * HoursFactory[0] + 10 * HoursFactory[1] >= 1000)
 model.addConstr(
-    sum(BaseGelRequirement[i] * HoursFactory[i] for i in range(NumFactories))
+    sum(BaseGelRequirement[i] * HoursRun[i] for i in range(NumFactories))
     <= AvailableBaseGel
 )
-model.addConstr(HoursFactory[0] >= 0)
-model.addConstr(HoursFactory[1] >= 0)
+model.addConstr(ProductionRate[0][0] * HoursRun[0] + ProductionRate[1][0] * HoursRun[1] >= MinimumDemand[0])
+model.addConstr(15 * HoursRun[0] + 10 * HoursRun[1] >= 1000)
+model.addConstr(HoursRun[0] >= 0)
+model.addConstr(HoursRun[1] >= 0)
 
 
 ### Define the objective
 
-model.setObjective(quicksum(HoursFactory[f] for f in range(NumFactories)), GRB.MINIMIZE)
+model.setObjective(quicksum(HoursRun[f] for f in range(NumFactories)), GRB.MINIMIZE)
 
 
 ### Optimize the model

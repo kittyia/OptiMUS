@@ -1,23 +1,56 @@
 ----
-The nonnegativity constraints are redundant:
+Yes, there is redundancy in the constraint list.
 
-- Since `TreatmentPills >= MinimumTreatmentPills` and `MinimumTreatmentPills = 50` (which is positive), it already guarantees `TreatmentPills >= 0`. Therefore,  
-  **"TreatmentPills >= 0"** is redundant.
+### Step-by-step reasoning:
 
-- Since `PreventionPills >= PreventionToTreatmentRatio * TreatmentPills`, and both `PreventionToTreatmentRatio = 2` (positive) and `TreatmentPills >= 50` (positive), it follows that  
-  `PreventionPills >= 2 * 50 = 100`,  
-  which automatically guarantees `PreventionPills >= 0`. Therefore,  
-  **"PreventionPills >= 0"** is also redundant.
+1. **Budget constraint**  
+   This is necessary and cannot be removed or combined.
 
-No other constraints are redundant, and no remaining constraints can be combined without changing the model structure.
+2. **Prevention-to-treatment ratio constraint**  
+   This is necessary and cannot be removed or combined.
 
-Updated list of constraints:
+3. **Minimum treatment pills constraint**  
+   This is necessary and cannot be removed or combined.
 
+4. **Non-negativity of TreatmentPills**  
+   Since we already have:
+   ```
+   TreatmentPills >= MinimumTreatmentPills
+   ```
+   and the problem states that the hospital must purchase *at least 50* treatment pills, this already guarantees:
+   ```
+   TreatmentPills >= 50 > 0
+   ```
+   Therefore, the non-negativity constraint for TreatmentPills is redundant and can be removed.
+
+5. **Non-negativity of PreventionPills**  
+   From:
+   ```
+   PreventionPills >= PreventionToTreatmentRatio * TreatmentPills
+   ```
+   and since:
+   - `PreventionToTreatmentRatio = 2` (positive),
+   - `TreatmentPills >= 50` (positive),
+
+   it follows that:
+   ```
+   PreventionPills >= 2 * 50 = 100 > 0
+   ```
+   Therefore, the non-negativity constraint for PreventionPills is also redundant and can be removed.
+
+No constraints can be meaningfully combined further.
+
+---
+
+### ✅ Updated list of constraints:
+
+```python
 [
-    "PreventionPills >= PreventionToTreatmentRatio * TreatmentPills",
-    "TreatmentPills >= MinimumTreatmentPills",
-    "PreventionPillCost * PreventionPills + TreatmentPillCost * TreatmentPills <= Budget"
+    "The total cost of prevention and treatment pills should not exceed the budget: PreventionPillCost * PreventionPills + TreatmentPillCost * TreatmentPills <= Budget",
+    "The number of prevention pills purchased must be at least PreventionToTreatmentRatio times the number of treatment pills: PreventionPills >= PreventionToTreatmentRatio * TreatmentPills",
+    "The number of treatment pills purchased must be at least MinimumTreatmentPills: TreatmentPills >= MinimumTreatmentPills"
 ]
+```
 ----
 +++++++++++++++++++
 ++ Constraint Qs ++
@@ -61,7 +94,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: PreventionPills >= PreventionToTreatmentRatio * TreatmentPills
+Consider this potential constraint: The total cost of prevention and treatment pills should not exceed the budget: PreventionPillCost * PreventionPills + TreatmentPillCost * TreatmentPills <= Budget
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -71,21 +104,19 @@ Consider this potential constraint: PreventionPills >= PreventionToTreatmentRati
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is clearly a constraint and it should be explicitly included in the (MI)LP formulation.
+Yes, this is clearly a constraint and it must be explicitly modeled.
 
-The problem statement says:
+The problem states: *“If the clinic only has a budget of 10000 dollars…”* — this directly limits total spending. Therefore, the total cost of prevention and treatment pills cannot exceed the available budget. That is a standard resource (budget) constraint in linear programming.
 
-> “Since the prevention pill is in higher demand, the hospital must purchase at least two times as many prevention pills as treatment pills.”
-
-This directly translates into the mathematical inequality:
+The proposed formulation:
 
 \[
-\text{PreventionPills} \ge \text{PreventionToTreatmentRatio} \times \text{TreatmentPills}
+\text{PreventionPillCost} \cdot \text{PreventionPills} + \text{TreatmentPillCost} \cdot \text{TreatmentPills} \le \text{Budget}
 \]
 
-where `PreventionToTreatmentRatio = 2`.
+correctly captures this restriction.
 
-This is a structural requirement imposed by policy (demand relationship), not something implied indirectly by cost or budget. Therefore, it must be explicitly modeled as a constraint.
+There is no ambiguity in the wording — the budget is a hard cap on total spending. This constraint is essential to the model and must be included.
 
 **5 OUT OF 5**
 +--+
@@ -131,7 +162,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: TreatmentPills >= MinimumTreatmentPills
+Consider this potential constraint: The number of prevention pills purchased must be at least PreventionToTreatmentRatio times the number of treatment pills: PreventionPills >= PreventionToTreatmentRatio * TreatmentPills
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -141,16 +172,17 @@ Consider this potential constraint: TreatmentPills >= MinimumTreatmentPills
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is explicitly a constraint.
+Yes, this is explicitly stated in the problem description:
 
-The problem states: *“the hospital must purchase at least 50 treatment pills.”*  
-This directly translates to the mathematical constraint:
+> “Since the prevention pill is in higher demand, the hospital must purchase at least two times as many prevention pills as treatment pills.”
+
+This directly translates to the constraint:
 
 \[
-\text{TreatmentPills} \ge \text{MinimumTreatmentPills}
+\text{PreventionPills} \ge \text{PreventionToTreatmentRatio} \times \text{TreatmentPills}
 \]
 
-This is a clear lower bound requirement and must be included in the (MI)LP formulation. There is no ambiguity in the wording—it is a mandatory condition, not optional or implied.
+It is clearly a structural requirement of the purchasing policy and must be included in the (MI)LP formulation.
 
 **Confidence: 5 OUT OF 5**
 +--+
@@ -196,7 +228,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: PreventionPillCost * PreventionPills + TreatmentPillCost * TreatmentPills <= Budget
+Consider this potential constraint: The number of treatment pills purchased must be at least MinimumTreatmentPills: TreatmentPills >= MinimumTreatmentPills
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -206,22 +238,18 @@ Consider this potential constraint: PreventionPillCost * PreventionPills + Treat
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is definitely a constraint and it should be explicitly included in the (MI)LP formulation.
+Yes, this is explicitly a constraint from the problem description.
 
-Reasoning:
+The text clearly states: *“the hospital must purchase at least 50 treatment pills.”*  
+This directly translates to the mathematical constraint:
 
-- The hospital has a limited budget of 10,000 dollars.
-- Each prevention pill costs 15 dollars and each treatment pill costs 25 dollars.
-- The total spending on pills cannot exceed the available budget.
-- Therefore, the total cost of purchased pills must satisfy:
+\[
+\text{TreatmentPills} \ge \text{MinimumTreatmentPills}
+\]
 
-  PreventionPillCost × PreventionPills + TreatmentPillCost × TreatmentPills ≤ Budget
+This is not implied or optional — it is a hard requirement. Therefore, it must be explicitly included in the (MI)LP formulation.
 
-This is a classic resource (budget) constraint and is essential to correctly model the feasible region of the optimization problem. Without it, the model would allow unlimited pill purchases, making the problem meaningless.
-
-This is clearly a structural constraint derived directly from the problem statement.
-
-5 OUT OF 5
+**Confidence level: 5 OUT OF 5**
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -237,17 +265,17 @@ Extracting constraint formulations
 
 ----
 {
-    "FORMULATION": "$PreventionPills \\geq PreventionToTreatmentRatio \\cdot TreatmentPills$",
+    "FORMULATION": "$PreventionPillCost \\cdot PreventionPills + TreatmentPillCost \\cdot TreatmentPills \\leq Budget$",
     "NEW VARIABLES": {
         "PreventionPills": {
             "shape": [],
             "type": "integer",
-            "definition": "Number of prevention pills to purchase"
+            "definition": "Number of prevention pills purchased"
         },
         "TreatmentPills": {
             "shape": [],
             "type": "integer",
-            "definition": "Number of treatment pills to purchase"
+            "definition": "Number of treatment pills purchased"
         }
     },
     "AUXILIARY CONSTRAINTS": []
@@ -255,8 +283,21 @@ Extracting constraint formulations
 ----
 ----
 EXTRACTED ITEMS
+$PreventionPillCost \\cdot PreventionPills + TreatmentPillCost \\cdot TreatmentPills \\leq Budget$
+{'PreventionPills': {'shape': [], 'type': 'integer', 'definition': 'Number of prevention pills purchased'}, 'TreatmentPills': {'shape': [], 'type': 'integer', 'definition': 'Number of treatment pills purchased'}}
+[]
+----
+----
+{
+    "FORMULATION": "$PreventionPills \\geq PreventionToTreatmentRatio \\cdot TreatmentPills$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
 $PreventionPills \\geq PreventionToTreatmentRatio \\cdot TreatmentPills$
-{'PreventionPills': {'shape': [], 'type': 'integer', 'definition': 'Number of prevention pills to purchase'}, 'TreatmentPills': {'shape': [], 'type': 'integer', 'definition': 'Number of treatment pills to purchase'}}
+{}
 []
 ----
 ----
@@ -272,19 +313,6 @@ $TreatmentPills \\geq MinimumTreatmentPills$
 {}
 []
 ----
-----
-{
-    "FORMULATION": "$PreventionPillCost \\cdot PreventionPills + TreatmentPillCost \\cdot TreatmentPills \\leq Budget$",
-    "NEW VARIABLES": {},
-    "AUXILIARY CONSTRAINTS": []
-}
-----
-----
-EXTRACTED ITEMS
-$PreventionPillCost \\cdot PreventionPills + TreatmentPillCost \\cdot TreatmentPills \\leq Budget$
-{}
-[]
-----
 Code executed successfully. Output:
 Restricted license - for non-production use only - expires 2027-11-29
 Gurobi Optimizer version 13.0.1 build v13.0.1rc0 (linux64 - "Alibaba Cloud Linux 3.2104 U12.3 (OpenAnolis Edition)")
@@ -292,13 +320,13 @@ Gurobi Optimizer version 13.0.1 build v13.0.1rc0 (linux64 - "Alibaba Cloud Linux
 CPU model: Intel(R) Xeon(R) Platinum, instruction set [SSE2|AVX|AVX2|AVX512]
 Thread count: 1 physical cores, 2 logical processors, using up to 2 threads
 
-Optimize a model with 3 rows, 2 columns and 5 nonzeros (Min)
-Model fingerprint: 0xf88b1b37
-Model has 0 linear objective coefficients
+Optimize a model with 3 rows, 2 columns and 5 nonzeros (Max)
+Model fingerprint: 0x371c50c6
+Model has 1 linear objective coefficients
 Variable types: 0 continuous, 2 integer (0 binary)
 Coefficient statistics:
   Matrix range     [1e+00, 2e+01]
-  Objective range  [0e+00, 0e+00]
+  Objective range  [1e+00, 1e+00]
   Bounds range     [0e+00, 0e+00]
   RHS range        [5e+01, 1e+04]
 
@@ -309,10 +337,10 @@ Presolve: All rows and columns removed
 Explored 0 nodes (0 simplex iterations) in 0.00 seconds (0.00 work units)
 Thread count was 1 (of 2 available processors)
 
-Solution count 1: 0 
+Solution count 1: 181 
 
 Optimal solution found (tolerance 1.00e-04)
-Best objective 0.000000000000e+00, best bound 0.000000000000e+00, gap 0.0000%
-Optimal Objective Value:  0.0
-Optimal Objective Value:  0.0
+Best objective 1.810000000000e+02, best bound 1.810000000000e+02, gap 0.0000%
+Optimal Objective Value:  181.0
+Optimal Objective Value:  181.0
 

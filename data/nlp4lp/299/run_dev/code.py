@@ -45,8 +45,6 @@ model.addConstr(WaterPerWine * Wine <= TotalWater)
 model.addConstr(TeaPerKombucha * Kombucha <= TotalTea)
 model.addConstr(Wine >= Kombucha)
 model.addConstr(Kombucha >= MinKombuchaPercentage * (Wine + Kombucha))
-model.addConstr(Wine >= 0)
-model.addConstr(Kombucha >= 0)
 
 
 ### Define the objective

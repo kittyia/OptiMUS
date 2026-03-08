@@ -1,3 +1,10 @@
+# # main.py 文件开头
+# __import__('pysqlite3')
+# import sys
+# sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+
+
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 

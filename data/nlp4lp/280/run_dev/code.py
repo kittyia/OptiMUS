@@ -27,25 +27,28 @@ DesiredIlluminations = data["DesiredIlluminations"] # shape: ['NumSegments'], de
 
 ### Define the variables
 
-Illumination = model.addVars(NumSegments, vtype=GRB.CONTINUOUS, name="Illumination")
-
 LampPower = model.addVars(NumLamps, vtype=GRB.CONTINUOUS, name="LampPower")
 
 
 
 ### Define the constraints
 
-for i in range(NumSegments):
-    model.addConstr(
-        Illumination[i] == sum(Coefficients[i][j] * LampPower[j] for j in range(NumLamps))
-    )
 for j in range(NumLamps):
     model.addConstr(LampPower[j] >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(
+    quicksum(
+        abs_(
+            quicksum(Coefficients[i][j] * LampPower[j] for j in range(NumLamps))
+            - DesiredIlluminations[i]
+        )
+        for i in range(NumSegments)
+    ),
+    GRB.MINIMIZE
+)
 
 
 ### Optimize the model

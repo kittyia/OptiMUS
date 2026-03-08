@@ -1,21 +1,7 @@
 ----
-The two listed constraints serve fundamentally different purposes:
-
-1. **Binary constraint** ensures integrality and models the yes/no decision for each item. Without it, the model would become a linear relaxation allowing fractional selection, which changes the problem.
-
-2. **Capacity constraint** enforces the knapsack’s size limitation. Without it, all items would be selected since the objective is to maximize value.
-
-There is no redundancy:
-- Neither constraint implies the other.
-- They cannot be meaningfully combined because one defines variable domain and the other defines a resource limitation.
-
-Therefore, no constraints can be removed or merged.
-
-Updated list of constraints:
-
 [
-    "For each item k, isincluded_k must be a binary variable (0 or 1)",
-    "The total size of the selected items must not exceed the knapsack capacity C, i.e., sum over k of Size_k * isincluded_k <= C"
+    "For each item k, the decision variable isincluded_k must be binary (isincluded_k ∈ {0,1})",
+    "The total size of selected items must not exceed the knapsack capacity: sum over k of Size_k * isincluded_k ≤ C"
 ]
 ----
 +++++++++++++++++++
@@ -88,7 +74,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: For each item k, isincluded_k must be a binary variable (0 or 1)
+Consider this potential constraint: For each item k, the decision variable isincluded_k must be binary (isincluded_k ∈ {0,1})
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -98,20 +84,29 @@ Consider this potential constraint: For each item k, isincluded_k must be a bina
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is indeed a constraint — specifically, it is a **domain (integrality) constraint** on the decision variables.
+Yes, this **is indeed a constraint**, specifically a *domain (integrality) constraint*.
 
-In the knapsack problem, the decision variable \( \text{isincluded}_k \) represents whether item \( k \) is selected. Since an item is either included or not included, this must be modeled as:
+### Step-by-step reasoning:
 
-\[
-\text{isincluded}_k \in \{0,1\} \quad \forall k
-\]
+- The decision variable `isincluded_k` represents whether item \( k \) is included in the knapsack.
+- By definition:
+  - If item \( k \) is included → \( isincluded_k = 1 \)
+  - If item \( k \) is not included → \( isincluded_k = 0 \)
 
-Without this constraint, the model would reduce to a linear relaxation where fractional values (e.g., 0.3 of an item) would be allowed, which changes the problem into the fractional knapsack problem — a different problem entirely.
+This is not optional modeling detail — it is **fundamental to the knapsack problem structure**.  
+Without enforcing \( isincluded_k \in \{0,1\} \):
+
+- The model would become a linear programming relaxation.
+- Variables could take fractional values (e.g., 0.3 of an item).
+- That would convert the model into a *fractional knapsack problem*, which is a different problem entirely.
+
+In Mixed-Integer Programming (MIP), integrality restrictions **are explicitly modeled constraints**. Even though they are not algebraic inequalities, they are formal constraints defining the feasible region.
 
 Therefore:
-- It **is absolutely required** in the MIP formulation.
-- It is a **core defining feature** of the integer programming model.
-- It must be explicitly included in the model.
+
+- ✅ It **is** a constraint.
+- ✅ It **must** be explicitly modeled.
+- ✅ It is essential for correctly defining the MIP formulation.
 
 **5 OUT OF 5**
 +--+
@@ -185,7 +180,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: The total size of the selected items must not exceed the knapsack capacity C, i.e., sum over k of Size_k * isincluded_k <= C
+Consider this potential constraint: The total size of selected items must not exceed the knapsack capacity: sum over k of Size_k * isincluded_k ≤ C
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -195,31 +190,23 @@ Consider this potential constraint: The total size of the selected items must no
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is absolutely a constraint and it is the *core feasibility constraint* of the knapsack problem.
+Yes, this is absolutely a constraint, and it is the core feasibility constraint of the knapsack problem.
 
 Step-by-step reasoning:
 
 - The problem states that the container has maximum capacity \( C \).
-- It explicitly says: *If the total size of the items exceeds the capacity, we can't pack them all.*
-- Therefore, any feasible solution must ensure that the total size of selected items does not exceed \( C \).
-- The decision variable \( \text{isincluded}_k \) is binary (0/1), indicating whether item \( k \) is selected.
-- The total packed size is therefore:
-  
+- It explicitly says that if the total size of the items exceeds the capacity, we cannot pack them.
+- Therefore, any feasible solution must satisfy that the total size of selected items does not exceed \( C \).
+- The mathematical expression  
   \[
-  \sum_{k=1}^{K} \text{Size}_k \cdot \text{isincluded}_k
+  \sum_k \text{Size}_k \cdot \text{isincluded}_k \le C
   \]
+  exactly enforces this requirement.
+- Without this constraint, the model would simply select all items with positive value, making it invalid.
 
-- Enforcing feasibility requires:
+This is not optional or derived — it is the defining constraint of the knapsack problem.
 
-  \[
-  \sum_{k=1}^{K} \text{Size}_k \cdot \text{isincluded}_k \le C
-  \]
-
-Without this constraint, the model would simply select all items to maximize value, ignoring capacity, which would not represent the knapsack problem.
-
-This constraint is fundamental and must be explicitly included in the MIP formulation.
-
-**5 OUT OF 5**
+Confidence level: **5 OUT OF 5**
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -240,7 +227,7 @@ Extracting constraint formulations
         "isincluded": {
             "shape": "[NumItems]",
             "type": "binary",
-            "definition": "Binary variable equal to 1 if item k is included in the knapsack, 0 otherwise"
+            "definition": "Binary decision variable equal to 1 if item k is included in the knapsack, and 0 otherwise"
         }
     },
     "AUXILIARY CONSTRAINTS": []
@@ -249,19 +236,19 @@ Extracting constraint formulations
 ----
 EXTRACTED ITEMS
 $\\forall k = 1, \\dots, NumItems,\\; isincluded_k \\in \\{0,1\\}$
-{'isincluded': {'shape': '[NumItems]', 'type': 'binary', 'definition': 'Binary variable equal to 1 if item k is included in the knapsack, 0 otherwise'}}
+{'isincluded': {'shape': '[NumItems]', 'type': 'binary', 'definition': 'Binary decision variable equal to 1 if item k is included in the knapsack, and 0 otherwise'}}
 []
 ----
 ----
 {
-    "FORMULATION": "$\\sum_{k=1}^{NumItems} Size_k \\cdot isincluded_k \\leq C$",
+    "FORMULATION": "$\\sum_{k=1}^{NumItems} Size_k \\cdot isincluded_k \\le C$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$\\sum_{k=1}^{NumItems} Size_k \\cdot isincluded_k \\leq C$
+$\\sum_{k=1}^{NumItems} Size_k \\cdot isincluded_k \\le C$
 {}
 []
 ----
@@ -272,25 +259,28 @@ Gurobi Optimizer version 13.0.1 build v13.0.1rc0 (linux64 - "Alibaba Cloud Linux
 CPU model: Intel(R) Xeon(R) Platinum, instruction set [SSE2|AVX|AVX2|AVX512]
 Thread count: 1 physical cores, 2 logical processors, using up to 2 threads
 
-Optimize a model with 5 rows, 2 columns and 6 nonzeros (Min)
-Model fingerprint: 0x1dcdb7d4
-Model has 0 linear objective coefficients
+Optimize a model with 5 rows, 2 columns and 6 nonzeros (Max)
+Model fingerprint: 0x610f632d
+Model has 2 linear objective coefficients
 Variable types: 0 continuous, 2 integer (2 binary)
 Coefficient statistics:
   Matrix range     [1e+00, 8e+00]
-  Objective range  [0e+00, 0e+00]
+  Objective range  [1e+01, 2e+01]
   Bounds range     [1e+00, 1e+00]
   RHS range        [1e+00, 1e+01]
 
-Found heuristic solution: objective 0.0000000
+Found heuristic solution: objective 10.0000000
+Presolve removed 5 rows and 2 columns
+Presolve time: 0.00s
+Presolve: All rows and columns removed
 
 Explored 0 nodes (0 simplex iterations) in 0.00 seconds (0.00 work units)
 Thread count was 1 (of 2 available processors)
 
-Solution count 1: 0 
+Solution count 2: 20 10 
 
 Optimal solution found (tolerance 1.00e-04)
-Best objective 0.000000000000e+00, best bound 0.000000000000e+00, gap 0.0000%
-Optimal Objective Value:  0.0
-Optimal Objective Value:  0.0
+Best objective 2.000000000000e+01, best bound 2.000000000000e+01, gap 0.0000%
+Optimal Objective Value:  20.0
+Optimal Objective Value:  20.0
 

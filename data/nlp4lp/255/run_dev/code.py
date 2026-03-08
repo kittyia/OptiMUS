@@ -36,14 +36,16 @@ PullCarts = model.addVar(vtype=GRB.INTEGER, name="PullCarts")
 ### Define the constraints
 
 model.addConstr(GolfCartCapacity * GolfCarts + PullCartCapacity * PullCarts >= MinGuests)
-model.addConstr(2 * GolfCarts <= 3 * PullCarts)
+model.addConstr(GolfCarts <= MaxGolfCartPercentage * (GolfCarts + PullCarts))
+model.addConstr(GolfCarts >= 0)
+model.addConstr(PullCarts >= 0)
 model.addConstr(GolfCarts >= 0)
 model.addConstr(PullCarts >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(GolfCarts + PullCarts, GRB.MINIMIZE)
 
 
 ### Optimize the model

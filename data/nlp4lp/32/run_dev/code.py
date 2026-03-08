@@ -29,7 +29,7 @@ RequiredQuantity = data["RequiredQuantity"] # shape: ['NumBerries'], definition:
 
 ### Define the variables
 
-Days = model.addVars(NumFarms, vtype=GRB.CONTINUOUS, name="Days")
+DaysOperated = model.addVars(NumFarms, vtype=GRB.CONTINUOUS, name="DaysOperated")
 
 
 
@@ -37,16 +37,16 @@ Days = model.addVars(NumFarms, vtype=GRB.CONTINUOUS, name="Days")
 
 for b in range(NumBerries):
     model.addConstr(
-        sum(HarvestDelivery[f][b] * Days[f] for f in range(NumFarms)) 
+        sum(HarvestDelivery[f][b] * DaysOperated[f] for f in range(NumFarms)) 
         >= RequiredQuantity[b]
     )
 for f in range(NumFarms):
-    model.addConstr(Days[f] >= 0)
+    model.addConstr(DaysOperated[f] >= 0)
 
 
 ### Define the objective
 
-model.setObjective(quicksum(OperatingCost[i] * Days[i] for i in range(NumFarms)), GRB.MINIMIZE)
+model.setObjective(quicksum(OperatingCost[f] * DaysOperated[f] for f in range(NumFarms)), GRB.MINIMIZE)
 
 
 ### Optimize the model

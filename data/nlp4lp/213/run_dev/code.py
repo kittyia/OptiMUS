@@ -39,32 +39,40 @@ MinPiTVProportion = data["MinPiTVProportion"] # shape: [], definition: Minimum p
 
 ### Define the variables
 
-numPiTV = model.addVar(vtype=GRB.INTEGER, name="numPiTV")
+NumPiTV = model.addVar(vtype=GRB.INTEGER, name="NumPiTV")
 
-numBetaVideo = model.addVar(vtype=GRB.INTEGER, name="numBetaVideo")
+NumBetaVideo = model.addVar(vtype=GRB.INTEGER, name="NumBetaVideo")
 
-numGammaLive = model.addVar(vtype=GRB.INTEGER, name="numGammaLive")
+NumGammaLive = model.addVar(vtype=GRB.INTEGER, name="NumGammaLive")
 
 
 
 ### Define the constraints
 
-model.addConstr(CostPiTV * numPiTV + CostBetaVideo * numBetaVideo + CostGammaLive * numGammaLive <= TotalBudget)
-model.addConstr(numBetaVideo <= MaxCommercialsBetaVideo)
 model.addConstr(
-    numGammaLive <= MaxGammaProportion * (numPiTV + numBetaVideo + numGammaLive)
+    CostPiTV * NumPiTV 
+    + CostBetaVideo * NumBetaVideo 
+    + CostGammaLive * NumGammaLive 
+    <= TotalBudget
 )
+model.addConstr(NumBetaVideo <= MaxCommercialsBetaVideo)
+model.addConstr(3 * NumGammaLive <= NumPiTV + NumBetaVideo + NumGammaLive)
 model.addConstr(
-    numPiTV >= MinPiTVProportion * (numPiTV + numBetaVideo + numGammaLive)
+    NumPiTV >= MinPiTVProportion * (NumPiTV + NumBetaVideo + NumGammaLive)
 )
-model.addConstr(numPiTV >= 0)
-model.addConstr(numBetaVideo >= 0)
-model.addConstr(numGammaLive >= 0)
+model.addConstr(NumPiTV >= 0)
+model.addConstr(NumBetaVideo >= 0)
+model.addConstr(NumGammaLive >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(
+    AudiencePiTV * NumPiTV +
+    AudienceBetaVideo * NumBetaVideo +
+    AudienceGammaLive * NumGammaLive,
+    GRB.MAXIMIZE
+)
 
 
 ### Optimize the model

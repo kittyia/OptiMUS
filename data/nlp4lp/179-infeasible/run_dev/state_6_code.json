@@ -32,42 +32,39 @@
         }
     },
     "objective": {
-        "description": "\"Minimize the total number of transportation trips required to deliver the hydrogen\"",
-        "formulation": "$\\min \\; HighPressureTrips + LiquefiedTrips$",
-        "code": ""
+        "description": "\"Minimize the total number of transportation trips using both methods\"",
+        "formulation": "$\\min \\sum_{i=1}^{NumTransportMethods} NumTrips_i$",
+        "code": "model.setObjective(quicksum(NumTrips[i] for i in range(NumTransportMethods)), GRB.MINIMIZE)"
     },
     "constraints": [
         {
-            "description": "The total hydrogen transported by all trips must be at least the minimum required hydrogen (50 * HighPressureTrips + 30 * LiquefiedTrips \u2265 1000)",
-            "formulation": "$50 \\\\cdot HighPressureTrips + 30 \\\\cdot LiquefiedTrips \\\\geq MinimumHydrogen$",
-            "code": "model.addConstr(50 * HighPressureTrips + 30 * LiquefiedTrips >= MinimumHydrogen)"
+            "description": "The total hydrogen transported by all trips must be at least 1000 cubic meters",
+            "formulation": "$\\\\sum_{m=1}^{NumTransportMethods} TransportCapacity[m] \\\\cdot NumTrips[m] \\\\geq MinimumHydrogen$",
+            "code": "model.addConstr(\n    sum(TransportCapacity[m] * NumTrips[m] for m in range(NumTransportMethods)) \n    >= MinimumHydrogen\n)"
         },
         {
-            "description": "The total transportation cost must not exceed the available budget (500 * HighPressureTrips + 200 * LiquefiedTrips \u2264 3750)",
-            "formulation": "$500 \\\\cdot HighPressureTrips + 200 \\\\cdot LiquefiedTrips \\\\leq Budget$",
-            "code": "model.addConstr(500 * HighPressureTrips + 200 * LiquefiedTrips <= Budget)"
+            "description": "The total transportation cost must not exceed 3750 dollars",
+            "formulation": "$\\\\sum_{m=1}^{NumTransportMethods} TransportCost[m] \\\\cdot NumTrips[m] \\\\leq Budget$",
+            "code": "model.addConstr(\n    sum(TransportCost[m] * NumTrips[m] for m in range(NumTransportMethods)) <= Budget\n)"
         },
         {
-            "description": "The number of high pressure tube trailer trips must be less than the number of liquefied hydrogen tanker trips (HighPressureTrips \u2264 LiquefiedTrips - 1)",
-            "formulation": "$HighPressureTrips \\\\leq LiquefiedTrips - 1$",
-            "code": "model.addConstr(HighPressureTrips <= LiquefiedTrips - 1)"
+            "description": "The number of high-pressure tube trailer trips must be less than the number of liquefied hydrogen tanker trips",
+            "formulation": "$NumTrips[1] + 1 \\\\leq NumTrips[2]$",
+            "code": "model.addConstr(NumTrips[0] + 1 <= NumTrips[1])"
         },
         {
-            "description": "The number of trips for each transportation method must be non-negative integers (HighPressureTrips \u2265 0, LiquefiedTrips \u2265 0, both integers)",
-            "formulation": "$HighPressureTrips \\\\geq 0, \\\\; LiquefiedTrips \\\\geq 0, \\\\; HighPressureTrips, LiquefiedTrips \\\\in \\\\mathbb{Z}$",
-            "code": "model.addConstr(HighPressureTrips >= 0)\nmodel.addConstr(LiquefiedTrips >= 0)"
+            "description": "The number of trips for each transportation method must be a non-negative integer",
+            "formulation": "$\\\\forall m = 1, \\\\dots, \\\\text{NumTransportMethods}, \\\\; NumTrips[m] \\\\geq 0 \\\\; \\\\text{and} \\\\; NumTrips[m] \\\\in \\\\mathbb{Z}$",
+            "code": "for m in range(NumTransportMethods):\n    model.addConstr(NumTrips[m] >= 0)"
         }
     ],
     "variables": {
-        "HighPressureTrips": {
-            "shape": [],
+        "NumTrips": {
+            "shape": [
+                "NumTransportMethods"
+            ],
             "type": "integer",
-            "definition": "Number of trips using the high-pressure tube trailer method"
-        },
-        "LiquefiedTrips": {
-            "shape": [],
-            "type": "integer",
-            "definition": "Number of trips using the liquefied hydrogen tanker method"
+            "definition": "Number of trips using each transportation method"
         }
     }
 }

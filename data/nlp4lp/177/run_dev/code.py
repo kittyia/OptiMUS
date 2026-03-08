@@ -37,13 +37,13 @@ LightRailTrips = model.addVar(vtype=GRB.INTEGER, name="LightRailTrips")
 
 model.addConstr(FerryTripCapacity * FerryTrips + LightRailTripCapacity * LightRailTrips >= MinBoxesToSend)
 model.addConstr(LightRailTrips >= MinLightRailMultiplier * FerryTrips)
-model.addConstr(FerryTrips >= 0)
+model.addConstr(FerryTrips >= 0)  
 model.addConstr(LightRailTrips >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(FerryTrips + LightRailTrips, GRB.MINIMIZE)
 
 
 ### Optimize the model

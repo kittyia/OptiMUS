@@ -38,7 +38,9 @@ islocated = model.addVars(K, L, vtype=GRB.BINARY, name="islocated")
 for k in range(K):
     model.addConstr(sum(islocated[k, l] for l in range(L)) == 1)
 for l in range(L):
-    model.addConstr(sum(islocated[k, l] for k in range(K)) <= 3)
+    model.addConstr(
+        sum(islocated[k, l] for k in range(K)) <= 3
+    )
 for k in range(K):
     for l in range(L):
         model.addConstr(islocated[k, l] >= 0)

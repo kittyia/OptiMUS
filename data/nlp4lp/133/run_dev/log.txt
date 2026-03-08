@@ -1,8 +1,8 @@
 ----
 [
-    "3 × (number of large pills) + 2 × (number of small pills) ≤ 1000",
+    "3 × (number of large pills) + 2 × (number of small pills) ≤ TotalMedicinalIngredients",
     "Number of large pills ≥ 100",
-    "Number of small pills ≥ 0.6 × (total number of pills produced)"
+    "Number of small pills ≥ 0.6 × (number of large pills + number of small pills)"
 ]
 ----
 +++++++++++++++++++
@@ -60,7 +60,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: 3 × (number of large pills) + 2 × (number of small pills) ≤ 1000
+Consider this potential constraint: 3 × (number of large pills) + 2 × (number of small pills) ≤ TotalMedicinalIngredients
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -70,42 +70,33 @@ Consider this potential constraint: 3 × (number of large pills) + 2 × (number 
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is definitely a constraint and it must be included in the (MI)LP formulation.
+Yes, this **is definitely a constraint**, and it must be explicitly included in the (MI)LP formulation.
 
 ### Why?
 
 The problem states:
 
-> "A lab has 1000 units of medicinal ingredients..."
+> *A lab has 1000 units of medicinal ingredients...*
 
-This clearly defines a **resource capacity limit**. Since:
+This creates a **resource availability constraint**. Since:
+- Each large pill uses **3 units** of medicinal ingredients,
+- Each small pill uses **2 units** of medicinal ingredients,
 
-- Each large pill requires **3 units** of medicinal ingredients  
-- Each small pill requires **2 units** of medicinal ingredients  
-
-If we let:
-- \( L \) = number of large pills  
-- \( S \) = number of small pills  
-
-Then total medicinal usage is:
+the total medicinal ingredients consumed is:
 
 \[
 3L + 2S
 \]
 
-Because the lab only has 1000 units available, we must enforce:
+Because the lab cannot exceed the available 1000 units, we must enforce:
 
 \[
-3L + 2S \le 1000
+3L + 2S \leq \text{TotalMedicinalIngredients}
 \]
 
-This is a classic **resource capacity constraint**, and omitting it would make the model incorrect because it would allow producing more pills than the available medicinal ingredients permit.
+This is a classic **resource capacity constraint**, and omitting it would allow infeasible solutions that use more medicinal ingredients than available.
 
-### Conclusion
-
-✅ It is absolutely a constraint.  
-✅ It must be explicitly modeled.  
-✅ It is directly implied by the problem statement.  
+There is no ambiguity here — this constraint is directly stated in the problem description and is structurally necessary.
 
 **5 OUT OF 5**
 +--+
@@ -174,7 +165,7 @@ Consider this potential constraint: Number of large pills ≥ 100
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is explicitly stated in the problem:
+Yes, this is **explicitly stated** in the problem description:
 
 > “The lab has to make at least 100 large pills.”
 
@@ -184,9 +175,9 @@ This directly translates to the constraint:
 \text{Number of large pills} \ge 100
 \]
 
-There is no ambiguity or implicit interpretation required — it is a clear production requirement and must be explicitly included in the (MI)LP formulation.
+There is no ambiguity or implied interpretation here — it is a clear production requirement and must be included in the (MI)LP formulation.
 
-**5 OUT OF 5**
+**Confidence level:** 5 OUT OF 5
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -243,7 +234,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: Number of small pills ≥ 0.6 × (total number of pills produced)
+Consider this potential constraint: Number of small pills ≥ 0.6 × (number of large pills + number of small pills)
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -253,27 +244,44 @@ Consider this potential constraint: Number of small pills ≥ 0.6 × (total numb
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is definitely a constraint and must be explicitly modeled.
+Yes, this is **definitely a constraint**, and it should be explicitly modeled.
 
-The problem statement says:  
-> “since small pills are more popular at least 60% of the total number of pills must be small.”
+The statement:
 
-This directly imposes a requirement on the composition of total production. If we let:
+> “Since small pills are more popular at least 60% of the total number of pills must be small”
 
-- \( L \) = number of large pills  
-- \( S \) = number of small pills  
+directly translates to:
 
-Then the total number of pills is \( L + S \), and the condition becomes:
+\[
+\text{Small} \ge 0.6(\text{Large} + \text{Small})
+\]
+
+This is a structural requirement on the production mix, not something implied by other constraints. It does not automatically follow from the ingredient limit or the minimum large-pill requirement, so it must be explicitly included in the formulation.
+
+It is also perfectly valid in a linear model. It can be rearranged into linear form:
 
 \[
 S \ge 0.6(L + S)
 \]
 
-This is a structural feasibility requirement, not something implied by other constraints. It restricts the feasible region and therefore must be explicitly included in the (MI)LP formulation.
+\[
+S \ge 0.6L + 0.6S
+\]
 
-There is no ambiguity in the wording — “at least 60% must be small” clearly defines a proportional lower bound constraint.
+\[
+0.4S \ge 0.6L
+\]
 
-**Confidence: 5 OUT OF 5**
+\[
+2S \ge 3L
+\]
+
+So it is linear and fully compatible with an LP/MILP formulation.
+
+✅ It is absolutely a real constraint from the problem description.  
+✅ It must be explicitly modeled.  
+
+**5 OUT OF 5**
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -289,17 +297,12 @@ Extracting constraint formulations
 
 ----
 {
-    "FORMULATION": "$3 \\cdot LargePills + 2 \\cdot SmallPills \\leq TotalMedicinalIngredients$",
+    "FORMULATION": "$3 \\cdot NumPills[1] + 2 \\cdot NumPills[2] \\leq TotalMedicinalIngredients$",
     "NEW VARIABLES": {
-        "LargePills": {
-            "shape": [],
+        "NumPills": {
+            "shape": "[NumPillTypes]",
             "type": "integer",
-            "definition": "Number of large pills to be produced"
-        },
-        "SmallPills": {
-            "shape": [],
-            "type": "integer",
-            "definition": "Number of small pills to be produced"
+            "definition": "Number of pills produced for each pill type (1 = large pill, 2 = small pill)"
         }
     },
     "AUXILIARY CONSTRAINTS": []
@@ -307,33 +310,33 @@ Extracting constraint formulations
 ----
 ----
 EXTRACTED ITEMS
-$3 \\cdot LargePills + 2 \\cdot SmallPills \\leq TotalMedicinalIngredients$
-{'LargePills': {'shape': [], 'type': 'integer', 'definition': 'Number of large pills to be produced'}, 'SmallPills': {'shape': [], 'type': 'integer', 'definition': 'Number of small pills to be produced'}}
+$3 \\cdot NumPills[1] + 2 \\cdot NumPills[2] \\leq TotalMedicinalIngredients$
+{'NumPills': {'shape': '[NumPillTypes]', 'type': 'integer', 'definition': 'Number of pills produced for each pill type (1 = large pill, 2 = small pill)'}}
 []
 ----
 ----
 {
-    "FORMULATION": "$LargePills \\ge 100$",
+    "FORMULATION": "$NumPills[1] \\geq 100$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$LargePills \\ge 100$
+$NumPills[1] \\geq 100$
 {}
 []
 ----
 ----
 {
-    "FORMULATION": "$SmallPills \\geq 0.6 \\,(LargePills + SmallPills)$",
+    "FORMULATION": "$NumPills[2] \\ge 0.6 \\left( NumPills[1] + NumPills[2] \\right)$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$SmallPills \\geq 0.6 \\,(LargePills + SmallPills)$
+$NumPills[2] \\ge 0.6 \\left( NumPills[1] + NumPills[2] \\right)$
 {}
 []
 ----
@@ -345,12 +348,12 @@ CPU model: Intel(R) Xeon(R) Platinum, instruction set [SSE2|AVX|AVX2|AVX512]
 Thread count: 1 physical cores, 2 logical processors, using up to 2 threads
 
 Optimize a model with 3 rows, 2 columns and 5 nonzeros (Min)
-Model fingerprint: 0xd57def09
-Model has 0 linear objective coefficients
+Model fingerprint: 0x41d2f2ad
+Model has 2 linear objective coefficients
 Variable types: 0 continuous, 2 integer (0 binary)
 Coefficient statistics:
   Matrix range     [4e-01, 3e+00]
-  Objective range  [0e+00, 0e+00]
+  Objective range  [1e+00, 2e+00]
   Bounds range     [0e+00, 0e+00]
   RHS range        [1e+02, 1e+03]
 
@@ -361,10 +364,10 @@ Presolve: All rows and columns removed
 Explored 0 nodes (0 simplex iterations) in 0.00 seconds (0.00 work units)
 Thread count was 1 (of 2 available processors)
 
-Solution count 1: 0 
+Solution count 1: 350 
 
 Optimal solution found (tolerance 1.00e-04)
-Best objective 0.000000000000e+00, best bound 0.000000000000e+00, gap 0.0000%
-Optimal Objective Value:  0.0
-Optimal Objective Value:  0.0
+Best objective 3.500000000000e+02, best bound 3.500000000000e+02, gap 0.0000%
+Optimal Objective Value:  350.0
+Optimal Objective Value:  350.0
 

@@ -40,14 +40,17 @@ TruckTrips = model.addVar(vtype=GRB.INTEGER, name="TruckTrips")
 ### Define the constraints
 
 model.addConstr(HelicopterCapacity * HelicopterTrips + TruckCapacity * TruckTrips >= TotalCows)
-model.addConstr(HelicopterTrips >= 0)
 model.addConstr(TruckTrips >= 0)
 model.addConstr(TruckTrips <= MaxTruckTrips)
+model.addConstr(HelicopterTrips >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(
+    HelicopterPollution * HelicopterTrips + TruckPollution * TruckTrips,
+    GRB.MINIMIZE
+)
 
 
 ### Optimize the model

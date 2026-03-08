@@ -33,22 +33,22 @@ MaximumUnitsOfMagnesium = data["MaximumUnitsOfMagnesium"] # shape: [], definitio
 
 ### Define the variables
 
-NumberOfGummies = model.addVar(vtype=GRB.INTEGER, name="NumberOfGummies")
-
 NumberOfPills = model.addVar(vtype=GRB.INTEGER, name="NumberOfPills")
+
+NumberOfGummies = model.addVar(vtype=GRB.INTEGER, name="NumberOfGummies")
 
 
 
 ### Define the constraints
 
-model.addConstr(UnitsMagnesiumPerGummy * NumberOfGummies + UnitsMagnesiumPerPill * NumberOfPills <= MaximumUnitsOfMagnesium)
 model.addConstr(NumberOfPills >= MinimumNumberOfPills)
 model.addConstr(NumberOfGummies >= MinimumGummiesToPillsRatio * NumberOfPills)
+model.addConstr(UnitsMagnesiumPerGummy * NumberOfGummies + UnitsMagnesiumPerPill * NumberOfPills <= MaximumUnitsOfMagnesium)
 
 
 ### Define the objective
 
-del.setObjective(UnitsZincPerGummy * NumberOfGummies + UnitsZincPerPill * NumberOfPills, GRB.MAXIMIZE
+model.setObjective(UnitsZincPerGummy * NumberOfGummies + UnitsZincPerPill * NumberOfPills, GRB.MAXIMIZE)
 
 
 ### Optimize the model

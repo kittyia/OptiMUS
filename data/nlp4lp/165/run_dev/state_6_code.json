@@ -38,30 +38,35 @@
         }
     },
     "objective": {
-        "description": "\"Maximize the total number of gifts delivered by seasonal and full-time volunteers\"",
-        "formulation": "$\\max \\; GiftsPerSeasonal \\cdot SeasonalVolunteers \\;+\\; GiftsPerFullTime \\cdot FullTimeVolunteers$",
-        "code": ""
+        "description": "\"The goal is to maximize the total number of gifts delivered by seasonal and full-time volunteers\"",
+        "formulation": "$\\max \\left( GiftsPerSeasonal \\cdot SeasonalVolunteers + GiftsPerFullTime \\cdot FullTimeVolunteers \\right)$",
+        "code": "model.setObjective(\n    GiftsPerSeasonal * SeasonalVolunteers +\n    GiftsPerFullTime * FullTimeVolunteers,\n    GRB.MAXIMIZE\n)"
     },
     "constraints": [
         {
-            "description": "Total points awarded to volunteers cannot exceed 200",
-            "formulation": "$PointsPerSeasonal \\\\cdot SeasonalVolunteers + PointsPerFullTime \\\\cdot FullTimeVolunteers \\\\leq PointsLimit$",
+            "description": "2 * SeasonalVolunteers + 5 * FullTimeVolunteers <= PointsLimit",
+            "formulation": "$2 \\\\cdot SeasonalVolunteers + 5 \\\\cdot FullTimeVolunteers \\\\leq PointsLimit$",
             "code": "model.addConstr(PointsPerSeasonal * SeasonalVolunteers + PointsPerFullTime * FullTimeVolunteers <= PointsLimit)"
         },
         {
-            "description": "The number of seasonal volunteers cannot exceed 30% of the total number of volunteers",
-            "formulation": "$7 \\\\cdot SeasonalVolunteers \\\\leq 3 \\\\cdot FullTimeVolunteers$",
-            "code": "model.addConstr(7 * SeasonalVolunteers <= 3 * FullTimeVolunteers)"
+            "description": "SeasonalVolunteers <= MaxSeasonalPercentage * (SeasonalVolunteers + FullTimeVolunteers)",
+            "formulation": "$SeasonalVolunteers \\\\leq MaxSeasonalPercentage \\\\cdot (SeasonalVolunteers + FullTimeVolunteers)$",
+            "code": "model.addConstr(SeasonalVolunteers <= MaxSeasonalPercentage * (SeasonalVolunteers + FullTimeVolunteers))"
         },
         {
-            "description": "The number of full-time volunteers must be at least 10",
+            "description": "FullTimeVolunteers >= MinFullTimeVolunteers",
             "formulation": "$FullTimeVolunteers \\\\geq MinFullTimeVolunteers$",
             "code": "model.addConstr(FullTimeVolunteers >= MinFullTimeVolunteers)"
         },
         {
-            "description": "The numbers of seasonal and full-time volunteers must be integers, and the number of seasonal volunteers must be non-negative",
-            "formulation": "$SeasonalVolunteers,\\\\; FullTimeVolunteers \\\\in \\\\mathbb{Z}, \\\\quad SeasonalVolunteers \\\\ge 0$",
+            "description": "SeasonalVolunteers >= 0",
+            "formulation": "$SeasonalVolunteers \\\\geq 0$",
             "code": "model.addConstr(SeasonalVolunteers >= 0)"
+        },
+        {
+            "description": "SeasonalVolunteers and FullTimeVolunteers must be integers",
+            "formulation": "$SeasonalVolunteers \\\\in \\\\mathbb{Z}_{+}, \\\\; FullTimeVolunteers \\\\in \\\\mathbb{Z}_{+}$",
+            "code": "model.addConstr(SeasonalVolunteers >= 0)\nmodel.addConstr(FullTimeVolunteers >= 0)"
         }
     ],
     "variables": {

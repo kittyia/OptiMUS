@@ -62,46 +62,46 @@
         }
     },
     "objective": {
-        "description": "Maximize the total profit from producing and selling steel, which is the total revenue from steel sales minus the total cost of the alloys used.",
-        "formulation": "$\\max \\sum_{s=1}^{S} SteelPrice_s \\, totalSteel_s \\;-\\; \\sum_{s=1}^{S}\\sum_{a=1}^{A} AlloyPrice_a \\, alloyUse_{s,a}$"
+        "description": "\"Maximize the total profit from producing and selling steel, calculated as total steel sales revenue minus the total cost of purchased alloys.\"",
+        "formulation": "$\\max \\sum_{s=1}^{S} SteelPrice_s \\, totalSteel_s \\;-\\; \\sum_{a=1}^{A} \\sum_{s=1}^{S} AlloyPrice_a \\, alloyUse_{a,s}$"
     },
     "constraints": [
         {
-            "description": "For each steel type s, total_steel_s = sum over all alloys a of alloy_amount_{a,s}",
-            "formulation": "$\\\\forall s = 1, \\\\dots, S:\\\\; totalSteel_s = \\\\sum_{a=1}^{A} alloyUse_{s,a}$",
+            "description": "For each steel type s, the total amount of steel produced equals the sum of the amounts of all alloys used in that steel type (total_steel_s = sum over a of alloy_amount_{a,s})",
+            "formulation": "$\\\\forall s \\\\in \\\\{1, \\\\dots, S\\\\}, \\\\; totalSteel[s] = \\\\sum_{a=1}^{A} alloyUse[a, s]$",
             "code": null
         },
         {
-            "description": "For each alloy a, sum over all steel types s of alloy_amount_{a,s} \u2264 AvailableAlloy_a",
-            "formulation": "$\\\\forall a = 1, \\\\dots, A:\\\\; \\\\sum_{s=1}^{S} alloyUse[s,a] \\\\leq AvailableAlloy[a]$",
+            "description": "For each alloy a, the total amount used across all steel types must not exceed the available amount of that alloy (sum over s of alloy_amount_{a,s} \u2264 AvailableAlloy_a)",
+            "formulation": "$\\\\forall a = 1, \\\\dots, A, \\\\; \\\\sum_{s=1}^{S} alloyUse[a,s] \\\\leq AvailableAlloy[a]$",
             "code": null
         },
         {
-            "description": "For each steel type s, sum over all alloys a of (CarbonContent_a * alloy_amount_{a,s}) \u2265 CarbonMin_s * total_steel_s",
-            "formulation": "$\\\\forall s \\\\in \\\\{1,\\\\dots,S\\\\}: \\\\sum_{a=1}^{A} CarbonContent_a \\\\cdot alloyUse_{s,a} \\\\geq CarbonMin_s \\\\cdot totalSteel_s$",
+            "description": "For each steel type s, the weighted average carbon content must be at least the minimum required carbon content (sum over a of CarbonContent_a * alloy_amount_{a,s} \u2265 CarbonMin_s * total_steel_s)",
+            "formulation": "$\\\\forall s = 1, \\\\dots, S:\\\\; \\\\sum_{a=1}^{A} CarbonContent_a \\\\cdot alloyUse_{a,s} \\\\geq CarbonMin_s \\\\cdot totalSteel_s$",
             "code": null
         },
         {
-            "description": "For each steel type s, sum over all alloys a of (NickelContent_a * alloy_amount_{a,s}) \u2264 NickelMax_s * total_steel_s",
-            "formulation": "$\\\\forall s = 1, \\\\dots, S:\\\\; \\\\sum_{a=1}^{A} NickelContent_{a} \\\\cdot alloyUse_{s,a} \\\\leq NickelMax_{s} \\\\cdot totalSteel_{s}$",
+            "description": "For each steel type s, the weighted average nickel content must be at most the maximum allowed nickel content (sum over a of NickelContent_a * alloy_amount_{a,s} \u2264 NickelMax_s * total_steel_s)",
+            "formulation": "$\\\\forall s = 1, \\\\dots, S:\\\\; \\\\sum_{a=1}^{A} NickelContent_a \\\\cdot alloyUse_{a,s} \\\\leq NickelMax_s \\\\cdot totalSteel_s$",
             "code": null
         },
         {
-            "description": "For each steel type s, alloy_amount_{1,s} \u2264 0.4 * total_steel_s",
-            "formulation": "$\\\\forall s = 1, \\\\dots, S:\\\\; alloyUse[s,1] \\\\leq 0.4 \\\\cdot totalSteel[s]$",
+            "description": "For each steel type s, the amount of alloy 1 used must be at most 40% of the total steel produced of that type (alloy_amount_{1,s} \u2264 0.4 * total_steel_s)",
+            "formulation": "$\\\\forall s = 1, \\\\dots, S,\\\\; alloyUse_{1,s} \\\\leq 0.4 \\\\, totalSteel_s$",
             "code": null
         },
         {
-            "description": "alloy_amount_{a,s} \u2265 0 for all alloys a and steel types s",
-            "formulation": "$\\\\forall s = 1, \\\\dots, S,\\\\; \\\\forall a = 1, \\\\dots, A:\\\\; alloyUse_{s,a} \\\\geq 0$",
+            "description": "All alloy_amount_{a,s} variables must be non-negative",
+            "formulation": "$\\\\forall a = 1, \\\\dots, A, \\\\; \\\\forall s = 1, \\\\dots, S, \\\\; alloyUse[a,s] \\\\geq 0$",
             "code": null
         }
     ],
     "variables": {
         "alloyUse": {
             "shape": [
-                "S",
-                "A"
+                "A",
+                "S"
             ],
             "type": "continuous",
             "definition": "Amount of alloy a used in steel type s"

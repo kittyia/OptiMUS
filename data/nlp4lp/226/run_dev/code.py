@@ -49,16 +49,20 @@ ScooterShifts = model.addVar(vtype=GRB.INTEGER, name="ScooterShifts")
 
 model.addConstr(BikeShifts + ScooterShifts <= TotalShifts)
 model.addConstr(EnergyPerBikeShift * BikeShifts + EnergyPerScooterShift * ScooterShifts <= TotalEnergy)
-model.addConstr(OrdersPerBikeShift * BikeShifts + OrdersPerScooterShift * ScooterShifts >= MinOrders)
+model.addConstr(
+    OrdersPerBikeShift * BikeShifts + OrdersPerScooterShift * ScooterShifts >= MinOrders
+)
 model.addConstr(ScooterShifts >= MinShiftsScooter)
 model.addConstr(BikeShifts >= 0)
 
 
+
 ### Define the objective
 
-del.setObjective(
+model.setObjective(
     TipsPerBikeShift * BikeShifts + TipsPerScooterShift * ScooterShifts,
     GRB.MAXIMIZE
+)
 
 
 ### Optimize the model

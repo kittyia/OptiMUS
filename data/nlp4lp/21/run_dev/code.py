@@ -40,16 +40,22 @@ RegularDesktops = model.addVar(vtype=GRB.INTEGER, name="RegularDesktops")
 ### Define the constraints
 
 model.addConstr(PremiumDesktops + RegularDesktops <= MaxDesktopSales)
-model.addConstr(ManufacturingCostPremiumDesktop * PremiumDesktops 
-                + ManufacturingCostRegularDesktop * RegularDesktops 
-                <= MaxManufacturingBudget)
+model.addConstr(
+    ManufacturingCostPremiumDesktop * PremiumDesktops
+    + ManufacturingCostRegularDesktop * RegularDesktops
+    <= MaxManufacturingBudget
+)
 model.addConstr(PremiumDesktops >= 0)
 model.addConstr(RegularDesktops >= 0)
 
 
 ### Define the objective
 
-del.setObjective(ProfitPremiumDesktop * PremiumDesktops + ProfitRegularDesktop * RegularDesktops, GRB.MAXIMIZE
+model.setObjective(
+    ProfitPremiumDesktop * PremiumDesktops +
+    ProfitRegularDesktop * RegularDesktops,
+    GRB.MAXIMIZE
+)
 
 
 ### Optimize the model

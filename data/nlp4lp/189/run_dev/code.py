@@ -38,9 +38,11 @@ FoodQuantity = model.addVars(NumFoods, vtype=GRB.CONTINUOUS, name="FoodQuantity"
 model.addConstr(
     sum(NutrientContent[0][f] * FoodQuantity[f] for f in range(NumFoods)) >= 2200
 )
-model.addConstr(20 * FoodQuantity[0] + 10 * FoodQuantity[1] >= 70)
+model.addConstr(
+    sum(NutrientContent[carbs_index][f] * FoodQuantity[f] for f in range(NumFoods)) >= 70
+)
 model.addConstr(FoodQuantity[1] >= 0)
-model.addConstr(FoodQuantity[1] >= 0)
+model.addConstr(FoodQuantity[2] >= 0)
 
 
 ### Define the objective

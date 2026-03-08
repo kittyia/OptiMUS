@@ -43,15 +43,23 @@ ExperimentalMeals = model.addVar(vtype=GRB.INTEGER, name="ExperimentalMeals")
 
 ### Define the constraints
 
-model.addConstr(45 * OriginalMeals + 35 * ExperimentalMeals <= MaxWrappingWaste)
+model.addConstr(
+    OriginalWrappingWaste * OriginalMeals + ExperimentalWrappingWaste * ExperimentalMeals
+    <= MaxWrappingWaste
+)
+model.addConstr(OriginalFoodWaste * OriginalMeals + ExperimentalFoodWaste * ExperimentalMeals <= MaxFoodWaste)
+model.addConstr(OriginalMeals >= 0)
+model.addConstr(ExperimentalMeals >= 0)
 model.addConstr(OriginalMeals >= 0)
 model.addConstr(ExperimentalMeals >= 0)
 
 
-
 ### Define the objective
 
-model.setObjective(OriginalCookingTime * OriginalMeals + ExperimentalCookingTime * ExperimentalMeals, GRB.MINIMIZE)
+model.setObjective(
+    OriginalCookingTime * OriginalMeals + ExperimentalCookingTime * ExperimentalMeals,
+    GRB.MINIMIZE
+)
 
 
 ### Optimize the model

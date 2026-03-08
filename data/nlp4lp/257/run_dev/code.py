@@ -49,7 +49,7 @@ model.addConstr(Footballs >= MinimumFootballs)
 
 ### Define the objective
 
-del.setObjective(Basketballs + Footballs, GRB.MAXIMIZE
+model.setObjective(Basketballs + Footballs, GRB.MAXIMIZE)
 
 
 ### Optimize the model

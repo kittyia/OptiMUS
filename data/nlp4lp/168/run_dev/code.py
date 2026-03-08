@@ -36,14 +36,16 @@ NumberOfCars = model.addVar(vtype=GRB.INTEGER, name="NumberOfCars")
 ### Define the constraints
 
 model.addConstr(BikeCapacity * NumberOfBikes + CarCapacity * NumberOfCars >= NumberOfPeople)
-model.addConstr(NumberOfCars <= MaxCarPercentage * (NumberOfBikes + NumberOfCars))
+model.addConstr(3 * NumberOfCars <= 2 * NumberOfBikes)
+model.addConstr(NumberOfBikes >= 0)
+model.addConstr(NumberOfCars >= 0)
 model.addConstr(NumberOfBikes >= 0)
 model.addConstr(NumberOfCars >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(NumberOfBikes, GRB.MINIMIZE)
 
 
 ### Optimize the model

@@ -46,16 +46,15 @@ DosesB = model.addVar(vtype=GRB.INTEGER, name="DosesB")
 ### Define the constraints
 
 model.addConstr(ImportedMaterialPerDoseA * DosesA + ImportedMaterialPerDoseB * DosesB <= MaxImportedMaterial)
-model.addConstr(MRNAPerDoseA * DosesA + MRNAPerDoseB * DosesB <= MaxMRNA)
-model.addConstr(DosesA <= MaxDosesA)
+model.addConstr(50 * DosesA + 30 * DosesB <= 400)
 model.addConstr(DosesB >= DosesA + 1)
 model.addConstr(DosesA >= 0)
-model.addConstr(DosesB >= 0)
+
 
 
 ### Define the objective
 
-
+model.setObjective(TreatmentPerDoseA * DosesA + TreatmentPerDoseB * DosesB, GRB.MAXIMIZE)
 
 
 ### Optimize the model

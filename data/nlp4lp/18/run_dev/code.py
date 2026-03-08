@@ -45,15 +45,14 @@ Laptops = model.addVar(vtype=GRB.INTEGER, name="Laptops")
 
 ### Define the constraints
 
-model.addConstr(Laptops >= MinLaptopPercentage * (Phones + Laptops))
 model.addConstr(CostPhone * Phones + CostLaptop * Laptops <= MaxBudget)
+model.addConstr(Laptops >= MinLaptopPercentage * (Phones + Laptops))
 model.addConstr(Phones >= 0)
-model.addConstr(Laptops >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(ProfitPhone * Phones + ProfitLaptop * Laptops, GRB.MAXIMIZE)
 
 
 ### Optimize the model

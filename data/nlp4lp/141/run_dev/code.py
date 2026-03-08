@@ -45,12 +45,13 @@ model.addConstr(ShipCapacity * ShipTrips + PlaneCapacity * PlaneTrips >= MinCont
 model.addConstr(PlaneTrips <= MaxPlaneTrips)
 model.addConstr(ShipTrips >= PlaneTrips)
 model.addConstr(PlaneTrips >= 0)
-
+model.addConstr(ShipTrips >= 0)
+model.addConstr(PlaneTrips >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(ShipFuel * ShipTrips + PlaneFuel * PlaneTrips, GRB.MINIMIZE)
 
 
 ### Optimize the model

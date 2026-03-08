@@ -27,6 +27,8 @@ B = data["B"] # shape: ['M'], definition: The right-hand side of the inequalitie
 
 ### Define the variables
 
+y = model.addVars(N, vtype=GRB.CONTINUOUS, name="y")
+
 r = model.addVar(vtype=GRB.CONTINUOUS, name="r")
 
 
@@ -34,11 +36,10 @@ r = model.addVar(vtype=GRB.CONTINUOUS, name="r")
 ### Define the constraints
 
 for i in range(M):
-    norm_ai = (sum(A[i][j] * A[i][j] for j in range(N))) ** 0.5
+    norm_ai = (sum(A[i][j]**2 for j in range(N)))**0.5
     model.addConstr(
-        sum(A[i][j] * y[j] for j in range(N)) + r * norm_ai <= B[i]
+        sum(A[i][j] * y[j] for j in range(N)) + norm_ai * r <= B[i]
     )
-model.addConstr(r >= 0)
 
 
 ### Define the objective

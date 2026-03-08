@@ -33,23 +33,28 @@ TotalTreats = data["TotalTreats"] # shape: [], definition: Total number of treat
 
 ### Define the variables
 
-Otters = model.addVar(vtype=GRB.INTEGER, name="Otters")
+NumberOfOtters = model.addVar(vtype=GRB.INTEGER, name="NumberOfOtters")
 
-Dolphins = model.addVar(vtype=GRB.INTEGER, name="Dolphins")
+NumberOfDolphins = model.addVar(vtype=GRB.INTEGER, name="NumberOfDolphins")
 
 
 
 ### Define the constraints
 
-model.addConstr(OtterTreats * Otters + DolphinTreats * Dolphins <= TotalTreats)
-model.addConstr(Dolphins >= MinDolphins)
-model.addConstr(Otters <= MaxOtterPercentage * (Otters + Dolphins))
-model.addConstr(Otters >= 0)
+model.addConstr(OtterTreats * NumberOfOtters + DolphinTreats * NumberOfDolphins <= TotalTreats)
+model.addConstr(NumberOfDolphins >= MinDolphins)
+model.addConstr(7 * NumberOfOtters <= 3 * NumberOfDolphins)
+model.addConstr(NumberOfOtters >= 0)
+model.addConstr(NumberOfOtters >= 0)
+model.addConstr(NumberOfDolphins >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(
+    OtterTricks * NumberOfOtters + DolphinTricks * NumberOfDolphins,
+    GRB.MAXIMIZE
+)
 
 
 ### Optimize the model

@@ -29,24 +29,22 @@ TotalMasksRequired = data["TotalMasksRequired"] # shape: [], definition: Minimum
 
 ### Define the variables
 
-smallBoxes = model.addVar(vtype=GRB.INTEGER, name="smallBoxes")
+SmallBoxes = model.addVar(vtype=GRB.INTEGER, name="SmallBoxes")
 
-largeBoxes = model.addVar(vtype=GRB.INTEGER, name="largeBoxes")
+LargeBoxes = model.addVar(vtype=GRB.INTEGER, name="LargeBoxes")
 
 
 
 ### Define the constraints
 
-model.addConstr(smallBoxes >= MinRatioSmallToLarge * largeBoxes)
-model.addConstr(largeBoxes >= MinLargeBoxes)
-model.addConstr(MasksPerSmallBox * smallBoxes + MasksPerLargeBox * largeBoxes >= TotalMasksRequired)
-model.addConstr(smallBoxes >= 0)
-model.addConstr(largeBoxes >= 0)
+model.addConstr(SmallBoxes >= MinRatioSmallToLarge * LargeBoxes)
+model.addConstr(LargeBoxes >= MinLargeBoxes)
+model.addConstr(MasksPerSmallBox * SmallBoxes + MasksPerLargeBox * LargeBoxes >= TotalMasksRequired)
 
 
 ### Define the objective
 
-
+model.setObjective(SmallBoxes + LargeBoxes, GRB.MINIMIZE)
 
 
 ### Optimize the model

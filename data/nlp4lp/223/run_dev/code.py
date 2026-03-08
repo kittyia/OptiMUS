@@ -48,6 +48,8 @@ model.addConstr(TechniciansPerHighVolumePipe * HighVolumePipes + TechniciansPerL
 model.addConstr(HighVolumePipes <= MaxHighVolumeProportion * (HighVolumePipes + LowVolumePipes))
 model.addConstr(LowVolumePipes >= MinLowVolumePipes)
 model.addConstr(HighVolumePipes >= 0)
+model.addConstr(HighVolumePipes >= 0)
+model.addConstr(LowVolumePipes >= 0)
 
 
 ### Define the objective

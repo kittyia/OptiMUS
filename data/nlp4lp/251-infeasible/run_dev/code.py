@@ -40,23 +40,19 @@ NumVehicles = model.addVars(NumVehicleTypes, vtype=GRB.INTEGER, name="NumVehicle
 ### Define the constraints
 
 model.addConstr(
-    NumVehicles[0] <= MaxVehiclePercentage[0] * 
-    sum(NumVehicles[t] for t in range(NumVehicleTypes))
-)
-model.addConstr(
     sum(Pollution[i] * NumVehicles[i] for i in range(NumVehicleTypes)) <= PollutionCap
 )
 model.addConstr(
-    sum(TransportCapacity[i] * NumVehicles[i] for i in range(NumVehicleTypes))
-    >= MinTransportCapacity
+    sum(TransportCapacity[i] * NumVehicles[i] for i in range(NumVehicleTypes)) >= MinTransportCapacity
 )
+model.addConstr(NumVehicles[0] <= 0.25 * sum(NumVehicles[i] for i in range(NumVehicleTypes)))
 for i in range(NumVehicleTypes):
     model.addConstr(NumVehicles[i] >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(quicksum(Earnings[i] * NumVehicles[i] for i in range(NumVehicleTypes)), GRB.MAXIMIZE)
 
 
 ### Optimize the model

@@ -51,11 +51,13 @@ model.addConstr(TrussBridges <= MaxTrussBridges)
 model.addConstr(BeamBridges >= TrussBridges + 1)
 model.addConstr(BeamBridges >= 0)
 model.addConstr(TrussBridges >= 0)
+model.addConstr(BeamBridges >= 0)
+model.addConstr(TrussBridges >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(MassPerBeamBridge * BeamBridges + MassPerTrussBridge * TrussBridges, GRB.MAXIMIZE)
 
 
 ### Optimize the model

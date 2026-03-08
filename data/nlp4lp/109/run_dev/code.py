@@ -29,22 +29,22 @@ TotalAvailableTime = data["TotalAvailableTime"] # shape: [], definition: Total a
 
 ### Define the variables
 
-NumberElectronicPatients = model.addVar(vtype=GRB.INTEGER, name="NumberElectronicPatients")
+ElectronicPatients = model.addVar(vtype=GRB.INTEGER, name="ElectronicPatients")
 
-NumberRegularPatients = model.addVar(vtype=GRB.INTEGER, name="NumberRegularPatients")
+RegularPatients = model.addVar(vtype=GRB.INTEGER, name="RegularPatients")
 
 
 
 ### Define the constraints
 
-model.addConstr(TimeElectronicReading * NumberElectronicPatients + TimeRegularReading * NumberRegularPatients <= TotalAvailableTime)
-model.addConstr(NumberElectronicPatients >= MinRatioElectronicToRegular * NumberRegularPatients)
-model.addConstr(NumberRegularPatients >= MinRegularPatients)
+model.addConstr(TimeElectronicReading * ElectronicPatients + TimeRegularReading * RegularPatients <= TotalAvailableTime)
+model.addConstr(ElectronicPatients >= MinRatioElectronicToRegular * RegularPatients)
+model.addConstr(RegularPatients >= MinRegularPatients)
 
 
 ### Define the objective
 
-
+model.setObjective(ElectronicPatients + RegularPatients, GRB.MAXIMIZE)
 
 
 ### Optimize the model

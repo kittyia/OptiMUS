@@ -1,10 +1,48 @@
 ----
+Yes, there is redundancy in the constraint list.
+
+### Step-by-step reasoning
+
+1. **Resource constraints**
+   - `5 * MechanicalKeyboards + 2 * StandardKeyboards <= TotalPlasticAvailable`
+   - `2 * MechanicalKeyboards + 1 * StandardKeyboards <= TotalSolderAvailable`  
+   These are distinct resource limitations (plastic and solder). Neither implies the other, and they cannot be combined into a single constraint because they involve different resources.  
+   ✅ Both must remain.
+
+2. **Ratio constraint**
+   - `MechanicalKeyboards = MechanicalToStandardRatio * StandardKeyboards`  
+   This enforces the 5:1 production ratio. It is essential and not implied by any other constraint.  
+   ✅ Must remain.
+
+3. **Minimum standard keyboards**
+   - `StandardKeyboards >= MinimumStandardKeyboards`  
+   Since `MinimumStandardKeyboards = 30`, this implies `StandardKeyboards ≥ 30`, which already ensures `StandardKeyboards ≥ 0`.  
+   ✅ Must remain.
+
+4. **Nonnegativity constraints**
+   - `StandardKeyboards >= 0`
+   - `MechanicalKeyboards >= 0`  
+
+   Because:
+   - `StandardKeyboards ≥ 30` ⇒ automatically `StandardKeyboards ≥ 0`
+   - `MechanicalKeyboards = 5 * StandardKeyboards` and `StandardKeyboards ≥ 30` ⇒ `MechanicalKeyboards ≥ 150 ≥ 0`
+
+   Therefore, both nonnegativity constraints are redundant and can be removed.
+
+No other constraints can be combined or removed.
+
+---
+
+### ✅ Updated list of constraints:
+
+```python
 [
     "5 * MechanicalKeyboards + 2 * StandardKeyboards <= TotalPlasticAvailable",
     "2 * MechanicalKeyboards + 1 * StandardKeyboards <= TotalSolderAvailable",
     "MechanicalKeyboards = MechanicalToStandardRatio * StandardKeyboards",
     "StandardKeyboards >= MinimumStandardKeyboards"
 ]
+```
 ----
 +++++++++++++++++++
 ++ Constraint Qs ++
@@ -78,31 +116,38 @@ Consider this potential constraint: 5 * MechanicalKeyboards + 2 * StandardKeyboa
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is definitely a valid constraint and should be explicitly included in the (MI)LP formulation.
+Yes, this is **definitely a valid constraint** and it must be explicitly included in the (MI)LP formulation.
 
-**Reasoning:**
+### Step-by-step reasoning:
 
-- Each mechanical keyboard requires **5 units of plastic**.
-- Each standard keyboard requires **2 units of plastic**.
+- Each **mechanical keyboard** uses **5 units of plastic**.
+- Each **standard keyboard** uses **2 units of plastic**.
 - The company has **1000 units of plastic available**.
 
-Therefore, the total plastic used in production is:
+If:
+- \( M \) = number of mechanical keyboards  
+- \( S \) = number of standard keyboards  
+
+Then total plastic usage is:
 
 \[
-5 \cdot \text{MechanicalKeyboards} + 2 \cdot \text{StandardKeyboards}
+5M + 2S
 \]
 
-Since total plastic usage cannot exceed availability, the correct constraint is:
+Since plastic is limited to 1000 units, we must enforce:
 
 \[
-5 \cdot \text{MechanicalKeyboards} + 2 \cdot \text{StandardKeyboards} \leq \text{TotalPlasticAvailable}
+5M + 2S \leq 1000
 \]
 
-This directly models the plastic resource limitation described in the problem statement.
+This is a **classic resource capacity constraint**, directly derived from the problem statement. It is absolutely necessary in the optimization model.
 
-There is no ambiguity here — this is a fundamental resource constraint and must be included.
+### Conclusion:
+✅ It is a real constraint.  
+✅ It must be explicitly modeled.  
+✅ There is no ambiguity in the wording.
 
-**Confidence:** 5 OUT OF 5
+**5 OUT OF 5**
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -176,18 +221,17 @@ Consider this potential constraint: 2 * MechanicalKeyboards + 1 * StandardKeyboa
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this **is** a valid constraint and it should be explicitly included in the (MI)LP formulation.
+Yes, this is definitely a valid constraint and it should be explicitly included in the (MI)LP formulation.
 
-### Why?
+From the problem description:
 
-The problem states:
-- A mechanical keyboard requires **2 units of solder**
-- A standard keyboard requires **1 unit of solder**
-- There are **250 total units of solder available**
+- A mechanical keyboard requires **2 units of solder**.
+- A standard keyboard requires **1 unit of solder**.
+- The company has **250 units of solder available**.
 
-If we define:
-- \( M \) = MechanicalKeyboards  
-- \( S \) = StandardKeyboards  
+If:
+- \( M \) = number of mechanical keyboards  
+- \( S \) = number of standard keyboards  
 
 Then total solder usage is:
 
@@ -195,17 +239,15 @@ Then total solder usage is:
 2M + 1S
 \]
 
-Since solder availability is limited to 250 units, we must enforce:
+Since the available solder is limited to 250 units, this gives the constraint:
 
 \[
-2M + S \le 250
+2M + S \leq 250
 \]
 
-This is a classic **resource capacity constraint**, directly derived from the problem statement. It is necessary to ensure feasibility of the production plan.
+This is clearly a **resource capacity constraint**, directly derived from the problem statement. It is essential for correctly modeling the optimization problem.
 
-There is no ambiguity in the wording — the solder limit is explicitly stated — so this constraint should definitely be part of the model.
-
-**5 OUT OF 5**
+**Confidence level: 5 OUT OF 5**
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -279,25 +321,19 @@ Consider this potential constraint: MechanicalKeyboards = MechanicalToStandardRa
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-The sentence in the description states:
+Yes, this is indeed a constraint.
 
-> “the manufacturer aims to have five times as many mechanical than standard keyboards.”
-
-This expresses a **target proportional relationship** between the two decision variables. There is no wording such as “at least” or “at most,” which would indicate an inequality. Instead, “have five times as many” most naturally translates to an equality:
+The phrase *“aims to have five times as many mechanical than standard keyboards”* indicates a required production ratio between the two products. In a deterministic optimization formulation, this is naturally modeled as:
 
 \[
-\text{MechanicalKeyboards} = 5 \times \text{StandardKeyboards}
+\text{MechanicalKeyboards} = \text{MechanicalToStandardRatio} \times \text{StandardKeyboards}
 \]
 
-If we do **not** model this as a constraint, the optimization would ignore the stated production goal and simply maximize total output under resource limits. In fact, without this constraint, the optimal solution would be to produce only standard keyboards (since they use fewer resources per unit), which contradicts the stated aim.
+Since the ratio is given explicitly (five times as many), it defines a structural relationship between the decision variables. Without this constraint, the optimizer would ignore the stated production goal and simply allocate resources to maximize total output.
 
-Therefore:
+There is no indication that this ratio is merely a soft preference (e.g., a goal to approximate). It is stated as an intended production policy, so it should be modeled explicitly as a hard equality constraint.
 
-- ✅ Yes, this is a structural constraint derived directly from the problem description.
-- ✅ It should be explicitly modeled in the (MI)LP formulation.
-- ✅ It is not optional or redundant with other constraints.
-
-**Confidence level:** 5 OUT OF 5
+**Confidence:** 5 OUT OF 5
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -371,23 +407,36 @@ Consider this potential constraint: StandardKeyboards >= MinimumStandardKeyboard
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is clearly a constraint and it should be explicitly included in the (MI)LP formulation.
+Yes, this is **definitely a constraint**, and it should be explicitly included in the (MI)LP formulation.
 
-The problem statement explicitly says:
+### Reasoning
 
-> "There must be at least 30 standard keyboards."
+The problem statement clearly says:
 
-This directly translates to the inequality:
+> “There are still customers that prefer a less noisy alternative. **Therefore, there must be at least 30 standard keyboards.**”
+
+This is a direct logical requirement that imposes a **lower bound** on the number of standard keyboards produced.
+
+If we define:
+- \( S \) = number of standard keyboards  
+- `MinimumStandardKeyboards = 30`
+
+then the constraint is:
 
 \[
-\text{StandardKeyboards} \ge \text{MinimumStandardKeyboards}
+S \geq 30
 \]
 
-This is not implied indirectly by other conditions (such as the mechanical-to-standard ratio or resource constraints). It is an independent business requirement and must therefore be explicitly modeled.
+This is:
+- Not optional  
+- Not implied indirectly  
+- Not redundant with other constraints  
 
-If we omitted this constraint, the solver could potentially choose fewer than 30 standard keyboards (or even zero), especially if resource limitations or the ratio condition allowed it, which would violate the stated requirement.
+It is an explicit business rule and must be modeled directly.
 
-✅ This is unquestionably a necessary model constraint.
+### Conclusion
+
+✅ This is absolutely a constraint and should be included in the model.
 
 **5 OUT OF 5**
 +--+
@@ -410,12 +459,12 @@ Extracting constraint formulations
         "MechanicalKeyboards": {
             "shape": [],
             "type": "integer",
-            "definition": "Number of mechanical keyboards to be manufactured"
+            "definition": "Number of mechanical keyboards to be produced"
         },
         "StandardKeyboards": {
             "shape": [],
             "type": "integer",
-            "definition": "Number of standard keyboards to be manufactured"
+            "definition": "Number of standard keyboards to be produced"
         }
     },
     "AUXILIARY CONSTRAINTS": []
@@ -424,19 +473,19 @@ Extracting constraint formulations
 ----
 EXTRACTED ITEMS
 $5 \\cdot MechanicalKeyboards + 2 \\cdot StandardKeyboards \\leq TotalPlasticAvailable$
-{'MechanicalKeyboards': {'shape': [], 'type': 'integer', 'definition': 'Number of mechanical keyboards to be manufactured'}, 'StandardKeyboards': {'shape': [], 'type': 'integer', 'definition': 'Number of standard keyboards to be manufactured'}}
+{'MechanicalKeyboards': {'shape': [], 'type': 'integer', 'definition': 'Number of mechanical keyboards to be produced'}, 'StandardKeyboards': {'shape': [], 'type': 'integer', 'definition': 'Number of standard keyboards to be produced'}}
 []
 ----
 ----
 {
-    "FORMULATION": "$2 \\, MechanicalKeyboards + StandardKeyboards \\leq TotalSolderAvailable$",
+    "FORMULATION": "$2 \\cdot MechanicalKeyboards + StandardKeyboards \\leq TotalSolderAvailable$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$2 \\, MechanicalKeyboards + StandardKeyboards \\leq TotalSolderAvailable$
+$2 \\cdot MechanicalKeyboards + StandardKeyboards \\leq TotalSolderAvailable$
 {}
 []
 ----
@@ -526,18 +575,14 @@ model.addConstr(
     + PlasticCostStandard * StandardKeyboards
     <= TotalPlasticAvailable
 )
-model.addConstr(
-    SolderCostMechanical * MechanicalKeyboards + 
-    SolderCostStandard * StandardKeyboards 
-    <= TotalSolderAvailable
-)
+model.addConstr(SolderCostMechanical * MechanicalKeyboards + SolderCostStandard * StandardKeyboards <= TotalSolderAvailable)
 model.addConstr(MechanicalKeyboards == MechanicalToStandardRatio * StandardKeyboards)
 model.addConstr(StandardKeyboards >= MinimumStandardKeyboards)
 
 
 ### Define the objective
 
-
+model.setObjective(MechanicalKeyboards + StandardKeyboards, GRB.MAXIMIZE)
 
 
 ### Optimize the model
@@ -562,7 +607,7 @@ else:
 
 Error Message:
 Traceback (most recent call last):
-  File "/home/admin/OptiMUS/data/nlp4lp/267/run_dev/code.py", line 75, in <module>
+  File "/home/admin/OptiMUS/data/nlp4lp/267/run_dev/code.py", line 71, in <module>
     print("Optimal Objective Value: ", model.objVal)
                                        ^^^^^^^^^^^^
   File "src/gurobipy/_model.pyx", line 399, in gurobipy._model.Model.__getattr__
@@ -639,17 +684,18 @@ model.addConstr(
     <= TotalSolderAvailable
 )
 
-model.addConstr(MechanicalKeyboards == MechanicalToStandardRatio * StandardKeyboards)
+model.addConstr(
+    MechanicalKeyboards == MechanicalToStandardRatio * StandardKeyboards
+)
 
-model.addConstr(StandardKeyboards >= MinimumStandardKeyboards)
+model.addConstr(
+    StandardKeyboards >= MinimumStandardKeyboards
+)
 
 
 ### Define the objective
 
-model.setObjective(
-    MechanicalKeyboards + StandardKeyboards,
-    GRB.MAXIMIZE
-)
+model.setObjective(MechanicalKeyboards + StandardKeyboards, GRB.MAXIMIZE)
 
 
 ### Optimize the model
@@ -659,13 +705,13 @@ model.optimize()
 
 ### Output optimal objective value
 
-if model.status == GRB.OPTIMAL:
-    print("Optimal Objective Value: ", model.ObjVal)
+if model.Status == GRB.OPTIMAL:
+    print("Optimal Objective Value:", model.ObjVal)
     with open("output_solution.txt", "w") as f:
         f.write(str(model.ObjVal))
 else:
     with open("output_solution.txt", "w") as f:
-        f.write(str(model.status))
+        f.write(str(model.Status))
 ```
 =====
 ==========

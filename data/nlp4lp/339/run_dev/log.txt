@@ -1,43 +1,15 @@
 ----
-Yes, there is some redundancy and a few statements that are not actually constraints.
-
-### Redundancies and Removals
-
-1. **Nonnegativity of `regular_baskets_w` and `overtime_baskets_w`**  
-   These are redundant. Since:
-   - `regular_baskets_w = regular_used_w / AssemblyTime`
-   - `overtime_baskets_w = overtime_used_w / AssemblyTime`
-   - `regular_used_w ≥ 0`, `overtime_used_w ≥ 0`
-   - `AssemblyTime > 0`  
-
-   Nonnegativity of baskets is automatically enforced.
-
-2. **Holding cost and salvage value statements**  
-   These are not constraints. They describe how costs/revenues are incorporated into the **objective function**, not feasibility conditions. Therefore, they should be removed from the constraint list.
-
-3. **Inventory at start of week 1**  
-   This is necessary, but it can be interpreted as defining `inventory_0 = 0`. It is not redundant, so we keep it.
-
-4. **All remaining constraints**  
-   The rest are necessary and not redundant.
-
----
-
-### ✅ Updated Constraint List
-
-```python
 [
     "For each week w, regular_used_w ≤ RegularLabor_w",
     "For each week w, overtime_used_w ≤ OvertimeLabor_w",
     "For each week w, regular_baskets_w = regular_used_w / AssemblyTime",
     "For each week w, overtime_baskets_w = overtime_used_w / AssemblyTime",
     "For each week w, inventory_w = inventory_{w-1} + regular_baskets_w + overtime_baskets_w - Demand_w",
-    "Inventory at the start of week 1 is zero",
+    "Inventory_0 = 0 (no baskets available at the start of week 1)",
     "For each week w, inventory_w ≥ 0",
-    "For each week w, regular_used_w ≥ 0",
-    "For each week w, overtime_used_w ≥ 0"
+    "regular_used_w ≥ 0 for all weeks w",
+    "overtime_used_w ≥ 0 for all weeks w"
 ]
-```
 ----
 +++++++++++++++++++
 ++ Constraint Qs ++
@@ -176,20 +148,38 @@ Consider this potential constraint: For each week w, regular_used_w ≤ RegularL
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is clearly a constraint and should be explicitly included in the model.
+Yes, this **is definitely a required constraint**, and it should explicitly appear in the (MI)LP formulation.
 
-The problem states:  
+### Why?
+
+The problem states:
+
 > “Regular labor is available for \( \text{regular\_labor}_w \) hours per week.”
 
-This directly implies a weekly capacity limit on regular labor usage. Therefore, the decision variable \( \text{regular\_used}_w \) must satisfy:
+This clearly defines an **upper bound on available regular labor hours** in each week. Since the decision variable is:
+
+- \( \text{regular\_used}_w \): hours of regular labor used in week \( w \),
+
+we must ensure that the amount used does not exceed what is available.
+
+Thus, the constraint
 
 \[
-\text{regular\_used}_w \le \text{regular\_labor}_w \quad \forall w = 1, \dots, W.
+\text{regular\_used}_w \le \text{RegularLabor}_w \quad \forall w
 \]
 
-Without this constraint, the model could use unlimited regular labor (paying its cost) to increase production, which would contradict the stated availability restriction.
+is a **standard capacity constraint**.
 
-This is a standard capacity constraint in production planning models and is essential for correctness.
+Without this constraint:
+- The model could use unlimited regular labor,
+- Leading to infeasible or unrealistic solutions,
+- Violating the problem statement.
+
+This is a fundamental structural constraint in production planning models.
+
+### Conclusion  
+✅ This is absolutely a real and necessary constraint.  
+✅ It should be explicitly modeled.
 
 **5 OUT OF 5**
 +--+
@@ -330,32 +320,21 @@ Consider this potential constraint: For each week w, overtime_used_w ≤ Overtim
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this **is absolutely a constraint**, and it must be explicitly included in the LP/MILP formulation.
-
-### Why?
+Yes, this is clearly a required constraint.
 
 The problem states:
 
 > “Overtime labor is available for \( \text{overtime\_labor}_w \) hours per week…”
 
-This clearly defines a **capacity limit** on overtime labor usage. Since overtime is limited in availability, we must enforce:
+This directly implies a capacity limit on overtime labor usage in each week. Therefore, the model must enforce:
 
 \[
 \text{overtime\_used}_w \le \text{overtime\_labor}_w \quad \forall w
 \]
 
-Without this constraint:
-- The model could use unlimited overtime.
-- It could produce arbitrarily many baskets (subject only to demand/inventory structure).
-- The solution would violate the physical labor availability described in the problem.
+Without this constraint, the optimizer could use unlimited overtime (if profitable), which would contradict the problem statement.
 
-This is a **standard resource capacity constraint**, analogous to the regular labor constraint.
-
-### Conclusion
-
-✅ It is definitely a required constraint.  
-✅ It directly reflects a physical limit given in the problem statement.  
-✅ It must be modeled explicitly.
+This is a standard resource capacity constraint and should **definitely** be included in the (MI)LP formulation.
 
 **5 OUT OF 5**
 +--+
@@ -496,36 +475,38 @@ Consider this potential constraint: For each week w, regular_baskets_w = regular
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this **is** a necessary modeling constraint.
+Yes, this **is** a necessary constraint and it should be explicitly modeled.
 
 ### Why?
 
 We have:
-- `regular_used_w`: hours of regular labor used in week \( w \)
-- `regular_baskets_w`: number of baskets assembled using regular labor in week \( w \)
-- `AssemblyTime`: hours required per basket
+- `regular_used_w` = hours of regular labor used in week \( w \)
+- `AssemblyTime` = hours required per basket
+- `regular_baskets_w` = number of baskets produced with regular labor
 
-Since each basket requires a fixed number of labor hours, the number of baskets produced using regular labor must be directly linked to the labor hours used.
-
-The correct linear modeling form would be:
+Since each basket requires `AssemblyTime` hours, the production–labor relationship must satisfy:
 
 \[
 \text{regular\_used}_w = \text{AssemblyTime} \times \text{regular\_baskets}_w
 \]
 
-(or equivalently  
-\(\text{regular\_baskets}_w = \frac{\text{regular\_used}_w}{\text{AssemblyTime}}\))
+which is equivalent to:
 
-This constraint is essential because:
+\[
+\text{regular\_baskets}_w = \frac{\text{regular\_used}_w}{\text{AssemblyTime}}
+\]
 
-- Without it, labor usage and basket production would be unrelated.
-- The labor capacity constraints limit hours, not baskets.
-- Demand and inventory constraints operate on baskets.
-- The objective includes labor cost (per hour) and material cost (per basket), so we must correctly connect hours and baskets.
+This is not redundant — it is a **structural linking constraint** that connects labor usage to production quantity. Without it:
 
-The same type of constraint is also required for overtime labor.
+- Labor hours and basket production would be independent decision variables.
+- The model could use labor without producing baskets (or produce baskets without using labor), which is physically impossible.
+- Costs and inventory balance would break.
 
-This is a **core structural constraint**, not optional or redundant.
+Since `AssemblyTime` is a constant parameter, this constraint is **linear** and perfectly valid in an LP.
+
+The same structure would also be required for overtime production.
+
+This is a fundamental production-technology constraint and must be included.
 
 **5 OUT OF 5**
 +--+
@@ -666,40 +647,31 @@ Consider this potential constraint: For each week w, overtime_baskets_w = overti
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this **is a necessary constraint**.
+Yes, this **is a constraint**, and it should be explicitly modeled.
 
-### Why?
+### Reasoning
 
-We are given:
 - Each basket requires `AssemblyTime` hours of labor.
-- `overtime_used_w` represents overtime labor hours used in week \( w \).
-- `overtime_baskets_w` represents baskets assembled using overtime labor.
+- `overtime_used_w` represents total overtime labor hours used in week \( w \).
+- Therefore, the number of baskets produced using overtime labor must equal:
+  
+  \[
+  \text{overtime\_baskets}_w = \frac{\text{overtime\_used}_w}{\text{AssemblyTime}}
+  \]
 
-Since production requires a fixed number of labor hours per basket, the relationship between hours and baskets must be enforced explicitly. Otherwise, the model could:
-- Use overtime hours without producing baskets, or  
-- Produce baskets without consuming the required overtime hours.
+- In linear form (preferred for LP/MILP), this is written as:
 
-This relationship is fundamental to the feasibility of the model.
+  \[
+  \text{overtime\_used}_w = \text{AssemblyTime} \cdot \text{overtime\_baskets}_w
+  \]
 
-### How it should appear in the LP
+This constraint is **essential** because:
 
-Instead of writing:
+- It links labor utilization decisions to production quantities.
+- Without it, overtime hours and overtime baskets would be independent variables, which would break the physical logic of the model.
+- It ensures consistency between labor allocation and output.
 
-\[
-\text{overtime\_baskets}_w = \frac{\text{overtime\_used}_w}{\text{AssemblyTime}}
-\]
-
-we would model it linearly as:
-
-\[
-\text{overtime\_used}_w = \text{AssemblyTime} \cdot \text{overtime\_baskets}_w
-\]
-
-which is a perfectly valid linear constraint.
-
-### Conclusion
-
-This is a **core structural constraint** linking labor usage and production. It must be included in the model.
+This is a standard production-labor linking constraint in aggregate planning models.
 
 **5 OUT OF 5**
 +--+
@@ -840,7 +812,7 @@ Consider this potential constraint: For each week w, inventory_w = inventory_{w-
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is absolutely a constraint, and it is essential to the correctness of the model.
+Yes, this is **definitely a required constraint**, and it is a fundamental one.
 
 ### Why this is a constraint
 
@@ -852,29 +824,34 @@ The equation
 
 is the **inventory balance equation**. It enforces conservation of flow:
 
-- Inventory carried from last week  
-- Plus baskets produced this week  
-- Minus baskets sold to meet demand  
-- Equals ending inventory  
+- What you have at the end of week \( w \)
+- equals what you had at the end of week \( w-1 \)
+- plus what you produced in week \( w \)
+- minus what was used to satisfy demand in week \( w \)
 
 Without this constraint:
-- Inventory levels would not be linked across weeks.
-- Production decisions would not be properly tied to demand satisfaction.
-- Holding costs and salvage value would not be correctly computed.
-- The model would be logically inconsistent.
+- There would be no link between production and inventory.
+- You could “meet demand” without producing.
+- Inventory holding cost and salvage value would be meaningless.
+- The time structure of the problem would collapse.
 
-This is a **core structural constraint** in any multi-period production-inventory model.
+Since:
+- Demand must be met,
+- Inventory carries across weeks,
+- There is holding cost,
+- There is salvage value at the end,
 
-### Additional notes
+this balance equation is absolutely essential to correctly model the system.
 
-- You must also specify:
-  - \( \text{inventory}_0 = 0 \)
-  - Demand must be met (implicitly enforced if inventory is constrained to be ≥ 0).
-  - No holding cost in the final week (handled in objective, not here).
+You would also need:
+- \( \text{inventory}_0 = 0 \) (no initial inventory),
+- \( \text{inventory}_w \ge 0 \) for all \( w \).
 
-This constraint is fundamental and must be explicitly modeled.
+This is a **core structural constraint** in any production-inventory LP.
 
-**5 OUT OF 5**
+### Confidence Level
+
+5 OUT OF 5
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -1003,7 +980,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: Inventory at the start of week 1 is zero
+Consider this potential constraint: Inventory_0 = 0 (no baskets available at the start of week 1)
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -1015,33 +992,33 @@ Take a deep breath and think step by step. You will be awarded a million dollars
 ----
 Yes, this **is** a constraint (more precisely, an initial condition that must be enforced in the model).
 
-### Why?
+The problem statement explicitly says:
 
-The inventory balance over time will be modeled with constraints such as:
+> *“No baskets are available at the start of week 1.”*
 
-\[
-inventory_w = inventory_{w-1} + production_w - demand_w
-\]
-
-To make this recursion well-defined for \( w = 1 \), we must specify:
+To correctly model inventory balance across weeks, we typically use:
 
 \[
-inventory_0 = 0
+Inventory_w = Inventory_{w-1} + Production_w - Demand_w
 \]
 
-or equivalently enforce:
+For this recursion to work properly starting at \( w = 1 \), we must define:
 
 \[
-inventory_1 = production_1 - demand_1
+Inventory_0 = 0
 \]
 
-This is not optional — without fixing the initial inventory to zero, the model could artificially assume positive starting inventory and inflate profit.
+Without explicitly setting \( Inventory_0 = 0 \), the model could implicitly allow free initial inventory, which would artificially increase profit (since baskets could be sold without incurring labor or material costs).
 
-Therefore, this condition **must be explicitly modeled** (either as a fixed parameter or as a constraint setting initial inventory to zero).
+So:
 
-✅ It is absolutely a modeling constraint.
+- ✅ It is logically required by the problem statement.
+- ✅ It is necessary for a correct inventory balance formulation.
+- ✅ It prevents unintended model behavior.
 
-**Confidence: 5 OUT OF 5**
+Therefore, this should absolutely be included in the (MI)LP formulation.
+
+**5 OUT OF 5**
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -1182,24 +1159,28 @@ Take a deep breath and think step by step. You will be awarded a million dollars
 ----
 Yes, this **is** a necessary constraint.
 
-### Step-by-step reasoning:
+### Reasoning
 
 - The problem states that **demand must be met** each week.
-- There is no mention of backlogging or allowing unmet demand.
-- Inventory represents the number of unsold baskets carried to the next week.
-- A negative inventory would imply unmet demand (i.e., backorders), which is not allowed in the description.
+- There is **no mention of backlogging or shortages** being allowed.
+- Inventory represents physical baskets carried from one week to the next.
+- Negative inventory would imply unmet demand (i.e., backorders), which is not permitted in the description.
 
-Therefore:
+Even if the inventory balance equations are written correctly, without explicitly enforcing  
+\[
+inventory_w \ge 0
+\]
+the LP could mathematically allow negative inventory values unless otherwise prevented.
 
-- Either inventory is explicitly constrained as  
-  \[
-  \text{inventory}_w \ge 0 \quad \forall w
-  \]
-- Or inventory is declared as a nonnegative decision variable in the LP.
+Since:
+- No backordering is allowed,
+- Demand must be fully satisfied,
+- Inventory represents physical stock,
 
-In either case, this nonnegativity is a required modeling restriction. Without it, the model could artificially create negative inventory to improve profit, which would violate the “demand must be met” condition.
+this nonnegativity constraint is both **logically required** and **standard in production-inventory LP models**.
 
-So yes — this is a legitimate and necessary constraint (or variable domain restriction) in the formulation.
+### Conclusion  
+This **should absolutely be explicitly modeled** in the formulation.
 
 **5 OUT OF 5**
 +--+
@@ -1330,7 +1311,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: For each week w, regular_used_w ≥ 0
+Consider this potential constraint: regular_used_w ≥ 0 for all weeks w
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -1340,22 +1321,23 @@ Consider this potential constraint: For each week w, regular_used_w ≥ 0
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this **is** a constraint and it should be explicitly modeled in the LP/MILP formulation.
+Yes, this **is** a constraint and it should be explicitly modeled (at least as a non-negativity bound).
 
 ### Reasoning
 
-- **regular_used\_w** represents the number of regular labor hours used in week *w*.
-- Labor hours cannot be negative in any physically meaningful solution.
-- Without the constraint  
-  \[
-  \text{regular\_used}_w \ge 0
-  \]
-  the model could assign negative labor usage to artificially improve profit (e.g., by reducing cost terms), which would make the solution infeasible in reality.
-- Even though many solvers assume nonnegativity by default, from a modeling standpoint this is a required decision-variable domain constraint.
+- \( \text{regular\_used}_w \) represents hours of regular labor used in week \( w \).
+- Negative labor usage is physically impossible and has no meaningful interpretation in this context.
+- If this constraint were omitted and the variable were left unrestricted, the model could potentially:
+  - Use negative labor hours to artificially reduce labor costs in the objective,
+  - Distort feasibility through interactions with other constraints.
 
-Therefore, it **must** be included (either explicitly or via variable bounds).
+In linear programming, non-negativity constraints are typically included explicitly (or implicitly via variable bounds). Even if modeling software assumes non-negativity by default, from a formulation standpoint this **is a necessary constraint**.
 
-**5 OUT OF 5**
+Therefore:
+- ✅ It is a legitimate constraint.
+- ✅ It should be included in the (MI)LP formulation (at least as a lower bound).
+
+**Confidence level:** 5 OUT OF 5
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -1484,7 +1466,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: For each week w, overtime_used_w ≥ 0
+Consider this potential constraint: overtime_used_w ≥ 0 for all weeks w
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -1500,25 +1482,30 @@ Yes, this **is** a constraint.
 
 - `overtime_used_w` represents the number of overtime labor hours used in week \( w \).
 - Labor hours used cannot be negative in any realistic setting.
-- Therefore, we must impose the non-negativity restriction:
+- Therefore, we must enforce:
 
 \[
-\text{overtime\_used}_w \ge 0 \quad \forall w = 1, \dots, W
+\text{overtime\_used}_w \ge 0 \quad \forall w
 \]
 
-### Is it necessary to explicitly model?
+### Is it necessary to model explicitly?
 
-Yes. In an LP/MILP formulation, all decision variables must either:
-- Be explicitly constrained (e.g., \( \ge 0 \)), or  
-- Be declared nonnegative by definition in the modeling language.
+In an LP/MILP formulation:
 
-Since this is a fundamental domain restriction, it **must** be included in the model (either explicitly or via variable declaration).
+- Decision variables are not automatically nonnegative unless explicitly declared that way.
+- If we do not include a nonnegativity restriction, the solver could assign negative overtime hours, which would:
+  - Artificially reduce labor cost
+  - Potentially increase profit incorrectly
+  - Produce an infeasible real-world solution
 
-There is no modeling interpretation under which negative overtime usage would make sense.
+Even if some modeling systems default to nonnegative variables, from a mathematical modeling perspective this **must** be explicitly enforced as a domain constraint.
 
-### Confidence Level
+### Conclusion
 
-5 OUT OF 5
+✅ This is absolutely a valid and necessary constraint.  
+✅ It should be explicitly included (or enforced via variable domain declaration).  
+
+**5 OUT OF 5**
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -1539,7 +1526,7 @@ Extracting constraint formulations
         "regularUsed": {
             "shape": "[Weeks]",
             "type": "continuous",
-            "definition": "Number of regular labor hours used in week w"
+            "definition": "Hours of regular labor used in week w"
         }
     },
     "AUXILIARY CONSTRAINTS": []
@@ -1548,7 +1535,7 @@ Extracting constraint formulations
 ----
 EXTRACTED ITEMS
 $\\forall w = 1, \\dots, Weeks:\\; regularUsed_w \\leq RegularLabor_w$
-{'regularUsed': {'shape': '[Weeks]', 'type': 'continuous', 'definition': 'Number of regular labor hours used in week w'}}
+{'regularUsed': {'shape': '[Weeks]', 'type': 'continuous', 'definition': 'Hours of regular labor used in week w'}}
 []
 ----
 ----
@@ -1558,7 +1545,7 @@ $\\forall w = 1, \\dots, Weeks:\\; regularUsed_w \\leq RegularLabor_w$
         "overtimeUsed": {
             "shape": ["Weeks"],
             "type": "continuous",
-            "definition": "Number of overtime labor hours used in week w"
+            "definition": "Hours of overtime labor used in week w"
         }
     },
     "AUXILIARY CONSTRAINTS": []
@@ -1567,12 +1554,12 @@ $\\forall w = 1, \\dots, Weeks:\\; regularUsed_w \\leq RegularLabor_w$
 ----
 EXTRACTED ITEMS
 $\\forall w = 1, \\dots, Weeks:\\; overtimeUsed[w] \\leq OvertimeLabor[w]$
-{'overtimeUsed': {'shape': ['Weeks'], 'type': 'continuous', 'definition': 'Number of overtime labor hours used in week w'}}
+{'overtimeUsed': {'shape': ['Weeks'], 'type': 'continuous', 'definition': 'Hours of overtime labor used in week w'}}
 []
 ----
 ----
 {
-    "FORMULATION": "$\\forall w = 1, \\dots, Weeks,\\; regularBaskets[w] = \\frac{regularUsed[w]}{AssemblyTime}$",
+    "FORMULATION": "$\\forall w \\in \\{1,\\dots,Weeks\\},\\; regularUsed_w = AssemblyTime \\cdot regularBaskets_w$",
     "NEW VARIABLES": {
         "regularBaskets": {
             "shape": "[Weeks]",
@@ -1585,16 +1572,16 @@ $\\forall w = 1, \\dots, Weeks:\\; overtimeUsed[w] \\leq OvertimeLabor[w]$
 ----
 ----
 EXTRACTED ITEMS
-$\\forall w = 1, \\dots, Weeks,\\; regularBaskets[w] = \\frac{regularUsed[w]}{AssemblyTime}$
+$\\forall w \\in \\{1,\\dots,Weeks\\},\\; regularUsed_w = AssemblyTime \\cdot regularBaskets_w$
 {'regularBaskets': {'shape': '[Weeks]', 'type': 'continuous', 'definition': 'Number of baskets assembled using regular labor in week w'}}
 []
 ----
 ----
 {
-    "FORMULATION": "$\\forall w = 1, \\ldots, Weeks:\\; AssemblyTime \\cdot overtimeBaskets[w] = overtimeUsed[w]$",
+    "FORMULATION": "$\\forall w = 1, \\dots, Weeks:\\; AssemblyTime \\cdot overtimeBaskets[w] = overtimeUsed[w]$",
     "NEW VARIABLES": {
         "overtimeBaskets": {
-            "shape": "[Weeks]",
+            "shape": ["Weeks"],
             "type": "continuous",
             "definition": "Number of baskets assembled using overtime labor in week w"
         }
@@ -1604,22 +1591,22 @@ $\\forall w = 1, \\dots, Weeks,\\; regularBaskets[w] = \\frac{regularUsed[w]}{As
 ----
 ----
 EXTRACTED ITEMS
-$\\forall w = 1, \\ldots, Weeks:\\; AssemblyTime \\cdot overtimeBaskets[w] = overtimeUsed[w]$
-{'overtimeBaskets': {'shape': '[Weeks]', 'type': 'continuous', 'definition': 'Number of baskets assembled using overtime labor in week w'}}
+$\\forall w = 1, \\dots, Weeks:\\; AssemblyTime \\cdot overtimeBaskets[w] = overtimeUsed[w]$
+{'overtimeBaskets': {'shape': ['Weeks'], 'type': 'continuous', 'definition': 'Number of baskets assembled using overtime labor in week w'}}
 []
 ----
 ----
 {
-    "FORMULATION": "$\\forall w = 1, \\ldots, Weeks:\\; inventory_w = inventory_{w-1} + regularBaskets_w + overtimeBaskets_w - Demand_w$",
+    "FORMULATION": "$\\forall w = 1, \\dots, Weeks:\\; inventory[w] = inventory[w-1] + regularBaskets[w] + overtimeBaskets[w] - Demand[w]$",
     "NEW VARIABLES": {
         "inventory": {
-            "shape": ["Weeks"],
+            "shape": "[Weeks]",
             "type": "continuous",
             "definition": "Number of baskets held in inventory at the end of week w"
         }
     },
     "AUXILIARY CONSTRAINTS": [
-        "$inventory_0 = 0$"
+        "$inventory[0] = 0$"
     ]
 }
 ----

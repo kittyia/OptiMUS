@@ -48,7 +48,8 @@ model.addConstr(GondolaRides >= 0)
 ### Define the objective
 
 model.setObjective(
-    PollutionPerBalloon * BalloonRides + PollutionPerGondola * GondolaRides,
+    PollutionPerBalloon * BalloonRides +
+    PollutionPerGondola * GondolaRides,
     GRB.MINIMIZE
 )
 

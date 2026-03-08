@@ -43,15 +43,14 @@ OldTrips = model.addVar(vtype=GRB.INTEGER, name="OldTrips")
 
 model.addConstr(NewCompanyCapacity * NewTrips + OldCompanyCapacity * OldTrips >= MinimumGifts)
 model.addConstr(NewTrips <= MaxTripsNewCompany)
-model.addConstr(3 * OldTrips >= 2 * NewTrips)
-model.addConstr(NewTrips >= 0)
+model.addConstr(OldTrips >= MinimumOldCompanyTripPercentage * (NewTrips + OldTrips))
 model.addConstr(NewTrips >= 0)
 model.addConstr(OldTrips >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(NewCompanyDiesel * NewTrips + OldCompanyDiesel * OldTrips, GRB.MINIMIZE)
 
 
 ### Optimize the model

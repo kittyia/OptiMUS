@@ -33,8 +33,6 @@ MinBatches = data["MinBatches"] # shape: ['P'], definition: Minimum number of ba
 
 ### Define the variables
 
-batches = model.addVars(P, vtype=GRB.CONTINUOUS, name="batches")
-
 
 
 ### Define the constraints
@@ -54,7 +52,14 @@ for p in range(P):
 
 ### Define the objective
 
-
+model.setObjective(
+    quicksum(Prices[p] * batches[p] for p in range(P))
+    - quicksum(
+        MachineCosts[m] * quicksum(TimeRequired[m][p] * batches[p] for p in range(P))
+        for m in range(M)
+    ),
+    GRB.MAXIMIZE
+)
 
 
 ### Optimize the model

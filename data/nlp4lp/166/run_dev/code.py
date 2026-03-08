@@ -27,23 +27,27 @@ MaxLargeJarsRatio = data["MaxLargeJarsRatio"] # shape: [], definition: Maximum a
 
 ### Define the variables
 
-smallJars = model.addVar(vtype=GRB.INTEGER, name="smallJars")
+NumberOfSmallJars = model.addVar(vtype=GRB.INTEGER, name="NumberOfSmallJars")
 
-largeJars = model.addVar(vtype=GRB.INTEGER, name="largeJars")
+NumberOfLargeJars = model.addVar(vtype=GRB.INTEGER, name="NumberOfLargeJars")
 
 
 
 ### Define the constraints
 
-model.addConstr(SmallJarCapacity * smallJars + LargeJarCapacity * largeJars >= MinJamVolume)
-model.addConstr(largeJars <= MaxLargeJarsRatio * smallJars)
-model.addConstr(smallJars >= 0)
-model.addConstr(largeJars >= 0)
+model.addConstr(
+    SmallJarCapacity * NumberOfSmallJars + 
+    LargeJarCapacity * NumberOfLargeJars 
+    >= MinJamVolume
+)
+model.addConstr(NumberOfLargeJars <= NumberOfSmallJars)
+model.addConstr(NumberOfSmallJars >= 0)
+model.addConstr(NumberOfLargeJars >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(NumberOfSmallJars + NumberOfLargeJars, GRB.MINIMIZE)
 
 
 ### Optimize the model

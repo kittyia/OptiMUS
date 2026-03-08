@@ -39,12 +39,16 @@ AntidepressantUnits = model.addVar(vtype=GRB.INTEGER, name="AntidepressantUnits"
 
 model.addConstr(AnxietyUnits + AntidepressantUnits >= MinimumTotalUnits)
 model.addConstr(AnxietyUnits >= MinimumAnxietyUnits)
-model.addConstr(AnxietyUnits <= MaximumAnxietyToAntidepressantRatio * AntidepressantUnits])
+model.addConstr(AnxietyUnits <= MaximumAnxietyToAntidepressantRatio * AntidepressantUnits)
 
 
 ### Define the objective
 
-
+model.setObjective(
+    TimePerAnxietyUnit * AnxietyUnits +
+    TimePerAntidepressantUnit * AntidepressantUnits,
+    GRB.MINIMIZE
+)
 
 
 ### Optimize the model

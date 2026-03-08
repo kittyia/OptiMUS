@@ -42,17 +42,23 @@ SleepingPills = model.addVar(vtype=GRB.INTEGER, name="SleepingPills")
 ### Define the constraints
 
 model.addConstr(
-    MorphinePerPainkiller * PainkillerPills +
-    MorphinePerSleepingPill * SleepingPills
+    MorphinePerPainkiller * PainkillerPills + 
+    MorphinePerSleepingPill * SleepingPills 
     <= TotalMorphine
 )
 model.addConstr(PainkillerPills >= MinPainkillerPills)
-model.addConstr(SleepingPills >= MinSleepingPillsProportion * (PainkillerPills + SleepingPills))
+model.addConstr(
+    SleepingPills >= MinSleepingPillsProportion * (PainkillerPills + SleepingPills)
+)
 
 
 ### Define the objective
 
-
+model.setObjective(
+    DigestiveMedicinePerPainkiller * PainkillerPills +
+    DigestiveMedicinePerSleepingPill * SleepingPills,
+    GRB.MINIMIZE
+)
 
 
 ### Optimize the model

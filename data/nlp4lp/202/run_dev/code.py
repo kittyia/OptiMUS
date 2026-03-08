@@ -35,12 +35,13 @@ NumPills = model.addVars(NumSupplements, vtype=GRB.INTEGER, name="NumPills")
 
 ### Define the constraints
 
-model.addConstr(
-    sum(NutrientContent[i][0] * NumPills[i] for i in range(NumSupplements)) 
-    >= MinRequirement[0]
-)
-model.addConstr(NumPills[1] >= 0)
-model.addConstr(NumPills[1] >= 0)
+for j in range(NumNutrients):
+    model.addConstr(
+        sum(NutrientContent[i][j] * NumPills[i] for i in range(NumSupplements))
+        >= MinRequirement[j]
+    )
+for i in range(NumSupplements):
+    model.addConstr(NumPills[i] >= 0)
 
 
 ### Define the objective

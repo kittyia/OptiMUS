@@ -46,9 +46,8 @@ clicks = model.addVars(NumAdTypes, vtype=GRB.CONTINUOUS, name="clicks")
 ### Define the constraints
 
 for a in range(NumAdTypes):
-    model.addConstr(clicks[a] <= MaxClicks[a])
-for a in range(NumAdTypes):
     model.addConstr(clicks[a] >= 0)
+    model.addConstr(clicks[a] <= MaxClicks[a])
 model.addConstr(
     sum(YoungClicks[a] * clicks[a] for a in range(NumAdTypes)) >= GoalYoung
 )
@@ -56,11 +55,11 @@ model.addConstr(
     sum(OldClicks[a] * clicks[a] for a in range(NumAdTypes)) >= GoalOld
 )
 model.addConstr(
-    sum(YoungClicks[a] * UniqueClicks[a] * clicks[a] for a in range(NumAdTypes))
+    sum(UniqueClicks[a] * YoungClicks[a] * clicks[a] for a in range(NumAdTypes)) 
     >= GoalUniqueYoung
 )
 model.addConstr(
-    sum(OldClicks[a] * UniqueClicks[a] * clicks[a] for a in range(NumAdTypes))
+    sum(UniqueClicks[a] * OldClicks[a] * clicks[a] for a in range(NumAdTypes)) 
     >= GoalUniqueOld
 )
 

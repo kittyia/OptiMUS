@@ -51,17 +51,24 @@ model.addConstr(
     <= Availability[0]
 )
 for p in range(P):
-    model.addConstr(batches[p] <= BigM * setupFlags[p])
-for p in range(P):
     model.addConstr(batches[p] >= 0)
 for p in range(P):
     model.addConstr(setupFlags[p] >= 0)
     model.addConstr(setupFlags[p] <= 1)
+for p in range(P):
+    model.addConstr(batches[p] <= M * setupFlags[p])
 
 
 ### Define the objective
 
-
+model.setObjective(
+    quicksum(Prices[p] * batches[p] for p in range(P))
+    - quicksum(MachineCosts[m] * TimeRequired[m][p] * batches[p]
+               for m in range(M) for p in range(P))
+    - quicksum(MachineCosts[0] * SetupTime[p] * setupFlags[p]
+               for p in range(P)),
+    GRB.MAXIMIZE
+)
 
 
 ### Optimize the model

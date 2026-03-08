@@ -56,29 +56,29 @@
         }
     },
     "objective": {
-        "description": "\"Maximize the total discounted profit over the planning horizon, calculated as total revenue from selling the blended ore minus the discounted royalty costs for keeping mines open.\"",
+        "description": "Maximize the total discounted profit over the planning horizon, calculated as revenue from selling the blended ore minus the royalty costs for keeping mines open.",
         "formulation": "$\\max \\sum_{i=1}^{\\text{NumYears}} \\frac{1}{(1+\\text{Discount})^{i-1}} \\left( \\text{Price} \\sum_{k=1}^{K} \\text{amount}_{k,i} \\;-\\; \\sum_{k=1}^{K} \\text{Royalty}_k \\,\\text{isOperated}_{k,i} \\right)$",
         "code": "model.setObjective(\n    quicksum(\n        (1 / ((1 + Discount) ** i)) * (\n            Price * quicksum(amount[k, i] for k in range(K))\n            - quicksum(Royalty[k] * isOperated[k, i] for k in range(K))\n        )\n        for i in range(NumYears)\n    ),\n    GRB.MAXIMIZE\n)"
     },
     "constraints": [
         {
-            "description": "For each year i, the number of mines operated cannot exceed MaxWork: sum over k of isoperated_{k,i} <= MaxWork",
-            "formulation": "$\\\\forall i = 1, \\\\dots, NumYears:\\\\; \\\\sum_{k=1}^{K} isOperated_{k,i} \\\\leq MaxWork$",
+            "description": "For each year i, the total number of mines operated cannot exceed MaxWork",
+            "formulation": "$\\\\forall i \\\\in \\\\{1,\\\\dots,\\\\text{NumYears}\\\\}: \\\\sum_{k=1}^{K} isOperated[k,i] \\\\leq MaxWork$",
             "code": "for i in range(NumYears):\n    model.addConstr(\n        sum(isOperated[k, i] for k in range(K)) <= MaxWork\n    )"
         },
         {
-            "description": "For each mine k and year i, production is bounded by operation status and capacity: 0 <= amount_{k,i} <= Limit_k * isoperated_{k,i}",
+            "description": "For each mine k and year i, 0 <= amount_{k,i} <= Limit_k multiplied by isoperated_{k,i}",
             "formulation": "$\\\\forall k = 1,\\\\dots,K,\\\\; \\\\forall i = 1,\\\\dots,NumYears:\\\\; 0 \\\\leq amount_{k,i} \\\\leq Limit_k \\\\cdot isOperated_{k,i}$",
             "code": "for k in range(K):\n    for i in range(NumYears):\n        model.addConstr(amount[k, i] >= 0)\n        model.addConstr(amount[k, i] <= Limit[k] * isOperated[k, i])"
         },
         {
-            "description": "For each mine k and year i, isoperated_{k,i} is a binary variable (0 or 1)",
-            "formulation": "$\\\\forall k = 1,\\\\dots,K,\\\\; \\\\forall i = 1,\\\\dots,\\\\text{NumYears}: \\\\; isOperated_{k,i} \\\\in \\\\{0,1\\\\}$",
+            "description": "For each mine k and year i, isoperated_{k,i} must be a binary variable (0 or 1)",
+            "formulation": "$\\\\forall k = 1, \\\\dots, K,\\\\; \\\\forall i = 1, \\\\dots, \\\\text{NumYears},\\\\; isOperated_{k,i} \\\\in \\\\{0,1\\\\}$",
             "code": "for k in range(K):\n    for i in range(NumYears):\n        model.addConstr(isOperated[k, i] >= 0)\n        model.addConstr(isOperated[k, i] <= 1)"
         },
         {
-            "description": "For each year i, the blended quality constraint must hold: sum over k of (Quality_k * amount_{k,i}) = RequiredQuality_i * sum over k of amount_{k,i}",
-            "formulation": "$\\\\forall i = 1, \\\\dots, \\\\text{NumYears}: \\\\sum_{k=1}^{K} Quality_k \\\\cdot amount_{k,i} = RequiredQuality_i \\\\cdot \\\\sum_{k=1}^{K} amount_{k,i}$",
+            "description": "For each year i, the blended quality constraint must hold: (sum over k of Quality_k * amount_{k,i}) equals RequiredQuality_i multiplied by (sum over k of amount_{k,i})",
+            "formulation": "$\\\\forall i = 1, \\\\dots, \\\\text{NumYears}: \\\\sum_{k=1}^{K} \\\\text{Quality}_k \\\\cdot \\\\text{amount}_{k,i} = \\\\text{RequiredQuality}_i \\\\cdot \\\\sum_{k=1}^{K} \\\\text{amount}_{k,i}$",
             "code": "for i in range(NumYears):\n    model.addConstr(\n        sum(Quality[k] * amount[k, i] for k in range(K)) ==\n        RequiredQuality[i] * sum(amount[k, i] for k in range(K))\n    )"
         }
     ],

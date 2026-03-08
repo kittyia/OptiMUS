@@ -42,15 +42,15 @@ EnglishWorkbooks = model.addVar(vtype=GRB.INTEGER, name="EnglishWorkbooks")
 ### Define the constraints
 
 model.addConstr(MathWorkbooks >= MinMathWorkbooks)
-model.addConstr(EnglishWorkbooks >= MinEnglishWorkbooks)
 model.addConstr(MathWorkbooks <= MaxMathWorkbooks)
+model.addConstr(EnglishWorkbooks >= MinEnglishWorkbooks)
 model.addConstr(EnglishWorkbooks <= MaxEnglishWorkbooks)
 model.addConstr(MathWorkbooks + EnglishWorkbooks >= MinTotalWorkbooks)
 
 
 ### Define the objective
 
-
+model.setObjective(ProfitMathWorkbook * MathWorkbooks + ProfitEnglishWorkbook * EnglishWorkbooks, GRB.MAXIMIZE)
 
 
 ### Optimize the model

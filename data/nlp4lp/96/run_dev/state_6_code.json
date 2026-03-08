@@ -40,30 +40,35 @@
         }
     },
     "objective": {
-        "description": "\"Minimize the total number of hours that the two factories are operated to meet the production requirements\"",
-        "formulation": "$\\min \\sum_{j=1}^{NumFactories} Hours_j$",
+        "description": "\"Minimize the total number of hours that the two factories are operated\"",
+        "formulation": "$\\min \\sum_{j=1}^{\\text{NumFactories}} Hours_j$",
         "code": "model.setObjective(quicksum(Hours[j] for j in range(NumFactories)), GRB.MINIMIZE)"
     },
     "constraints": [
         {
-            "description": "Total allergy pills produced by factory 1 and factory 2 must be at least 700",
-            "formulation": "$\\\\sum_{j=1}^{NumFactories} ProductionRate[1,j] \\\\cdot Hours[j] \\\\geq 700$",
-            "code": "model.addConstr(\n    sum(ProductionRate[0][j] * Hours[j] for j in range(NumFactories)) >= 700\n)"
+            "description": "20 * Hours_Factory1 + 10 * Hours_Factory2 >= 700",
+            "formulation": "$20 \\\\cdot Hours[1] + 10 \\\\cdot Hours[2] \\\\geq 700$",
+            "code": "model.addConstr(20 * Hours[0] + 10 * Hours[1] >= 700)"
         },
         {
-            "description": "Total fever reducing pills produced by factory 1 and factory 2 must be at least 600",
-            "formulation": "$\\\\sum_{j=1}^{NumFactories} ProductionRate[2, j] \\\\cdot Hours[j] \\\\ge 600$",
-            "code": "model.addConstr(\n    sum(ProductionRate[1][j] * Hours[j] for j in range(NumFactories)) >= 600\n)"
+            "description": "15 * Hours_Factory1 + 30 * Hours_Factory2 >= 600",
+            "formulation": "$15 \\\\, Hours[1] + 30 \\\\, Hours[2] \\\\geq 600$",
+            "code": "model.addConstr(15 * Hours[0] + 30 * Hours[1] >= 600)"
         },
         {
-            "description": "Total rare compound used by factory 1 and factory 2 must not exceed 1000 units",
+            "description": "20 * Hours_Factory1 + 30 * Hours_Factory2 <= 1000",
             "formulation": "$\\\\sum_{j=1}^{NumFactories} ResourceRequirement[j] \\\\cdot Hours[j] \\\\leq TotalResource$",
-            "code": "model.addConstr(\n    sum(ResourceRequirement[j] * Hours[j] for j in range(NumFactories)) <= TotalResource\n)"
+            "code": "model.addConstr(\n    sum(ResourceRequirement[j] * Hours[j] for j in range(NumFactories)) \n    <= TotalResource\n)"
         },
         {
-            "description": "Hours run of each factory must be non-negative",
-            "formulation": "$\\\\forall j = 1, \\\\dots, NumFactories,\\\\; Hours[j] \\\\geq 0$",
-            "code": "for j in range(NumFactories):\n    model.addConstr(Hours[j] >= 0)"
+            "description": "Hours_Factory1 >= 0",
+            "formulation": "$Hours[1] \\\\geq 0$",
+            "code": "model.addConstr(Hours[0] >= 0)"
+        },
+        {
+            "description": "Hours_Factory2 >= 0",
+            "formulation": "$Hours[2] \\\\geq 0$",
+            "code": "model.addConstr(Hours[1] >= 0)"
         }
     ],
     "variables": {
@@ -72,7 +77,7 @@
                 "NumFactories"
             ],
             "type": "continuous",
-            "definition": "Number of hours that each factory is operated"
+            "definition": "Number of hours each factory is operated"
         }
     }
 }

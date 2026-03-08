@@ -31,24 +31,24 @@ FoodAvailable = data["FoodAvailable"] # shape: [], definition: Total units of fo
 
 ### Define the variables
 
-CamelCount = model.addVar(vtype=GRB.INTEGER, name="CamelCount")
+NumberOfCamels = model.addVar(vtype=GRB.INTEGER, name="NumberOfCamels")
 
-HorseCount = model.addVar(vtype=GRB.INTEGER, name="HorseCount")
+NumberOfHorses = model.addVar(vtype=GRB.INTEGER, name="NumberOfHorses")
 
 
 
 ### Define the constraints
 
-model.addConstr(CamelCapacity * CamelCount + HorseCapacity * HorseCount >= MinPackages)
-model.addConstr(CamelFood * CamelCount + HorseFood * HorseCount <= FoodAvailable)
-model.addConstr(HorseCount <= CamelCount)
-model.addConstr(CamelCount >= 0)
-model.addConstr(HorseCount >= 0)
+model.addConstr(CamelCapacity * NumberOfCamels + HorseCapacity * NumberOfHorses >= MinPackages)
+model.addConstr(CamelFood * NumberOfCamels + HorseFood * NumberOfHorses <= FoodAvailable)
+model.addConstr(NumberOfHorses <= NumberOfCamels)
+model.addConstr(NumberOfCamels >= 0)
+model.addConstr(NumberOfHorses >= 0)
 
 
 ### Define the objective
 
-model.setObjective(CamelCount + HorseCount, GRB.MINIMIZE)
+model.setObjective(NumberOfCamels + NumberOfHorses, GRB.MINIMIZE)
 
 
 ### Optimize the model

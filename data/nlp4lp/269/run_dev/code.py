@@ -47,7 +47,7 @@ model.addConstr(OrangeQuantity >= 0)
 
 ### Define the objective
 
-
+model.setObjective(2 * MatchaQuantity + 4 * OrangeQuantity, GRB.MINIMIZE)
 
 
 ### Optimize the model

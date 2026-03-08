@@ -42,13 +42,21 @@ LargeSuitcases = model.addVar(vtype=GRB.INTEGER, name="LargeSuitcases")
 ### Define the constraints
 
 model.addConstr(SmallSuitcases >= MinSmallToLargeRatio * LargeSuitcases)
+model.addConstr(SmallSuitcases <= MaxSmallSuitcases)
 model.addConstr(LargeSuitcases >= MinLargeSuitcases)
+model.addConstr(LargeSuitcases <= MaxLargeSuitcases)
 model.addConstr(SmallSuitcases + LargeSuitcases <= MaxTotalSuitcases)
+model.addConstr(SmallSuitcases >= 0)
+model.addConstr(LargeSuitcases >= 0)
 
 
 ### Define the objective
 
-del.setObjective(SmallSuitcaseCapacity * SmallSuitcases + LargeSuitcaseCapacity * LargeSuitcases, GRB.MAXIMIZE
+model.setObjective(
+    SmallSuitcaseCapacity * SmallSuitcases +
+    LargeSuitcaseCapacity * LargeSuitcases,
+    GRB.MAXIMIZE
+)
 
 
 ### Optimize the model

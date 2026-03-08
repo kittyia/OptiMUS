@@ -31,29 +31,23 @@ MaxTotalEmployees = data["MaxTotalEmployees"] # shape: [], definition: Maximum n
 
 ### Define the variables
 
-NumberOfRetailStores = model.addVar(vtype=GRB.INTEGER, name="NumberOfRetailStores")
+RetailStores = model.addVar(vtype=GRB.INTEGER, name="RetailStores")
 
-NumberOfFactoryOutlets = model.addVar(vtype=GRB.INTEGER, name="NumberOfFactoryOutlets")
+FactoryOutlets = model.addVar(vtype=GRB.INTEGER, name="FactoryOutlets")
 
 
 
 ### Define the constraints
 
-model.addConstr(
-    CustomersPerRetailStore * NumberOfRetailStores
-    + CustomersPerFactoryOutlet * NumberOfFactoryOutlets
-    >= MinTotalCustomers
-)
-model.addConstr(EmployeesPerRetailStore * NumberOfRetailStores + EmployeesPerFactoryOutlet * NumberOfFactoryOutlets <= MaxTotalEmployees)
-model.addConstr(NumberOfRetailStores >= 0)
-model.addConstr(NumberOfFactoryOutlets >= 0)
-model.addConstr(NumberOfRetailStores >= 0)
-model.addConstr(NumberOfFactoryOutlets >= 0)
+model.addConstr(CustomersPerRetailStore * RetailStores + CustomersPerFactoryOutlet * FactoryOutlets >= MinTotalCustomers)
+model.addConstr(EmployeesPerRetailStore * RetailStores + EmployeesPerFactoryOutlet * FactoryOutlets <= MaxTotalEmployees)
+model.addConstr(RetailStores >= 0)
+model.addConstr(FactoryOutlets >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(RetailStores + FactoryOutlets, GRB.MINIMIZE)
 
 
 ### Optimize the model

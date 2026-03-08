@@ -31,23 +31,27 @@ GarbagePerNarrowTrail = data["GarbagePerNarrowTrail"] # shape: [], definition: U
 
 ### Define the variables
 
-numWideTrails = model.addVar(vtype=GRB.INTEGER, name="numWideTrails")
+wideTrails = model.addVar(vtype=GRB.INTEGER, name="wideTrails")
 
-numNarrowTrails = model.addVar(vtype=GRB.INTEGER, name="numNarrowTrails")
+narrowTrails = model.addVar(vtype=GRB.INTEGER, name="narrowTrails")
 
 
 
 ### Define the constraints
 
-model.addConstr(numWideTrails <= MaxWideTrails)
-model.addConstr(VisitorsPerWideTrail * numWideTrails + VisitorsPerNarrowTrail * numNarrowTrails <= MaxVisitorsPerDay)
-model.addConstr(numWideTrails >= 0)
-model.addConstr(numNarrowTrails >= 0)
+model.addConstr(wideTrails <= MaxWideTrails)
+model.addConstr(VisitorsPerWideTrail * wideTrails + VisitorsPerNarrowTrail * narrowTrails <= MaxVisitorsPerDay)
+model.addConstr(wideTrails >= 0)
+model.addConstr(narrowTrails >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(
+    GarbagePerWideTrail * wideTrails + 
+    GarbagePerNarrowTrail * narrowTrails,
+    GRB.MINIMIZE
+)
 
 
 ### Optimize the model

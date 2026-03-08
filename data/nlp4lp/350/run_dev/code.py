@@ -29,24 +29,22 @@ RequiredLanguages = data["RequiredLanguages"] # shape: ['M'], definition: List o
 
 ### Define the variables
 
-Select = model.addVars(N, vtype=GRB.BINARY, name="Select")
+x = model.addVars(N, vtype=GRB.BINARY, name="x")
 
 
 
 ### Define the constraints
 
-for m in range(M):
-    model.addConstr(
-        sum(Select[i] for i in range(N) if RequiredLanguages[m] in Languages[i]) >= 1
-    )
+for m in RequiredLanguages:
+    model.addConstr(sum(x[i] for i in range(N) if m in Languages[i]) >= 1)
 for i in range(N):
-    model.addConstr(Select[i] >= 0)
-    model.addConstr(Select[i] <= 1)
+    model.addConstr(x[i] >= 0)
+    model.addConstr(x[i] <= 1)
 
 
 ### Define the objective
 
-
+model.setObjective(quicksum(Cost[i] * x[i] for i in range(N)), GRB.MINIMIZE)
 
 
 ### Optimize the model

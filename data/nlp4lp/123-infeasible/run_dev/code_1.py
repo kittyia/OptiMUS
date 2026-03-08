@@ -9,6 +9,7 @@ with open("data.json", "r") as f:
     data = json.load(f)
 
 ### Define the parameters
+
 TotalPainkillerUnits = data["TotalPainkillerUnits"]
 PainkillerPerDayPill = data["PainkillerPerDayPill"]
 SleepPerDayPill = data["SleepPerDayPill"]
@@ -18,42 +19,44 @@ MinDayPillPercentage = data["MinDayPillPercentage"]
 MinNightPills = data["MinNightPills"]
 
 ### Define the variables
-DayPills = model.addVar(vtype=GRB.INTEGER, name="DayPills", lb=0)
-NightPills = model.addVar(vtype=GRB.INTEGER, name="NightPills", lb=0)
+
+DayPills = model.addVar(vtype=GRB.INTEGER, name="DayPills")
+NightPills = model.addVar(vtype=GRB.INTEGER, name="NightPills")
 
 ### Define the constraints
+
 model.addConstr(
-    PainkillerPerDayPill * DayPills + 
-    PainkillerPerNightPill * NightPills 
-    <= TotalPainkillerUnits,
-    name="PainkillerLimit"
+    PainkillerPerDayPill * DayPills +
+    PainkillerPerNightPill * NightPills
+    <= TotalPainkillerUnits
 )
 
 model.addConstr(
-    DayPills >= MinDayPillPercentage * (DayPills + NightPills),
-    name="MinDayPercentage"
+    DayPills >= MinDayPillPercentage * (DayPills + NightPills)
 )
 
 model.addConstr(
-    NightPills >= MinNightPills,
-    name="MinNightPills"
+    NightPills >= MinNightPills
 )
 
-### Define the objective (minimize total sleep medicine)
+### Define the objective
+
 model.setObjective(
-    SleepPerDayPill * DayPills + 
+    SleepPerDayPill * DayPills +
     SleepPerNightPill * NightPills,
     GRB.MINIMIZE
 )
 
 ### Optimize the model
+
 model.optimize()
 
 ### Output optimal objective value
-if model.status == GRB.OPTIMAL:
+
+if model.Status == GRB.OPTIMAL:
     print("Optimal Objective Value: ", model.ObjVal)
     with open("output_solution.txt", "w") as f:
         f.write(str(model.ObjVal))
 else:
     with open("output_solution.txt", "w") as f:
-        f.write(str(model.status))
+        f.write(str(model.Status))

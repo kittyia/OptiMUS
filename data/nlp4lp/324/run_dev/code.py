@@ -43,7 +43,7 @@ model.addConstr(
 
 ### Define the objective
 
-
+model.setObjective(quicksum(Value[k] * isincluded[k] for k in range(NumItems)), GRB.MAXIMIZE)
 
 
 ### Optimize the model

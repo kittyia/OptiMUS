@@ -41,13 +41,13 @@ model.addConstr(
 model.addConstr(
     sum(AmountPerPill[1][p] * NumPills[p] for p in range(NumPillTypes)) >= 50
 )
-model.addConstr(NumPills[0] >= 0)
-model.addConstr(NumPills[1] >= 0)
+for p in range(NumPillTypes):
+    model.addConstr(NumPills[p] >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(quicksum(PillCost[p] * NumPills[p] for p in range(NumPillTypes)), GRB.MINIMIZE)
 
 
 ### Optimize the model

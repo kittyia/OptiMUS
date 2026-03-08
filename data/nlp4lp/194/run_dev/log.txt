@@ -1,36 +1,10 @@
 ----
-Let’s examine each constraint carefully.
-
-1. **Total calcium intake ≥ MinCalcium**  
-   This ensures the daily calcium requirement is met. It is essential and not implied by any other constraint.
-
-2. **Total iron intake ≥ MinIron**  
-   This ensures the daily iron requirement is met. It is also essential and independent of the calcium constraint.
-
-3. **Number of glasses of milk consumed ≥ 0**  
-   This enforces non-negativity for milk consumption. It is necessary because negative consumption would be infeasible in this context.
-
-4. **Number of plates of vegetables consumed ≥ 0**  
-   This enforces non-negativity for vegetable consumption. It is also necessary for feasibility.
-
-### Redundancy Check
-- The calcium and iron constraints address different nutrients, so neither implies the other.
-- The non-negativity constraints apply to different decision variables, so neither is redundant.
-- While the two non-negativity constraints are conceptually similar, they apply to different variables and therefore cannot be merged into a single scalar constraint without losing clarity or correctness.
-
-### Conclusion
-There is **no redundancy**, and no constraints can be removed or safely combined.
-
-### Updated List of Constraints
-
-```python
 [
     "Total calcium intake from milk and vegetables must be at least MinCalcium",
     "Total iron intake from milk and vegetables must be at least MinIron",
-    "Number of glasses of milk consumed must be non-negative",
-    "Number of plates of vegetables consumed must be non-negative"
+    "The number of glasses of milk consumed must be greater than or equal to 0",
+    "The number of plates of vegetables consumed must be greater than or equal to 0"
 ]
-```
 ----
 +++++++++++++++++++
 ++ Constraint Qs ++
@@ -99,21 +73,39 @@ Consider this potential constraint: Total calcium intake from milk and vegetable
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is definitely a constraint and must be explicitly modeled in the (MI)LP formulation.
+Yes, this is **definitely a constraint** and must be explicitly modeled in the (MI)LP formulation.
 
-The problem clearly states that the boy wants to get **a minimum of 100 units of calcium per day**. Since calcium can only come from milk and vegetables in this model, we must enforce that the total calcium provided by these two foods is at least `MinCalcium`.
+### Reasoning
 
-Mathematically, if:
-- \( x \) = glasses of milk  
-- \( y \) = plates of vegetables  
+The problem states:
 
-then the constraint is:
+> "He wants to get a minimum of 100 units of calcium per day."
+
+This is a **nutritional requirement**, meaning the total calcium intake from all consumed items (milk and vegetables) must meet or exceed a specified minimum level (`MinCalcium`).
+
+If we define decision variables:
+- \( x \) = number of glasses of milk  
+- \( y \) = number of plates of vegetables  
+
+Then total calcium intake is:
+
+\[
+40x + 15y
+\]
+
+Thus, the constraint is:
 
 \[
 40x + 15y \ge \text{MinCalcium}
 \]
 
-This is a core nutritional requirement and central to the feasibility of the solution. Without it, the model would not reflect the problem statement.
+This is a **core feasibility constraint**, not optional or implied. Without it, the optimization would ignore the calcium requirement entirely, potentially producing an invalid solution.
+
+### Conclusion
+
+✅ Yes, it is a constraint.  
+✅ It must be explicitly included in the model.  
+✅ It directly reflects a stated minimum requirement in the problem.
 
 **5 OUT OF 5**
 +--+
@@ -184,15 +176,17 @@ Consider this potential constraint: Total iron intake from milk and vegetables m
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is definitely a constraint.
+Yes, this is clearly a constraint.
 
-The problem explicitly states that the boy wants to get **a minimum of 50 units of iron per day**. Since iron can only come from milk and vegetables in this model, we must enforce:
+The problem explicitly states that the boy wants to get **a minimum of 50 units of iron per day**. Therefore, the total iron intake from milk and vegetables must be **at least MinIron**. This is a classic nutritional requirement constraint in a diet optimization problem.
+
+Mathematically, this would be modeled as:
 
 \[
-\text{MilkIron} \cdot \text{Milk} + \text{VegetableIron} \cdot \text{Vegetables} \ge \text{MinIron}
+\text{MilkIron} \cdot x_{\text{milk}} + \text{VegetableIron} \cdot x_{\text{veg}} \ge \text{MinIron}
 \]
 
-This is a core nutritional requirement and directly derived from the problem statement. It must be explicitly included in the (MI)LP formulation.
+This is essential to the formulation and must be explicitly included in the (MI)LP model.
 
 **5 OUT OF 5**
 +--+
@@ -253,7 +247,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: Number of glasses of milk consumed must be non-negative
+Consider this potential constraint: The number of glasses of milk consumed must be greater than or equal to 0
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -265,17 +259,17 @@ Take a deep breath and think step by step. You will be awarded a million dollars
 ----
 Yes, this **is** a constraint.
 
-The number of glasses of milk consumed is a decision variable (let’s call it \( x \)). In real life, consuming a negative number of glasses is impossible. Therefore, we must impose:
+In an optimization model, decision variables must have defined domains. The number of glasses of milk consumed is a physical quantity and therefore cannot be negative. Without explicitly including the non-negativity constraint:
 
 \[
-x \ge 0
+\text{Milk} \ge 0
 \]
 
-In optimization modeling, non-negativity constraints are standard and essential. Even though they are often treated as default variable domain restrictions rather than written as separate “problem constraints,” they **must** be explicitly enforced in the (MI)LP formulation unless otherwise specified.
+the mathematical model would technically allow negative values, even if they are not optimal in this particular instance. Proper (MI)LP formulations require domain constraints to ensure meaningful and well-defined feasible regions.
 
-So this is indeed a valid and necessary modeling constraint.
+Although in this specific problem the optimal solution would not choose negative milk anyway, non-negativity is a **standard and necessary modeling constraint** for quantity decision variables.
 
-**5 OUT OF 5**
+**Confidence: 5 OUT OF 5**
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -334,7 +328,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: Number of plates of vegetables consumed must be non-negative
+Consider this potential constraint: The number of plates of vegetables consumed must be greater than or equal to 0
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -344,19 +338,22 @@ Consider this potential constraint: Number of plates of vegetables consumed must
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is indeed a constraint.
+Yes, this **is** a constraint.
 
-In an optimization model, the number of plates of vegetables consumed is a decision variable (let’s call it \( v \)). Since it represents a physical quantity (number of plates eaten), it cannot be negative. Therefore, we must include the non-negativity constraint:
+In an optimization model, the number of plates of vegetables consumed is a **decision variable**. Since it represents a physical quantity (number of plates eaten), it cannot be negative. Therefore, we must impose a **non-negativity constraint**:
 
 \[
-v \ge 0
+\text{Vegetables} \ge 0
 \]
 
-This is a standard domain constraint in linear programming models. Even though it may seem obvious from the real-world interpretation, it must be explicitly enforced in the mathematical formulation unless non-negativity is assumed by default in the modeling framework being used.
+Even though non-negativity constraints are often considered “standard” and sometimes implicitly assumed in linear programming formulations, they are still formally required unless otherwise specified.
 
-So yes — this is a valid and necessary constraint to include in the (MI)LP formulation.
+So:
 
-**5 OUT OF 5**
+- ✅ It **is** a valid constraint.
+- ✅ It **should be explicitly modeled** (unless your modeling framework assumes non-negativity by default).
+
+**Confidence level:** 5 OUT OF 5
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -376,12 +373,12 @@ Extracting constraint formulations
     "NEW VARIABLES": {
         "MilkQty": {
             "shape": [],
-            "type": "integer",
+            "type": "continuous",
             "definition": "Number of glasses of milk consumed per day"
         },
         "VegetableQty": {
             "shape": [],
-            "type": "integer",
+            "type": "continuous",
             "definition": "Number of plates of vegetables consumed per day"
         }
     },
@@ -391,7 +388,7 @@ Extracting constraint formulations
 ----
 EXTRACTED ITEMS
 $MilkCalcium \\cdot MilkQty + VegetableCalcium \\cdot VegetableQty \\geq MinCalcium$
-{'MilkQty': {'shape': [], 'type': 'integer', 'definition': 'Number of glasses of milk consumed per day'}, 'VegetableQty': {'shape': [], 'type': 'integer', 'definition': 'Number of plates of vegetables consumed per day'}}
+{'MilkQty': {'shape': [], 'type': 'continuous', 'definition': 'Number of glasses of milk consumed per day'}, 'VegetableQty': {'shape': [], 'type': 'continuous', 'definition': 'Number of plates of vegetables consumed per day'}}
 []
 ----
 ----
@@ -441,24 +438,22 @@ CPU model: Intel(R) Xeon(R) Platinum, instruction set [SSE2|AVX|AVX2|AVX512]
 Thread count: 1 physical cores, 2 logical processors, using up to 2 threads
 
 Optimize a model with 4 rows, 2 columns and 6 nonzeros (Min)
-Model fingerprint: 0x420655bb
-Model has 0 linear objective coefficients
-Variable types: 0 continuous, 2 integer (0 binary)
+Model fingerprint: 0x28d6be30
+Model has 2 linear objective coefficients
 Coefficient statistics:
   Matrix range     [1e+00, 4e+01]
-  Objective range  [0e+00, 0e+00]
+  Objective range  [1e+00, 2e+00]
   Bounds range     [0e+00, 0e+00]
   RHS range        [5e+01, 1e+02]
 
-Found heuristic solution: objective 0.0000000
+Presolve removed 4 rows and 2 columns
+Presolve time: 0.00s
+Presolve: All rows and columns removed
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0    2.5000000e+00   0.000000e+00   0.000000e+00      0s
 
-Explored 0 nodes (0 simplex iterations) in 0.00 seconds (0.00 work units)
-Thread count was 1 (of 2 available processors)
-
-Solution count 1: 0 
-
-Optimal solution found (tolerance 1.00e-04)
-Best objective 0.000000000000e+00, best bound 0.000000000000e+00, gap 0.0000%
-Optimal Objective Value:  0.0
-Optimal Objective Value:  0.0
+Solved in 0 iterations and 0.00 seconds (0.00 work units)
+Optimal objective  2.500000000e+00
+Optimal Objective Value:  2.5
+Optimal Objective Value:  2.5
 

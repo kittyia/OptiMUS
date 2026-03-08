@@ -54,7 +54,7 @@ Small = model.addVar(vtype=GRB.INTEGER, name="Small")
 ### Define the constraints
 
 model.addConstr(4 * Large + 2 * Small <= AvailablePaint)
-model.addConstr(3 * Large + Small <= AvailableGlitter)
+model.addConstr(3 * Large + 1 * Small <= AvailableGlitter)
 model.addConstr(5 * Large + 2 * Small <= AvailableGlue)
 model.addConstr(Large >= MinLarge)
 model.addConstr(Small >= MinSmall)
@@ -62,7 +62,7 @@ model.addConstr(Small >= MinSmall)
 
 ### Define the objective
 
-
+model.setObjective(ProfitLarge * Large + ProfitSmall * Small, GRB.MAXIMIZE)
 
 
 ### Optimize the model

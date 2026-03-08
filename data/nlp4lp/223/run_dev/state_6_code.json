@@ -43,47 +43,52 @@
         }
     },
     "objective": {
-        "description": "Minimize the total number of pipes used (the sum of high-volume and low-volume pipes)",
+        "description": "\"Minimize the total number of pipes used (high-volume and low-volume combined)\"",
         "formulation": "$\\min \\; HighVolumePipes + LowVolumePipes$",
         "code": "model.setObjective(HighVolumePipes + LowVolumePipes, GRB.MINIMIZE)"
     },
     "constraints": [
         {
-            "description": "10000 * HighVolumePipes + 5000 * LowVolumePipes >= 150000",
+            "description": "10000 * HighVolumePipes + 5000 * LowVolumePipes >= DailyGasDemand",
             "formulation": "$HighVolumeCapacity \\\\cdot HighVolumePipes + LowVolumeCapacity \\\\cdot LowVolumePipes \\\\geq DailyGasDemand$",
             "code": "model.addConstr(HighVolumeCapacity * HighVolumePipes + LowVolumeCapacity * LowVolumePipes >= DailyGasDemand)"
         },
         {
-            "description": "12 * HighVolumePipes + 5 * LowVolumePipes <= 160",
+            "description": "12 * HighVolumePipes + 5 * LowVolumePipes <= TotalTechnicians",
             "formulation": "$TechniciansPerHighVolumePipe \\\\cdot HighVolumePipes + TechniciansPerLowVolumePipe \\\\cdot LowVolumePipes \\\\leq TotalTechnicians$",
             "code": "model.addConstr(TechniciansPerHighVolumePipe * HighVolumePipes + TechniciansPerLowVolumePipe * LowVolumePipes <= TotalTechnicians)"
         },
         {
-            "description": "HighVolumePipes <= 0.35 * (HighVolumePipes + LowVolumePipes)",
+            "description": "HighVolumePipes <= MaxHighVolumeProportion * (HighVolumePipes + LowVolumePipes)",
             "formulation": "$HighVolumePipes \\\\leq MaxHighVolumeProportion \\\\cdot (HighVolumePipes + LowVolumePipes)$",
             "code": "model.addConstr(HighVolumePipes <= MaxHighVolumeProportion * (HighVolumePipes + LowVolumePipes))"
         },
         {
-            "description": "LowVolumePipes >= 8",
-            "formulation": "$LowVolumePipes \\\\geq MinLowVolumePipes$",
+            "description": "LowVolumePipes >= MinLowVolumePipes",
+            "formulation": "$LowVolumePipes \\\\ge MinLowVolumePipes$",
             "code": "model.addConstr(LowVolumePipes >= MinLowVolumePipes)"
         },
         {
             "description": "HighVolumePipes >= 0",
             "formulation": "$HighVolumePipes \\\\geq 0$",
             "code": "model.addConstr(HighVolumePipes >= 0)"
+        },
+        {
+            "description": "HighVolumePipes and LowVolumePipes must be integers",
+            "formulation": "$HighVolumePipes \\\\in \\\\mathbb{Z}_{\\\\ge 0}, \\\\; LowVolumePipes \\\\in \\\\mathbb{Z}_{\\\\ge 0}$",
+            "code": "model.addConstr(HighVolumePipes >= 0)\nmodel.addConstr(LowVolumePipes >= 0)"
         }
     ],
     "variables": {
         "HighVolumePipes": {
             "shape": [],
             "type": "integer",
-            "definition": "Number of high-volume pipes used per day"
+            "definition": "Number of high-volume pipes to be used"
         },
         "LowVolumePipes": {
             "shape": [],
             "type": "integer",
-            "definition": "Number of low-volume pipes used per day"
+            "definition": "Number of low-volume pipes to be used"
         }
     }
 }

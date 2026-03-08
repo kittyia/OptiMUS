@@ -25,24 +25,23 @@ MinPairsToSupply = data["MinPairsToSupply"] # shape: [], definition: Minimum num
 
 ### Define the variables
 
-Vans = model.addVar(vtype=GRB.INTEGER, name="Vans")
+vans = model.addVar(vtype=GRB.INTEGER, name="vans")
 
-Trucks = model.addVar(vtype=GRB.INTEGER, name="Trucks")
+trucks = model.addVar(vtype=GRB.INTEGER, name="trucks")
 
 
 
 ### Define the constraints
 
-model.addConstr(VanCapacity * Vans + TruckCapacity * Trucks >= MinPairsToSupply)
-model.addConstr(Trucks <= Vans)
-model.addConstr(Trucks >= 0)
-model.addConstr(Vans >= 0)
-model.addConstr(Trucks >= 0)
+model.addConstr(VanCapacity * vans + TruckCapacity * trucks >= MinPairsToSupply)
+model.addConstr(trucks <= vans)
+model.addConstr(vans >= 0)
+model.addConstr(trucks >= 0)
 
 
 ### Define the objective
 
-del.setObjective(Vans, GRB.MINIMIZE
+model.setObjective(vans, GRB.MINIMIZE)
 
 
 ### Optimize the model

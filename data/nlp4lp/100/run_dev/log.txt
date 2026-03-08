@@ -1,23 +1,54 @@
 ----
-The three constraints represent fundamentally different requirements:
+Let’s analyze each constraint carefully.
 
-1. **Throat medicine upper bound** – limits total throat medicine to at most `MaxMedicineThroat`.
-2. **Lung medicine lower bound** – requires total lung medicine to be at least `MinMedicineLungs`.
-3. **Non-negativity of servings** – ensures physically meaningful decision variables.
+### 1️⃣ Throat medicine upper bound  
+> "The total medicine delivered to the throat from all syrups should not exceed MaxMedicineThroat"
 
-There is:
+This constraint limits total throat medicine to at most 5 units.  
+It is necessary because it enforces the patient’s maximum allowable throat dosage.  
+It is not implied by any other constraint.  
+✅ **Keep**
 
-- **No redundancy**: None of the constraints can be derived from the others.
-- **No removable constraint**: Each one enforces a distinct modeling requirement.
-- **No combinable pair**: The first two constraints involve different linear combinations and opposite inequality directions (≤ vs ≥). The third constraint applies directly to the decision variables and cannot be merged with the others.
+---
 
-Thus, the constraint list remains unchanged.
+### 2️⃣ Lungs medicine lower bound  
+> "The total medicine delivered to the lungs from all syrups should be at least MinMedicineLungs"
 
+This constraint enforces the minimum required lungs medicine (at least 4 units).  
+It is independent of the throat constraint and cannot be derived from it.  
+✅ **Keep**
+
+---
+
+### 3️⃣ Non-negativity of servings  
+> "The number of servings taken of each syrup should be non-negative"
+
+This ensures physical feasibility (negative servings are impossible).  
+It is not implied by the other constraints.  
+✅ **Keep**
+
+---
+
+### Redundancy or Combinations?
+
+- No constraint is redundant.
+- None can be removed.
+- None can be combined, since they:
+  - Involve different expressions (throat vs lungs),
+  - Have different inequality directions (≤ vs ≥),
+  - Or impose domain restrictions (non-negativity).
+
+---
+
+### ✅ Updated List of Constraints
+
+```python
 [
     "The total medicine delivered to the throat from all syrups should not exceed MaxMedicineThroat",
     "The total medicine delivered to the lungs from all syrups should be at least MinMedicineLungs",
     "The number of servings taken of each syrup should be non-negative"
 ]
+```
 ----
 +++++++++++++++++++
 ++ Constraint Qs ++
@@ -82,23 +113,22 @@ Consider this potential constraint: The total medicine delivered to the throat f
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is **explicitly a constraint** in the problem description.
+Yes, this is clearly a constraint and must be explicitly included in the (MI)LP formulation.
 
-The text states:
+The problem statement says:  
+> “The patient can get **at most 5 units of medicine for the throat**...”
 
-> "The patient can get **at most 5 units of medicine for the throat**..."
+"At most" directly translates to a ≤ (less-than-or-equal-to) constraint. Therefore, the total throat medicine delivered by all syrups combined must not exceed `MaxMedicineThroat`.
 
-"At most 5 units" directly translates to the inequality:
+If we let \( x_i \) be the number of servings of syrup \( i \), the constraint is:
 
 \[
-\sum_{i} (\text{MedicineThroatPerServing}_i \cdot x_i) \le \text{MaxMedicineThroat}
+\sum_{i=1}^{\text{NumSyrups}} \text{MedicineThroatPerServing}_i \cdot x_i \le \text{MaxMedicineThroat}
 \]
 
-This is clearly a **hard upper bound constraint**, not an objective component or optional condition. It must be included in the LP formulation.
+This is an essential feasibility constraint and directly derived from the problem description. It must be included in the optimization model.
 
-There is no ambiguity in the wording — this is exactly the kind of statement that defines a constraint.
-
-**Confidence level: 5 OUT OF 5**
+**Confidence level:** 5 OUT OF 5
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -163,25 +193,17 @@ Consider this potential constraint: The total medicine delivered to the lungs fr
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is **explicitly a constraint** in the problem description.
+Yes, this is explicitly a constraint.
 
-The text clearly states:
-
-> "The patient can get at most 5 units of medicine for the throat and **at least 4 units of medicine to the lungs**."
-
-The phrase *"at least 4 units of medicine to the lungs"* directly translates into the constraint:
+The problem statement clearly says: *“The patient can get … at least 4 units of medicine to the lungs.”* This directly translates into a lower-bound constraint on the total amount of lung medicine delivered by all syrups combined:
 
 \[
-\sum_{i=1}^{\text{NumSyrups}} (\text{MedicineLungsPerServing}_i \cdot x_i) \ge \text{MinMedicineLungs}
+\sum_{i} (\text{MedicineLungsPerServing}_i \cdot x_i) \ge \text{MinMedicineLungs}
 \]
 
-This is not implied or optional — it is a hard requirement in the problem statement. Therefore, it must be explicitly modeled in the (MI)LP formulation.
+This is a core feasibility requirement and must be included in the (MI)LP model. There is no ambiguity in the wording—it is a direct quantitative restriction.
 
-✅ It is a true constraint.  
-✅ It must be included in the model.  
-✅ There is no ambiguity in the wording.
-
-**Confidence level: 5 OUT OF 5**
+5 OUT OF 5
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -246,32 +268,26 @@ Consider this potential constraint: The number of servings taken of each syrup s
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this **is definitely a constraint** and it should be explicitly modeled in the (MI)LP formulation.
+Yes, this is indeed a constraint and it should be explicitly modeled in the (MI)LP formulation.
 
-### Why?
+### Step-by-step reasoning:
 
 The decision variables in this problem are:
 
 - \( x_1 \): servings of syrup 1  
 - \( x_2 \): servings of syrup 2  
 
-Since servings represent physical quantities, they **cannot be negative**. A negative number of servings would have no real-world meaning in this context.
-
-Therefore, we must explicitly include:
+These variables represent physical quantities (number of servings consumed). In reality, it is impossible to consume a negative number of servings. Therefore, we must impose:
 
 \[
-x_1 \ge 0
-\]
-\[
-x_2 \ge 0
+x_1 \ge 0, \quad x_2 \ge 0
 \]
 
-Even though non-negativity is often standard in linear programming models, it still needs to be formally specified in the formulation unless the modeling framework assumes it by default. Conceptually and mathematically, this is absolutely a constraint.
+Even if some modeling languages assume non-negativity by default, from a mathematical modeling standpoint this is absolutely a necessary constraint to ensure feasibility and interpretability of the solution.
 
-### Conclusion
+Without these constraints, the solver could assign negative values to one syrup to artificially reduce sugar intake while still satisfying the medicine constraints — which would be physically meaningless.
 
-✅ This is a real and necessary constraint.  
-✅ It should be included explicitly in the LP formulation.  
+So yes, this is a real and necessary constraint.
 
 **5 OUT OF 5**
 +--+
@@ -289,7 +305,7 @@ Extracting constraint formulations
 
 ----
 {
-    "FORMULATION": "$\\sum_{i=1}^{NumSyrups} MedicineThroatPerServing[i] \\cdot Servings[i] \\leq MaxMedicineThroat$",
+    "FORMULATION": "$\\sum_{s=1}^{NumSyrups} MedicineThroatPerServing[s] \\cdot Servings[s] \\leq MaxMedicineThroat$",
     "NEW VARIABLES": {
         "Servings": {
             "shape": "[NumSyrups]",
@@ -302,7 +318,7 @@ Extracting constraint formulations
 ----
 ----
 EXTRACTED ITEMS
-$\\sum_{i=1}^{NumSyrups} MedicineThroatPerServing[i] \\cdot Servings[i] \\leq MaxMedicineThroat$
+$\\sum_{s=1}^{NumSyrups} MedicineThroatPerServing[s] \\cdot Servings[s] \\leq MaxMedicineThroat$
 {'Servings': {'shape': '[NumSyrups]', 'type': 'continuous', 'definition': 'Number of servings taken of each syrup'}}
 []
 ----
@@ -340,22 +356,24 @@ CPU model: Intel(R) Xeon(R) Platinum, instruction set [SSE2|AVX|AVX2|AVX512]
 Thread count: 1 physical cores, 2 logical processors, using up to 2 threads
 
 Optimize a model with 4 rows, 2 columns and 6 nonzeros (Min)
-Model fingerprint: 0x196265ef
-Model has 0 linear objective coefficients
+Model fingerprint: 0x80b14136
+Model has 2 linear objective coefficients
 Coefficient statistics:
   Matrix range     [2e-01, 1e+00]
-  Objective range  [0e+00, 0e+00]
+  Objective range  [3e-01, 5e-01]
   Bounds range     [0e+00, 0e+00]
   RHS range        [4e+00, 5e+00]
 
-Presolve removed 4 rows and 2 columns
+Presolve removed 2 rows and 0 columns
 Presolve time: 0.00s
-Presolve: All rows and columns removed
-Iteration    Objective       Primal Inf.    Dual Inf.      Time
-       0    0.0000000e+00   0.000000e+00   0.000000e+00      0s
+Presolved: 2 rows, 2 columns, 4 nonzeros
 
-Solved in 0 iterations and 0.00 seconds (0.00 work units)
-Optimal objective  0.000000000e+00
-Optimal Objective Value:  0.0
-Optimal Objective Value:  0.0
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0    0.0000000e+00   4.000000e+00   0.000000e+00      0s
+       1    2.4000000e+00   0.000000e+00   0.000000e+00      0s
+
+Solved in 1 iterations and 0.00 seconds (0.00 work units)
+Optimal objective  2.400000000e+00
+Optimal Objective Value:  2.4
+Optimal Objective Value:  2.4
 

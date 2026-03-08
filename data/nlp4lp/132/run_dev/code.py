@@ -35,29 +35,22 @@ MaxSmelly = data["MaxSmelly"] # shape: [], definition: Maximum units of smelly g
 
 ### Define the variables
 
-NumRuns = model.addVars(NumExperiments, vtype=GRB.INTEGER, name="NumRuns")
+Experiments = model.addVars(NumExperiments, vtype=GRB.INTEGER, name="Experiments")
 
 
 
 ### Define the constraints
 
 model.addConstr(
-    sum(RedUsage[i] * NumRuns[i] for i in range(NumExperiments)) <= TotalRed
+    sum(SmellyGasProduction[i] * Experiments[i] for i in range(NumExperiments)) <= MaxSmelly
 )
-model.addConstr(
-    sum(BlueUsage[i] * NumRuns[i] for i in range(NumExperiments)) <= TotalBlue
-)
-model.addConstr(
-    sum(SmellyGasProduction[i] * NumRuns[i] for i in range(NumExperiments)) 
-    <= MaxSmelly
-)
-for e in range(NumExperiments):
-    model.addConstr(NumRuns[e] >= 0)
+model.addConstr(Experiments[0] >= 0)
+model.addConstr(Experiments[1] >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(quicksum(GreenGasProduction[i] * Experiments[i] for i in range(NumExperiments)), GRB.MAXIMIZE)
 
 
 ### Optimize the model

@@ -50,7 +50,7 @@ model.addConstr(TinyBags >= 0)
 
 ### Define the objective
 
-
+model.setObjective(LargeBagCapacity * LargeBags + TinyBagCapacity * TinyBags, GRB.MAXIMIZE)
 
 
 ### Optimize the model

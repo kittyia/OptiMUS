@@ -31,28 +31,25 @@ MinProductRequired = data["MinProductRequired"] # shape: [2], definition: MinPro
 
 ### Define the variables
 
-ProcessTime = model.addVars(NumProcesses, vtype=GRB.CONTINUOUS, name="ProcessTime")
+HoursProcess = model.addVars(NumProcesses, vtype=GRB.CONTINUOUS, name="HoursProcess")
 
 
 
 ### Define the constraints
 
 model.addConstr(
-    sum(PreliminaryMaterialRequired[p] * ProcessTime[p] for p in range(NumProcesses))
+    sum(PreliminaryMaterialRequired[i] * HoursProcess[i] for i in range(NumProcesses))
     <= TotalPreliminaryMaterialAvailable
 )
-model.addConstr(35 * ProcessTime[0] + 50 * ProcessTime[1] >= 1200)
-model.addConstr(
-    sum(ProductionRate[p][1] * ProcessTime[p] for p in range(NumProcesses)) 
-    >= MinProductRequired[1]
-)
-model.addConstr(ProcessTime[0] >= 0)
-model.addConstr(ProcessTime[1] >= 0)
+model.addConstr(35 * HoursProcess[0] + 50 * HoursProcess[1] >= 1200)
+model.addConstr(12 * HoursProcess[0] + 30 * HoursProcess[1] >= 1200)
+model.addConstr(HoursProcess[0] >= 0)
+model.addConstr(HoursProcess[1] >= 0)
 
 
 ### Define the objective
 
-model.setObjective(quicksum(ProcessTime[i] for i in range(NumProcesses)), GRB.MINIMIZE)
+model.setObjective(quicksum(HoursProcess[p] for p in range(NumProcesses)), GRB.MINIMIZE)
 
 
 ### Optimize the model

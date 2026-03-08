@@ -131,48 +131,39 @@ Consider this potential constraint: For each machine m: Sum over all parts p of 
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is absolutely a constraint, and it is a fundamental one in the LP formulation.
+Yes, this is absolutely a constraint and a fundamental one in the LP formulation.
 
-### Why this is a constraint
+Reasoning step by step:
 
-For each machine \( m \):
+- Each machine \( m \) has a regular monthly availability of \( \text{Availability}[m] \) hours.
+- The company may purchase additional machine time \( \text{extra\_time}[m] \), up to \( \text{MaxExtra}[m] \).
+- Producing one batch of part \( p \) requires \( \text{TimeRequired}[m][p] \) hours on machine \( m \).
+- Therefore, if \( \text{batches}[p] \) batches of part \( p \) are produced, the total time used on machine \( m \) is:
 
-- Producing batches requires machine time.
-- The total time used on machine \( m \) is:
   \[
-  \sum_{p=1}^{P} \text{TimeRequired}_{m,p} \cdot \text{batches}_p
+  \sum_{p=1}^{P} \text{TimeRequired}[m][p] \cdot \text{batches}[p]
   \]
-- Machine \( m \) has:
-  - Regular available time: \( \text{Availability}_m \)
-  - Optional extra time that can be purchased: \( \text{extra\_time}_m \)
 
-So total usable time is:
-\[
-\text{Availability}_m + \text{extra\_time}_m
-\]
+- This total usage must not exceed the total available time:
 
-Since machine usage cannot exceed total available time, we must enforce:
+  \[
+  \text{Availability}[m] + \text{extra\_time}[m]
+  \]
+
+Thus, the constraint:
+
 \[
-\sum_{p=1}^{P} \text{TimeRequired}_{m,p} \cdot \text{batches}_p 
-\le 
-\text{Availability}_m + \text{extra\_time}_m
+\sum_{p=1}^{P} \text{TimeRequired}[m][p] \cdot \text{batches}[p]
+\;\le\;
+\text{Availability}[m] + \text{extra\_time}[m]
 \quad \forall m
 \]
 
-This is the core **capacity constraint** of the problem. Without it, machine limits would not restrict production, making the model incorrect.
+is a core machine capacity constraint and must be explicitly included in the LP model.
 
-Additionally, this works together with another necessary constraint:
-\[
-0 \le \text{extra\_time}_m \le \text{MaxExtra}_m
-\]
+Without it, machine capacity limits would not be enforced, making the model incorrect.
 
-### Conclusion
-
-✅ Yes, this is definitely a required constraint.  
-✅ It must explicitly appear in the LP formulation.  
-✅ It directly models machine capacity limitations.
-
-**5 OUT OF 5**
+5 OUT OF 5
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -300,27 +291,35 @@ Consider this potential constraint: For each machine m: 0 <= extra_time[m] <= Ma
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is definitely a constraint and it should be explicitly modeled.
+Yes, this is **definitely a constraint**, and it should be explicitly modeled in the LP formulation.
 
-From the problem statement:
+### Why?
 
-- “Extra available time for machine \( m \) can be acquired at \( \text{extra\_costs}_m \) per hour.”
-- “Up to \( \text{max\_extra}_m \) hours can be purchased for each machine \( m \).”
+The problem clearly states:
 
-This directly implies:
+- *“Up to* `max_extra_m` *hours can be purchased for each machine m.”*
 
-- You cannot purchase negative extra time → \( \text{extra\_time}_m \ge 0 \)
-- You cannot exceed the maximum purchasable extra time → \( \text{extra\_time}_m \le \text{MaxExtra}_m \)
+This directly implies an **upper bound** on the decision variable `extra_time[m]`.
 
-Thus, for each machine \( m \):
+Additionally:
 
+- Since extra time represents purchased machine hours, it cannot be negative.
+- Therefore, we must enforce:
+  
 \[
-0 \le \text{extra\_time}_m \le \text{MaxExtra}_m
+0 \le \text{extra\_time}[m] \le \text{MaxExtra}[m] \quad \forall m
 \]
 
-This is not optional or implied indirectly—it is a core feasibility restriction derived explicitly from the problem description. Without it, the model could purchase unlimited extra hours, which would violate the stated business rule.
+### Why this must be explicitly modeled
 
-Confidence level:  
+- Without the **upper bound**, the model could purchase unlimited extra hours if profitable.
+- Without the **nonnegativity constraint**, the solver could choose negative extra time to artificially reduce costs.
+- The statement explicitly defines a limit (“up to”), which is a classic bounded decision variable constraint in LP modeling.
+
+This is a **core feasibility constraint**, not optional.
+
+### Confidence Level
+
 **5 OUT OF 5**
 +--+
 ---
@@ -449,21 +448,36 @@ Consider this potential constraint: For each part p: batches[p] must be greater 
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is explicitly a constraint.
+Yes, this is **definitely a constraint** and it must be explicitly included in the LP formulation.
 
-The problem statement clearly says:
+### Why?
 
-> "The division must produce at least \(\text{min\_batches}_p\) batches of part \(p\) each month to fulfill a contract."
+The problem statement explicitly says:
 
-The word *must* indicates a hard requirement, not a soft preference or cost-based tradeoff. Therefore, for each part \(p\), we need the constraint:
+> “The division must produce at least \( \text{min\_batches}_p \) batches of part \( p \) each month to fulfill a contract.”
+
+The word **“must”** indicates a hard requirement, not a soft preference. This is not something that can be left to the objective function to handle — it is a contractual obligation and therefore must be enforced as a constraint in the model.
+
+### Mathematical Form
+
+For each part \( p = 1, \dots, P \):
 
 \[
 \text{batches}_p \ge \text{MinBatches}_p
 \]
 
-This is a standard lower-bound production constraint and must be explicitly included in the LP formulation.
+Without this constraint:
+- The model might produce fewer batches (or even zero) if doing so increases profit.
+- That would violate the contract requirement.
+- Therefore, the model would not correctly represent the problem.
 
-**Confidence:** 5 OUT OF 5
+### Conclusion
+
+✅ This is absolutely a required constraint.  
+✅ It must be explicitly modeled in the LP.  
+✅ There is no ambiguity in the problem statement.
+
+**5 OUT OF 5**
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -479,17 +493,17 @@ Extracting constraint formulations
 
 ----
 {
-    "FORMULATION": "$\\forall m \\in \\{1, \\dots, M\\}: \\sum_{p=1}^{P} TimeRequired_{m,p} \\cdot batches_p \\leq Availability_m + extraTime_m$",
+    "FORMULATION": "$\\forall m = 1, \\dots, M:\\; \\sum_{p=1}^{P} TimeRequired[m,p] \\cdot batches[p] \\leq Availability[m] + extraTime[m]$",
     "NEW VARIABLES": {
         "batches": {
             "shape": "[P]",
             "type": "continuous",
-            "definition": "Number of batches of part p produced per month"
+            "definition": "Number of batches of part p produced each month"
         },
         "extraTime": {
             "shape": "[M]",
             "type": "continuous",
-            "definition": "Additional hours purchased for machine m"
+            "definition": "Additional hours purchased for machine m beyond regular availability"
         }
     },
     "AUXILIARY CONSTRAINTS": []
@@ -497,33 +511,33 @@ Extracting constraint formulations
 ----
 ----
 EXTRACTED ITEMS
-$\\forall m \\in \\{1, \\dots, M\\}: \\sum_{p=1}^{P} TimeRequired_{m,p} \\cdot batches_p \\leq Availability_m + extraTime_m$
-{'batches': {'shape': '[P]', 'type': 'continuous', 'definition': 'Number of batches of part p produced per month'}, 'extraTime': {'shape': '[M]', 'type': 'continuous', 'definition': 'Additional hours purchased for machine m'}}
+$\\forall m = 1, \\dots, M:\\; \\sum_{p=1}^{P} TimeRequired[m,p] \\cdot batches[p] \\leq Availability[m] + extraTime[m]$
+{'batches': {'shape': '[P]', 'type': 'continuous', 'definition': 'Number of batches of part p produced each month'}, 'extraTime': {'shape': '[M]', 'type': 'continuous', 'definition': 'Additional hours purchased for machine m beyond regular availability'}}
 []
 ----
 ----
 {
-    "FORMULATION": "$\\forall m = 1, \\dots, M: \\; 0 \\leq extraTime[m] \\leq MaxExtra[m]$",
+    "FORMULATION": "$\\forall m \\in \\{1, \\dots, M\\},\\; 0 \\le extraTime[m] \\le MaxExtra[m]$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$\\forall m = 1, \\dots, M: \\; 0 \\leq extraTime[m] \\leq MaxExtra[m]$
+$\\forall m \\in \\{1, \\dots, M\\},\\; 0 \\le extraTime[m] \\le MaxExtra[m]$
 {}
 []
 ----
 ----
 {
-    "FORMULATION": "$\\forall p = 1, \\dots, P:\\; batches[p] \\geq MinBatches[p]$",
+    "FORMULATION": "$\\forall p \\in \\{1, \\dots, P\\},\\; batches[p] \\ge MinBatches[p]$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$\\forall p = 1, \\dots, P:\\; batches[p] \\geq MinBatches[p]$
+$\\forall p \\in \\{1, \\dots, P\\},\\; batches[p] \\ge MinBatches[p]$
 {}
 []
 ----

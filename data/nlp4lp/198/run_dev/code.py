@@ -35,7 +35,10 @@ Servings = model.addVars(NumSupplements, vtype=GRB.CONTINUOUS, name="Servings")
 
 ### Define the constraints
 
-model.addConstr(30 * Servings[0] + 60 * Servings[1] >= 400)
+model.addConstr(
+    sum(AmountPerServing[0][j] * Servings[j] for j in range(NumSupplements)) 
+    >= MinimumRequirement[0]
+)
 model.addConstr(Servings[1] >= 0)
 model.addConstr(Servings[1] >= 0)
 

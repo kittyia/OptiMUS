@@ -43,28 +43,28 @@
     },
     "objective": {
         "description": "\"Minimize the total distance traveled by all students when assigning them to schools\"",
-        "formulation": "$\\min \\sum_{n=1}^{NumNeighborhoods} \\sum_{s=1}^{NumSchools} \\sum_{g=1}^{NumGrades} Distance_{n,s} \\, Assign_{n,s,g}$",
-        "code": ""
+        "formulation": "$\\min \\sum_{n=1}^{\\text{NumNeighborhoods}} \\sum_{s=1}^{\\text{NumSchools}} \\sum_{g=1}^{\\text{NumGrades}} \\text{Distance}_{n,s} \\cdot \\text{Assignments}_{n,s,g}$",
+        "code": "model.setObjective(\n    quicksum(Distance[n][s] * Assignments[n, s, g]\n             for n in range(NumNeighborhoods)\n             for s in range(NumSchools)\n             for g in range(NumGrades)),\n    GRB.MINIMIZE\n)"
     },
     "constraints": [
         {
-            "description": "For each neighborhood n and grade g, the total number of students assigned from neighborhood n and grade g to all schools must equal the population of that neighborhood and grade",
-            "formulation": "$\\\\forall n = 1, \\\\dots, NumNeighborhoods, \\\\; \\\\forall g = 1, \\\\dots, NumGrades:\\\\; \\\\sum_{s=1}^{NumSchools} Assign[n,s,g] = Population[n,g]$",
-            "code": "for n in range(NumNeighborhoods):\n    for g in range(NumGrades):\n        model.addConstr(\n            sum(Assign[n, s, g] for s in range(NumSchools)) == Population[n][g]\n        )"
+            "description": "For each neighborhood n and grade g, the total number of students assigned to all schools must equal the population of grade g in neighborhood n",
+            "formulation": "$\\\\forall n \\\\in \\\\{1,\\\\dots,\\\\text{NumNeighborhoods}\\\\},\\\\; \\\\forall g \\\\in \\\\{1,\\\\dots,\\\\text{NumGrades}\\\\},\\\\; \\\\sum_{s=1}^{\\\\text{NumSchools}} Assignments[n,s,g] = Population[n,g]$",
+            "code": "for n in range(NumNeighborhoods):\n    for g in range(NumGrades):\n        model.addConstr(\n            sum(Assignments[n, s, g] for s in range(NumSchools)) == Population[n][g]\n        )"
         },
         {
-            "description": "For each school s and grade g, the total number of students assigned to school s in grade g from all neighborhoods must not exceed the capacity of school s for grade g",
-            "formulation": "$\\\\forall s = 1, \\\\dots, \\\\text{NumSchools}, \\\\; \\\\forall g = 1, \\\\dots, \\\\text{NumGrades}, \\\\; \\\\sum_{n=1}^{\\\\text{NumNeighborhoods}} Assign[n, s, g] \\\\leq Capacity[s, g]$",
-            "code": "for s in range(NumSchools):\n    for g in range(NumGrades):\n        model.addConstr(\n            sum(Assign[n, s, g] for n in range(NumNeighborhoods)) \n            <= Capacity[s][g]\n        )"
+            "description": "For each school s and grade g, the total number of students assigned from all neighborhoods must not exceed the capacity of school s for grade g",
+            "formulation": "$\\\\forall s = 1, \\\\dots, NumSchools,\\\\; \\\\forall g = 1, \\\\dots, NumGrades:\\\\; \\\\sum_{n = 1}^{NumNeighborhoods} Assignments[n, s, g] \\\\leq Capacity[s, g]$",
+            "code": "for s in range(NumSchools):\n    for g in range(NumGrades):\n        model.addConstr(\n            sum(Assignments[n, s, g] for n in range(NumNeighborhoods)) \n            <= Capacity[s][g]\n        )"
         },
         {
-            "description": "The number of students assigned from neighborhood n to school s in grade g must be a non-negative integer",
-            "formulation": "$\\\\forall n = 1, \\\\dots, \\\\text{NumNeighborhoods},\\\\; \\\\forall s = 1, \\\\dots, \\\\text{NumSchools},\\\\; \\\\forall g = 1, \\\\dots, \\\\text{NumGrades}:\\\\; Assign[n,s,g] \\\\geq 0$",
-            "code": "for n in range(NumNeighborhoods):\n    for s in range(NumSchools):\n        for g in range(NumGrades):\n            model.addConstr(Assign[n, s, g] >= 0)"
+            "description": "The number of students assigned from neighborhood n to school s for grade g must be a non-negative integer",
+            "formulation": "$\\\\forall n = 1, \\\\dots, \\\\text{NumNeighborhoods},\\\\; \\\\forall s = 1, \\\\dots, \\\\text{NumSchools},\\\\; \\\\forall g = 1, \\\\dots, \\\\text{NumGrades},\\\\; Assignments[n,s,g] \\\\geq 0$",
+            "code": "for n in range(NumNeighborhoods):\n    for s in range(NumSchools):\n        for g in range(NumGrades):\n            model.addConstr(Assignments[n, s, g] >= 0)"
         }
     ],
     "variables": {
-        "Assign": {
+        "Assignments": {
             "shape": [
                 "NumNeighborhoods",
                 "NumSchools",

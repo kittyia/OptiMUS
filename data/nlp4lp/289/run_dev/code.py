@@ -29,24 +29,24 @@ ProfitWireless = data["ProfitWireless"] # shape: [], definition: Profit per wire
 
 ### Define the variables
 
-wiredProduction = model.addVar(vtype=GRB.INTEGER, name="wiredProduction")
+WiredProduction = model.addVar(vtype=GRB.INTEGER, name="WiredProduction")
 
-wirelessProduction = model.addVar(vtype=GRB.INTEGER, name="wirelessProduction")
+WirelessProduction = model.addVar(vtype=GRB.INTEGER, name="WirelessProduction")
 
 
 
 ### Define the constraints
 
-model.addConstr(wiredProduction >= 0)
-model.addConstr(wiredProduction <= MaxWiredProduction)
-model.addConstr(wirelessProduction >= 0)
-model.addConstr(wirelessProduction <= MaxWirelessProduction)
-model.addConstr(wiredProduction + wirelessProduction <= MaxTestingCapacity)
+model.addConstr(WiredProduction <= MaxWiredProduction)
+model.addConstr(WirelessProduction <= MaxWirelessProduction)
+model.addConstr(WiredProduction + WirelessProduction <= MaxTestingCapacity)
+model.addConstr(WiredProduction >= 0)
+model.addConstr(WirelessProduction >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(ProfitWired * WiredProduction + ProfitWireless * WirelessProduction, GRB.MAXIMIZE)
 
 
 ### Optimize the model

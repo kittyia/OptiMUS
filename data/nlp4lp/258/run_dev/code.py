@@ -51,7 +51,10 @@ model.addConstr(ExVivoExperiments >= 0)
 
 ### Define the objective
 
-
+model.setObjective(
+    RadiationInVivo * InVivoExperiments + RadiationExVivo * ExVivoExperiments,
+    GRB.MINIMIZE
+)
 
 
 ### Optimize the model

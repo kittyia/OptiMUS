@@ -35,27 +35,26 @@ SmallTrucksPerLargeTruck = data["SmallTrucksPerLargeTruck"] # shape: [], definit
 
 ### Define the variables
 
-SmallTrucks = model.addVar(vtype=GRB.INTEGER, name="SmallTrucks")
+smallTrucks = model.addVar(vtype=GRB.INTEGER, name="smallTrucks")
 
-LargeTrucks = model.addVar(vtype=GRB.INTEGER, name="LargeTrucks")
+largeTrucks = model.addVar(vtype=GRB.INTEGER, name="largeTrucks")
 
 
 
 ### Define the constraints
 
-model.addConstr(PeoplePerSmallTruck * SmallTrucks + PeoplePerLargeTruck * LargeTrucks <= TotalPeople)
-model.addConstr(SmallTrucks >= MinSmallTrucks)
-model.addConstr(LargeTrucks >= MinLargeTrucks)
-model.addConstr(SmallTrucks == SmallTrucksPerLargeTruck * LargeTrucks)
-model.addConstr(SmallTrucks >= 0)
-model.addConstr(LargeTrucks >= 0)
+model.addConstr(PeoplePerSmallTruck * smallTrucks + PeoplePerLargeTruck * largeTrucks <= TotalPeople)
+model.addConstr(smallTrucks >= MinSmallTrucks)
+model.addConstr(smallTrucks == 2 * largeTrucks)
+model.addConstr(smallTrucks >= 0)
+model.addConstr(largeTrucks >= 0)
 
 
 ### Define the objective
 
 model.setObjective(
-    SnowCapacitySmallTruck * SmallTrucks +
-    SnowCapacityLargeTruck * LargeTrucks,
+    SnowCapacitySmallTruck * smallTrucks +
+    SnowCapacityLargeTruck * largeTrucks,
     GRB.MAXIMIZE
 )
 

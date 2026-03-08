@@ -43,30 +43,35 @@
         }
     },
     "objective": {
-        "description": "\"The goal is to maximize the total amount of sand delivered using small and large containers\"",
-        "formulation": "$\\max \\; CapacitySmall \\cdot SmallContainers \\;+\\; CapacityLarge \\cdot LargeContainers$",
-        "code": "model.setObjective(CapacitySmall * SmallContainers + CapacityLarge * LargeContainers, GRB.MAXIMIZE)"
+        "description": "\"Maximize the total amount of sand delivered using the available containers and personnel\"",
+        "formulation": "$\\max \\left( CapacitySmall \\cdot SmallContainers + CapacityLarge \\cdot LargeContainers \\right)$",
+        "code": "model.setObjective(\n    CapacitySmall * SmallContainers + CapacityLarge * LargeContainers,\n    GRB.MAXIMIZE\n)"
     },
     "constraints": [
         {
-            "description": "Number of small containers used must be equal to RatioSmallToLargeContainers times the number of large containers used",
-            "formulation": "$SmallContainers = RatioSmallToLargeContainers \\\\cdot LargeContainers$",
+            "description": "The total number of persons required to unload the containers must not exceed the total persons available: UnloadPersonsSmall \u00d7 SmallContainers + UnloadPersonsLarge \u00d7 LargeContainers \u2264 TotalPersonsAvailable",
+            "formulation": "$UnloadPersonsSmall \\\\cdot SmallContainers + UnloadPersonsLarge \\\\cdot LargeContainers \\\\leq TotalPersonsAvailable$",
+            "code": "model.addConstr(UnloadPersonsSmall * SmallContainers + UnloadPersonsLarge * LargeContainers <= TotalPersonsAvailable)"
+        },
+        {
+            "description": "The number of small containers used must be equal to RatioSmallToLargeContainers times the number of large containers used: SmallContainers = RatioSmallToLargeContainers \u00d7 LargeContainers",
+            "formulation": "$SmallContainers = RatioSmallToLargeContainers \\\\times LargeContainers$",
             "code": "model.addConstr(SmallContainers == RatioSmallToLargeContainers * LargeContainers)"
         },
         {
-            "description": "Number of small containers used must be at least MinSmallContainers",
-            "formulation": "$SmallContainers \\\\ge MinSmallContainers$",
+            "description": "The number of small containers used must be at least MinSmallContainers: SmallContainers \u2265 MinSmallContainers",
+            "formulation": "$SmallContainers \\\\geq MinSmallContainers$",
             "code": "model.addConstr(SmallContainers >= MinSmallContainers)"
         },
         {
-            "description": "Number of large containers used must be at least MinLargeContainers",
+            "description": "The number of large containers used must be at least MinLargeContainers: LargeContainers \u2265 MinLargeContainers",
             "formulation": "$LargeContainers \\\\geq MinLargeContainers$",
             "code": "model.addConstr(LargeContainers >= MinLargeContainers)"
         },
         {
-            "description": "UnloadPersonsSmall multiplied by the number of small containers used plus UnloadPersonsLarge multiplied by the number of large containers used must not exceed TotalPersonsAvailable",
-            "formulation": "$UnloadPersonsSmall \\\\cdot SmallContainers + UnloadPersonsLarge \\\\cdot LargeContainers \\\\leq TotalPersonsAvailable$",
-            "code": "model.addConstr(UnloadPersonsSmall * SmallContainers + UnloadPersonsLarge * LargeContainers <= TotalPersonsAvailable)"
+            "description": "The number of small and large containers used must be integers",
+            "formulation": "$SmallContainers \\\\in \\\\mathbb{Z}_{\\\\ge 0}, \\\\; LargeContainers \\\\in \\\\mathbb{Z}_{\\\\ge 0}$",
+            "code": "model.addConstr(SmallContainers >= 0)\nmodel.addConstr(LargeContainers >= 0)"
         }
     ],
     "variables": {

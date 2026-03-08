@@ -35,23 +35,24 @@ MaxGuavaToMangoRatio = data["MaxGuavaToMangoRatio"] # shape: [], definition: The
 
 ### Define the variables
 
-MangosSold = model.addVar(vtype=GRB.INTEGER, name="MangosSold")
+MangoSold = model.addVar(vtype=GRB.INTEGER, name="MangoSold")
 
-GuavasSold = model.addVar(vtype=GRB.INTEGER, name="GuavasSold")
+GuavaSold = model.addVar(vtype=GRB.INTEGER, name="GuavaSold")
 
 
 
 ### Define the constraints
 
-model.addConstr(MangosSold >= MinMangosSold)
-model.addConstr(MangosSold <= MaxMangosSold)
-model.addConstr(GuavasSold <= MaxGuavaToMangoRatio * MangosSold)
-model.addConstr(GuavasSold >= 0)
+model.addConstr(CostMango * MangoSold + CostGuava * GuavaSold <= MaxSpendingBudget)
+model.addConstr(MangoSold >= MinMangosSold)
+model.addConstr(MangoSold <= MaxMangosSold)
+model.addConstr(GuavaSold <= MaxGuavaToMangoRatio * MangoSold)
+model.addConstr(GuavaSold >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(ProfitMango * MangoSold + ProfitGuava * GuavaSold, GRB.MAXIMIZE)
 
 
 ### Optimize the model

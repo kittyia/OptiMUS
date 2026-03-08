@@ -29,35 +29,35 @@ TotalTime = data["TotalTime"] # shape: [], definition: Total number of time step
 
 ### Define the variables
 
-x = model.addVars(TotalTime + 1, vtype=GRB.CONTINUOUS, name="x")
+Position = model.addVars(TotalTime+1, vtype=GRB.CONTINUOUS, name="Position")
 
-v = model.addVars(TotalTime + 1, vtype=GRB.CONTINUOUS, name="v")
+Velocity = model.addVars(TotalTime+1, vtype=GRB.CONTINUOUS, name="Velocity")
 
-a = model.addVars(TotalTime, vtype=GRB.CONTINUOUS, name="a")
+Acceleration = model.addVars(TotalTime, vtype=GRB.CONTINUOUS, name="Acceleration")
 
 
 
 ### Define the constraints
 
 for t in range(TotalTime):
-    model.addConstr(x[t+1] == x[t] + v[t])
+    model.addConstr(Position[t+1] == Position[t] + Velocity[t])
 for t in range(TotalTime):
-    model.addConstr(v[t+1] == v[t] + a[t])
-model.addConstr(x[0] == InitialPosition)
-model.addConstr(v[0] == InitialVelocity)
-model.addConstr(x[TotalTime] == FinalPosition)
-model.addConstr(v[TotalTime] == FinalVelocity)
+    model.addConstr(Velocity[t+1] == Velocity[t] + Acceleration[t])
+model.addConstr(Position[0] == InitialPosition)
+model.addConstr(Velocity[0] == InitialVelocity)
+model.addConstr(Position[TotalTime] == FinalPosition)
+model.addConstr(Velocity[TotalTime] == FinalVelocity)
 
 
 ### Define the objective
 
-Amax = model.addVar(name="Amax")
+max_thrust = model.addVar(vtype=GRB.CONTINUOUS, name="max_thrust")
 
 for t in range(TotalTime):
-    model.addConstr(Amax >= a[t])
-    model.addConstr(Amax >= -a[t])
+    model.addConstr(max_thrust >= Acceleration[t])
+    model.addConstr(max_thrust >= -Acceleration[t])
 
-model.setObjective(Amax, GRB.MINIMIZE)
+model.setObjective(max_thrust, GRB.MINIMIZE)
 
 
 ### Optimize the model

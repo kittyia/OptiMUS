@@ -35,13 +35,13 @@ BetAmounts = model.addVars(NumBets, vtype=GRB.CONTINUOUS, name="BetAmounts")
 
 ### Define the constraints
 
-model.addConstr(sum(BetAmounts[i] for i in range(NumBets)) <= TotalMoney)
+model.addConstr(sum(BetAmounts[i] for i in range(NumBets)) == TotalMoney)
+for i in range(NumBets):
+    model.addConstr(BetAmounts[i] >= 0)
 model.addConstr(
     sum(LossProbabilities[i] * BetAmounts[i] for i in range(NumBets))
     <= MaxAverageLossProbability * TotalMoney
 )
-for i in range(NumBets):
-    model.addConstr(BetAmounts[i] >= 0)
 
 
 ### Define the objective

@@ -39,6 +39,12 @@ OvertimeHour = data["OvertimeHour"] # shape: ['NumMachines'], definition: Number
 
 ### Define the variables
 
+batches = model.addVars(NumParts, vtype=GRB.CONTINUOUS, name="batches")
+
+regularHours1 = model.addVar(vtype=GRB.CONTINUOUS, name="regularHours1")
+
+overtimeHours1 = model.addVar(vtype=GRB.CONTINUOUS, name="overtimeHours1")
+
 
 
 ### Define the constraints
@@ -48,8 +54,15 @@ for m in range(1, NumMachines):
         sum(TimeRequired[m][p] * batches[p] for p in range(NumParts)) 
         <= Availability[m]
     )
+model.addConstr(
+    regularHours1 + overtimeHours1 ==
+    sum(TimeRequired[0][p] * batches[p] for p in range(NumParts))
+)
+model.addConstr(regularHours1 <= OvertimeHour[0])
 for p in range(NumParts):
     model.addConstr(batches[p] >= MinBatches[p])
+model.addConstr(regularHours1 >= 0)
+model.addConstr(overtimeHours1 >= 0)
 
 
 ### Define the objective
@@ -58,9 +71,10 @@ model.setObjective(
     quicksum(Prices[p] * batches[p] for p in range(NumParts))
     - quicksum(
         MachineCosts[m] * quicksum(TimeRequired[m][p] * batches[p] for p in range(NumParts))
-        for m in range(NumMachines)
+        for m in range(1, NumMachines)
     )
-    - (OvertimeCost - StandardCost) * overtime_1,
+    - StandardCost * regularHours1
+    - OvertimeCost * overtimeHours1,
     GRB.MAXIMIZE
 )
 

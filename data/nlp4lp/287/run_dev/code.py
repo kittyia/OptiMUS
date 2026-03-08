@@ -45,11 +45,7 @@ model.addConstr(HealthcareInvestment >= 0)
 
 ### Define the objective
 
-model.setObjective(
-    TelecomInterestRate * TelecomInvestment + 
-    HealthcareInterestRate * HealthcareInvestment,
-    GRB.MAXIMIZE
-)
+model.setObjective(TelecomInterestRate * TelecomInvestment + HealthcareInterestRate * HealthcareInvestment, GRB.MAXIMIZE)
 
 
 ### Optimize the model

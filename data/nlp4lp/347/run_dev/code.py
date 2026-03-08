@@ -27,64 +27,53 @@ NorthTime = data["NorthTime"] # shape: ['W', 'N'], definition: Time to cross str
 
 ### Define the variables
 
-WestFlow = model.addVars(N, W-1, vtype=GRB.BINARY, name="WestFlow")
+xWest = model.addVars(N, W-1, vtype=GRB.CONTINUOUS, name="xWest")
 
-NorthFlow = model.addVars(N-1, W, vtype=GRB.BINARY, name="NorthFlow")
+xNorth = model.addVars(N-1, W, vtype=GRB.CONTINUOUS, name="xNorth")
 
 
 
 ### Define the constraints
 
-# Start node (1,1) -> index (0,0)
-model.addConstr(WestFlow[0, 0] + NorthFlow[0, 0] == 1)
-
-# Destination node (N,W) -> index (N-1,W-1)
-model.addConstr(WestFlow[N-1, W-2] + NorthFlow[N-2, W-1] == 1)
-
-# Flow balance for all other nodes
 for n in range(N):
     for w in range(W):
-        # Skip start and destination nodes
-        if (n == 0 and w == 0) or (n == N-1 and w == W-1):
-            continue
+        inflow = 0
+        outflow = 0
 
-        outgoing = 0
-        incoming = 0
-
-        # Outgoing flows
-        if w < W-1:
-            outgoing += WestFlow[n, w]
-        if n < N-1:
-            outgoing += NorthFlow[n, w]
-
-        # Incoming flows
         if w > 0:
-            incoming += WestFlow[n, w-1]
+            inflow += xWest[n, w-1]
         if n > 0:
-            incoming += NorthFlow[n-1, w]
+            inflow += xNorth[n-1, w]
 
-        model.addConstr(outgoing - incoming == 0)
+        if w < W-1:
+            outflow += xWest[n, w]
+        if n < N-1:
+            outflow += xNorth[n, w]
+
+        if n == 0 and w == 0:
+            rhs = -1
+        elif n == N-1 and w == W-1:
+            rhs = 1
+        else:
+            rhs = 0
+
+        model.addConstr(inflow - outflow == rhs)
 for n in range(N):
     for w in range(W-1):
-        model.addConstr(WestFlow[n, w] >= 0)
-        model.addConstr(WestFlow[n, w] <= 1)
+        model.addConstr(xWest[n, w] >= 0)
 
 for n in range(N-1):
     for w in range(W):
-        model.addConstr(NorthFlow[n, w] >= 0)
-        model.addConstr(NorthFlow[n, w] <= 1)
-for n in range(N):
-    for w in range(W - 1):
-        model.addConstr(WestFlow[n, w] >= 0)
-
-for n in range(N - 1):
-    for w in range(W):
-        model.addConstr(NorthFlow[n, w] >= 0)
+        model.addConstr(xNorth[n, w] >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(
+    quicksum(WestTime[n][w] * xWest[n, w] for n in range(N) for w in range(W-1)) +
+    quicksum(NorthTime[n][w] * xNorth[n, w] for n in range(N-1) for w in range(W)),
+    GRB.MINIMIZE
+)
 
 
 ### Optimize the model

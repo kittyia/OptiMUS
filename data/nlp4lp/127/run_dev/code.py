@@ -54,7 +54,7 @@ model.addConstr(Grapefruits >= 0)
 
 ### Define the objective
 
-del.setObjective(SugarPerOrange * Oranges + SugarPerGrapefruit * Grapefruits, GRB.MINIMIZE
+model.setObjective(SugarPerOrange * Oranges + SugarPerGrapefruit * Grapefruits, GRB.MINIMIZE)
 
 
 ### Optimize the model

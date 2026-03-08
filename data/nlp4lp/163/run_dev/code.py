@@ -48,7 +48,7 @@ model.addConstr(NumberOfMinibuses >= 0)
 
 ### Define the objective
 
-
+model.setObjective(VanPollution * NumberOfVans + MinibusPollution * NumberOfMinibuses, GRB.MINIMIZE)
 
 
 ### Optimize the model

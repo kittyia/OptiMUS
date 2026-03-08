@@ -35,28 +35,25 @@ MinSmallTeams = data["MinSmallTeams"] # shape: [], definition: Minimum number of
 
 ### Define the variables
 
-numberSmallTeams = model.addVar(vtype=GRB.INTEGER, name="numberSmallTeams")
+smallTeams = model.addVar(vtype=GRB.INTEGER, name="smallTeams")
 
-numberLargeTeams = model.addVar(vtype=GRB.INTEGER, name="numberLargeTeams")
+largeTeams = model.addVar(vtype=GRB.INTEGER, name="largeTeams")
 
 
 
 ### Define the constraints
 
-model.addConstr(
-    EmployeesPerSmallTeam * numberSmallTeams +
-    EmployeesPerLargeTeam * numberLargeTeams
-    <= TotalEmployees
-)
-model.addConstr(numberSmallTeams >= RatioSmallToLargeTeams * numberLargeTeams)
-model.addConstr(numberLargeTeams >= MinLargeTeams)
-model.addConstr(numberSmallTeams >= 0)
-model.addConstr(numberLargeTeams >= 0)
+model.addConstr(EmployeesPerSmallTeam * smallTeams + EmployeesPerLargeTeam * largeTeams <= TotalEmployees)
+model.addConstr(smallTeams >= RatioSmallToLargeTeams * largeTeams)
+model.addConstr(largeTeams >= MinLargeTeams)
 
 
 ### Define the objective
 
-
+model.setObjective(
+    AreaMowedSmallTeam * smallTeams + AreaMowedLargeTeam * largeTeams,
+    GRB.MAXIMIZE
+)
 
 
 ### Optimize the model

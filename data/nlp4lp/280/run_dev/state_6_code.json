@@ -29,35 +29,23 @@
     },
     "objective": {
         "description": "\"Minimize the total deviation between the achieved illumination of each road segment and its desired illumination level.\"",
-        "formulation": "$\\min \\sum_{i=1}^{NumSegments} \\left| Illumination_i - DesiredIlluminations_i \\right|$",
-        "code": ""
+        "formulation": "$\\min \\sum_{i=1}^{\\text{NumSegments}} \\left| \\sum_{j=1}^{\\text{NumLamps}} \\text{Coefficients}_{i,j} \\,\\text{LampPower}_j \\;-\\; \\text{DesiredIlluminations}_i \\right|$",
+        "code": "model.setObjective(\n    quicksum(\n        abs_(\n            quicksum(Coefficients[i][j] * LampPower[j] for j in range(NumLamps))\n            - DesiredIlluminations[i]\n        )\n        for i in range(NumSegments)\n    ),\n    GRB.MINIMIZE\n)"
     },
     "constraints": [
         {
-            "description": "For each segment i, the illumination of segment i must equal the sum over all lamps j of (Coefficients[i,j] multiplied by LampPower[j])",
-            "formulation": "$\\\\forall i = 1, \\\\dots, NumSegments:\\\\; Illumination[i] = \\\\sum_{j=1}^{NumLamps} Coefficients[i,j] \\\\cdot LampPower[j]$",
-            "code": "for i in range(NumSegments):\n    model.addConstr(\n        Illumination[i] == sum(Coefficients[i][j] * LampPower[j] for j in range(NumLamps))\n    )"
-        },
-        {
             "description": "LampPower[j] must be greater than or equal to 0 for all lamps j",
-            "formulation": "$\\\\forall j \\\\in \\\\{1, \\\\dots, NumLamps\\\\},\\\\; LampPower[j] \\\\geq 0$",
+            "formulation": "$\\\\forall j = 1, \\\\dots, \\\\text{NumLamps}, \\\\; LampPower[j] \\\\geq 0$",
             "code": "for j in range(NumLamps):\n    model.addConstr(LampPower[j] >= 0)"
         }
     ],
     "variables": {
-        "Illumination": {
-            "shape": [
-                "NumSegments"
-            ],
-            "type": "continuous",
-            "definition": "Actual illumination level for each road segment"
-        },
         "LampPower": {
             "shape": [
                 "NumLamps"
             ],
             "type": "continuous",
-            "definition": "Power level assigned to each lamp"
+            "definition": "Power level of lamp j"
         }
     }
 }

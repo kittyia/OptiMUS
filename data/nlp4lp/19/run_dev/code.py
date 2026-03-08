@@ -29,21 +29,21 @@ AvailableCandy = data["AvailableCandy"] # shape: ['NumCandyTypes'], definition: 
 
 ### Define the variables
 
-MixProduced = model.addVars(NumMixes, vtype=GRB.CONTINUOUS, name="MixProduced")
+MixAmount = model.addVars(NumMixes, vtype=GRB.CONTINUOUS, name="MixAmount")
 
 
 
 ### Define the constraints
 
-model.addConstr(0.8 * MixProduced[0] + 0.1 * MixProduced[1] <= 80)
-model.addConstr(0.2 * MixProduced[0] + 0.9 * MixProduced[1] <= 60)
+model.addConstr(0.8 * MixAmount[0] + 0.1 * MixAmount[1] <= 80)
+model.addConstr(0.2 * MixAmount[0] + 0.9 * MixAmount[1] <= 60)
 for m in range(NumMixes):
-    model.addConstr(MixProduced[m] >= 0)
+    model.addConstr(MixAmount[m] >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(quicksum(ProfitPerMix[m] * MixAmount[m] for m in range(NumMixes)), GRB.MAXIMIZE)
 
 
 ### Optimize the model

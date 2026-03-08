@@ -29,23 +29,23 @@ MaxTotalCookiesPerDay = data["MaxTotalCookiesPerDay"] # shape: [], definition: M
 
 ### Define the variables
 
-x2 = model.addVar(vtype=GRB.CONTINUOUS, name="x2")
-
 x1 = model.addVar(vtype=GRB.CONTINUOUS, name="x1")
+
+x2 = model.addVar(vtype=GRB.CONTINUOUS, name="x2")
 
 
 
 ### Define the constraints
 
-model.addConstr(x2 <= MaxDailyDemandSugar)
-model.addConstr(x1 + x2 <= MaxTotalCookiesPerDay)
 model.addConstr(x1 >= 0)
 model.addConstr(x2 >= 0)
+model.addConstr(x2 <= MaxDailyDemandSugar)
+model.addConstr(x1 + x2 <= MaxTotalCookiesPerDay)
 
 
 ### Define the objective
 
-
+model.setObjective(ProfitPerStrawberryCookie * x1 + ProfitPerSugarCookie * x2, GRB.MAXIMIZE)
 
 
 ### Optimize the model

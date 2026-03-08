@@ -39,29 +39,29 @@
         }
     },
     "objective": {
-        "description": "\"Maximize the total profit from selling refrigerators and stoves\"",
-        "formulation": "$\\max \\sum_{i=1}^{NumProducts} ProfitPerProduct_i \\, UnitsSold_i$",
-        "code": ""
+        "description": "\"The goal is to maximize the total profit from selling refrigerators and stoves\"",
+        "formulation": "$\\max \\sum_{i=1}^{NumProducts} ProfitPerProduct_i \\, Quantity_i$",
+        "code": "model.setObjective(quicksum(ProfitPerProduct[i] * Quantity[i] for i in range(NumProducts)), GRB.MAXIMIZE)"
     },
     "constraints": [
         {
-            "description": "Total mover time used by refrigerators and stoves should not exceed the available mover time of 20000 minutes",
-            "formulation": "$\\\\sum_{p=1}^{NumProducts} MoverTimePerProduct[p] \\\\cdot UnitsSold[p] \\\\leq TotalMoverTime$",
-            "code": "model.addConstr(\n    sum(MoverTimePerProduct[p] * UnitsSold[p] for p in range(NumProducts))\n    <= TotalMoverTime\n)"
+            "description": "Sum over all products of (MoverTimePerProduct[i] * Quantity[i]) must be less than or equal to TotalMoverTime",
+            "formulation": "$\\\\sum_{i=1}^{NumProducts} MoverTimePerProduct[i] \\\\cdot Quantity[i] \\\\leq TotalMoverTime$",
+            "code": "model.addConstr(\n    sum(MoverTimePerProduct[i] * Quantity[i] for i in range(NumProducts))\n    <= TotalMoverTime\n)"
         },
         {
-            "description": "Total setup time used by refrigerators and stoves should not exceed the available setup time of 13000 minutes",
-            "formulation": "$\\\\sum_{i=1}^{NumProducts} SetupTimePerProduct[i] \\\\cdot UnitsSold[i] \\\\leq TotalSetupTime$",
-            "code": "model.addConstr(\n    sum(SetupTimePerProduct[i] * UnitsSold[i] for i in range(NumProducts)) \n    <= TotalSetupTime\n)"
+            "description": "Sum over all products of (SetupTimePerProduct[i] * Quantity[i]) must be less than or equal to TotalSetupTime",
+            "formulation": "$\\\\sum_{i=1}^{NumProducts} SetupTimePerProduct[i] \\\\cdot Quantity[i] \\\\leq TotalSetupTime$",
+            "code": "model.addConstr(\n    sum(SetupTimePerProduct[i] * Quantity[i] for i in range(NumProducts))\n    <= TotalSetupTime\n)"
         },
         {
-            "description": "The number of refrigerators and stoves sold must be greater than or equal to 0",
-            "formulation": "$\\\\forall p \\\\in \\\\{1, \\\\dots, \\\\text{NumProducts}\\\\}, \\\\; UnitsSold[p] \\\\geq 0$",
-            "code": "for p in range(NumProducts):\n    model.addConstr(UnitsSold[p] >= 0)"
+            "description": "Quantity[i] must be a nonnegative integer for all products",
+            "formulation": "$\\\\forall i = 1, \\\\dots, \\\\text{NumProducts},\\\\; Quantity[i] \\\\in \\\\mathbb{Z}_{\\\\ge 0}$",
+            "code": "for i in range(NumProducts):\n    model.addConstr(Quantity[i] >= 0)"
         }
     ],
     "variables": {
-        "UnitsSold": {
+        "Quantity": {
             "shape": [
                 "NumProducts"
             ],

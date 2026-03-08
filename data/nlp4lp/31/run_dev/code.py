@@ -42,15 +42,15 @@ VinylProduction = model.addVar(vtype=GRB.CONTINUOUS, name="VinylProduction")
 ### Define the constraints
 
 model.addConstr(HardwoodProduction >= MinimumDemandHardwood)
-model.addConstr(VinylProduction >= MinimumDemandVinyl)
-model.addConstr(HardwoodProduction + VinylProduction >= MinimumTotalShipping)
 model.addConstr(HardwoodProduction <= MaxProductionHardwood)
+model.addConstr(VinylProduction >= MinimumDemandVinyl)
 model.addConstr(VinylProduction <= MaxProductionVinyl)
+model.addConstr(HardwoodProduction + VinylProduction >= MinimumTotalShipping)
 
 
 ### Define the objective
 
-
+model.setObjective(ProfitHardwood * HardwoodProduction + ProfitVinyl * VinylProduction, GRB.MAXIMIZE)
 
 
 ### Optimize the model

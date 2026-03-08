@@ -27,25 +27,25 @@ NumVisitors = data["NumVisitors"] # shape: [], definition: Number of visitors to
 
 ### Define the variables
 
-Scooters = model.addVar(vtype=GRB.INTEGER, name="Scooters")
+numScooters = model.addVar(vtype=GRB.INTEGER, name="numScooters")
 
-Rickshaws = model.addVar(vtype=GRB.INTEGER, name="Rickshaws")
+numRickshaws = model.addVar(vtype=GRB.INTEGER, name="numRickshaws")
 
 
 
 ### Define the constraints
 
-model.addConstr(ScooterCapacity * Scooters + RickshawCapacity * Rickshaws >= NumVisitors)
-model.addConstr(3 * Rickshaws <= 2 * Scooters)
-model.addConstr(Scooters >= 0)
-model.addConstr(Rickshaws >= 0)
-model.addConstr(Scooters >= 0)
-model.addConstr(Rickshaws >= 0)
+model.addConstr(ScooterCapacity * numScooters + RickshawCapacity * numRickshaws >= NumVisitors)
+model.addConstr(3 * numRickshaws <= 2 * numScooters)
+model.addConstr(numScooters >= 0)
+model.addConstr(numRickshaws >= 0)
+model.addConstr(numScooters >= 0)
+model.addConstr(numRickshaws >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(numScooters, GRB.MINIMIZE)
 
 
 ### Optimize the model

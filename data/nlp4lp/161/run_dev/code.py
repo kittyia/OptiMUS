@@ -45,14 +45,17 @@ model.addConstr(RegularBoatCapacity * RegularBoatTrips + SpeedBoatCapacity * Spe
 model.addConstr(RegularBoatTrips <= MaxRegularBoatTrips)
 model.addConstr(SpeedBoatTrips >= RegularBoatTrips)
 model.addConstr(RegularBoatTrips >= 0)
-# RegularBoatTrips is defined as an integer variable (vtype=GRB.INTEGER),
-# so no additional constraint is required to enforce integrality.
-model.addConstr(SpeedBoatTrips >= 0)
+# Integrality is enforced by defining RegularBoatTrips and SpeedBoatTrips 
+# with vtype=GRB.INTEGER when creating the variables.
 
 
 ### Define the objective
 
-
+model.setObjective(
+    RegularBoatGasConsumption * RegularBoatTrips +
+    SpeedBoatGasConsumption * SpeedBoatTrips,
+    GRB.MINIMIZE
+)
 
 
 ### Optimize the model

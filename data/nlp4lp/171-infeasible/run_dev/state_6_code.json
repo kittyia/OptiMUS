@@ -38,35 +38,40 @@
         }
     },
     "objective": {
-        "description": "\"The goal is to minimize the total amount of gas used for transporting the required mail\"",
-        "formulation": "$\\min \\; SubmarineGasUsage \\cdot SubmarineTrips + BoatGasUsage \\cdot BoatTrips$",
-        "code": ""
+        "description": "\"The goal is to minimize the total amount of gas used for transporting the mail.\"",
+        "formulation": "$\\min \\; SubmarineGasUsage \\cdot SubmarineTrips \\;+\\; BoatGasUsage \\cdot BoatTrips$",
+        "code": "model.setObjective(SubmarineGasUsage * SubmarineTrips + BoatGasUsage * BoatTrips, GRB.MINIMIZE)"
     },
     "constraints": [
         {
-            "description": "Number of submarine trips must be less than or equal to MaxSubmarineTrips",
+            "description": "100 * SubmarineTrips + 80 * BoatTrips >= 1000",
+            "formulation": "$100 \\\\cdot SubmarineTrips + 80 \\\\cdot BoatTrips \\\\geq 1000$",
+            "code": "model.addConstr(SubmarineCapacity * SubmarineTrips + BoatCapacity * BoatTrips >= MailRequired)"
+        },
+        {
+            "description": "SubmarineTrips <= 6",
             "formulation": "$SubmarineTrips \\\\leq MaxSubmarineTrips$",
             "code": "model.addConstr(SubmarineTrips <= MaxSubmarineTrips)"
         },
         {
-            "description": "Number of boat trips must be at least MinBoatTripPercentage percent of the total number of trips",
-            "formulation": "$100 \\\\cdot BoatTrips \\\\geq MinBoatTripPercentage \\\\cdot (SubmarineTrips + BoatTrips)$",
-            "code": "model.addConstr(100 * BoatTrips >= MinBoatTripPercentage * (SubmarineTrips + BoatTrips))"
+            "description": "BoatTrips >= SubmarineTrips",
+            "formulation": "$BoatTrips \\\\geq SubmarineTrips$",
+            "code": "model.addConstr(BoatTrips >= SubmarineTrips)"
         },
         {
-            "description": "SubmarineCapacity * (number of submarine trips) + BoatCapacity * (number of boat trips) must be greater than or equal to MailRequired",
-            "formulation": "$SubmarineCapacity \\\\cdot SubmarineTrips + BoatCapacity \\\\cdot BoatTrips \\\\geq MailRequired$",
-            "code": "model.addConstr(SubmarineCapacity * SubmarineTrips + BoatCapacity * BoatTrips >= MailRequired)"
-        },
-        {
-            "description": "Number of submarine trips must be a nonnegative integer",
+            "description": "SubmarineTrips >= 0",
             "formulation": "$SubmarineTrips \\\\geq 0$",
             "code": "model.addConstr(SubmarineTrips >= 0)"
         },
         {
-            "description": "Number of boat trips must be a nonnegative integer",
-            "formulation": "$BoatTrips \\\\ge 0$",
+            "description": "BoatTrips >= 0",
+            "formulation": "$BoatTrips \\\\geq 0$",
             "code": "model.addConstr(BoatTrips >= 0)"
+        },
+        {
+            "description": "SubmarineTrips and BoatTrips must be integers",
+            "formulation": "$SubmarineTrips \\\\in \\\\mathbb{Z}_{\\\\geq 0}, \\\\; BoatTrips \\\\in \\\\mathbb{Z}_{\\\\geq 0}$",
+            "code": "model.addConstr(SubmarineTrips >= 0)\nmodel.addConstr(BoatTrips >= 0)"
         }
     ],
     "variables": {

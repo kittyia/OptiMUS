@@ -1,0 +1,173 @@
+{
+    "description": "PROBLEM TYPE: LP\nPROBLEM INFO:\n\n- A company is undergoing a number of changes that will affect its manpower requirements in future years. \n- Owing to the installation of new machinery, fewer unskilled but more skilled and semi-skilled workers will be required. \n- In addition to this, a downturn in trade is expected in the next year, which will reduce the need for workers in all categories.\n- The estimated manpower requirements for manpower \\var{k} in year \\var{i} is \\var{requirement_{k, i}}.\n- The current number of manpower \\var{k} is \\var{strength_{k}}.\n- The company wishes to decide its policy with regard to recruitment, retraining, redundancy and short-time working in the next years.\n- There is a natural wastage of labour. \n- A fairly large number of workers leave during their first year. After this, the rate of leaving is much smaller. \n- Taking this into account, the wastage rates of manpower \\var{k} with less than one year's service is \\var{lessonewaste_{k}}.\n- The wastage rates of \\var{k} manpower with more than one year's service is \\var{moreonewaste_{k}}.\n- There has been no recent recruitment and all the workers in the current labour force have been employed for more than one year.\n- It is possible to recruit a limited number of workers from outside. \n- In any one year, the maximum number that can be recruited in manpower \\var{k} is \\var{recruit_{k}}.\n- The redundancy payment to manpower \\var{k} is \\var{costredundancy_{k}}.\n- It is possible to employ up to \\var{num_overman} more workers over the whole company than are needed, but the extra costs per employee per year is \\var{costoverman_{k}} for manpower \\var{k}.\n- Up to \\var{num_shortwork} workers in each category of skill can be put on short-time working. \n- The cost of this (per employee per year) is \\var{costshort_{k}} for manpower \\var{k}.\n- An employee on short-time working meets the production requirements of half a full-time employee.\n\n\nINPUT FORMAT:\n\n{\n    \"requirement\": [[requirement_{k, i} for i in 1,...,I] for k in 1,...,K],\n    \"strength\": [strength_{k} for k in 1,...,K],\n    \"lessonewaste\": [lessonewaste_{k} for k in 1,...,K],\n    \"moreonewaste\": [lessonewaste_{k} for k in 1,...,K],\n    \"recruit\": [recruit_{k} for k in 1,...,K],\n    \"costredundancy\": [costredundancy_{k} for k in 1,...,K],\n    \"num_overman\": num_overman,\n    \"costoverman\": [costoverman_{k} for k in 1,...,K],\n    \"num_shortwork\": num_shortwork\n    \"costshort\": [costshort_{k} for k in 1,...,K],\n}\n\n\nOBJECTIVE: The company\u2019s declared objective is to minimize redundancy. How should they operate in order to do this?\n\nOUTPUT INFO:\n\n- \\var{recruit} represents the number of each recruit manpower to employ each year\n- \\var{overmanning} represents the number of each overmanning manpower to employ each year\n- \\var{short} represents the number of each short-time manpower to employ each year\n\nOUTPUT FORMAT:\n\n{\n    \"recruit\": [[recruit_{k, i} for i in 1,...,I] for k in 1,...,K],\n    \"overmanning\": [[overmanning_{k, i} for i in 1,...,I] for k in 1,...,K],\n    \"short\": [[short_{k, i} for i in 1,...,I] for k in 1,...,K]\n}",
+    "parameters": {
+        "K": {
+            "definition": "Total number of different types of resources",
+            "shape": [],
+            "type": "int"
+        },
+        "I": {
+            "definition": "Number of different requirements for each type of resource",
+            "shape": [],
+            "type": "int"
+        },
+        "Strength": {
+            "definition": "Strength of each type of resource",
+            "shape": [
+                "K"
+            ],
+            "type": "string"
+        },
+        "LessOneWaste": {
+            "definition": "Value when wastage of resources is less than optimal",
+            "shape": [
+                "K"
+            ],
+            "type": "string"
+        },
+        "MoreOneWaste": {
+            "definition": "Value when wastage of resources is more than optimal",
+            "shape": [
+                "K"
+            ],
+            "type": "string"
+        },
+        "Recruit": {
+            "definition": "Number of recruited resources of each type",
+            "shape": [
+                "K"
+            ],
+            "type": "string"
+        },
+        "CostRedundancy": {
+            "definition": "Cost of redundancy for each type of resource",
+            "shape": [
+                "K"
+            ],
+            "type": "string"
+        },
+        "NumOverman": {
+            "definition": "Number of overmanned positions",
+            "shape": [],
+            "type": "int"
+        },
+        "CostOverman": {
+            "definition": "Cost of overmanning for each type of resource",
+            "shape": [
+                "K"
+            ],
+            "type": "string"
+        },
+        "NumShortwork": {
+            "definition": "Number of shortworked positions",
+            "shape": [],
+            "type": "int"
+        },
+        "CostShort": {
+            "definition": "Cost of short working for each type of resource",
+            "shape": [
+                "K"
+            ],
+            "type": "string"
+        },
+        "Requirement": {
+            "definition": "Manpower requirements for each type of resource over the years",
+            "shape": [
+                "K",
+                "I"
+            ],
+            "type": "string"
+        }
+    },
+    "objective": {
+        "description": "\"Minimize the total number of redundancies over the planning horizon\"",
+        "formulation": "$\\min \\sum_{k=1}^{K} \\sum_{i=1}^{I} redundancies_{k,i}$"
+    },
+    "constraints": [
+        {
+            "description": "For each manpower type k and year i, the workforce evolution must account for initial strength (in year 1), wastage of workers with less than one year of service at rate lessonewaste_k, wastage of workers with more than one year of service at rate moreonewaste_k, recruitment, and redundancies",
+            "formulation": "$\\\\forall k:\\\\; workforceMore[k,1] = (1 - MoreOneWaste[k]) \\\\cdot Strength[k] - redundancies[k,1]$ \\n\\n$\\\\forall k:\\\\; workforceLess[k,1] = recruit[k,1]$ \\n\\n$\\\\forall k,\\\\; \\\\forall i = 2,\\\\dots,I:\\\\; workforceMore[k,i] = (1 - MoreOneWaste[k]) \\\\cdot workforceMore[k,i-1] + (1 - LessOneWaste[k]) \\\\cdot workforceLess[k,i-1] - redundancies[k,i]$ \\n\\n$\\\\forall k,\\\\; \\\\forall i = 2,\\\\dots,I:\\\\; workforceLess[k,i] = recruit[k,i]$",
+            "code": null
+        },
+        {
+            "description": "For each manpower type k, in year 1, the initial workforce is equal to the current strength, and all are treated as having more than one year of service",
+            "formulation": "$\\\\forall k \\\\in \\\\{1,\\\\dots,K\\\\}: \\\\; workforceMore[k,1] + redundancies[k,1] = Strength[k] \\\\; \\\\land \\\\; workforceLess[k,1] = recruit[k,1]$",
+            "code": null
+        },
+        {
+            "description": "For each manpower type k and year i, the number of recruits cannot exceed recruit_k",
+            "formulation": "$\\\\forall k = 1,\\\\dots,K,\\\\; \\\\forall i = 1,\\\\dots,I:\\\\; recruit_{k,i} \\\\leq Recruit_k$",
+            "code": null
+        },
+        {
+            "description": "For each manpower type k and year i, the number of workers put on short-time working cannot exceed num_shortwork",
+            "formulation": "$\\\\forall k = 1, \\\\dots, K,\\\\; \\\\forall i = 1, \\\\dots, I:\\\\; short[k,i] \\\\leq NumShortwork$",
+            "code": null
+        },
+        {
+            "description": "For each manpower type k and year i, full-time workers plus 0.5 times short-time workers must equal requirement_{k,i} plus overmanning_{k,i}",
+            "formulation": "$\\\\forall k,i:\\\\; workforceMore[k,i] + workforceLess[k,i] - 0.5\\\\,short[k,i] = Requirement[k,i] + overmanning[k,i]$",
+            "code": null
+        },
+        {
+            "description": "For each year i, the total overmanning across all manpower types cannot exceed num_overman",
+            "formulation": "$\\\\forall i = 1, \\\\ldots, I:\\\\; \\\\sum_{k=1}^{K} overmanning_{k,i} \\\\leq NumOverman$",
+            "code": null
+        },
+        {
+            "description": "Redundancies, recruitments, overmanning, and short-time working variables must be non-negative for all manpower types and years",
+            "formulation": "$\\\\forall k = 1, \\\\dots, K, \\\\; \\\\forall i = 1, \\\\dots, I:\\\\; recruit_{k,i} \\\\ge 0, \\\\; redundancies_{k,i} \\\\ge 0, \\\\; overmanning_{k,i} \\\\ge 0, \\\\; short_{k,i} \\\\ge 0$",
+            "code": null
+        }
+    ],
+    "variables": {
+        "workforceMore": {
+            "shape": [
+                "K",
+                "I"
+            ],
+            "type": "continuous",
+            "definition": "Number of workers of type k in year i with more than one year of service after wastage and redundancies"
+        },
+        "workforceLess": {
+            "shape": [
+                "K",
+                "I"
+            ],
+            "type": "continuous",
+            "definition": "Number of workers of type k in year i with less than one year of service (new recruits)"
+        },
+        "recruit": {
+            "shape": [
+                "K",
+                "I"
+            ],
+            "type": "continuous",
+            "definition": "Number of newly recruited workers of type k in year i"
+        },
+        "redundancies": {
+            "shape": [
+                "K",
+                "I"
+            ],
+            "type": "continuous",
+            "definition": "Number of redundant workers of type k in year i"
+        },
+        "short": {
+            "shape": [
+                "K",
+                "I"
+            ],
+            "type": "continuous",
+            "definition": "Number of workers of type k put on short-time working in year i"
+        },
+        "overmanning": {
+            "shape": [
+                "K",
+                "I"
+            ],
+            "type": "continuous",
+            "definition": "Number of overmanning workers of type k in year i (workers employed in excess of requirement)"
+        }
+    }
+}

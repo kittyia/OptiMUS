@@ -41,16 +41,20 @@ LargeBottlesUsed = model.addVar(vtype=GRB.INTEGER, name="LargeBottlesUsed")
 
 ### Define the constraints
 
-model.addConstr(SmallBottlesUsed <= MaxSmallBottles)
-model.addConstr(LargeBottlesUsed <= MaxLargeBottles)
 model.addConstr(SmallBottlesUsed >= MinRatioSmallToLarge * LargeBottlesUsed)
 model.addConstr(SmallBottlesUsed + LargeBottlesUsed <= MaxTotalBottles)
 model.addConstr(LargeBottlesUsed >= MinLargeBottles)
+# Integrality is enforced by defining SmallBottlesUsed and LargeBottlesUsed 
+# with vtype=GRB.INTEGER when creating the variables.
 
 
 ### Define the objective
 
-
+model.setObjective(
+    SmallBottleCapacity * SmallBottlesUsed + 
+    LargeBottleCapacity * LargeBottlesUsed,
+    GRB.MAXIMIZE
+)
 
 
 ### Optimize the model

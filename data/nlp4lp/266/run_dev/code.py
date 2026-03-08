@@ -35,24 +35,24 @@ MinIron = data["MinIron"] # shape: [], definition: Minimum total amount of iron 
 
 ### Define the variables
 
-SpinachCups = model.addVar(vtype=GRB.CONTINUOUS, name="SpinachCups")
+cupsSpinach = model.addVar(vtype=GRB.CONTINUOUS, name="cupsSpinach")
 
-SoybeanCups = model.addVar(vtype=GRB.CONTINUOUS, name="SoybeanCups")
+cupsSoybeans = model.addVar(vtype=GRB.CONTINUOUS, name="cupsSoybeans")
 
 
 
 ### Define the constraints
 
-model.addConstr(FiberSpinach * SpinachCups + FiberSoybeans * SoybeanCups >= MinFiber)
-model.addConstr(IronSpinach * SpinachCups + IronSoybeans * SoybeanCups >= MinIron)
-model.addConstr(SpinachCups >= SoybeanCups))
-model.addConstr(SpinachCups >= 0)
-model.addConstr(SoybeanCups >= 0)
+model.addConstr(FiberSpinach * cupsSpinach + FiberSoybeans * cupsSoybeans >= MinFiber)
+model.addConstr(IronSpinach * cupsSpinach + IronSoybeans * cupsSoybeans >= MinIron)
+model.addConstr(cupsSpinach >= cupsSoybeans)
+model.addConstr(cupsSpinach >= 0)
+model.addConstr(cupsSoybeans >= 0)
 
 
 ### Define the objective
 
-model.setObjective(CaloriesSpinach * SpinachCups + CaloriesSoybeans * SoybeanCups, GRB.MAXIMIZE)
+model.setObjective(CaloriesSpinach * cupsSpinach + CaloriesSoybeans * cupsSoybeans, GRB.MAXIMIZE)
 
 
 ### Optimize the model

@@ -50,7 +50,7 @@ model.addConstr(RnBConcerts >= 0)
 
 ### Define the objective
 
-
+model.setObjective(PopConcerts + RnBConcerts, GRB.MINIMIZE)
 
 
 ### Optimize the model

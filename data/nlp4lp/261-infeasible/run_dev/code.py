@@ -46,14 +46,18 @@ WesternFactoryHours = model.addVar(vtype=GRB.CONTINUOUS, name="WesternFactoryHou
 ### Define the constraints
 
 model.addConstr(
-    NorthernFactoryAntiItchRate * NorthernFactoryHours
-    + WesternFactoryAntiItchRate * WesternFactoryHours
+    NorthernFactoryAntiItchRate * NorthernFactoryHours +
+    WesternFactoryAntiItchRate * WesternFactoryHours
     >= MinimumAntiItchProduction
 )
-model.addConstr(NorthernFactoryTopicalCreamRate * NorthernFactoryHours + WesternFactoryTopicalCreamRate * WesternFactoryHours >= MinimumTopicalCreamProduction)
 model.addConstr(
-    NorthernFactoryPlasticUsage * NorthernFactoryHours +
-    WesternFactoryPlasticUsage * WesternFactoryHours
+    NorthernFactoryTopicalCreamRate * NorthernFactoryHours +
+    WesternFactoryTopicalCreamRate * WesternFactoryHours
+    >= MinimumTopicalCreamProduction
+)
+model.addConstr(
+    NorthernFactoryPlasticUsage * NorthernFactoryHours
+    + WesternFactoryPlasticUsage * WesternFactoryHours
     <= TotalPlasticAvailable
 )
 model.addConstr(NorthernFactoryHours >= 0)
@@ -62,7 +66,7 @@ model.addConstr(WesternFactoryHours >= 0)
 
 ### Define the objective
 
-
+model.setObjective(NorthernFactoryHours + WesternFactoryHours, GRB.MINIMIZE)
 
 
 ### Optimize the model

@@ -44,13 +44,11 @@ ShortCables = model.addVar(vtype=GRB.INTEGER, name="ShortCables")
 model.addConstr(GoldPerLong * LongCables + GoldPerShort * ShortCables <= TotalGold)
 model.addConstr(ShortCables >= MinShortToLongRatio * LongCables)
 model.addConstr(LongCables >= MinLongCables)
-LongCables.vtype = GRB.INTEGER
-ShortCables.vtype = GRB.INTEGER
 
 
 ### Define the objective
 
-
+model.setObjective(ProfitPerLong * LongCables + ProfitPerShort * ShortCables, GRB.MAXIMIZE)
 
 
 ### Optimize the model

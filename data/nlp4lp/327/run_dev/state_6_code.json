@@ -40,18 +40,23 @@
         }
     },
     "objective": {
-        "description": "\"Minimize the total cost of purchasing the different alloys needed to produce the required quantity of the final alloy while meeting the target metal composition requirements\"",
-        "formulation": "$\\min \\sum_{k=1}^{NumAlloys} Price_k \\, amount_k$",
+        "description": "\"Minimize the total cost of purchasing the various alloys needed to produce the required quantity of the final alloy while meeting the target metal composition requirements.\"",
+        "formulation": "$\\min \\sum_{k=1}^{NumAlloys}} Price_k \\, amount_k$",
         "code": "model.setObjective(quicksum(Price[k] * amount[k] for k in range(NumAlloys)), GRB.MINIMIZE)"
     },
     "constraints": [
         {
-            "description": "For each metal m, the total amount contributed by all purchased alloys must equal the target quantity for that metal (sum_k ratio_{k,m} * amount_k = Target_m)",
-            "formulation": "$\\\\forall m = 1, \\\\dots, NumMetals:\\\\; \\\\sum_{k=1}^{NumAlloys} Ratio_{k,m} \\\\cdot amount_k = Target_m$",
+            "description": "The total amount of all purchased alloys must equal the required alloy quantity: sum_k amount_k = AlloyQuantity",
+            "formulation": "$\\\\sum_{k=1}^{NumAlloys} amount_k = AlloyQuantity$",
+            "code": "model.addConstr(sum(amount[k] for k in range(NumAlloys)) == AlloyQuantity)"
+        },
+        {
+            "description": "For each metal m, the total amount contributed by all alloys must equal the target quantity: sum_k (Ratio[k][m] * amount_k) = Target[m]",
+            "formulation": "$\\\\forall m = 1, \\\\dots, \\\\text{NumMetals}: \\\\sum_{k=1}^{\\\\text{NumAlloys}} \\\\text{Ratio}[k,m] \\\\cdot \\\\text{amount}[k] = \\\\text{Target}[m]$",
             "code": "for m in range(NumMetals):\n    model.addConstr(\n        sum(Ratio[k][m] * amount[k] for k in range(NumAlloys)) == Target[m]\n    )"
         },
         {
-            "description": "The amount of each alloy purchased must be non-negative (amount_k >= 0 for all k)",
+            "description": "The amount of each alloy purchased must be non-negative: amount_k >= 0 for all k",
             "formulation": "$\\\\forall k = 1, \\\\dots, \\\\text{NumAlloys},\\\\; amount_k \\\\geq 0$",
             "code": "for k in range(NumAlloys):\n    model.addConstr(amount[k] >= 0)"
         }
@@ -62,7 +67,7 @@
                 "NumAlloys"
             ],
             "type": "continuous",
-            "definition": "Amount of each available alloy k to purchase and use in the final blend"
+            "definition": "The quantity purchased of each available alloy"
         }
     }
 }

@@ -44,7 +44,7 @@ model.addConstr(SwabTests >= MinSwabTests)
 
 ### Define the objective
 
-
+model.setObjective(SpitTests + SwabTests, GRB.MAXIMIZE)
 
 
 ### Optimize the model

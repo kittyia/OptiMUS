@@ -40,13 +40,16 @@ model.addConstr(
     sum(MedicinePerDose[i][0] * Doses[i] for i in range(NumPainKillers)) 
     >= MinLegsMedicine
 )
-for i in range(NumPainKillers):
-    model.addConstr(Doses[i] >= 0)
+model.addConstr(Doses[0] >= 0)
+model.addConstr(Doses[1] >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(
+    quicksum(MedicinePerDose[i][1] * Doses[i] for i in range(NumPainKillers)),
+    GRB.MAXIMIZE
+)
 
 
 ### Optimize the model

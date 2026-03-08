@@ -33,28 +33,25 @@ TargetCustomerInteractions = data["TargetCustomerInteractions"] # shape: [], def
 
 ### Define the variables
 
-NumberCartServers = model.addVar(vtype=GRB.INTEGER, name="NumberCartServers")
+NumberCart = model.addVar(vtype=GRB.INTEGER, name="NumberCart")
 
-NumberHandServers = model.addVar(vtype=GRB.INTEGER, name="NumberHandServers")
+NumberHand = model.addVar(vtype=GRB.INTEGER, name="NumberHand")
 
 
 
 ### Define the constraints
 
 model.addConstr(
-    CustomerInteractionsCart * NumberCartServers
-    + CustomerInteractionsHand * NumberHandServers
+    CustomerInteractionsCart * NumberCart + CustomerInteractionsHand * NumberHand
     >= TargetCustomerInteractions
 )
-model.addConstr(NumberCartServers >= MinFractionCart * (NumberCartServers + NumberHandServers))
-model.addConstr(NumberHandServers >= MinServersHand)
-model.addConstr(NumberCartServers >= 0)
-model.addConstr(NumberHandServers >= 0)
+model.addConstr(NumberCart >= MinFractionCart * (NumberCart + NumberHand))
+model.addConstr(NumberHand >= MinServersHand)
 
 
 ### Define the objective
 
-
+model.setObjective(RefillsCart * NumberCart + RefillsHand * NumberHand, GRB.MINIMIZE)
 
 
 ### Optimize the model

@@ -46,14 +46,14 @@ PizzaSlices = model.addVar(vtype=GRB.INTEGER, name="PizzaSlices")
 ### Define the constraints
 
 model.addConstr(FatPerBurger * Burgers + FatPerPizzaSlice * PizzaSlices >= MinFat)
-model.addConstr(PizzaSlices >= 2 * Burgers)
+model.addConstr(PizzaSlices >= MinPizzaToBurgerRatio * Burgers)
 model.addConstr(Burgers >= 0)
 model.addConstr(PizzaSlices >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(CholesterolPerBurger * Burgers + CholesterolPerPizzaSlice * PizzaSlices, GRB.MINIMIZE)
 
 
 ### Optimize the model

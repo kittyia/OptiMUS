@@ -31,22 +31,23 @@ MinimumProportion = data["MinimumProportion"] # shape: ['NumPillTypes'], definit
 
 ### Define the variables
 
-LargePills = model.addVar(vtype=GRB.INTEGER, name="LargePills")
-
-SmallPills = model.addVar(vtype=GRB.INTEGER, name="SmallPills")
+NumPills = model.addVars(NumPillTypes, vtype=GRB.INTEGER, name="NumPills")
 
 
 
 ### Define the constraints
 
-model.addConstr(3 * LargePills + 2 * SmallPills <= TotalMedicinalIngredients)
-model.addConstr(LargePills >= 100)
-model.addConstr(SmallPills >= 0.6 * (LargePills + SmallPills))
+model.addConstr(
+    sum(RequiredMedicinal[i] * NumPills[i] for i in range(NumPillTypes)) 
+    <= TotalMedicinalIngredients
+)
+model.addConstr(NumPills[0] >= 100)
+model.addConstr(NumPills[1] >= 0.6 * (NumPills[0] + NumPills[1]))
 
 
 ### Define the objective
 
-
+model.setObjective(quicksum(RequiredFiller[i] * NumPills[i] for i in range(NumPillTypes)), GRB.MINIMIZE)
 
 
 ### Optimize the model

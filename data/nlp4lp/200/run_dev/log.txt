@@ -1,23 +1,20 @@
 ----
-Step-by-step reasoning:
+There is **no redundancy** in the constraint list. Each constraint plays a distinct and necessary role:
 
-1. **Compound A constraint** and **Compound B constraint** refer to different resources (A and B).  
-   - They cannot be combined because they involve different coefficients and different resource limits (250 and 150).
-   - Neither is redundant since both resources are limited and binding constraints may differ.
+1. **Compound A constraint** limits total usage of compound A to 250 units.  
+2. **Compound B constraint** limits total usage of compound B to 150 units.  
+   - These two cannot be combined into a single constraint because they restrict different resources.
+3. **Non-negativity constraint** ensures feasibility (negative production levels would be meaningless).  
+   - This cannot be derived from the other constraints and therefore cannot be removed.
 
-2. **Non-negativity constraints** for light, non-sticky, and heavy oil:
-   - These are structurally identical (each variable must be ≥ 0).
-   - They can be combined into a single constraint stating that all decision variables are non-negative.
-   - None of them are redundant, but they can be expressed more compactly.
-
-So the only simplification is combining the three non-negativity constraints into one.
+No constraints can be removed, and no pair can be meaningfully combined without losing clarity or correctness.
 
 Updated constraint list:
 
 [
-    "The total amount of compound A used for processing light, non-sticky, and heavy oil must not exceed 250 units",
-    "The total amount of compound B used for processing light, non-sticky, and heavy oil must not exceed 150 units",
-    "The number of tanks of light oil, non-sticky oil, and heavy oil processed must be non-negative"
+    "The total amount of compound A used to process all oil types should not exceed 250 units",
+    "The total amount of compound B used to process all oil types should not exceed 150 units",
+    "The number of tanks processed for each type of oil (light, non-sticky, and heavy) must be non-negative"
 ]
 ----
 +++++++++++++++++++
@@ -69,7 +66,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: The total amount of compound A used for processing light, non-sticky, and heavy oil must not exceed 250 units
+Consider this potential constraint: The total amount of compound A used to process all oil types should not exceed 250 units
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -79,36 +76,28 @@ Consider this potential constraint: The total amount of compound A used for proc
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is **definitely a constraint** and must be explicitly modeled in the LP formulation.
+Yes, this is clearly a constraint and it must be explicitly included in the (MI)LP formulation.
 
-### Why?
-
-The problem states:
-
-> "Currently the company has **250 units of compound A** and **150 units of compound B** to process."
-
-This directly implies a **resource availability constraint**. Since each oil type consumes a certain amount of compound A, the total amount used across all processed tanks cannot exceed the available 250 units.
+The problem states that the company has **250 units of compound A available**. Since each tank of oil requires a certain amount of compound A, the total compound A used across all processed tanks cannot exceed this available amount. This is a classic **resource capacity constraint**.
 
 If we let:
 - \( x_1 \) = tanks of light oil  
 - \( x_2 \) = tanks of non-sticky oil  
 - \( x_3 \) = tanks of heavy oil  
 
-Then the compound A usage constraint is:
+Then compound A usage is:
 
 \[
 3x_1 + 6x_2 + 9x_3 \le 250
 \]
 
-This is a standard resource capacity constraint and is absolutely necessary for a correct LP formulation.
+This is directly derived from:
+- Light oil: 3 units of A per tank  
+- Non-sticky oil: 6 units of A per tank  
+- Heavy oil: 9 units of A per tank  
+- Total available: 250 units  
 
-Without this constraint, the model would allow unlimited processing of oil types, leading to an unbounded objective.
-
-### Conclusion
-
-✅ This is clearly a required constraint.  
-✅ It directly follows from the resource limitation in the problem statement.  
-✅ It must be explicitly included in the (MI)LP model.
+Because this constraint is explicitly stated in the problem description and is essential to defining the feasible region, it absolutely must be included in the optimization model.
 
 **5 OUT OF 5**
 +--+
@@ -161,7 +150,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: The total amount of compound B used for processing light, non-sticky, and heavy oil must not exceed 150 units
+Consider this potential constraint: The total amount of compound B used to process all oil types should not exceed 150 units
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -171,42 +160,33 @@ Consider this potential constraint: The total amount of compound B used for proc
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is **definitely a constraint** and it should be explicitly modeled in the (MI)LP formulation.
+Yes, this is definitely a constraint and it should be explicitly included in the (MI)LP formulation.
 
-### Why?
-
-The problem states:
+From the problem statement:
 
 > "Currently the company has 250 units of compound A and 150 units of compound B to process."
 
-This clearly defines **resource availability limits**. Since each oil type consumes some amount of compound B per tank:
+This clearly defines resource availability limits. Since compound B is required to process each type of oil, the total amount of compound B consumed across all processed tanks cannot exceed 150 units.
 
-- Light oil: 3 units of B  
-- Non-sticky oil: 2 units of B  
-- Heavy oil: 3 units of B  
-
-The total amount of compound B used across all processed tanks **cannot exceed 150 units**.
-
-If we define decision variables:
+Mathematically, if:
 - \( x_1 \) = tanks of light oil  
 - \( x_2 \) = tanks of non-sticky oil  
 - \( x_3 \) = tanks of heavy oil  
 
-Then the compound B constraint is:
+And compound B requirements per tank are:
+- Light: 3  
+- Non-sticky: 2  
+- Heavy: 3  
+
+Then the constraint is:
 
 \[
 3x_1 + 2x_2 + 3x_3 \le 150
 \]
 
-This is a **core resource constraint** and is absolutely required in the formulation.
+This is a standard resource capacity constraint and is essential to correctly model the problem. Omitting it would fundamentally change the feasible region and produce an incorrect solution.
 
-### Conclusion
-
-✅ It is a real constraint.  
-✅ It must be explicitly included in the model.  
-✅ It directly reflects the limited availability of compound B.
-
-**5 OUT OF 5**
+5 OUT OF 5
 +--+
 ---
 The confidence score is 5, which is high enough.
@@ -257,7 +237,7 @@ Here is a list of parameters that someone has extracted from the description:
 }
 
 
-Consider this potential constraint: The number of tanks of light oil, non-sticky oil, and heavy oil processed must be non-negative
+Consider this potential constraint: The number of tanks processed for each type of oil (light, non-sticky, and heavy) must be non-negative
 
 
 - Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
@@ -267,35 +247,23 @@ Consider this potential constraint: The number of tanks of light oil, non-sticky
 Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
 
 ----
-Yes, this is indeed a constraint and it should be explicitly modeled in the (MI)LP formulation.
+Yes, this **is** a constraint.
 
-### Reasoning
+The decision variables represent the number of full or partial tanks of each oil type to process. In reality, processing a negative number of tanks is impossible. Therefore, non-negativity is a required feasibility condition.
 
-The decision variables in this problem are:
-
-- \( x_1 \): tanks of light oil processed  
-- \( x_2 \): tanks of non-sticky oil processed  
-- \( x_3 \): tanks of heavy oil processed  
-
-Since the problem asks how many full or partial tanks should be processed, these variables are **continuous and non-negative**.
-
-From a modeling standpoint:
-
-- It is physically impossible to process a negative number of tanks.
-- If non-negativity constraints are omitted, the model could assign negative values to some oil types to artificially increase total revenue while still satisfying resource constraints (because negative production would "free up" compounds in the constraints).
-- Therefore, non-negativity is necessary to ensure the solution is physically meaningful and mathematically well-posed.
-
-### How it appears in the LP
+In an LP formulation, this is typically modeled as:
 
 \[
-x_1 \ge 0,\quad x_2 \ge 0,\quad x_3 \ge 0
+x_{\text{light}} \ge 0,\quad
+x_{\text{non-sticky}} \ge 0,\quad
+x_{\text{heavy}} \ge 0
 \]
 
-Even though many solvers assume non-negativity by default, in a proper mathematical formulation these are explicit constraints.
+Even though non-negativity constraints are often considered *standard variable bounds*, they **must** be explicitly included in the model (unless the modeling framework assumes non-negativity by default).
 
-### Conclusion
+Since the problem allows “full or partial tanks,” the variables are continuous and must be constrained to be non-negative real numbers.
 
-Yes, this is a real and necessary constraint and should be included in the formulation.
+✅ This is definitely a necessary constraint.
 
 **5 OUT OF 5**
 +--+
@@ -313,7 +281,7 @@ Extracting constraint formulations
 
 ----
 {
-    "FORMULATION": "$\\sum_{i=1}^{NumOilTypes} CompoundRequirement[1,i] \\cdot TanksProcessed[i] \\leq 250$",
+    "FORMULATION": "$\\sum_{j=1}^{NumOilTypes} CompoundRequirement[1, j] \\cdot TanksProcessed[j] \\leq 250$",
     "NEW VARIABLES": {
         "TanksProcessed": {
             "shape": "[NumOilTypes]",
@@ -326,33 +294,33 @@ Extracting constraint formulations
 ----
 ----
 EXTRACTED ITEMS
-$\\sum_{i=1}^{NumOilTypes} CompoundRequirement[1,i] \\cdot TanksProcessed[i] \\leq 250$
+$\\sum_{j=1}^{NumOilTypes} CompoundRequirement[1, j] \\cdot TanksProcessed[j] \\leq 250$
 {'TanksProcessed': {'shape': '[NumOilTypes]', 'type': 'continuous', 'definition': 'Number of full or partial tanks processed for each type of crude oil'}}
 []
 ----
 ----
 {
-    "FORMULATION": "$\\sum_{i=1}^{NumOilTypes} CompoundRequirement[2,i] \\cdot TanksProcessed[i] \\leq TotalCompoundAvailable[2]$",
+    "FORMULATION": "$\\sum_{j=1}^{NumOilTypes} CompoundRequirement[2, j] \\cdot TanksProcessed[j] \\leq TotalCompoundAvailable[2]$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$\\sum_{i=1}^{NumOilTypes} CompoundRequirement[2,i] \\cdot TanksProcessed[i] \\leq TotalCompoundAvailable[2]$
+$\\sum_{j=1}^{NumOilTypes} CompoundRequirement[2, j] \\cdot TanksProcessed[j] \\leq TotalCompoundAvailable[2]$
 {}
 []
 ----
 ----
 {
-    "FORMULATION": "$\\forall i \\in \\{1, \\dots, \\text{NumOilTypes}\\}, \\; \\text{TanksProcessed}[i] \\geq 0$",
+    "FORMULATION": "$\\forall i \\in \\{1, \\dots, \\text{NumOilTypes}\\},\\; TanksProcessed[i] \\geq 0$",
     "NEW VARIABLES": {},
     "AUXILIARY CONSTRAINTS": []
 }
 ----
 ----
 EXTRACTED ITEMS
-$\\forall i \\in \\{1, \\dots, \\text{NumOilTypes}\\}, \\; \\text{TanksProcessed}[i] \\geq 0$
+$\\forall i \\in \\{1, \\dots, \\text{NumOilTypes}\\},\\; TanksProcessed[i] \\geq 0$
 {}
 []
 ----
@@ -363,23 +331,25 @@ Gurobi Optimizer version 13.0.1 build v13.0.1rc0 (linux64 - "Alibaba Cloud Linux
 CPU model: Intel(R) Xeon(R) Platinum, instruction set [SSE2|AVX|AVX2|AVX512]
 Thread count: 1 physical cores, 2 logical processors, using up to 2 threads
 
-Optimize a model with 5 rows, 3 columns and 9 nonzeros (Min)
-Model fingerprint: 0x03cfdbcc
-Model has 0 linear objective coefficients
+Optimize a model with 5 rows, 3 columns and 9 nonzeros (Max)
+Model fingerprint: 0x1997cbc2
+Model has 3 linear objective coefficients
 Coefficient statistics:
   Matrix range     [1e+00, 9e+00]
-  Objective range  [0e+00, 0e+00]
+  Objective range  [6e+02, 1e+03]
   Bounds range     [0e+00, 0e+00]
   RHS range        [2e+02, 2e+02]
 
-Presolve removed 5 rows and 3 columns
+Presolve removed 3 rows and 1 columns
 Presolve time: 0.00s
-Presolve: All rows and columns removed
-Iteration    Objective       Primal Inf.    Dual Inf.      Time
-       0    0.0000000e+00   0.000000e+00   0.000000e+00      0s
+Presolved: 2 rows, 2 columns, 4 nonzeros
 
-Solved in 0 iterations and 0.00 seconds (0.00 work units)
-Optimal objective  0.000000000e+00
-Optimal Objective Value:  0.0
-Optimal Objective Value:  0.0
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0    4.5833333e+04   1.457058e+01   0.000000e+00      0s
+       2    3.7083333e+04   0.000000e+00   0.000000e+00      0s
+
+Solved in 2 iterations and 0.00 seconds (0.00 work units)
+Optimal objective  3.708333333e+04
+Optimal Objective Value:  37083.333333333336
+Optimal Objective Value:  37083.333333333336
 

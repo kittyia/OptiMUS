@@ -37,47 +37,39 @@
         }
     },
     "objective": {
-        "description": "\"Maximize the total number of newspapers delivered by the dogs\"",
-        "formulation": "$\\max \\; 7 \\, NumLabradors \\;+\\; 10 \\, NumGoldenRetrievers$",
-        "code": "model.setObjective(7 * NumLabradors + 10 * NumGoldenRetrievers, GRB.MAXIMIZE)"
+        "description": "\"Maximize the total number of newspapers delivered by the labradors and golden retrievers\"",
+        "formulation": "$\\max \\sum_{i=1}^{NumDogTypes} NewspapersPerService_i \\, DogsUsed_i$",
+        "code": "model.setObjective(quicksum(NewspapersPerService[i] * DogsUsed[i] \n                            for i in range(NumDogTypes)), \n                   GRB.MAXIMIZE)"
     },
     "constraints": [
         {
-            "description": "5 * (number of labradors) + 6 * (number of golden retrievers) \u2264 1500",
-            "formulation": "$5 \\\\cdot NumLabradors + 6 \\\\cdot NumGoldenRetrievers \\\\leq 1500$",
-            "code": "model.addConstr(5 * NumLabradors + 6 * NumGoldenRetrievers <= TotalBoneTreatsAvailable)"
+            "description": "Total small bone treats used by labradors and golden retrievers should not exceed 1500",
+            "formulation": "$\\\\sum_{i=1}^{NumDogTypes} TreatsPerService[i] \\\\cdot DogsUsed[i] \\\\leq TotalBoneTreatsAvailable$",
+            "code": "model.addConstr(\n    sum(TreatsPerService[i] * DogsUsed[i] for i in range(NumDogTypes))\n    <= TotalBoneTreatsAvailable\n)"
         },
         {
-            "description": "Number of golden retrievers \u2265 50",
-            "formulation": "$NumGoldenRetrievers \\\\ge 50$",
-            "code": "model.addConstr(NumGoldenRetrievers >= MinGoldenRetrievers)"
+            "description": "Number of golden retrievers used should be at least 50",
+            "formulation": "$DogsUsed[2] \\\\geq MinGoldenRetrievers$",
+            "code": "model.addConstr(DogsUsed[2] >= MinGoldenRetrievers)"
         },
         {
-            "description": "Number of labradors \u2264 0.6 * (number of labradors + number of golden retrievers)",
-            "formulation": "$NumLabradors \\\\leq 0.6 \\\\,(NumLabradors + NumGoldenRetrievers)$",
-            "code": "model.addConstr(NumLabradors <= (MaxPercentageLabradors / 100.0) * (NumLabradors + NumGoldenRetrievers))"
+            "description": "Number of labradors used should be at most 60% of the total number of dogs used",
+            "formulation": "$DogsUsed[1] \\\\leq 0.6 \\\\sum_{i=1}^{NumDogTypes} DogsUsed[i]$",
+            "code": "model.addConstr(\n    DogsUsed[0] <= (MaxPercentageLabradors / 100.0) * \n    sum(DogsUsed[i] for i in range(NumDogTypes))\n)"
         },
         {
-            "description": "Number of labradors \u2265 0",
-            "formulation": "$NumLabradors \\\\ge 0$",
-            "code": "model.addConstr(NumLabradors >= 0)"
-        },
-        {
-            "description": "Number of labradors and number of golden retrievers must be integers",
-            "formulation": "$NumLabradors \\\\in \\\\mathbb{Z}_{\\\\geq 0}, \\\\; NumGoldenRetrievers \\\\in \\\\mathbb{Z}_{\\\\geq 0}$",
-            "code": "model.addConstr(NumLabradors >= 0)\nmodel.addConstr(NumGoldenRetrievers >= 0)"
+            "description": "Number of labradors and golden retrievers used should be non-negative integers",
+            "formulation": "$\\\\forall i \\\\in \\\\{1, \\\\dots, \\\\text{NumDogTypes}\\\\},\\\\; DogsUsed[i] \\\\geq 0$",
+            "code": "for i in range(NumDogTypes):\n    model.addConstr(DogsUsed[i] >= 0)"
         }
     ],
     "variables": {
-        "NumLabradors": {
-            "shape": [],
+        "DogsUsed": {
+            "shape": [
+                "NumDogTypes"
+            ],
             "type": "integer",
-            "definition": "Number of labradors used by the school"
-        },
-        "NumGoldenRetrievers": {
-            "shape": [],
-            "type": "integer",
-            "definition": "Number of golden retrievers used by the school"
+            "definition": "Number of dogs of each type used for newspaper delivery"
         }
     }
 }

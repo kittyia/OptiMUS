@@ -51,34 +51,29 @@
         }
     },
     "objective": {
-        "description": "\"Maximize the total amount of green gas produced from the experiments\"",
-        "formulation": "$\\max \\sum_{i=1}^{NumExperiments} GreenGasProduction_i \\, NumRuns_i$",
-        "code": ""
+        "description": "\"Maximize the total amount of green gas produced from conducting the experiments.\"",
+        "formulation": "$\\max \\sum_{i=1}^{NumExperiments} GreenGasProduction_i \\, Experiments_i$",
+        "code": "model.setObjective(quicksum(GreenGasProduction[i] * Experiments[i] for i in range(NumExperiments)), GRB.MAXIMIZE)"
     },
     "constraints": [
         {
-            "description": "The total red liquid used by both experiments should not exceed 80 units",
-            "formulation": "$\\\\sum_{i=1}^{NumExperiments} RedUsage[i] \\\\cdot NumRuns[i] \\\\leq TotalRed$",
-            "code": "model.addConstr(\n    sum(RedUsage[i] * NumRuns[i] for i in range(NumExperiments)) <= TotalRed\n)"
+            "description": "1 * (number of experiment 1) + 2 * (number of experiment 2) \u2264 10",
+            "formulation": "$\\\\sum_{i=1}^{NumExperiments} SmellyGasProduction[i] \\\\cdot Experiments[i] \\\\leq MaxSmelly$",
+            "code": "model.addConstr(\n    sum(SmellyGasProduction[i] * Experiments[i] for i in range(NumExperiments)) <= MaxSmelly\n)"
         },
         {
-            "description": "The total blue liquid used by both experiments should not exceed 70 units",
-            "formulation": "$\\\\sum_{i=1}^{NumExperiments} BlueUsage[i] \\\\cdot NumRuns[i] \\\\leq TotalBlue$",
-            "code": "model.addConstr(\n    sum(BlueUsage[i] * NumRuns[i] for i in range(NumExperiments)) <= TotalBlue\n)"
+            "description": "Number of experiment 1 \u2265 0",
+            "formulation": "$Experiments[1] \\\\geq 0$",
+            "code": "model.addConstr(Experiments[0] >= 0)"
         },
         {
-            "description": "The total smelly gas produced by both experiments should not exceed 10 units",
-            "formulation": "$\\\\sum_{i=1}^{NumExperiments} SmellyGasProduction[i] \\\\cdot NumRuns[i] \\\\leq MaxSmelly$",
-            "code": "model.addConstr(\n    sum(SmellyGasProduction[i] * NumRuns[i] for i in range(NumExperiments)) \n    <= MaxSmelly\n)"
-        },
-        {
-            "description": "The number of times each experiment is conducted must be non-negative",
-            "formulation": "$\\\\forall e = 1, \\\\dots, NumExperiments,\\\\; NumRuns[e] \\\\geq 0$",
-            "code": "for e in range(NumExperiments):\n    model.addConstr(NumRuns[e] >= 0)"
+            "description": "Number of experiment 2 \u2265 0",
+            "formulation": "$Experiments[2] \\\\geq 0$",
+            "code": "model.addConstr(Experiments[1] >= 0)"
         }
     ],
     "variables": {
-        "NumRuns": {
+        "Experiments": {
             "shape": [
                 "NumExperiments"
             ],

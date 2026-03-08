@@ -35,9 +35,7 @@ for k in range(K + 1):
     model.addConstr(p[k] >= 0)
 model.addConstr(sum(p[k] for k in range(K + 1)) == 1)
 model.addConstr(sum(k * p[k] for k in range(K + 1)) == ExpectedZ)
-model.addConstr(
-    sum(k * k * p[k] for k in range(K + 1)) == ExpectedZSquared
-)
+model.addConstr(sum(k * k * p[k] for k in range(K + 1)) == ExpectedZSquared)
 
 
 ### Define the objective

@@ -46,7 +46,7 @@ FruitBowls = model.addVar(vtype=GRB.CONTINUOUS, name="FruitBowls")
 ### Define the constraints
 
 model.addConstr(VitaminsPerSalad * Salads + VitaminsPerFruitBowl * FruitBowls >= MinVitamins)
-model.addConstr(12 * Salads + 3 * FruitBowls >= MinFiber)
+model.addConstr(FiberPerSalad * Salads + FiberPerFruitBowl * FruitBowls >= MinFiber)
 model.addConstr(FruitBowls <= MaxFruitBowlFraction * (Salads + FruitBowls))
 model.addConstr(Salads >= 0)
 model.addConstr(FruitBowls >= 0)
@@ -54,7 +54,7 @@ model.addConstr(FruitBowls >= 0)
 
 ### Define the objective
 
-
+model.setObjective(PotassiumPerSalad * Salads + PotassiumPerFruitBowl * FruitBowls, GRB.MAXIMIZE)
 
 
 ### Optimize the model

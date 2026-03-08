@@ -31,25 +31,30 @@ MaxPercentageLabradors = data["MaxPercentageLabradors"] # shape: [], definition:
 
 ### Define the variables
 
-NumLabradors = model.addVar(vtype=GRB.INTEGER, name="NumLabradors")
-
-NumGoldenRetrievers = model.addVar(vtype=GRB.INTEGER, name="NumGoldenRetrievers")
+DogsUsed = model.addVars(NumDogTypes, vtype=GRB.INTEGER, name="DogsUsed")
 
 
 
 ### Define the constraints
 
-model.addConstr(5 * NumLabradors + 6 * NumGoldenRetrievers <= TotalBoneTreatsAvailable)
-model.addConstr(NumGoldenRetrievers >= MinGoldenRetrievers)
-model.addConstr(NumLabradors <= (MaxPercentageLabradors / 100.0) * (NumLabradors + NumGoldenRetrievers))
-model.addConstr(NumLabradors >= 0)
-model.addConstr(NumLabradors >= 0)
-model.addConstr(NumGoldenRetrievers >= 0)
+model.addConstr(
+    sum(TreatsPerService[i] * DogsUsed[i] for i in range(NumDogTypes))
+    <= TotalBoneTreatsAvailable
+)
+model.addConstr(DogsUsed[2] >= MinGoldenRetrievers)
+model.addConstr(
+    DogsUsed[0] <= (MaxPercentageLabradors / 100.0) * 
+    sum(DogsUsed[i] for i in range(NumDogTypes))
+)
+for i in range(NumDogTypes):
+    model.addConstr(DogsUsed[i] >= 0)
 
 
 ### Define the objective
 
-model.setObjective(7 * NumLabradors + 10 * NumGoldenRetrievers, GRB.MAXIMIZE)
+model.setObjective(quicksum(NewspapersPerService[i] * DogsUsed[i] 
+                            for i in range(NumDogTypes)), 
+                   GRB.MAXIMIZE)
 
 
 ### Optimize the model

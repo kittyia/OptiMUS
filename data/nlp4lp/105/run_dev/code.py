@@ -31,20 +31,20 @@ MaxFertilizerRatio = data["MaxFertilizerRatio"] # shape: [], definition: Maximum
 
 FertilizerUnits = model.addVar(vtype=GRB.CONTINUOUS, name="FertilizerUnits")
 
-SeedsUnits = model.addVar(vtype=GRB.CONTINUOUS, name="SeedsUnits")
+SeedUnits = model.addVar(vtype=GRB.CONTINUOUS, name="SeedUnits")
 
 
 
 ### Define the constraints
 
-model.addConstr(FertilizerUnits + SeedsUnits <= MaxTotalUnits)
+model.addConstr(FertilizerUnits + SeedUnits <= MaxTotalUnits)
 model.addConstr(FertilizerUnits >= MinFertilizer)
-model.addConstr(FertilizerUnits <= MaxFertilizerRatio * SeedsUnits)
+model.addConstr(FertilizerUnits <= MaxFertilizerRatio * SeedUnits)
 
 
 ### Define the objective
 
-del.setObjective(TimePerFertilizer * FertilizerUnits + TimePerSeeds * SeedsUnits, GRB.MINIMIZE
+model.setObjective(TimePerFertilizer * FertilizerUnits + TimePerSeeds * SeedUnits, GRB.MINIMIZE)
 
 
 ### Optimize the model

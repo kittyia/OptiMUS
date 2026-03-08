@@ -52,7 +52,7 @@ model.addConstr(Dolls >= 0)
 
 ### Define the objective
 
-
+model.setObjective(ProfitPlushToy * PlushToys + ProfitDoll * Dolls, GRB.MAXIMIZE)
 
 
 ### Optimize the model

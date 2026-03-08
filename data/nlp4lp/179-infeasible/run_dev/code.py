@@ -29,24 +29,27 @@ NumTransportMethods = data["NumTransportMethods"] # shape: [], definition: Numbe
 
 ### Define the variables
 
-HighPressureTrips = model.addVar(vtype=GRB.INTEGER, name="HighPressureTrips")
-
-LiquefiedTrips = model.addVar(vtype=GRB.INTEGER, name="LiquefiedTrips")
+NumTrips = model.addVars(NumTransportMethods, vtype=GRB.INTEGER, name="NumTrips")
 
 
 
 ### Define the constraints
 
-model.addConstr(50 * HighPressureTrips + 30 * LiquefiedTrips >= MinimumHydrogen)
-model.addConstr(500 * HighPressureTrips + 200 * LiquefiedTrips <= Budget)
-model.addConstr(HighPressureTrips <= LiquefiedTrips - 1)
-model.addConstr(HighPressureTrips >= 0)
-model.addConstr(LiquefiedTrips >= 0)
+model.addConstr(
+    sum(TransportCapacity[m] * NumTrips[m] for m in range(NumTransportMethods)) 
+    >= MinimumHydrogen
+)
+model.addConstr(
+    sum(TransportCost[m] * NumTrips[m] for m in range(NumTransportMethods)) <= Budget
+)
+model.addConstr(NumTrips[0] + 1 <= NumTrips[1])
+for m in range(NumTransportMethods):
+    model.addConstr(NumTrips[m] >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(quicksum(NumTrips[i] for i in range(NumTransportMethods)), GRB.MINIMIZE)
 
 
 ### Optimize the model

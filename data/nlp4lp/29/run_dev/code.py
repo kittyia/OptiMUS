@@ -56,12 +56,19 @@ model.addConstr(GallonsChocolate <= MaxGallonsChocolate)
 model.addConstr(GallonsVanilla >= MinGallonsVanilla)
 model.addConstr(GallonsVanilla <= MaxGallonsVanilla)
 model.addConstr(ProductionTimeChocolate * GallonsChocolate + ProductionTimeVanilla * GallonsVanilla <= TotalProductionHours)
-model.addConstr(WorkersNeededChocolate * GallonsChocolate + WorkersNeededVanilla * GallonsVanilla >= MinTotalWorkers)
+model.addConstr(
+    WorkersNeededChocolate * GallonsChocolate +
+    WorkersNeededVanilla * GallonsVanilla
+    >= MinTotalWorkers
+)
 
 
 ### Define the objective
 
-
+model.setObjective(
+    ProfitChocolate * GallonsChocolate + ProfitVanilla * GallonsVanilla,
+    GRB.MAXIMIZE
+)
 
 
 ### Optimize the model

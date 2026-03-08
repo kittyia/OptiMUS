@@ -48,10 +48,11 @@ model.addConstr(SemiWeightedQty >= 0)
 
 ### Define the objective
 
-del.setObjective(
+model.setObjective(
     PriceFullWeighted * FullWeightedQty +
     PriceSemiWeighted * SemiWeightedQty,
     GRB.MAXIMIZE
+)
 
 
 ### Optimize the model

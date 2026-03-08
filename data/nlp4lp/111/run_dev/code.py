@@ -46,9 +46,7 @@ FriesPacks = model.addVar(vtype=GRB.INTEGER, name="FriesPacks")
 ### Define the constraints
 
 model.addConstr(CaloriesPerRamenPack * RamenPacks + CaloriesPerFriesPack * FriesPacks >= MinCalories)
-model.addConstr(
-    ProteinPerRamenPack * RamenPacks + ProteinPerFriesPack * FriesPacks >= MinProtein
-)
+model.addConstr(ProteinPerRamenPack * RamenPacks + ProteinPerFriesPack * FriesPacks >= MinProtein)
 model.addConstr(RamenPacks <= MaxRamenMealRatio * (RamenPacks + FriesPacks))
 model.addConstr(RamenPacks >= 0)
 model.addConstr(FriesPacks >= 0)
@@ -56,7 +54,10 @@ model.addConstr(FriesPacks >= 0)
 
 ### Define the objective
 
-
+model.setObjective(
+    SodiumPerRamenPack * RamenPacks + SodiumPerFriesPack * FriesPacks,
+    GRB.MINIMIZE
+)
 
 
 ### Optimize the model

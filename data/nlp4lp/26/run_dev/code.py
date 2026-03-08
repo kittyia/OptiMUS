@@ -29,23 +29,39 @@ AvailableSubstances = data["AvailableSubstances"] # shape: ['NumSubstances'], de
 
 ### Define the variables
 
-xOilMax = model.addVar(vtype=GRB.INTEGER, name="xOilMax")
-
-xOilMaxPro = model.addVar(vtype=GRB.INTEGER, name="xOilMaxPro")
+ContainersProduced = model.addVars(NumOilTypes, vtype=GRB.INTEGER, name="ContainersProduced")
 
 
 
 ### Define the constraints
 
-model.addConstr(43 * xOilMax + 4 * xOilMaxPro <= 346)
-model.addConstr(56 * xOilMax + 45 * xOilMaxPro <= 1643)
-model.addConstr(xOilMax >= 0)
-model.addConstr(xOilMaxPro >= 0)
+model.addConstr(
+    sum(SubstanceAmountPerContainer[0][t] * ContainersProduced[t] 
+        for t in range(NumOilTypes)) 
+    <= AvailableSubstances[0]
+)
+model.addConstr(
+    sum(SubstanceAmountPerContainer[2][j] * ContainersProduced[j] 
+        for j in range(NumOilTypes)) 
+    <= AvailableSubstances[2]
+)
+model.addConstr(
+    sum(SubstanceAmountPerContainer[2][j] * ContainersProduced[j] 
+        for j in range(NumOilTypes)) 
+    <= AvailableSubstances[2]
+)
+for i in range(NumOilTypes):
+    model.addConstr(ContainersProduced[i] >= 0)
+for i in range(NumOilTypes):
+    model.addConstr(ContainersProduced[i] >= 0)
 
 
 ### Define the objective
 
-
+model.setObjective(
+    quicksum(ProfitPerContainer[i] * ContainersProduced[i] for i in range(NumOilTypes)),
+    GRB.MAXIMIZE
+)
 
 
 ### Optimize the model

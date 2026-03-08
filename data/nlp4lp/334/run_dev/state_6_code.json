@@ -49,19 +49,19 @@
         }
     },
     "objective": {
-        "description": "\"Maximize the total monthly profit from producing and selling the products (total revenue minus total production costs)\"",
+        "description": "\"Maximize the total monthly profit from producing and selling the products, calculated as total revenue minus total production costs.\"",
         "formulation": "$\\max \\sum_{j=1}^{M} (Prices_j - Costs_j)\\, amount_j$",
-        "code": ""
+        "code": "model.setObjective(\n    quicksum((Prices[j] - Costs[j]) * amount[j] for j in range(M)),\n    GRB.MAXIMIZE\n)"
     },
     "constraints": [
         {
-            "description": "For each raw material i, the total amount used across all products cannot exceed the available amount: sum over j of (Requirements[i][j] * amount[j]) \u2264 Available[i]",
-            "formulation": "$\\\\forall i = 1, \\\\dots, N:\\\\; \\\\sum_{j=1}^{M} Requirements[i][j] \\\\cdot amount[j] \\\\leq Available[i]$",
+            "description": "For each raw material i, the total amount used across all products cannot exceed the available amount: sum over j of (req_{i,j} * amount_{j}) <= available_{i}",
+            "formulation": "$\\\\forall i = 1, \\\\dots, N, \\\\; \\\\sum_{j=1}^{M} Requirements_{i,j} \\\\cdot amount_j \\\\le Available_i$",
             "code": "for i in range(N):\n    model.addConstr(\n        sum(Requirements[i][j] * amount[j] for j in range(M)) <= Available[i]\n    )"
         },
         {
-            "description": "For each product j, the production amount must satisfy: 0 \u2264 amount[j] \u2264 Demands[j]",
-            "formulation": "$\\\\forall j \\\\in \\\\{1, \\\\dots, M\\\\},\\\\; 0 \\\\leq amount[j] \\\\leq Demands[j]$",
+            "description": "For each product j, the production amount must satisfy the demand and non-negativity bounds: 0 <= amount_{j} <= demand_{j}",
+            "formulation": "$\\\\forall j = 1, \\\\ldots, M, \\\\; 0 \\\\leq amount_j \\\\leq Demands_j$",
             "code": "for j in range(M):\n    model.addConstr(amount[j] >= 0)\n    model.addConstr(amount[j] <= Demands[j])"
         }
     ],
@@ -71,7 +71,7 @@
                 "M"
             ],
             "type": "continuous",
-            "definition": "Amount of product j produced during the month"
+            "definition": "The amount of product j produced during the month"
         }
     }
 }
