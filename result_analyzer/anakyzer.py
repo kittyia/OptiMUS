@@ -6,7 +6,7 @@ import re
 import json
 from pathlib import Path
 
-BASE_DIR = Path("../data/nlp4lp")
+BASE_DIR = Path("./results/nlp4lp")
 
 
 def extract_optimal_value(text):
@@ -125,7 +125,9 @@ def main():
                 print(f"  • {error_type}: {count} ({percentage:.1f}%)")
 
     if total > 0:
-        print(f"\n正确率: {correct / total * 100:.1f}%")
+        print("\n")
+        print("LLM: gpt-5.2 instant")
+        print(f"正确率: {correct / total * 100:.1f}%")
 
 
 if __name__ == "__main__":
