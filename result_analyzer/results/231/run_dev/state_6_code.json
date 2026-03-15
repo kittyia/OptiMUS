@@ -1,0 +1,74 @@
+{
+    "description": "A dim sum restaurant can deliver their food by cart or by hand. Servers can deliver by cart and have 70 customer interactions and will have to refill food five times an hour. They can also deliver more food by hand, due to the increased mobility, and have 85 customer interactions while refilling food twenty times an hour. However, the customers get more options when delivering by cart, therefore at least 70% of delivery shifts must be by cart. There must be at least 3 servers delivering by hand for their direct customer service. If the restaurant wants to have 4000 customer interactions per hour, how many of each form of delivery should the dim sum restaurant schedule to minimize the total number of refills per hour?",
+    "parameters": {
+        "CustomerInteractionsCart": {
+            "definition": "Customer interactions per cart delivery server per hour",
+            "shape": [],
+            "type": "int"
+        },
+        "CustomerInteractionsHand": {
+            "definition": "Customer interactions per hand delivery server per hour",
+            "shape": [],
+            "type": "int"
+        },
+        "RefillsCart": {
+            "definition": "Number of refills per cart delivery server per hour",
+            "shape": [],
+            "type": "int"
+        },
+        "RefillsHand": {
+            "definition": "Number of refills per hand delivery server per hour",
+            "shape": [],
+            "type": "int"
+        },
+        "MinFractionCart": {
+            "definition": "Minimum fraction of delivery shifts that must be by cart",
+            "shape": [],
+            "type": "float"
+        },
+        "MinServersHand": {
+            "definition": "Minimum number of servers delivering by hand",
+            "shape": [],
+            "type": "int"
+        },
+        "TargetCustomerInteractions": {
+            "definition": "Target total number of customer interactions per hour",
+            "shape": [],
+            "type": "int"
+        }
+    },
+    "objective": {
+        "description": "\"Minimize the total number of food refills per hour from all delivery servers (cart and hand combined)\"",
+        "formulation": "$\\min \\; RefillsCart \\cdot NumberCart \\;+\\; RefillsHand \\cdot NumberHand$",
+        "code": "model.setObjective(RefillsCart * NumberCart + RefillsHand * NumberHand, GRB.MINIMIZE)"
+    },
+    "constraints": [
+        {
+            "description": "CustomerInteractionsCart * NumberCart + CustomerInteractionsHand * NumberHand >= TargetCustomerInteractions",
+            "formulation": "$CustomerInteractionsCart \\\\cdot NumberCart + CustomerInteractionsHand \\\\cdot NumberHand \\\\geq TargetCustomerInteractions$",
+            "code": "model.addConstr(\n    CustomerInteractionsCart * NumberCart + CustomerInteractionsHand * NumberHand\n    >= TargetCustomerInteractions\n)"
+        },
+        {
+            "description": "NumberCart >= MinFractionCart * (NumberCart + NumberHand)",
+            "formulation": "$NumberCart \\\\ge MinFractionCart \\\\cdot (NumberCart + NumberHand)$",
+            "code": "model.addConstr(NumberCart >= MinFractionCart * (NumberCart + NumberHand))"
+        },
+        {
+            "description": "NumberHand >= MinServersHand",
+            "formulation": "$NumberHand \\\\ge MinServersHand$",
+            "code": "model.addConstr(NumberHand >= MinServersHand)"
+        }
+    ],
+    "variables": {
+        "NumberCart": {
+            "shape": [],
+            "type": "integer",
+            "definition": "Number of servers delivering by cart"
+        },
+        "NumberHand": {
+            "shape": [],
+            "type": "integer",
+            "definition": "Number of servers delivering by hand"
+        }
+    }
+}

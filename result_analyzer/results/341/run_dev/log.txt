@@ -1,0 +1,572 @@
+----
+[
+    "For each machine m: Sum over all parts p of (TimeRequired[m][p] * batches[p]) must be less than or equal to Availability[m] + extra_time[m]",
+    "For each machine m: 0 <= extra_time[m] <= MaxExtra[m]",
+    "For each part p: batches[p] must be greater than or equal to MinBatches[p]"
+]
+----
++++++++++++++++++++
+++ Constraint Qs ++
++++++++++++++++++++
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+
+PROBLEM INFO:
+
+- A division of an auto parts manufacturer produces \var{P} different parts using \var{M} different machines.
+- Batch of 100 part \var{p} requires \var{time_{m,p}} hours on machine \var{m}.
+- The division incurs a charge of \var{cost_{m}} per hour for using machine \var{m}.
+- Machine \var{m} has an availability of up to \var{available_{m}} hours per month.
+- The division sells part \var{p} in batches of 100 at price of \var{price_{p}} per batch.
+- The division must produce at least \var{min_batches_{p}} batches of part \var{p} each month to fulfill a contract.
+- Extra available time for machine \var{m} can be acquired at $\var{extra_costs_{m}}/hour. 
+- Up to \var{max_extra_{m}} hours can be purchased for each machine \var{m}.
+
+INPUT FORMAT: 
+
+{
+    "time_required": [[time_{m,p} for p in 1, ..., P] for m in 1, ..., M],
+    "machine_costs": [cost_{m} for m in 1, ..., M],
+    "availability": [available_{m} for m in 1, ..., M],
+    "prices": [price_{p} for p in 1, ..., P],
+    "min_batches": [min_batches_{p} for p in 1, ..., P],
+    "extra_costs": [extra_cost_{m} for m in 1, ..., M],
+    "max_extra": [max_extra_{m} for m in 1, ..., M]
+}
+
+OBJECTIVE: How many batches of each part should the manufacturer produce each month to maximize profit?
+
+OUTPUT INFO:
+
+- the number of batches of each part produced \var{batches_{p}}.
+- \var{extra_time} denotes the additional hours purchased for each machine \var{m}.
+- \var{total_profit} represents the total profit obtained for the month.
+
+OUTPUT FORMAT:
+
+{
+    "batches": [batches_{p} for p in 1, ..., P],
+    "extra_time": [extra_time_{p} for p in 1, ..., P],
+    "total_profit": total_profit
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "M": {
+        "definition": "Number of machines",
+        "shape": [],
+        "type": "int"
+    },
+    "P": {
+        "definition": "Number of parts",
+        "shape": [],
+        "type": "int"
+    },
+    "TimeRequired": {
+        "definition": "Time required to produce a batch of part p on machine m",
+        "shape": [
+            "M",
+            "P"
+        ],
+        "type": "string"
+    },
+    "MachineCosts": {
+        "definition": "Cost associated with running machine m",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    },
+    "Availability": {
+        "definition": "Availability of machine m for production each month",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    },
+    "Prices": {
+        "definition": "Price obtained from selling a batch of part p",
+        "shape": [
+            "P"
+        ],
+        "type": "string"
+    },
+    "MinBatches": {
+        "definition": "Minimum number of batches of part p that should be produced",
+        "shape": [
+            "P"
+        ],
+        "type": "string"
+    },
+    "ExtraCosts": {
+        "definition": "Extra cost incurred when running machine m beyond regular operation",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    },
+    "MaxExtra": {
+        "definition": "Maximum extra hours machine m can be run",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: For each machine m: Sum over all parts p of (TimeRequired[m][p] * batches[p]) must be less than or equal to Availability[m] + extra_time[m]
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is absolutely a constraint and a fundamental one in the LP formulation.
+
+Reasoning step by step:
+
+- Each machine \( m \) has a regular monthly availability of \( \text{Availability}[m] \) hours.
+- The company may purchase additional machine time \( \text{extra\_time}[m] \), up to \( \text{MaxExtra}[m] \).
+- Producing one batch of part \( p \) requires \( \text{TimeRequired}[m][p] \) hours on machine \( m \).
+- Therefore, if \( \text{batches}[p] \) batches of part \( p \) are produced, the total time used on machine \( m \) is:
+
+  \[
+  \sum_{p=1}^{P} \text{TimeRequired}[m][p] \cdot \text{batches}[p]
+  \]
+
+- This total usage must not exceed the total available time:
+
+  \[
+  \text{Availability}[m] + \text{extra\_time}[m]
+  \]
+
+Thus, the constraint:
+
+\[
+\sum_{p=1}^{P} \text{TimeRequired}[m][p] \cdot \text{batches}[p]
+\;\le\;
+\text{Availability}[m] + \text{extra\_time}[m]
+\quad \forall m
+\]
+
+is a core machine capacity constraint and must be explicitly included in the LP model.
+
+Without it, machine capacity limits would not be enforced, making the model incorrect.
+
+5 OUT OF 5
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+
+PROBLEM INFO:
+
+- A division of an auto parts manufacturer produces \var{P} different parts using \var{M} different machines.
+- Batch of 100 part \var{p} requires \var{time_{m,p}} hours on machine \var{m}.
+- The division incurs a charge of \var{cost_{m}} per hour for using machine \var{m}.
+- Machine \var{m} has an availability of up to \var{available_{m}} hours per month.
+- The division sells part \var{p} in batches of 100 at price of \var{price_{p}} per batch.
+- The division must produce at least \var{min_batches_{p}} batches of part \var{p} each month to fulfill a contract.
+- Extra available time for machine \var{m} can be acquired at $\var{extra_costs_{m}}/hour. 
+- Up to \var{max_extra_{m}} hours can be purchased for each machine \var{m}.
+
+INPUT FORMAT: 
+
+{
+    "time_required": [[time_{m,p} for p in 1, ..., P] for m in 1, ..., M],
+    "machine_costs": [cost_{m} for m in 1, ..., M],
+    "availability": [available_{m} for m in 1, ..., M],
+    "prices": [price_{p} for p in 1, ..., P],
+    "min_batches": [min_batches_{p} for p in 1, ..., P],
+    "extra_costs": [extra_cost_{m} for m in 1, ..., M],
+    "max_extra": [max_extra_{m} for m in 1, ..., M]
+}
+
+OBJECTIVE: How many batches of each part should the manufacturer produce each month to maximize profit?
+
+OUTPUT INFO:
+
+- the number of batches of each part produced \var{batches_{p}}.
+- \var{extra_time} denotes the additional hours purchased for each machine \var{m}.
+- \var{total_profit} represents the total profit obtained for the month.
+
+OUTPUT FORMAT:
+
+{
+    "batches": [batches_{p} for p in 1, ..., P],
+    "extra_time": [extra_time_{p} for p in 1, ..., P],
+    "total_profit": total_profit
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "M": {
+        "definition": "Number of machines",
+        "shape": [],
+        "type": "int"
+    },
+    "P": {
+        "definition": "Number of parts",
+        "shape": [],
+        "type": "int"
+    },
+    "TimeRequired": {
+        "definition": "Time required to produce a batch of part p on machine m",
+        "shape": [
+            "M",
+            "P"
+        ],
+        "type": "string"
+    },
+    "MachineCosts": {
+        "definition": "Cost associated with running machine m",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    },
+    "Availability": {
+        "definition": "Availability of machine m for production each month",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    },
+    "Prices": {
+        "definition": "Price obtained from selling a batch of part p",
+        "shape": [
+            "P"
+        ],
+        "type": "string"
+    },
+    "MinBatches": {
+        "definition": "Minimum number of batches of part p that should be produced",
+        "shape": [
+            "P"
+        ],
+        "type": "string"
+    },
+    "ExtraCosts": {
+        "definition": "Extra cost incurred when running machine m beyond regular operation",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    },
+    "MaxExtra": {
+        "definition": "Maximum extra hours machine m can be run",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: For each machine m: 0 <= extra_time[m] <= MaxExtra[m]
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is **definitely a constraint**, and it should be explicitly modeled in the LP formulation.
+
+### Why?
+
+The problem clearly states:
+
+- *“Up to* `max_extra_m` *hours can be purchased for each machine m.”*
+
+This directly implies an **upper bound** on the decision variable `extra_time[m]`.
+
+Additionally:
+
+- Since extra time represents purchased machine hours, it cannot be negative.
+- Therefore, we must enforce:
+  
+\[
+0 \le \text{extra\_time}[m] \le \text{MaxExtra}[m] \quad \forall m
+\]
+
+### Why this must be explicitly modeled
+
+- Without the **upper bound**, the model could purchase unlimited extra hours if profitable.
+- Without the **nonnegativity constraint**, the solver could choose negative extra time to artificially reduce costs.
+- The statement explicitly defines a limit (“up to”), which is a classic bounded decision variable constraint in LP modeling.
+
+This is a **core feasibility constraint**, not optional.
+
+### Confidence Level
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+
+PROBLEM INFO:
+
+- A division of an auto parts manufacturer produces \var{P} different parts using \var{M} different machines.
+- Batch of 100 part \var{p} requires \var{time_{m,p}} hours on machine \var{m}.
+- The division incurs a charge of \var{cost_{m}} per hour for using machine \var{m}.
+- Machine \var{m} has an availability of up to \var{available_{m}} hours per month.
+- The division sells part \var{p} in batches of 100 at price of \var{price_{p}} per batch.
+- The division must produce at least \var{min_batches_{p}} batches of part \var{p} each month to fulfill a contract.
+- Extra available time for machine \var{m} can be acquired at $\var{extra_costs_{m}}/hour. 
+- Up to \var{max_extra_{m}} hours can be purchased for each machine \var{m}.
+
+INPUT FORMAT: 
+
+{
+    "time_required": [[time_{m,p} for p in 1, ..., P] for m in 1, ..., M],
+    "machine_costs": [cost_{m} for m in 1, ..., M],
+    "availability": [available_{m} for m in 1, ..., M],
+    "prices": [price_{p} for p in 1, ..., P],
+    "min_batches": [min_batches_{p} for p in 1, ..., P],
+    "extra_costs": [extra_cost_{m} for m in 1, ..., M],
+    "max_extra": [max_extra_{m} for m in 1, ..., M]
+}
+
+OBJECTIVE: How many batches of each part should the manufacturer produce each month to maximize profit?
+
+OUTPUT INFO:
+
+- the number of batches of each part produced \var{batches_{p}}.
+- \var{extra_time} denotes the additional hours purchased for each machine \var{m}.
+- \var{total_profit} represents the total profit obtained for the month.
+
+OUTPUT FORMAT:
+
+{
+    "batches": [batches_{p} for p in 1, ..., P],
+    "extra_time": [extra_time_{p} for p in 1, ..., P],
+    "total_profit": total_profit
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "M": {
+        "definition": "Number of machines",
+        "shape": [],
+        "type": "int"
+    },
+    "P": {
+        "definition": "Number of parts",
+        "shape": [],
+        "type": "int"
+    },
+    "TimeRequired": {
+        "definition": "Time required to produce a batch of part p on machine m",
+        "shape": [
+            "M",
+            "P"
+        ],
+        "type": "string"
+    },
+    "MachineCosts": {
+        "definition": "Cost associated with running machine m",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    },
+    "Availability": {
+        "definition": "Availability of machine m for production each month",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    },
+    "Prices": {
+        "definition": "Price obtained from selling a batch of part p",
+        "shape": [
+            "P"
+        ],
+        "type": "string"
+    },
+    "MinBatches": {
+        "definition": "Minimum number of batches of part p that should be produced",
+        "shape": [
+            "P"
+        ],
+        "type": "string"
+    },
+    "ExtraCosts": {
+        "definition": "Extra cost incurred when running machine m beyond regular operation",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    },
+    "MaxExtra": {
+        "definition": "Maximum extra hours machine m can be run",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: For each part p: batches[p] must be greater than or equal to MinBatches[p]
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is **definitely a constraint** and it must be explicitly included in the LP formulation.
+
+### Why?
+
+The problem statement explicitly says:
+
+> “The division must produce at least \( \text{min\_batches}_p \) batches of part \( p \) each month to fulfill a contract.”
+
+The word **“must”** indicates a hard requirement, not a soft preference. This is not something that can be left to the objective function to handle — it is a contractual obligation and therefore must be enforced as a constraint in the model.
+
+### Mathematical Form
+
+For each part \( p = 1, \dots, P \):
+
+\[
+\text{batches}_p \ge \text{MinBatches}_p
+\]
+
+Without this constraint:
+- The model might produce fewer batches (or even zero) if doing so increases profit.
+- That would violate the contract requirement.
+- Therefore, the model would not correctly represent the problem.
+
+### Conclusion
+
+✅ This is absolutely a required constraint.  
+✅ It must be explicitly modeled in the LP.  
+✅ There is no ambiguity in the problem statement.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
+
+
+
+++++++++++++++++++++++++++++++
+Extracting constraint formulations
+++++++++++++++++++++++++++++++
+
+
+
+----
+{
+    "FORMULATION": "$\\forall m = 1, \\dots, M:\\; \\sum_{p=1}^{P} TimeRequired[m,p] \\cdot batches[p] \\leq Availability[m] + extraTime[m]$",
+    "NEW VARIABLES": {
+        "batches": {
+            "shape": "[P]",
+            "type": "continuous",
+            "definition": "Number of batches of part p produced each month"
+        },
+        "extraTime": {
+            "shape": "[M]",
+            "type": "continuous",
+            "definition": "Additional hours purchased for machine m beyond regular availability"
+        }
+    },
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\forall m = 1, \\dots, M:\\; \\sum_{p=1}^{P} TimeRequired[m,p] \\cdot batches[p] \\leq Availability[m] + extraTime[m]$
+{'batches': {'shape': '[P]', 'type': 'continuous', 'definition': 'Number of batches of part p produced each month'}, 'extraTime': {'shape': '[M]', 'type': 'continuous', 'definition': 'Additional hours purchased for machine m beyond regular availability'}}
+[]
+----
+----
+{
+    "FORMULATION": "$\\forall m \\in \\{1, \\dots, M\\},\\; 0 \\le extraTime[m] \\le MaxExtra[m]$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\forall m \\in \\{1, \\dots, M\\},\\; 0 \\le extraTime[m] \\le MaxExtra[m]$
+{}
+[]
+----
+----
+{
+    "FORMULATION": "$\\forall p \\in \\{1, \\dots, P\\},\\; batches[p] \\ge MinBatches[p]$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\forall p \\in \\{1, \\dots, P\\},\\; batches[p] \\ge MinBatches[p]$
+{}
+[]
+----
+Code executed successfully. Output:
+Restricted license - for non-production use only - expires 2027-11-29
+Gurobi Optimizer version 13.0.1 build v13.0.1rc0 (linux64 - "Alibaba Cloud Linux 3.2104 U12.3 (OpenAnolis Edition)")
+
+CPU model: Intel(R) Xeon(R) Platinum, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 1 physical cores, 2 logical processors, using up to 2 threads
+
+Optimize a model with 13 rows, 7 columns and 25 nonzeros (Max)
+Model fingerprint: 0x8cfa7c8c
+Model has 6 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [1e+00, 6e+00]
+  Objective range  [2e+01, 1e+02]
+  Bounds range     [0e+00, 0e+00]
+  RHS range        [1e+01, 5e+02]
+
+Presolve removed 10 rows and 1 columns
+Presolve time: 0.00s
+Presolved: 3 rows, 6 columns, 14 nonzeros
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0    1.0200000e+04   3.750000e+00   0.000000e+00      0s
+       1    9.7500000e+03   0.000000e+00   0.000000e+00      0s
+
+Solved in 1 iterations and 0.00 seconds (0.00 work units)
+Optimal objective  9.750000000e+03
+Optimal Objective Value:  9750.0
+Optimal Objective Value:  9750.0
+

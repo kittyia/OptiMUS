@@ -1,0 +1,99 @@
+{
+    "description": "PROBLEM TYPE: LP\n\nPROBLEM INFO: \n\n- A company produces and sells \\var{P} different products. \n- The demand for each product is unlimited, but the company is constrained by cash availability and machine capacity.\n- Each unit of the \\var{i}-th product requires \\var{hour_i} machine hours.\n- There are \\var{availableHours} machine hours available in the current production period.\n- The production costs are \\var{cost_i} per unit of the \\var{i}-th product.\n- The selling prices of the \\var{i}-th product is \\var{price_i} per unit.\n- The available cash is \\var{cash}.\n- Furthermore, \\var{investRate_i} of the sales revenues from the \\var{i}-th product will be made available to finance operations during the current period.\n- \\var{investPercentage_i} is a number between 0 and 1\n- The company could increase its available machine hours by \\var{upgradeHours}, after spending \\var{upgradeCost} for certain repairs. \n- The net income from each product is the revenue we get from selling it minus the production cost and the investment cost.\n\nINPUT FORMAT:\n\n{\n    \"cash\": cash,\n    \"hour\": [hour_i for i in 1, ..., P],\n    \"cost\": [cost_i for i in 1, ..., P],\n    \"price\": [price_i for i in 1, ..., P],\n    \"investPercentage\": [investPercentage_i for i in 1, ..., P],\n    \"upgradeHours\": upgradeHours,   \n    \"upgradeCost\": upgradeCost,\n    \"availableHours\": availableHours,\n}\n\nOBJECTIVE: We are aiming at maximizing total net income subject to the cash availability and machine capacity limitations\n\nOUTPUT INFO:\n\n- \\var{net_income} shows the net income of the company\n- \\var{production_i} shows the production quantity of the \\var{i}-th product\n- \\var{upgrade} is a boolean variable that shows whether the company should upgrade its machine capacity or not\n\nOUTPUT FORMAT:\n\n{\n    \"net_income\": net_income,\n    \"production\": [production_i for i in 1, ..., P],\n    \"upgrade\": true/false,\n}",
+    "parameters": {
+        "P": {
+            "definition": "Number of products",
+            "shape": [],
+            "type": "int"
+        },
+        "Cash": {
+            "definition": "Initial cash available for investment",
+            "shape": [],
+            "type": "int"
+        },
+        "Hour": {
+            "definition": "Hours required to produce one unit of product i",
+            "shape": [
+                "P"
+            ],
+            "type": "string"
+        },
+        "Cost": {
+            "definition": "Cost to produce one unit of product i",
+            "shape": [
+                "P"
+            ],
+            "type": "string"
+        },
+        "Price": {
+            "definition": "Selling price for one unit of product i",
+            "shape": [
+                "P"
+            ],
+            "type": "string"
+        },
+        "InvestPercentage": {
+            "definition": "Percentage of income to reinvest for product i",
+            "shape": [
+                "P"
+            ],
+            "type": "string"
+        },
+        "UpgradeHours": {
+            "definition": "Hours required for upgrading the machinery",
+            "shape": [],
+            "type": "int"
+        },
+        "UpgradeCost": {
+            "definition": "Cost associated with upgrading the machinery",
+            "shape": [],
+            "type": "int"
+        },
+        "AvailableHours": {
+            "definition": "Total available machine hours",
+            "shape": [],
+            "type": "int"
+        }
+    },
+    "objective": {
+        "description": "\"The goal is to maximize the total net income from all products, considering revenues minus production costs, investment allocations, and any upgrade costs, subject to cash and machine capacity constraints.\"",
+        "formulation": "$\\max \\sum_{i=1}^{P} \\left( Price_i - Cost_i - InvestPercentage_i \\cdot Price_i \\right) \\, production_i \\;-\\; UpgradeCost \\cdot upgrade$",
+        "code": "model.setObjective(\n    quicksum(\n        (Price[i] - Cost[i] - InvestPercentage[i] * Price[i]) * production[i]\n        for i in range(P)\n    ) - UpgradeCost * upgrade,\n    GRB.MAXIMIZE\n)"
+    },
+    "constraints": [
+        {
+            "description": "For each product i, production_i >= 0",
+            "formulation": "$\\\\forall i \\\\in \\\\{1, \\\\dots, P\\\\},\\\\; production[i] \\\\ge 0$",
+            "code": "for i in range(P):\n    model.addConstr(production[i] >= 0)"
+        },
+        {
+            "description": "upgrade is a binary variable (upgrade \u2208 {0,1})",
+            "formulation": "$upgrade \\\\in \\\\{0,1\\\\}$",
+            "code": "model.addConstr(upgrade >= 0)\nmodel.addConstr(upgrade <= 1)"
+        },
+        {
+            "description": "Sum over i of (hour_i * production_i) <= AvailableHours + UpgradeHours * upgrade",
+            "formulation": "$\\\\sum_{i=1}^{P} Hour_i \\\\cdot production_i \\\\leq AvailableHours + UpgradeHours \\\\cdot upgrade$",
+            "code": "model.addConstr(\n    sum(Hour[i] * production[i] for i in range(P)) \n    <= AvailableHours + UpgradeHours * upgrade\n)"
+        },
+        {
+            "description": "Sum over i of (cost_i * production_i) + UpgradeCost * upgrade <= Cash + Sum over i of (InvestPercentage_i * Price_i * production_i)",
+            "formulation": "$\\\\sum_{i=1}^{P} Cost_i \\\\cdot production_i + UpgradeCost \\\\cdot upgrade \\\\leq Cash + \\\\sum_{i=1}^{P} InvestPercentage_i \\\\cdot Price_i \\\\cdot production_i$",
+            "code": "model.addConstr(\n    sum(Cost[i] * production[i] for i in range(P)) + UpgradeCost * upgrade\n    <= Cash + sum(InvestPercentage[i] * Price[i] * production[i] for i in range(P))\n)"
+        }
+    ],
+    "variables": {
+        "production": {
+            "shape": [
+                "P"
+            ],
+            "type": "continuous",
+            "definition": "Production quantity of product i"
+        },
+        "upgrade": {
+            "shape": [],
+            "type": "binary",
+            "definition": "Binary variable equal to 1 if the company upgrades its machine capacity, and 0 otherwise"
+        }
+    }
+}

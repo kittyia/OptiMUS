@@ -1,0 +1,103 @@
+{
+    "description": "PROBLEM TYPE: MIP\nPROBLEM INFO:\n\n- A mining company is going to continue operating in a certain area for the next years. \n- There are \\var{n_mines} mines in this area, but it can operate at most \\var{n_maxwork} in any one year. \n- Although a mine may not operate in a certain year, it is still necessary to keep it \u2018open\u2019, in the sense that royalties are payable, if it be operated in a future year. \n- Clearly, if a mine is not going to be worked again, it can be permanently closed down and no more royalties need be paid. \n- The yearly royalties payable on each mine kept \u2018open\u2019 is \\var{royalty_{k}} for mine \\var{k}.\n- There is an upper limit to the amount of ore, which can be extracted from each mine in a year. \n- The upper limit for mine \\var{k} is \\var{limit_{k}}.\n- The ore from the different mines is of varying quality.\n- This quality is measured on a scale so that blending ores together results in a linear combination of the quality measurements, for example, if equal quantities of two ores were combined, the resultant ore would have a quality measurement half way between\nthat of the ingredient ores. \n- The quality of ore from mine \\var{k} is \\var{quality_{k}}.\n- In each year, it is necessary to combine the total outputs from each mine to produce a blended ore of exactly some stipulated quality.\n- In year \\var{i}, the required quality is \\var{requiredquality_{i}}.\n- The final blended ore sells for \\var{price} ton each year. \n- Revenue and expenditure for future years must be discounted at a rate of \\var{discount} per annum.\n\nINPUT FORMAT:\n\n{\n    \"n_mines\": n_mines,\n    \"n_maxwork\": n_maxwork,\n    \"royalty\": [royalty_{k} for k in 1,...,K],\n    \"limit\": [limit_{k} for k in 1,...,K],\n    \"quality\": [quality_{k} for k in 1,...,K],\n    \"requiredquality\": [requiredquality_{i} for i in 1,...,I],\n    \"price\": price,\n    \"discount\": discount\n}\n\n\nOBJECTIVE: To maximize profit, which mines should be operated each year and how much should they produce?\n\nOUTPUT INFO:\n\n- \\var{isoperated} represents whether each mine is operated in each year\n- \\var{amount} represents the amount of ore produced by each mine in each year\n\nOUTPUT FORMAT:\n\n{\n    \"isoperated\": [[isoperated_{k, i} for i in 1,...,I] for k in 1,...K]\n    \"amount\": [[amount_{k, i} for i in 1,...,I] for k in 1,...K]\n}",
+    "parameters": {
+        "K": {
+            "definition": "Number of mines",
+            "shape": [],
+            "type": "int"
+        },
+        "MaxWork": {
+            "definition": "Maximum number of mines that can be operated in a year",
+            "shape": [],
+            "type": "int"
+        },
+        "NumYears": {
+            "definition": "Number of years the company will be operating",
+            "shape": [],
+            "type": "int"
+        },
+        "Royalty": {
+            "definition": "Royalty cost for operating mine k",
+            "shape": [
+                "K"
+            ],
+            "type": "string"
+        },
+        "Limit": {
+            "definition": "Production limit for mine k",
+            "shape": [
+                "K"
+            ],
+            "type": "string"
+        },
+        "Quality": {
+            "definition": "Quality of the material from mine k",
+            "shape": [
+                "K"
+            ],
+            "type": "string"
+        },
+        "RequiredQuality": {
+            "definition": "Required quality of the material for each year",
+            "shape": [
+                "NumYears"
+            ],
+            "type": "string"
+        },
+        "Price": {
+            "definition": "Price per unit of material sold",
+            "shape": [],
+            "type": "int"
+        },
+        "Discount": {
+            "definition": "Discount rate on the royalty cost per unit of material sold",
+            "shape": [],
+            "type": "float"
+        }
+    },
+    "objective": {
+        "description": "Maximize the total discounted profit over the planning horizon, calculated as revenue from selling the blended ore minus the royalty costs for keeping mines open.",
+        "formulation": "$\\max \\sum_{i=1}^{\\text{NumYears}} \\frac{1}{(1+\\text{Discount})^{i-1}} \\left( \\text{Price} \\sum_{k=1}^{K} \\text{amount}_{k,i} \\;-\\; \\sum_{k=1}^{K} \\text{Royalty}_k \\,\\text{isOperated}_{k,i} \\right)$",
+        "code": "model.setObjective(\n    quicksum(\n        (1 / ((1 + Discount) ** i)) * (\n            Price * quicksum(amount[k, i] for k in range(K))\n            - quicksum(Royalty[k] * isOperated[k, i] for k in range(K))\n        )\n        for i in range(NumYears)\n    ),\n    GRB.MAXIMIZE\n)"
+    },
+    "constraints": [
+        {
+            "description": "For each year i, the total number of mines operated cannot exceed MaxWork",
+            "formulation": "$\\\\forall i \\\\in \\\\{1,\\\\dots,\\\\text{NumYears}\\\\}: \\\\sum_{k=1}^{K} isOperated[k,i] \\\\leq MaxWork$",
+            "code": "for i in range(NumYears):\n    model.addConstr(\n        sum(isOperated[k, i] for k in range(K)) <= MaxWork\n    )"
+        },
+        {
+            "description": "For each mine k and year i, 0 <= amount_{k,i} <= Limit_k multiplied by isoperated_{k,i}",
+            "formulation": "$\\\\forall k = 1,\\\\dots,K,\\\\; \\\\forall i = 1,\\\\dots,NumYears:\\\\; 0 \\\\leq amount_{k,i} \\\\leq Limit_k \\\\cdot isOperated_{k,i}$",
+            "code": "for k in range(K):\n    for i in range(NumYears):\n        model.addConstr(amount[k, i] >= 0)\n        model.addConstr(amount[k, i] <= Limit[k] * isOperated[k, i])"
+        },
+        {
+            "description": "For each mine k and year i, isoperated_{k,i} must be a binary variable (0 or 1)",
+            "formulation": "$\\\\forall k = 1, \\\\dots, K,\\\\; \\\\forall i = 1, \\\\dots, \\\\text{NumYears},\\\\; isOperated_{k,i} \\\\in \\\\{0,1\\\\}$",
+            "code": "for k in range(K):\n    for i in range(NumYears):\n        model.addConstr(isOperated[k, i] >= 0)\n        model.addConstr(isOperated[k, i] <= 1)"
+        },
+        {
+            "description": "For each year i, the blended quality constraint must hold: (sum over k of Quality_k * amount_{k,i}) equals RequiredQuality_i multiplied by (sum over k of amount_{k,i})",
+            "formulation": "$\\\\forall i = 1, \\\\dots, \\\\text{NumYears}: \\\\sum_{k=1}^{K} \\\\text{Quality}_k \\\\cdot \\\\text{amount}_{k,i} = \\\\text{RequiredQuality}_i \\\\cdot \\\\sum_{k=1}^{K} \\\\text{amount}_{k,i}$",
+            "code": "for i in range(NumYears):\n    model.addConstr(\n        sum(Quality[k] * amount[k, i] for k in range(K)) ==\n        RequiredQuality[i] * sum(amount[k, i] for k in range(K))\n    )"
+        }
+    ],
+    "variables": {
+        "isOperated": {
+            "shape": [
+                "K",
+                "NumYears"
+            ],
+            "type": "binary",
+            "definition": "Binary variable equal to 1 if mine k is operated in year i, and 0 otherwise"
+        },
+        "amount": {
+            "shape": [
+                "K",
+                "NumYears"
+            ],
+            "type": "continuous",
+            "definition": "Amount of ore produced by mine k in year i"
+        }
+    }
+}

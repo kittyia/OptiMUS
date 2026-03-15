@@ -1,0 +1,785 @@
+----
+The constraints describe different and necessary aspects of the MILP formulation. Let’s analyze them one by one:
+
+1. **Each project must be assigned to exactly one consultant**  
+   This ensures full coverage of all projects and prevents multiple assignments of the same project. It is essential and not implied by any other constraint.
+
+2. **Each consultant can be assigned to at most MaxProjectsPerConsultant projects**  
+   This enforces the capacity limit per consultant. It is independent of the project assignment constraint and cannot be removed.
+
+3. **A project can only be assigned to a consultant if that consultant is hired**  
+   This links assignment variables to hiring variables. Without this constraint, assignments could be made without incurring the fixed hiring cost. It is necessary and not redundant.
+
+4. **Assignment variables must be binary (0 or 1)**  
+   This ensures projects are either assigned or not assigned (no fractional assignments). This is a domain constraint and not implied by other constraints.
+
+5. **Consultant hiring variables must be binary (0 or 1)**  
+   This ensures consultants are either hired or not hired (no fractional hiring). Also a domain constraint and not redundant.
+
+No constraint is implied by the others, and no pair can be meaningfully combined without weakening clarity or correctness. Therefore, no changes are needed.
+
+Updated list of constraints:
+
+```python
+[
+    "Each project must be assigned to exactly one consultant",
+    "Each consultant can be assigned to at most MaxProjectsPerConsultant projects",
+    "A project can only be assigned to a consultant if that consultant is hired",
+    "Assignment variables must be binary (0 or 1)",
+    "Consultant hiring variables must be binary (0 or 1)"
+]
+```
+----
++++++++++++++++++++
+++ Constraint Qs ++
++++++++++++++++++++
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: MILP
+
+PROBLEM INFO:
+
+- A company has \var{I} projects to be done by consultants.
+- They have a choice of \var{J} consultants.
+- Each consultant may be assigned up to \var{K} projects. 
+- Hiring consultant \var{j} incurs a fixed cost of \var{f_j}.
+- Assigning project \var{i} to consultant \var{j} incurs an additional cost of \var{c_{i,j}}.
+
+INPUT FORMAT: 
+
+{
+    "fixed_costs": [f_j for j in 1, ..., J],
+    "additional_costs": [[c_{i,j} for j in 1, ..., J] for i in 1, ..., I],
+    "max_projects_per_consultant": K
+}
+
+OBJECTIVE: Determine the assignment of consultants to projects that minimizes the total cost.
+
+OUTPUT INFO:
+
+- The projects assigned to each consultant \var{assignment_{j,i}}.
+- \var{total_cost} reflects the total cost of hiring consultants and assigning them to projects.
+
+OUTPUT FORMAT:
+
+{
+    "assignments": [[assignment_{j,i} for i in 1, ..., I] for j in 1, ..., J],
+    "total_cost": total_cost
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "FixedCosts": {
+        "definition": "Fixed cost for project j",
+        "shape": [
+            "NumConsultants"
+        ],
+        "type": "string"
+    },
+    "AdditionalCosts": {
+        "definition": "Additional cost for assigning consultant i to project j",
+        "shape": [
+            "NumProjects",
+            "NumConsultants"
+        ],
+        "type": "string"
+    },
+    "MaxProjectsPerConsultant": {
+        "definition": "Maximum number of projects that can be assigned to a consultant",
+        "shape": [],
+        "type": "int"
+    },
+    "NumProjects": {
+        "definition": "Number of projects",
+        "shape": [],
+        "type": "int"
+    },
+    "NumConsultants": {
+        "definition": "Number of consultants",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: Each project must be assigned to exactly one consultant
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is definitely a necessary constraint**, and it should be explicitly modeled in the MILP.
+
+### Why?
+
+The problem states:
+
+> “A company has *I projects to be done* by consultants.”
+
+This clearly implies:
+- Every project must be completed.
+- Completion requires assignment to a consultant.
+- There is no option to leave a project unassigned.
+
+Since:
+- Assigning project *i* to consultant *j* incurs a cost \( c_{i,j} \),
+- Consultants can handle up to \( K \) projects,
+- The objective is to minimize total cost,
+
+Without the constraint
+\[
+\sum_{j=1}^{J} x_{i,j} = 1 \quad \forall i
+\]
+the model could:
+- Leave projects unassigned (to avoid costs),
+- Assign a project to multiple consultants (if variables are not restricted properly).
+
+Therefore, this constraint is **structurally essential** to correctly model the problem.
+
+### Conclusion
+
+✅ This is absolutely a required constraint.  
+✅ It must be explicitly included in the MILP formulation.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: MILP
+
+PROBLEM INFO:
+
+- A company has \var{I} projects to be done by consultants.
+- They have a choice of \var{J} consultants.
+- Each consultant may be assigned up to \var{K} projects. 
+- Hiring consultant \var{j} incurs a fixed cost of \var{f_j}.
+- Assigning project \var{i} to consultant \var{j} incurs an additional cost of \var{c_{i,j}}.
+
+INPUT FORMAT: 
+
+{
+    "fixed_costs": [f_j for j in 1, ..., J],
+    "additional_costs": [[c_{i,j} for j in 1, ..., J] for i in 1, ..., I],
+    "max_projects_per_consultant": K
+}
+
+OBJECTIVE: Determine the assignment of consultants to projects that minimizes the total cost.
+
+OUTPUT INFO:
+
+- The projects assigned to each consultant \var{assignment_{j,i}}.
+- \var{total_cost} reflects the total cost of hiring consultants and assigning them to projects.
+
+OUTPUT FORMAT:
+
+{
+    "assignments": [[assignment_{j,i} for i in 1, ..., I] for j in 1, ..., J],
+    "total_cost": total_cost
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "FixedCosts": {
+        "definition": "Fixed cost for project j",
+        "shape": [
+            "NumConsultants"
+        ],
+        "type": "string"
+    },
+    "AdditionalCosts": {
+        "definition": "Additional cost for assigning consultant i to project j",
+        "shape": [
+            "NumProjects",
+            "NumConsultants"
+        ],
+        "type": "string"
+    },
+    "MaxProjectsPerConsultant": {
+        "definition": "Maximum number of projects that can be assigned to a consultant",
+        "shape": [],
+        "type": "int"
+    },
+    "NumProjects": {
+        "definition": "Number of projects",
+        "shape": [],
+        "type": "int"
+    },
+    "NumConsultants": {
+        "definition": "Number of consultants",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: Each consultant can be assigned to at most MaxProjectsPerConsultant projects
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is **explicitly a constraint** in the problem description.
+
+The statement:
+
+> "Each consultant may be assigned up to K projects."
+
+directly translates into a capacity constraint of the form:
+
+\[
+\sum_{i=1}^{I} x_{i,j} \le K \quad \forall j
+\]
+
+(or, more precisely, \(\sum_i x_{i,j} \le K \, y_j\) if a binary hiring variable \(y_j\) is introduced).
+
+This is not implied or optional — it is clearly stated in the problem definition and must be explicitly modeled in the MILP formulation.
+
+Therefore, this should absolutely remain in the constraint list.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: MILP
+
+PROBLEM INFO:
+
+- A company has \var{I} projects to be done by consultants.
+- They have a choice of \var{J} consultants.
+- Each consultant may be assigned up to \var{K} projects. 
+- Hiring consultant \var{j} incurs a fixed cost of \var{f_j}.
+- Assigning project \var{i} to consultant \var{j} incurs an additional cost of \var{c_{i,j}}.
+
+INPUT FORMAT: 
+
+{
+    "fixed_costs": [f_j for j in 1, ..., J],
+    "additional_costs": [[c_{i,j} for j in 1, ..., J] for i in 1, ..., I],
+    "max_projects_per_consultant": K
+}
+
+OBJECTIVE: Determine the assignment of consultants to projects that minimizes the total cost.
+
+OUTPUT INFO:
+
+- The projects assigned to each consultant \var{assignment_{j,i}}.
+- \var{total_cost} reflects the total cost of hiring consultants and assigning them to projects.
+
+OUTPUT FORMAT:
+
+{
+    "assignments": [[assignment_{j,i} for i in 1, ..., I] for j in 1, ..., J],
+    "total_cost": total_cost
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "FixedCosts": {
+        "definition": "Fixed cost for project j",
+        "shape": [
+            "NumConsultants"
+        ],
+        "type": "string"
+    },
+    "AdditionalCosts": {
+        "definition": "Additional cost for assigning consultant i to project j",
+        "shape": [
+            "NumProjects",
+            "NumConsultants"
+        ],
+        "type": "string"
+    },
+    "MaxProjectsPerConsultant": {
+        "definition": "Maximum number of projects that can be assigned to a consultant",
+        "shape": [],
+        "type": "int"
+    },
+    "NumProjects": {
+        "definition": "Number of projects",
+        "shape": [],
+        "type": "int"
+    },
+    "NumConsultants": {
+        "definition": "Number of consultants",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: A project can only be assigned to a consultant if that consultant is hired
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is absolutely a necessary constraint**, and it must be explicitly modeled in the MILP formulation.
+
+### Why?
+
+The problem includes:
+- A **fixed cost** \( f_j \) for hiring consultant \( j \)
+- An **assignment cost** \( c_{i,j} \) for assigning project \( i \) to consultant \( j \)
+
+To model this properly, we need:
+
+- Binary variable \( y_j \): 1 if consultant \( j \) is hired  
+- Binary variable \( x_{i,j} \): 1 if project \( i \) is assigned to consultant \( j \)
+
+Without a linking constraint, the model could:
+- Assign projects to consultant \( j \) (set \( x_{i,j} = 1 \))
+- Avoid paying the fixed cost by setting \( y_j = 0 \)
+
+This would produce an infeasible logical solution relative to the real-world interpretation.
+
+### Required linking constraint
+
+\[
+x_{i,j} \le y_j \quad \forall i,j
+\]
+
+This ensures:
+- If any project is assigned to consultant \( j \), then \( y_j = 1 \)
+- The fixed cost is paid whenever the consultant is used
+
+This is a standard **fixed-charge modeling structure**, and omitting it would fundamentally break the model.
+
+### Conclusion
+
+✅ Yes, this is definitely a constraint.  
+✅ It must be explicitly modeled.  
+✅ The model is incorrect without it.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: MILP
+
+PROBLEM INFO:
+
+- A company has \var{I} projects to be done by consultants.
+- They have a choice of \var{J} consultants.
+- Each consultant may be assigned up to \var{K} projects. 
+- Hiring consultant \var{j} incurs a fixed cost of \var{f_j}.
+- Assigning project \var{i} to consultant \var{j} incurs an additional cost of \var{c_{i,j}}.
+
+INPUT FORMAT: 
+
+{
+    "fixed_costs": [f_j for j in 1, ..., J],
+    "additional_costs": [[c_{i,j} for j in 1, ..., J] for i in 1, ..., I],
+    "max_projects_per_consultant": K
+}
+
+OBJECTIVE: Determine the assignment of consultants to projects that minimizes the total cost.
+
+OUTPUT INFO:
+
+- The projects assigned to each consultant \var{assignment_{j,i}}.
+- \var{total_cost} reflects the total cost of hiring consultants and assigning them to projects.
+
+OUTPUT FORMAT:
+
+{
+    "assignments": [[assignment_{j,i} for i in 1, ..., I] for j in 1, ..., J],
+    "total_cost": total_cost
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "FixedCosts": {
+        "definition": "Fixed cost for project j",
+        "shape": [
+            "NumConsultants"
+        ],
+        "type": "string"
+    },
+    "AdditionalCosts": {
+        "definition": "Additional cost for assigning consultant i to project j",
+        "shape": [
+            "NumProjects",
+            "NumConsultants"
+        ],
+        "type": "string"
+    },
+    "MaxProjectsPerConsultant": {
+        "definition": "Maximum number of projects that can be assigned to a consultant",
+        "shape": [],
+        "type": "int"
+    },
+    "NumProjects": {
+        "definition": "Number of projects",
+        "shape": [],
+        "type": "int"
+    },
+    "NumConsultants": {
+        "definition": "Number of consultants",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: Assignment variables must be binary (0 or 1)
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is absolutely a constraint** and must be explicitly modeled in the MILP formulation.
+
+### Why?
+
+The problem requires deciding whether:
+- A consultant \( j \) is assigned to a project \( i \), or
+- They are not.
+
+This is a **yes/no decision**, which is inherently binary. Therefore, the decision variable:
+
+\[
+x_{i,j} =
+\begin{cases}
+1 & \text{if project } i \text{ is assigned to consultant } j \\
+0 & \text{otherwise}
+\end{cases}
+\]
+
+must satisfy:
+
+\[
+x_{i,j} \in \{0,1\}
+\]
+
+If we fail to enforce integrality:
+- The solver could assign fractional values (e.g., 0.4 of a consultant),
+- Which is infeasible in reality,
+- And would invalidate the modeling of fixed hiring costs (since fractional hiring would reduce cost artificially).
+
+This is not optional — it is **essential to the correctness of the model**.
+
+So yes, this must be explicitly included in the MILP formulation as a binary variable constraint.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: MILP
+
+PROBLEM INFO:
+
+- A company has \var{I} projects to be done by consultants.
+- They have a choice of \var{J} consultants.
+- Each consultant may be assigned up to \var{K} projects. 
+- Hiring consultant \var{j} incurs a fixed cost of \var{f_j}.
+- Assigning project \var{i} to consultant \var{j} incurs an additional cost of \var{c_{i,j}}.
+
+INPUT FORMAT: 
+
+{
+    "fixed_costs": [f_j for j in 1, ..., J],
+    "additional_costs": [[c_{i,j} for j in 1, ..., J] for i in 1, ..., I],
+    "max_projects_per_consultant": K
+}
+
+OBJECTIVE: Determine the assignment of consultants to projects that minimizes the total cost.
+
+OUTPUT INFO:
+
+- The projects assigned to each consultant \var{assignment_{j,i}}.
+- \var{total_cost} reflects the total cost of hiring consultants and assigning them to projects.
+
+OUTPUT FORMAT:
+
+{
+    "assignments": [[assignment_{j,i} for i in 1, ..., I] for j in 1, ..., J],
+    "total_cost": total_cost
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "FixedCosts": {
+        "definition": "Fixed cost for project j",
+        "shape": [
+            "NumConsultants"
+        ],
+        "type": "string"
+    },
+    "AdditionalCosts": {
+        "definition": "Additional cost for assigning consultant i to project j",
+        "shape": [
+            "NumProjects",
+            "NumConsultants"
+        ],
+        "type": "string"
+    },
+    "MaxProjectsPerConsultant": {
+        "definition": "Maximum number of projects that can be assigned to a consultant",
+        "shape": [],
+        "type": "int"
+    },
+    "NumProjects": {
+        "definition": "Number of projects",
+        "shape": [],
+        "type": "int"
+    },
+    "NumConsultants": {
+        "definition": "Number of consultants",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: Consultant hiring variables must be binary (0 or 1)
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is actually a constraint**, and it must be explicitly modeled in the MILP formulation.
+
+### Reasoning
+
+The problem states:
+
+- Hiring consultant \( j \) incurs a fixed cost \( f_j \).
+- Consultants may be assigned up to \( K \) projects.
+
+To correctly model fixed hiring costs, we need a decision variable:
+
+\[
+y_j =
+\begin{cases}
+1 & \text{if consultant } j \text{ is hired} \\
+0 & \text{otherwise}
+\end{cases}
+\]
+
+This variable **must be binary** for the model to behave correctly:
+
+- If \( y_j \) were continuous (e.g., between 0 and 1), the solver could “partially hire” a consultant and pay only a fraction of the fixed cost.
+- That would break the intended logical structure of the problem.
+- The assignment variables \( x_{i,j} \) will also need linking constraints such as:
+  \[
+  x_{i,j} \le y_j
+  \]
+  so projects can only be assigned if the consultant is hired.
+
+Thus, declaring hiring variables as binary is not optional — it is a fundamental part of correctly formulating the MILP.
+
+### Conclusion
+
+This is absolutely a required modeling constraint.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
+
+
+
+++++++++++++++++++++++++++++++
+Extracting constraint formulations
+++++++++++++++++++++++++++++++
+
+
+
+----
+{
+    "FORMULATION": "$\\forall i \\in \\{1, \\dots, NumProjects\\}, \\; \\sum_{j=1}^{NumConsultants} Assignments[j,i] = 1$",
+    "NEW VARIABLES": {
+        "Assignments": {
+            "shape": "[NumConsultants, NumProjects]",
+            "type": "binary",
+            "definition": "Assignments[j,i] equals 1 if project i is assigned to consultant j, and 0 otherwise"
+        }
+    },
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\forall i \\in \\{1, \\dots, NumProjects\\}, \\; \\sum_{j=1}^{NumConsultants} Assignments[j,i] = 1$
+{'Assignments': {'shape': '[NumConsultants, NumProjects]', 'type': 'binary', 'definition': 'Assignments[j,i] equals 1 if project i is assigned to consultant j, and 0 otherwise'}}
+[]
+----
+----
+{
+    "FORMULATION": "$\\forall j = 1, \\ldots, NumConsultants:\\; \\sum_{i=1}^{NumProjects} Assignments[j,i] \\leq MaxProjectsPerConsultant$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\forall j = 1, \\ldots, NumConsultants:\\; \\sum_{i=1}^{NumProjects} Assignments[j,i] \\leq MaxProjectsPerConsultant$
+{}
+[]
+----
+----
+{
+    "FORMULATION": "$\\forall j \\in \\{1, \\dots, \\text{NumConsultants}\\}, \\; \\forall i \\in \\{1, \\dots, \\text{NumProjects}\\}: \\; Assignments[j,i] \\leq Hire[j]$",
+    "NEW VARIABLES": {
+        "Hire": {
+            "shape": "[NumConsultants]",
+            "type": "binary",
+            "definition": "Hire[j] equals 1 if consultant j is hired, and 0 otherwise"
+        }
+    },
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\forall j \\in \\{1, \\dots, \\text{NumConsultants}\\}, \\; \\forall i \\in \\{1, \\dots, \\text{NumProjects}\\}: \\; Assignments[j,i] \\leq Hire[j]$
+{'Hire': {'shape': '[NumConsultants]', 'type': 'binary', 'definition': 'Hire[j] equals 1 if consultant j is hired, and 0 otherwise'}}
+[]
+----
+----
+{
+    "FORMULATION": "$\\forall j = 1, \\dots, \\text{NumConsultants}, \\; \\forall i = 1, \\dots, \\text{NumProjects}, \\; Assignments[j,i] \\in \\{0,1\\}$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\forall j = 1, \\dots, \\text{NumConsultants}, \\; \\forall i = 1, \\dots, \\text{NumProjects}, \\; Assignments[j,i] \\in \\{0,1\\}$
+{}
+[]
+----
+----
+{
+    "FORMULATION": "$\\forall j = 1, \\dots, NumConsultants,\\; Hire[j] \\in \\{0,1\\}$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\forall j = 1, \\dots, NumConsultants,\\; Hire[j] \\in \\{0,1\\}$
+{}
+[]
+----
+Code executed successfully. Output:
+Restricted license - for non-production use only - expires 2027-11-29
+Gurobi Optimizer version 13.0.1 build v13.0.1rc0 (linux64 - "Alibaba Cloud Linux 3.2104 U12.3 (OpenAnolis Edition)")
+
+CPU model: Intel(R) Xeon(R) Platinum, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 1 physical cores, 2 logical processors, using up to 2 threads
+
+Optimize a model with 59 rows, 18 columns and 96 nonzeros (Min)
+Model fingerprint: 0x794d6260
+Model has 18 linear objective coefficients
+Variable types: 0 continuous, 18 integer (18 binary)
+Coefficient statistics:
+  Matrix range     [1e+00, 1e+00]
+  Objective range  [6e+00, 2e+02]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [1e+00, 3e+00]
+
+Found heuristic solution: objective 353.0000000
+Presolve removed 36 rows and 0 columns
+Presolve time: 0.00s
+Presolved: 23 rows, 18 columns, 60 nonzeros
+Variable types: 0 continuous, 18 integer (18 binary)
+
+Root relaxation: objective 1.694000e+02, 20 iterations, 0.00 seconds (0.00 work units)
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0  169.40000    0   12  353.00000  169.40000  52.0%     -    0s
+H    0     0                     303.0000000  169.40000  44.1%     -    0s
+H    0     0                     300.0000000  169.40000  43.5%     -    0s
+H    0     0                     292.0000000  169.40000  42.0%     -    0s
+H    0     0                     290.0000000  169.40000  41.6%     -    0s
+     0     0  203.20000    0   12  290.00000  203.20000  29.9%     -    0s
+     0     0  229.00000    0   16  290.00000  229.00000  21.0%     -    0s
+     0     0  259.33333    0    7  290.00000  259.33333  10.6%     -    0s
+     0     0  261.11111    0   15  290.00000  261.11111  10.0%     -    0s
+     0     0  262.00000    0   14  290.00000  262.00000  9.66%     -    0s
+     0     0  262.00000    0   16  290.00000  262.00000  9.66%     -    0s
+     0     0  262.00000    0   14  290.00000  262.00000  9.66%     -    0s
+     0     0  262.33333    0   13  290.00000  262.33333  9.54%     -    0s
+     0     0  262.40000    0   17  290.00000  262.40000  9.52%     -    0s
+     0     0  262.41667    0   18  290.00000  262.41667  9.51%     -    0s
+     0     0  262.41667    0   18  290.00000  262.41667  9.51%     -    0s
+     0     2  268.91667    0   18  290.00000  268.91667  7.27%     -    0s
+
+Cutting planes:
+  Gomory: 2
+  Cover: 2
+  MIR: 1
+  Zero half: 2
+  Relax-and-lift: 2
+
+Explored 3 nodes (54 simplex iterations) in 0.01 seconds (0.00 work units)
+Thread count was 2 (of 2 available processors)
+
+Solution count 5: 290 292 300 ... 353
+
+Optimal solution found (tolerance 1.00e-04)
+Best objective 2.900000000000e+02, best bound 2.900000000000e+02, gap 0.0000%
+Optimal Objective Value:  290.0
+Optimal Objective Value:  290.0
+

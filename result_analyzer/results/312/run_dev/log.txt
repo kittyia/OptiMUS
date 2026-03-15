@@ -1,0 +1,1434 @@
+----
+[
+    "For each manpower category k and year i, the workforce evolution must satisfy: the current workforce (distinguishing workers with less than one year of service and more than one year of service) equals the previous year's surviving workforce after applying the appropriate wastage rates (lessonewaste_k for workers with less than one year of service and moreonewaste_k for workers with more than one year of service), plus recruits, minus redundancies",
+    "In year 1, all initial workers are considered to have more than one year of service",
+    "For each manpower category k and year i, recruitment cannot exceed the maximum allowed recruit_k",
+    "For each manpower category k and year i, the effective workforce (full-time workers plus 0.5 times short-time workers) plus overmanning must be at least the required manpower requirement_{k,i}",
+    "For each manpower category k and year i, the number of short-time workers cannot exceed num_shortwork",
+    "For each manpower category k and year i, the total overmanning across all categories cannot exceed num_overman",
+    "All decision variables (recruitment, redundancies, overmanning, short-time workers, workforce levels) must be nonnegative"
+]
+----
++++++++++++++++++++
+++ Constraint Qs ++
++++++++++++++++++++
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+PROBLEM INFO:
+
+- A company is undergoing a number of changes that will affect its manpower requirements in future years. 
+- Owing to the installation of new machinery, fewer unskilled but more skilled and semi-skilled workers will be required. 
+- In addition to this, a downturn in trade is expected in the next year, which will reduce the need for workers in all categories.
+- The estimated manpower requirements for manpower \var{k} in year \var{i} is \var{requirement_{k, i}}.
+- The current strength of manpower \var{k} is \var{strength_{k}}.
+- The company wishes to decide its policy with regard to recruitment, retraining, redundancy and short-time working in the next years.
+- There is a natural wastage of labour. 
+- A fairly large number of workers leave during their first year. After this, the rate is much smaller. 
+- Taking this into account, the wastage rates of \var{k} manpower with less than one year's service is \var{lessonewaste_{k}}.
+- The wastage rates of \var{k} manpower with more than one year's service is \var{moreonewaste_{k}}.
+- There has been no recent recruitment and all workers in the current labour force have been employed for more than one year.
+- It is possible to recruit a limited number of workers from outside. 
+- In any one year, the numbers that can be recruited in manpower \var{k} is \var{recruit_{k}}.
+- The redundancy payment to manpower \var{k} is \var{costredundancy_{k}}.
+- It is possible to employ up to \var{num_overman} more workers over the whole company than are needed, but the extra costs per employee per year is \var{costoverman_{k}} for manpower \var{k}.
+- Up to \var{num_shortwork} workers in each category of skill can be put on short-time working. 
+- The cost of this (per employee per year) is \var{costshort_{k}} for manpower \var{k}.
+- An employee on short-time working meets the production requirements of half a full-time employee.
+
+
+INPUT FORMAT:
+
+{
+    "requirement": [[requirement_{k, i} for i in 1,...,I] for k in 1,...,K],
+    "strength": [strength_{k} for k in 1,...,K],
+    "lessonewaste": [lessonewaste_{k} for k in 1,...,K],
+    "moreonewaste": [lessonewaste_{k} for k in 1,...,K],
+    "recruit": [recruit_{k} for k in 1,...,K],
+    "costredundancy": [costredundancy_{k} for k in 1,...,K],
+    "num_overman": num_overman,
+    "costoverman": [costoverman_{k} for k in 1,...,K],
+    "num_shortwork": num_shortwork
+    "costshort": [costshort_{k} for k in 1,...,K],
+}
+
+
+OBJECTIVE: The company’s declared objective is to minimize costs. How should they operate in order to do this?
+
+OUTPUT INFO:
+
+- \var{recruit} represents the number of each recruit manpower to employ each year
+- \var{overmanning} represents the number of each overmanning manpower to employ each year
+- \var{short} represents the number of each short-time manpower to employ each year
+
+OUTPUT FORMAT:
+
+{
+    "recruit": [[recruit_{k, i} for i in 1,...,I] for k in 1,...,K],
+    "overmanning": [[overmanning_{k, i} for i in 1,...,I] for k in 1,...,K],
+    "short": [[short_{k, i} for i in 1,...,I] for k in 1,...,K]
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "K": {
+        "definition": "Number of requirements categories",
+        "shape": [],
+        "type": "int"
+    },
+    "I": {
+        "definition": "Number of different requirements",
+        "shape": [],
+        "type": "int"
+    },
+    "Strength": {
+        "definition": "Strength of each requirement category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "LessOneWaste": {
+        "definition": "Cost reduction per unit less waste in each category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "MoreOneWaste": {
+        "definition": "Additional cost per unit more waste in each category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "Recruit": {
+        "definition": "Number of recruits in each category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "CostRedundancy": {
+        "definition": "Cost of redundancy per recruit in each category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "NumOverman": {
+        "definition": "Number of over-managed categories allowed",
+        "shape": [],
+        "type": "int"
+    },
+    "CostOverman": {
+        "definition": "Cost of over-managing in each category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "NumShortwork": {
+        "definition": "Number of short-work categories allowed",
+        "shape": [],
+        "type": "int"
+    },
+    "CostShort": {
+        "definition": "Cost of short-work in each category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "Requirement": {
+        "definition": "Estimated manpower requirements for manpower k in year i",
+        "shape": [
+            "K",
+            "I"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: For each manpower category k and year i, the workforce evolution must satisfy: the current workforce (distinguishing workers with less than one year of service and more than one year of service) equals the previous year's surviving workforce after applying the appropriate wastage rates (lessonewaste_k for workers with less than one year of service and moreonewaste_k for workers with more than one year of service), plus recruits, minus redundancies
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is absolutely a constraint, and it is essential to the correctness of the LP formulation.
+
+### Why this must be modeled
+
+The problem explicitly states:
+
+- There are **two different wastage rates**:
+  - One for workers with **less than one year** of service.
+  - One for workers with **more than one year** of service.
+- All current workers have **more than one year** of service.
+- Recruitment occurs each year.
+- Redundancy decisions are made each year.
+
+This means workforce size is not static — it evolves over time according to:
+
+1. Survival after wastage (different rates depending on tenure),
+2. New recruits (who enter the “less than one year” category),
+3. Redundancies (which reduce the workforce).
+
+Without explicitly modeling this workforce transition:
+
+- You cannot correctly compute how many workers are available in future years.
+- You cannot apply the correct wastage rates.
+- You cannot ensure production requirements are met.
+- The optimization would ignore the dynamic structure of the labor system.
+
+This is not optional bookkeeping — it is a **core flow-balance constraint** that links decisions across years.
+
+### Structurally, this is a workforce balance constraint
+
+For each manpower category \( k \) and year \( i \), you must enforce:
+
+\[
+\text{Workforce}_{k,i}
+=
+\text{Surviving workforce from year } i-1
++
+\text{Recruits}_{k,i}
+-
+\text{Redundancies}_{k,i}
+\]
+
+with survival computed using:
+- `lessonewaste_k` for workers hired in the previous year,
+- `moreonewaste_k` for all others.
+
+This is a **dynamic inventory/flow conservation constraint**, and it is fundamental to the model.
+
+### Conclusion
+
+✅ Yes, this is definitely a constraint.  
+✅ It must be explicitly modeled in the LP formulation.  
+✅ It is structurally essential to the problem.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+PROBLEM INFO:
+
+- A company is undergoing a number of changes that will affect its manpower requirements in future years. 
+- Owing to the installation of new machinery, fewer unskilled but more skilled and semi-skilled workers will be required. 
+- In addition to this, a downturn in trade is expected in the next year, which will reduce the need for workers in all categories.
+- The estimated manpower requirements for manpower \var{k} in year \var{i} is \var{requirement_{k, i}}.
+- The current strength of manpower \var{k} is \var{strength_{k}}.
+- The company wishes to decide its policy with regard to recruitment, retraining, redundancy and short-time working in the next years.
+- There is a natural wastage of labour. 
+- A fairly large number of workers leave during their first year. After this, the rate is much smaller. 
+- Taking this into account, the wastage rates of \var{k} manpower with less than one year's service is \var{lessonewaste_{k}}.
+- The wastage rates of \var{k} manpower with more than one year's service is \var{moreonewaste_{k}}.
+- There has been no recent recruitment and all workers in the current labour force have been employed for more than one year.
+- It is possible to recruit a limited number of workers from outside. 
+- In any one year, the numbers that can be recruited in manpower \var{k} is \var{recruit_{k}}.
+- The redundancy payment to manpower \var{k} is \var{costredundancy_{k}}.
+- It is possible to employ up to \var{num_overman} more workers over the whole company than are needed, but the extra costs per employee per year is \var{costoverman_{k}} for manpower \var{k}.
+- Up to \var{num_shortwork} workers in each category of skill can be put on short-time working. 
+- The cost of this (per employee per year) is \var{costshort_{k}} for manpower \var{k}.
+- An employee on short-time working meets the production requirements of half a full-time employee.
+
+
+INPUT FORMAT:
+
+{
+    "requirement": [[requirement_{k, i} for i in 1,...,I] for k in 1,...,K],
+    "strength": [strength_{k} for k in 1,...,K],
+    "lessonewaste": [lessonewaste_{k} for k in 1,...,K],
+    "moreonewaste": [lessonewaste_{k} for k in 1,...,K],
+    "recruit": [recruit_{k} for k in 1,...,K],
+    "costredundancy": [costredundancy_{k} for k in 1,...,K],
+    "num_overman": num_overman,
+    "costoverman": [costoverman_{k} for k in 1,...,K],
+    "num_shortwork": num_shortwork
+    "costshort": [costshort_{k} for k in 1,...,K],
+}
+
+
+OBJECTIVE: The company’s declared objective is to minimize costs. How should they operate in order to do this?
+
+OUTPUT INFO:
+
+- \var{recruit} represents the number of each recruit manpower to employ each year
+- \var{overmanning} represents the number of each overmanning manpower to employ each year
+- \var{short} represents the number of each short-time manpower to employ each year
+
+OUTPUT FORMAT:
+
+{
+    "recruit": [[recruit_{k, i} for i in 1,...,I] for k in 1,...,K],
+    "overmanning": [[overmanning_{k, i} for i in 1,...,I] for k in 1,...,K],
+    "short": [[short_{k, i} for i in 1,...,I] for k in 1,...,K]
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "K": {
+        "definition": "Number of requirements categories",
+        "shape": [],
+        "type": "int"
+    },
+    "I": {
+        "definition": "Number of different requirements",
+        "shape": [],
+        "type": "int"
+    },
+    "Strength": {
+        "definition": "Strength of each requirement category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "LessOneWaste": {
+        "definition": "Cost reduction per unit less waste in each category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "MoreOneWaste": {
+        "definition": "Additional cost per unit more waste in each category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "Recruit": {
+        "definition": "Number of recruits in each category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "CostRedundancy": {
+        "definition": "Cost of redundancy per recruit in each category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "NumOverman": {
+        "definition": "Number of over-managed categories allowed",
+        "shape": [],
+        "type": "int"
+    },
+    "CostOverman": {
+        "definition": "Cost of over-managing in each category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "NumShortwork": {
+        "definition": "Number of short-work categories allowed",
+        "shape": [],
+        "type": "int"
+    },
+    "CostShort": {
+        "definition": "Cost of short-work in each category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "Requirement": {
+        "definition": "Estimated manpower requirements for manpower k in year i",
+        "shape": [
+            "K",
+            "I"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: In year 1, all initial workers are considered to have more than one year of service
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+This statement is **not a decision constraint**, but it **does impose an initial condition that must be explicitly modeled** in the LP formulation.
+
+### Why?
+
+The statement:
+> “There has been no recent recruitment and all workers in the current labour force have been employed for more than one year.”
+
+means that at the start of Year 1:
+
+- There are **no workers with less than one year of service**.
+- All initial workers are subject to the **more-than-one-year wastage rate**.
+- The less-than-one-year wastage rate applies only to new recruits from Year 1 onward.
+
+This directly affects the **workforce balance equations**, specifically:
+
+- In Year 1, the initial stock should be placed entirely in the “more-than-one-year” category.
+- No portion of the initial workforce should be multiplied by `lessonewaste_k`.
+- From Year 2 onward, recruits from Year 1 transition into the “more-than-one-year” category.
+
+### Is this a constraint?
+
+It is **not a policy constraint** (it does not restrict decisions), but it **is a structural modeling constraint / initial condition** that must be explicitly enforced in the manpower balance equations to correctly model wastage dynamics.
+
+If we fail to model this, we would incorrectly apply wastage rates in Year 1.
+
+So:
+
+- ✅ It should be modeled.
+- ❌ It is not a managerial decision constraint.
+- ✅ It is a necessary initial condition constraint in the LP formulation.
+
+### Confidence Level
+
+This is very likely intended as a modeling constraint (initial condition), though it could alternatively be embedded implicitly in how the Year 1 balance equation is written.
+
+**4 OUT OF 5**
++--+
+---
+The confidence score is 4, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+PROBLEM INFO:
+
+- A company is undergoing a number of changes that will affect its manpower requirements in future years. 
+- Owing to the installation of new machinery, fewer unskilled but more skilled and semi-skilled workers will be required. 
+- In addition to this, a downturn in trade is expected in the next year, which will reduce the need for workers in all categories.
+- The estimated manpower requirements for manpower \var{k} in year \var{i} is \var{requirement_{k, i}}.
+- The current strength of manpower \var{k} is \var{strength_{k}}.
+- The company wishes to decide its policy with regard to recruitment, retraining, redundancy and short-time working in the next years.
+- There is a natural wastage of labour. 
+- A fairly large number of workers leave during their first year. After this, the rate is much smaller. 
+- Taking this into account, the wastage rates of \var{k} manpower with less than one year's service is \var{lessonewaste_{k}}.
+- The wastage rates of \var{k} manpower with more than one year's service is \var{moreonewaste_{k}}.
+- There has been no recent recruitment and all workers in the current labour force have been employed for more than one year.
+- It is possible to recruit a limited number of workers from outside. 
+- In any one year, the numbers that can be recruited in manpower \var{k} is \var{recruit_{k}}.
+- The redundancy payment to manpower \var{k} is \var{costredundancy_{k}}.
+- It is possible to employ up to \var{num_overman} more workers over the whole company than are needed, but the extra costs per employee per year is \var{costoverman_{k}} for manpower \var{k}.
+- Up to \var{num_shortwork} workers in each category of skill can be put on short-time working. 
+- The cost of this (per employee per year) is \var{costshort_{k}} for manpower \var{k}.
+- An employee on short-time working meets the production requirements of half a full-time employee.
+
+
+INPUT FORMAT:
+
+{
+    "requirement": [[requirement_{k, i} for i in 1,...,I] for k in 1,...,K],
+    "strength": [strength_{k} for k in 1,...,K],
+    "lessonewaste": [lessonewaste_{k} for k in 1,...,K],
+    "moreonewaste": [lessonewaste_{k} for k in 1,...,K],
+    "recruit": [recruit_{k} for k in 1,...,K],
+    "costredundancy": [costredundancy_{k} for k in 1,...,K],
+    "num_overman": num_overman,
+    "costoverman": [costoverman_{k} for k in 1,...,K],
+    "num_shortwork": num_shortwork
+    "costshort": [costshort_{k} for k in 1,...,K],
+}
+
+
+OBJECTIVE: The company’s declared objective is to minimize costs. How should they operate in order to do this?
+
+OUTPUT INFO:
+
+- \var{recruit} represents the number of each recruit manpower to employ each year
+- \var{overmanning} represents the number of each overmanning manpower to employ each year
+- \var{short} represents the number of each short-time manpower to employ each year
+
+OUTPUT FORMAT:
+
+{
+    "recruit": [[recruit_{k, i} for i in 1,...,I] for k in 1,...,K],
+    "overmanning": [[overmanning_{k, i} for i in 1,...,I] for k in 1,...,K],
+    "short": [[short_{k, i} for i in 1,...,I] for k in 1,...,K]
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "K": {
+        "definition": "Number of requirements categories",
+        "shape": [],
+        "type": "int"
+    },
+    "I": {
+        "definition": "Number of different requirements",
+        "shape": [],
+        "type": "int"
+    },
+    "Strength": {
+        "definition": "Strength of each requirement category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "LessOneWaste": {
+        "definition": "Cost reduction per unit less waste in each category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "MoreOneWaste": {
+        "definition": "Additional cost per unit more waste in each category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "Recruit": {
+        "definition": "Number of recruits in each category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "CostRedundancy": {
+        "definition": "Cost of redundancy per recruit in each category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "NumOverman": {
+        "definition": "Number of over-managed categories allowed",
+        "shape": [],
+        "type": "int"
+    },
+    "CostOverman": {
+        "definition": "Cost of over-managing in each category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "NumShortwork": {
+        "definition": "Number of short-work categories allowed",
+        "shape": [],
+        "type": "int"
+    },
+    "CostShort": {
+        "definition": "Cost of short-work in each category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "Requirement": {
+        "definition": "Estimated manpower requirements for manpower k in year i",
+        "shape": [
+            "K",
+            "I"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: For each manpower category k and year i, recruitment cannot exceed the maximum allowed recruit_k
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is clearly a constraint and must be explicitly modeled.
+
+The problem statement says:
+
+> “In any one year, the numbers that can be recruited in manpower \( k \) is \( \text{recruit}_k \).”
+
+This directly implies a per-year upper bound on recruitment for each manpower category. Therefore, for all \( k = 1, \dots, K \) and \( i = 1, \dots, I \):
+
+\[
+\text{recruit}_{k,i} \le \text{recruit}_k
+\]
+
+This is a standard capacity constraint and is essential to correctly model the problem. Without it, the model could recruit arbitrarily many workers in a year, violating the stated policy limit.
+
+✅ It is definitely a constraint.  
+✅ It must be included in the LP formulation.  
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+PROBLEM INFO:
+
+- A company is undergoing a number of changes that will affect its manpower requirements in future years. 
+- Owing to the installation of new machinery, fewer unskilled but more skilled and semi-skilled workers will be required. 
+- In addition to this, a downturn in trade is expected in the next year, which will reduce the need for workers in all categories.
+- The estimated manpower requirements for manpower \var{k} in year \var{i} is \var{requirement_{k, i}}.
+- The current strength of manpower \var{k} is \var{strength_{k}}.
+- The company wishes to decide its policy with regard to recruitment, retraining, redundancy and short-time working in the next years.
+- There is a natural wastage of labour. 
+- A fairly large number of workers leave during their first year. After this, the rate is much smaller. 
+- Taking this into account, the wastage rates of \var{k} manpower with less than one year's service is \var{lessonewaste_{k}}.
+- The wastage rates of \var{k} manpower with more than one year's service is \var{moreonewaste_{k}}.
+- There has been no recent recruitment and all workers in the current labour force have been employed for more than one year.
+- It is possible to recruit a limited number of workers from outside. 
+- In any one year, the numbers that can be recruited in manpower \var{k} is \var{recruit_{k}}.
+- The redundancy payment to manpower \var{k} is \var{costredundancy_{k}}.
+- It is possible to employ up to \var{num_overman} more workers over the whole company than are needed, but the extra costs per employee per year is \var{costoverman_{k}} for manpower \var{k}.
+- Up to \var{num_shortwork} workers in each category of skill can be put on short-time working. 
+- The cost of this (per employee per year) is \var{costshort_{k}} for manpower \var{k}.
+- An employee on short-time working meets the production requirements of half a full-time employee.
+
+
+INPUT FORMAT:
+
+{
+    "requirement": [[requirement_{k, i} for i in 1,...,I] for k in 1,...,K],
+    "strength": [strength_{k} for k in 1,...,K],
+    "lessonewaste": [lessonewaste_{k} for k in 1,...,K],
+    "moreonewaste": [lessonewaste_{k} for k in 1,...,K],
+    "recruit": [recruit_{k} for k in 1,...,K],
+    "costredundancy": [costredundancy_{k} for k in 1,...,K],
+    "num_overman": num_overman,
+    "costoverman": [costoverman_{k} for k in 1,...,K],
+    "num_shortwork": num_shortwork
+    "costshort": [costshort_{k} for k in 1,...,K],
+}
+
+
+OBJECTIVE: The company’s declared objective is to minimize costs. How should they operate in order to do this?
+
+OUTPUT INFO:
+
+- \var{recruit} represents the number of each recruit manpower to employ each year
+- \var{overmanning} represents the number of each overmanning manpower to employ each year
+- \var{short} represents the number of each short-time manpower to employ each year
+
+OUTPUT FORMAT:
+
+{
+    "recruit": [[recruit_{k, i} for i in 1,...,I] for k in 1,...,K],
+    "overmanning": [[overmanning_{k, i} for i in 1,...,I] for k in 1,...,K],
+    "short": [[short_{k, i} for i in 1,...,I] for k in 1,...,K]
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "K": {
+        "definition": "Number of requirements categories",
+        "shape": [],
+        "type": "int"
+    },
+    "I": {
+        "definition": "Number of different requirements",
+        "shape": [],
+        "type": "int"
+    },
+    "Strength": {
+        "definition": "Strength of each requirement category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "LessOneWaste": {
+        "definition": "Cost reduction per unit less waste in each category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "MoreOneWaste": {
+        "definition": "Additional cost per unit more waste in each category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "Recruit": {
+        "definition": "Number of recruits in each category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "CostRedundancy": {
+        "definition": "Cost of redundancy per recruit in each category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "NumOverman": {
+        "definition": "Number of over-managed categories allowed",
+        "shape": [],
+        "type": "int"
+    },
+    "CostOverman": {
+        "definition": "Cost of over-managing in each category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "NumShortwork": {
+        "definition": "Number of short-work categories allowed",
+        "shape": [],
+        "type": "int"
+    },
+    "CostShort": {
+        "definition": "Cost of short-work in each category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "Requirement": {
+        "definition": "Estimated manpower requirements for manpower k in year i",
+        "shape": [
+            "K",
+            "I"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: For each manpower category k and year i, the effective workforce (full-time workers plus 0.5 times short-time workers) plus overmanning must be at least the required manpower requirement_{k,i}
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes — this is **definitely a constraint**, and it should be explicitly modeled in the LP.
+
+### Step-by-step reasoning
+
+1. **The company must meet manpower requirements.**  
+   The problem states that there are estimated manpower requirements \( requirement_{k,i} \) for each category \( k \) and year \( i \). These represent operational needs. Failing to meet them would violate feasibility.
+
+2. **Short-time workers only provide half productivity.**  
+   The description explicitly says:
+   > "An employee on short-time working meets the production requirements of half a full-time employee."
+
+   Therefore, workforce contribution must be modeled as:
+   \[
+   \text{full-time}_{k,i} + 0.5 \cdot \text{short}_{k,i}
+   \]
+
+3. **Overmanning is allowed above requirements.**  
+   The text says:
+   > "It is possible to employ up to num_overman more workers over the whole company than are needed..."
+
+   This clearly implies:
+   - Requirements must first be satisfied.
+   - Overmanning represents workers in excess of requirement.
+   - There is an upper bound on total excess across the company.
+
+   Therefore, overmanning does **not replace** the requirement constraint — it sits on top of it.
+
+4. **Logical structure of the model**
+
+   The natural feasibility condition is:
+
+   \[
+   \text{effective workforce}_{k,i} \ge requirement_{k,i}
+   \]
+
+   where
+
+   \[
+   \text{effective workforce}_{k,i}
+   =
+   \text{full-time}_{k,i}
+   +
+   0.5 \cdot \text{short}_{k,i}
+   \]
+
+   If overmanning is modeled as a separate variable, then it typically satisfies:
+
+   \[
+   \text{effective workforce}_{k,i}
+   =
+   requirement_{k,i}
+   +
+   overmanning_{k,i}
+   \]
+
+   which is equivalent to the ≥ formulation.
+
+5. **Conclusion**
+
+   This is a **core feasibility constraint** — without it, the company could reduce workforce arbitrarily to save cost, violating operational requirements.
+
+✅ It must be explicitly included in the LP formulation.
+
+---
+
+**Confidence level:**  
+5 OUT OF 5
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+PROBLEM INFO:
+
+- A company is undergoing a number of changes that will affect its manpower requirements in future years. 
+- Owing to the installation of new machinery, fewer unskilled but more skilled and semi-skilled workers will be required. 
+- In addition to this, a downturn in trade is expected in the next year, which will reduce the need for workers in all categories.
+- The estimated manpower requirements for manpower \var{k} in year \var{i} is \var{requirement_{k, i}}.
+- The current strength of manpower \var{k} is \var{strength_{k}}.
+- The company wishes to decide its policy with regard to recruitment, retraining, redundancy and short-time working in the next years.
+- There is a natural wastage of labour. 
+- A fairly large number of workers leave during their first year. After this, the rate is much smaller. 
+- Taking this into account, the wastage rates of \var{k} manpower with less than one year's service is \var{lessonewaste_{k}}.
+- The wastage rates of \var{k} manpower with more than one year's service is \var{moreonewaste_{k}}.
+- There has been no recent recruitment and all workers in the current labour force have been employed for more than one year.
+- It is possible to recruit a limited number of workers from outside. 
+- In any one year, the numbers that can be recruited in manpower \var{k} is \var{recruit_{k}}.
+- The redundancy payment to manpower \var{k} is \var{costredundancy_{k}}.
+- It is possible to employ up to \var{num_overman} more workers over the whole company than are needed, but the extra costs per employee per year is \var{costoverman_{k}} for manpower \var{k}.
+- Up to \var{num_shortwork} workers in each category of skill can be put on short-time working. 
+- The cost of this (per employee per year) is \var{costshort_{k}} for manpower \var{k}.
+- An employee on short-time working meets the production requirements of half a full-time employee.
+
+
+INPUT FORMAT:
+
+{
+    "requirement": [[requirement_{k, i} for i in 1,...,I] for k in 1,...,K],
+    "strength": [strength_{k} for k in 1,...,K],
+    "lessonewaste": [lessonewaste_{k} for k in 1,...,K],
+    "moreonewaste": [lessonewaste_{k} for k in 1,...,K],
+    "recruit": [recruit_{k} for k in 1,...,K],
+    "costredundancy": [costredundancy_{k} for k in 1,...,K],
+    "num_overman": num_overman,
+    "costoverman": [costoverman_{k} for k in 1,...,K],
+    "num_shortwork": num_shortwork
+    "costshort": [costshort_{k} for k in 1,...,K],
+}
+
+
+OBJECTIVE: The company’s declared objective is to minimize costs. How should they operate in order to do this?
+
+OUTPUT INFO:
+
+- \var{recruit} represents the number of each recruit manpower to employ each year
+- \var{overmanning} represents the number of each overmanning manpower to employ each year
+- \var{short} represents the number of each short-time manpower to employ each year
+
+OUTPUT FORMAT:
+
+{
+    "recruit": [[recruit_{k, i} for i in 1,...,I] for k in 1,...,K],
+    "overmanning": [[overmanning_{k, i} for i in 1,...,I] for k in 1,...,K],
+    "short": [[short_{k, i} for i in 1,...,I] for k in 1,...,K]
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "K": {
+        "definition": "Number of requirements categories",
+        "shape": [],
+        "type": "int"
+    },
+    "I": {
+        "definition": "Number of different requirements",
+        "shape": [],
+        "type": "int"
+    },
+    "Strength": {
+        "definition": "Strength of each requirement category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "LessOneWaste": {
+        "definition": "Cost reduction per unit less waste in each category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "MoreOneWaste": {
+        "definition": "Additional cost per unit more waste in each category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "Recruit": {
+        "definition": "Number of recruits in each category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "CostRedundancy": {
+        "definition": "Cost of redundancy per recruit in each category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "NumOverman": {
+        "definition": "Number of over-managed categories allowed",
+        "shape": [],
+        "type": "int"
+    },
+    "CostOverman": {
+        "definition": "Cost of over-managing in each category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "NumShortwork": {
+        "definition": "Number of short-work categories allowed",
+        "shape": [],
+        "type": "int"
+    },
+    "CostShort": {
+        "definition": "Cost of short-work in each category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "Requirement": {
+        "definition": "Estimated manpower requirements for manpower k in year i",
+        "shape": [
+            "K",
+            "I"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: For each manpower category k and year i, the number of short-time workers cannot exceed num_shortwork
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is clearly a constraint and should be explicitly modeled.
+
+The problem statement says:
+
+> “Up to `num_shortwork` workers in each category of skill can be put on short-time working.”
+
+This directly imposes an upper bound on the decision variable representing the number of short-time workers in each category. Since decisions are made year by year, this limit must apply **for each manpower category k and each year i**.
+
+So the constraint should be:
+
+\[
+\text{short}_{k,i} \le \text{num\_shortwork} \quad \forall k = 1,\dots,K,\; \forall i = 1,\dots,I
+\]
+
+This is a straightforward capacity constraint on a decision variable and is essential to correctly reflect the problem description. There is no ambiguity in the wording — it explicitly states a maximum number allowed.
+
+**Confidence level:** 5 OUT OF 5
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+PROBLEM INFO:
+
+- A company is undergoing a number of changes that will affect its manpower requirements in future years. 
+- Owing to the installation of new machinery, fewer unskilled but more skilled and semi-skilled workers will be required. 
+- In addition to this, a downturn in trade is expected in the next year, which will reduce the need for workers in all categories.
+- The estimated manpower requirements for manpower \var{k} in year \var{i} is \var{requirement_{k, i}}.
+- The current strength of manpower \var{k} is \var{strength_{k}}.
+- The company wishes to decide its policy with regard to recruitment, retraining, redundancy and short-time working in the next years.
+- There is a natural wastage of labour. 
+- A fairly large number of workers leave during their first year. After this, the rate is much smaller. 
+- Taking this into account, the wastage rates of \var{k} manpower with less than one year's service is \var{lessonewaste_{k}}.
+- The wastage rates of \var{k} manpower with more than one year's service is \var{moreonewaste_{k}}.
+- There has been no recent recruitment and all workers in the current labour force have been employed for more than one year.
+- It is possible to recruit a limited number of workers from outside. 
+- In any one year, the numbers that can be recruited in manpower \var{k} is \var{recruit_{k}}.
+- The redundancy payment to manpower \var{k} is \var{costredundancy_{k}}.
+- It is possible to employ up to \var{num_overman} more workers over the whole company than are needed, but the extra costs per employee per year is \var{costoverman_{k}} for manpower \var{k}.
+- Up to \var{num_shortwork} workers in each category of skill can be put on short-time working. 
+- The cost of this (per employee per year) is \var{costshort_{k}} for manpower \var{k}.
+- An employee on short-time working meets the production requirements of half a full-time employee.
+
+
+INPUT FORMAT:
+
+{
+    "requirement": [[requirement_{k, i} for i in 1,...,I] for k in 1,...,K],
+    "strength": [strength_{k} for k in 1,...,K],
+    "lessonewaste": [lessonewaste_{k} for k in 1,...,K],
+    "moreonewaste": [lessonewaste_{k} for k in 1,...,K],
+    "recruit": [recruit_{k} for k in 1,...,K],
+    "costredundancy": [costredundancy_{k} for k in 1,...,K],
+    "num_overman": num_overman,
+    "costoverman": [costoverman_{k} for k in 1,...,K],
+    "num_shortwork": num_shortwork
+    "costshort": [costshort_{k} for k in 1,...,K],
+}
+
+
+OBJECTIVE: The company’s declared objective is to minimize costs. How should they operate in order to do this?
+
+OUTPUT INFO:
+
+- \var{recruit} represents the number of each recruit manpower to employ each year
+- \var{overmanning} represents the number of each overmanning manpower to employ each year
+- \var{short} represents the number of each short-time manpower to employ each year
+
+OUTPUT FORMAT:
+
+{
+    "recruit": [[recruit_{k, i} for i in 1,...,I] for k in 1,...,K],
+    "overmanning": [[overmanning_{k, i} for i in 1,...,I] for k in 1,...,K],
+    "short": [[short_{k, i} for i in 1,...,I] for k in 1,...,K]
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "K": {
+        "definition": "Number of requirements categories",
+        "shape": [],
+        "type": "int"
+    },
+    "I": {
+        "definition": "Number of different requirements",
+        "shape": [],
+        "type": "int"
+    },
+    "Strength": {
+        "definition": "Strength of each requirement category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "LessOneWaste": {
+        "definition": "Cost reduction per unit less waste in each category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "MoreOneWaste": {
+        "definition": "Additional cost per unit more waste in each category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "Recruit": {
+        "definition": "Number of recruits in each category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "CostRedundancy": {
+        "definition": "Cost of redundancy per recruit in each category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "NumOverman": {
+        "definition": "Number of over-managed categories allowed",
+        "shape": [],
+        "type": "int"
+    },
+    "CostOverman": {
+        "definition": "Cost of over-managing in each category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "NumShortwork": {
+        "definition": "Number of short-work categories allowed",
+        "shape": [],
+        "type": "int"
+    },
+    "CostShort": {
+        "definition": "Cost of short-work in each category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "Requirement": {
+        "definition": "Estimated manpower requirements for manpower k in year i",
+        "shape": [
+            "K",
+            "I"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: For each manpower category k and year i, the total overmanning across all categories cannot exceed num_overman
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is** a real constraint implied by the problem description — but it is slightly mis-indexed in the way it is written.
+
+The text states:
+
+> "It is possible to employ up to num_overman more workers over the whole company than are needed..."
+
+This clearly implies:
+
+\[
+\sum_{k=1}^{K} \text{overmanning}_{k,i} \le \text{num\_overman}
+\quad \forall i
+\]
+
+So:
+
+- ✅ The constraint exists.
+- ✅ It applies **per year**.
+- ✅ It applies to the **sum across all categories**.
+- ❌ It does **not** depend on each category \(k\) separately.
+
+The proposed wording:
+
+> "For each manpower category k and year i, the total overmanning across all categories cannot exceed num_overman"
+
+is redundant in \(k\), since the left-hand side already sums over all categories. If implemented literally, it would just repeat the same constraint \(K\) times, which does not change the feasible region but is conceptually incorrect.
+
+However, the underlying restriction **must absolutely be modeled** in the LP.
+
+### Final Answer  
+Yes, this is a real constraint and should be explicitly included (indexed by year only).
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+PROBLEM INFO:
+
+- A company is undergoing a number of changes that will affect its manpower requirements in future years. 
+- Owing to the installation of new machinery, fewer unskilled but more skilled and semi-skilled workers will be required. 
+- In addition to this, a downturn in trade is expected in the next year, which will reduce the need for workers in all categories.
+- The estimated manpower requirements for manpower \var{k} in year \var{i} is \var{requirement_{k, i}}.
+- The current strength of manpower \var{k} is \var{strength_{k}}.
+- The company wishes to decide its policy with regard to recruitment, retraining, redundancy and short-time working in the next years.
+- There is a natural wastage of labour. 
+- A fairly large number of workers leave during their first year. After this, the rate is much smaller. 
+- Taking this into account, the wastage rates of \var{k} manpower with less than one year's service is \var{lessonewaste_{k}}.
+- The wastage rates of \var{k} manpower with more than one year's service is \var{moreonewaste_{k}}.
+- There has been no recent recruitment and all workers in the current labour force have been employed for more than one year.
+- It is possible to recruit a limited number of workers from outside. 
+- In any one year, the numbers that can be recruited in manpower \var{k} is \var{recruit_{k}}.
+- The redundancy payment to manpower \var{k} is \var{costredundancy_{k}}.
+- It is possible to employ up to \var{num_overman} more workers over the whole company than are needed, but the extra costs per employee per year is \var{costoverman_{k}} for manpower \var{k}.
+- Up to \var{num_shortwork} workers in each category of skill can be put on short-time working. 
+- The cost of this (per employee per year) is \var{costshort_{k}} for manpower \var{k}.
+- An employee on short-time working meets the production requirements of half a full-time employee.
+
+
+INPUT FORMAT:
+
+{
+    "requirement": [[requirement_{k, i} for i in 1,...,I] for k in 1,...,K],
+    "strength": [strength_{k} for k in 1,...,K],
+    "lessonewaste": [lessonewaste_{k} for k in 1,...,K],
+    "moreonewaste": [lessonewaste_{k} for k in 1,...,K],
+    "recruit": [recruit_{k} for k in 1,...,K],
+    "costredundancy": [costredundancy_{k} for k in 1,...,K],
+    "num_overman": num_overman,
+    "costoverman": [costoverman_{k} for k in 1,...,K],
+    "num_shortwork": num_shortwork
+    "costshort": [costshort_{k} for k in 1,...,K],
+}
+
+
+OBJECTIVE: The company’s declared objective is to minimize costs. How should they operate in order to do this?
+
+OUTPUT INFO:
+
+- \var{recruit} represents the number of each recruit manpower to employ each year
+- \var{overmanning} represents the number of each overmanning manpower to employ each year
+- \var{short} represents the number of each short-time manpower to employ each year
+
+OUTPUT FORMAT:
+
+{
+    "recruit": [[recruit_{k, i} for i in 1,...,I] for k in 1,...,K],
+    "overmanning": [[overmanning_{k, i} for i in 1,...,I] for k in 1,...,K],
+    "short": [[short_{k, i} for i in 1,...,I] for k in 1,...,K]
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "K": {
+        "definition": "Number of requirements categories",
+        "shape": [],
+        "type": "int"
+    },
+    "I": {
+        "definition": "Number of different requirements",
+        "shape": [],
+        "type": "int"
+    },
+    "Strength": {
+        "definition": "Strength of each requirement category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "LessOneWaste": {
+        "definition": "Cost reduction per unit less waste in each category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "MoreOneWaste": {
+        "definition": "Additional cost per unit more waste in each category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "Recruit": {
+        "definition": "Number of recruits in each category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "CostRedundancy": {
+        "definition": "Cost of redundancy per recruit in each category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "NumOverman": {
+        "definition": "Number of over-managed categories allowed",
+        "shape": [],
+        "type": "int"
+    },
+    "CostOverman": {
+        "definition": "Cost of over-managing in each category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "NumShortwork": {
+        "definition": "Number of short-work categories allowed",
+        "shape": [],
+        "type": "int"
+    },
+    "CostShort": {
+        "definition": "Cost of short-work in each category",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "Requirement": {
+        "definition": "Estimated manpower requirements for manpower k in year i",
+        "shape": [
+            "K",
+            "I"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: All decision variables (recruitment, redundancies, overmanning, short-time workers, workforce levels) must be nonnegative
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes — this **is** a constraint, specifically a **domain (nonnegativity) constraint** on the decision variables.
+
+### Why this is a real constraint
+
+All listed decision variables represent physical quantities:
+
+- Recruitment numbers  
+- Redundancies  
+- Overmanning levels  
+- Short-time workers  
+- Workforce levels  
+
+These quantities **cannot be negative in reality**. A negative number of recruits or workers would be meaningless.
+
+In linear programming, unless otherwise specified, variables are typically assumed to be continuous and unrestricted in sign. Therefore, **we must explicitly impose nonnegativity constraints** unless the modeling framework automatically assumes them.
+
+### Mathematical form
+
+For all categories \( k \) and years \( i \):
+
+\[
+\text{recruit}_{k,i} \ge 0
+\]
+\[
+\text{overmanning}_{k,i} \ge 0
+\]
+\[
+\text{short}_{k,i} \ge 0
+\]
+\[
+\text{redundancy}_{k,i} \ge 0
+\]
+\[
+\text{workforce}_{k,i} \ge 0
+\]
+
+These are standard LP feasibility constraints.
+
+### Should it be explicitly modeled?
+
+✅ Yes.  
+Even though nonnegativity is often considered implicit, it **must be included in the mathematical formulation** unless the solver assumes it by default.
+
+There is no modeling ambiguity here — these quantities cannot logically be negative.
+
+### Confidence Level
+
+5 OUT OF 5
++--+
+---
+The confidence score is 5, which is high enough.
+---
+
+
+
+++++++++++++++++++++++++++++++
+Extracting constraint formulations
+++++++++++++++++++++++++++++++
+
+
+
+----
+{
+    "FORMULATION": "$\\forall k,\\; \\forall i = 2,\\dots,I:\\; workforceLess[k,i] + workforceMore[k,i] = (1 - LessOneWaste[k]) \\, workforceLess[k,i-1] + (1 - MoreOneWaste[k]) \\, workforceMore[k,i-1] + recruit[k,i] - redundancy[k,i]$",
+    "NEW VARIABLES": {
+        "workforceLess": {
+            "shape": "[K, I]",
+            "type": "continuous",
+            "definition": "Number of workers in category k in year i with less than one year of service"
+        },
+        "workforceMore": {
+            "shape": "[K, I]",
+            "type": "continuous",
+            "definition": "Number of workers in category k in year i with more than one year of service"
+        },
+        "recruit": {
+            "shape": "[K, I]",
+            "type": "continuous",
+            "definition": "Number of workers recruited in category k in year i"
+        },
+        "redundancy": {
+            "shape": "[K, I]",
+            "type": "continuous",
+            "definition": "Number of workers made redundant in category k in year i"
+        }
+    },
+    "AUXILIARY CONSTRAINTS": [
+        "$\\forall k,\\; \\forall i = 1,\\dots,I:\\; workforceLess[k,i] = recruit[k,i]$",
+        "$\\forall k,\\; workforceMore[k,1] = (1 - MoreOneWaste[k]) \\, Strength[k] - redundancy[k,1]$",
+        "$\\forall k,\\; workforceLess[k,1] + workforceMore[k,1] = (1 - MoreOneWaste[k]) \\, Strength[k] + recruit[k,1] - redundancy[k,1]$"
+    ]
+}
+----

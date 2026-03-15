@@ -1,0 +1,118 @@
+{
+    "description": "PROBLEM TYPE: LP\n\nPROBLEM INFO:\n\n- A company produces \\var{S} different types of steel using \\var{A} different alloys.\n- The company has \\var{available_{a}} tons of alloy \\var{a} available.\n- Steel \\var{s} requires a certain percentage of carbon \\var{carbon_min_{s}}.\n- Steel \\var{s} has a maximum allowable percentage for nickel \\var{nickel_max_{s}}.\n- Alloy \\var{a} contains \\var{carbon_{a}} percent of carbon and \\var{nickel_{a}} percent of nickel.\n- Alloy \\var{a} has a purchase price of \\var{alloy_price_{a}} per ton.\n- Steel \\var{s} has a selling price of \\var{steel_price_{s}} per ton.\n- All steel must have at most 40% of alloy 1.\n\nINPUT FORMAT: \n\n{\n\"available\": [available_{a} for a in 1, ..., A],\n\"carbon\": [carbon_{a} for a in 1, ..., A],\n\"nickel\": [nickel_{a} for a in 1, ..., A],\n\"alloy_prices\": [alloy_price_{a} for a in 1, ..., A],\n\"steel_prices\": [steel_price_{s} for s in 1, ..., S],\n\"carbon_min\": [carbon_min_{s} for s in 1, ..., S],\n\"nickel_max\": [nickel_min_{s} for s in 1, ..., S]\n}\n\nOBJECTIVE: How much of each alloy should the company use in each type of steel, and how much of each steel type should be produced to maximize profit?\n\nOUTPUT INFO:\n\n- The amount of each alloy used in each type of steel \\var{alloy_amount_{a,s}}.\n- \\var{total_steel_{s}} shows the total amount of steel type \\var{s} produced.\n- \\var{total_profit} represents the total profit.\n\nOUTPUT FORMAT:\n\n{\n    \"alloy_use\": [[alloy_amount_{a,s} for a in 1, ..., A] for s in 1, ..., S],\n    \"total_steel\": [total_steel_{s} for s in 1, ..., S],\n    \"total_profit\": total_profit\n}",
+    "parameters": {
+        "A": {
+            "definition": "Total number of different alloys",
+            "shape": [],
+            "type": "int"
+        },
+        "S": {
+            "definition": "Total number of different steel types",
+            "shape": [],
+            "type": "int"
+        },
+        "AvailableAlloy": {
+            "definition": "Available amount of alloy a",
+            "shape": [
+                "A"
+            ],
+            "type": "string"
+        },
+        "CarbonContent": {
+            "definition": "Carbon content of alloy a",
+            "shape": [
+                "A"
+            ],
+            "type": "string"
+        },
+        "NickelContent": {
+            "definition": "Nickel content of alloy a",
+            "shape": [
+                "A"
+            ],
+            "type": "string"
+        },
+        "AlloyPrice": {
+            "definition": "Price of alloy a",
+            "shape": [
+                "A"
+            ],
+            "type": "string"
+        },
+        "SteelPrice": {
+            "definition": "Price of steel type s",
+            "shape": [
+                "S"
+            ],
+            "type": "string"
+        },
+        "CarbonMin": {
+            "definition": "Minimum required carbon content for steel type s",
+            "shape": [
+                "S"
+            ],
+            "type": "string"
+        },
+        "NickelMax": {
+            "definition": "Maximum allowed nickel content for steel type s",
+            "shape": [
+                "S"
+            ],
+            "type": "string"
+        }
+    },
+    "objective": {
+        "description": "\"Maximize the total profit from producing and selling steel, calculated as total steel sales revenue minus the total cost of purchased alloys.\"",
+        "formulation": "$\\max \\sum_{s=1}^{S} SteelPrice_s \\, totalSteel_s \\;-\\; \\sum_{a=1}^{A} \\sum_{s=1}^{S} AlloyPrice_a \\, alloyUse_{a,s}$",
+        "code": "model.setObjective(\n    quicksum(SteelPrice[s] * totalSteel[s] for s in range(S))\n    - quicksum(AlloyPrice[a] * alloyUse[a, s] for a in range(A) for s in range(S)),\n    GRB.MAXIMIZE\n)"
+    },
+    "constraints": [
+        {
+            "description": "For each steel type s, the total amount of steel produced equals the sum of the amounts of all alloys used in that steel type (total_steel_s = sum over a of alloy_amount_{a,s})",
+            "formulation": "$\\\\forall s \\\\in \\\\{1, \\\\dots, S\\\\}, \\\\; totalSteel[s] = \\\\sum_{a=1}^{A} alloyUse[a, s]$",
+            "code": "for s in range(S):\n    model.addConstr(\n        totalSteel[s] == sum(alloyUse[a, s] for a in range(A))\n    )"
+        },
+        {
+            "description": "For each alloy a, the total amount used across all steel types must not exceed the available amount of that alloy (sum over s of alloy_amount_{a,s} \u2264 AvailableAlloy_a)",
+            "formulation": "$\\\\forall a = 1, \\\\dots, A, \\\\; \\\\sum_{s=1}^{S} alloyUse[a,s] \\\\leq AvailableAlloy[a]$",
+            "code": "for a in range(A):\n    model.addConstr(\n        sum(alloyUse[a, s] for s in range(S)) <= AvailableAlloy[a]\n    )"
+        },
+        {
+            "description": "For each steel type s, the weighted average carbon content must be at least the minimum required carbon content (sum over a of CarbonContent_a * alloy_amount_{a,s} \u2265 CarbonMin_s * total_steel_s)",
+            "formulation": "$\\\\forall s = 1, \\\\dots, S:\\\\; \\\\sum_{a=1}^{A} CarbonContent_a \\\\cdot alloyUse_{a,s} \\\\geq CarbonMin_s \\\\cdot totalSteel_s$",
+            "code": "for s in range(S):\n    model.addConstr(\n        sum(CarbonContent[a] * alloyUse[a, s] for a in range(A)) \n        >= CarbonMin[s] * totalSteel[s]\n    )"
+        },
+        {
+            "description": "For each steel type s, the weighted average nickel content must be at most the maximum allowed nickel content (sum over a of NickelContent_a * alloy_amount_{a,s} \u2264 NickelMax_s * total_steel_s)",
+            "formulation": "$\\\\forall s = 1, \\\\dots, S:\\\\; \\\\sum_{a=1}^{A} NickelContent_a \\\\cdot alloyUse_{a,s} \\\\leq NickelMax_s \\\\cdot totalSteel_s$",
+            "code": "for s in range(S):\n    model.addConstr(\n        sum(NickelContent[a] * alloyUse[a, s] for a in range(A))\n        <= NickelMax[s] * totalSteel[s]\n    )"
+        },
+        {
+            "description": "For each steel type s, the amount of alloy 1 used must be at most 40% of the total steel produced of that type (alloy_amount_{1,s} \u2264 0.4 * total_steel_s)",
+            "formulation": "$\\\\forall s = 1, \\\\dots, S,\\\\; alloyUse_{1,s} \\\\leq 0.4 \\\\, totalSteel_s$",
+            "code": "for s in range(S):\n    model.addConstr(alloyUse[0, s] <= 0.4 * totalSteel[s])"
+        },
+        {
+            "description": "All alloy_amount_{a,s} variables must be non-negative",
+            "formulation": "$\\\\forall a = 1, \\\\dots, A, \\\\; \\\\forall s = 1, \\\\dots, S, \\\\; alloyUse[a,s] \\\\geq 0$",
+            "code": "for a in range(A):\n    for s in range(S):\n        model.addConstr(alloyUse[a, s] >= 0)"
+        }
+    ],
+    "variables": {
+        "alloyUse": {
+            "shape": [
+                "A",
+                "S"
+            ],
+            "type": "continuous",
+            "definition": "Amount of alloy a used in steel type s"
+        },
+        "totalSteel": {
+            "shape": [
+                "S"
+            ],
+            "type": "continuous",
+            "definition": "Total amount of steel type s produced"
+        }
+    }
+}

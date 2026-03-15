@@ -1,0 +1,78 @@
+{
+    "description": "A car manufacturer makes two types of car oils: Oil Max and Oil Max Pro. A container of Oil Max contains 46 grams of substance A, 43 grams of substance B and 56 grams of substance C. A container of Oil Max Pro contains 13 grams of substance A, 4 grams of substance B and 45 grams of substance C. The car manufacturer has 1345 grams of substance A, 346 grams of substance B, 1643 grams of substance C. In addition, the profit per container of Oil Max is $10 and the profit per container of Oil Max Pro is $15. How many containers of each of oil should the car manufacturer make to maximize profit?",
+    "parameters": {
+        "NumOilTypes": {
+            "definition": "Number of different types of car oils produced",
+            "shape": [],
+            "type": "int"
+        },
+        "NumSubstances": {
+            "definition": "Number of different substances used in the car oils",
+            "shape": [],
+            "type": "int"
+        },
+        "ProfitPerContainer": {
+            "definition": "Profit per container for each type of car oil",
+            "shape": [
+                "NumOilTypes"
+            ],
+            "type": "string"
+        },
+        "SubstanceAmountPerContainer": {
+            "definition": "Amount of each substance required per container of each type of car oil",
+            "shape": [
+                "NumSubstances",
+                "NumOilTypes"
+            ],
+            "type": "string"
+        },
+        "AvailableSubstances": {
+            "definition": "Available amount of each substance",
+            "shape": [
+                "NumSubstances"
+            ],
+            "type": "string"
+        }
+    },
+    "objective": {
+        "description": "\"Maximize the total profit from producing Oil Max and Oil Max Pro containers\"",
+        "formulation": "$\\max \\sum_{i=1}^{NumOilTypes} ProfitPerContainer_i \\cdot ContainersProduced_i$",
+        "code": "model.setObjective(\n    quicksum(ProfitPerContainer[i] * ContainersProduced[i] for i in range(NumOilTypes)),\n    GRB.MAXIMIZE\n)"
+    },
+    "constraints": [
+        {
+            "description": "The total amount of substance A used in Oil Max and Oil Max Pro must not exceed 1345 grams",
+            "formulation": "$\\\\sum_{t=1}^{NumOilTypes} SubstanceAmountPerContainer[1,t] \\\\cdot ContainersProduced[t] \\\\leq 1345$",
+            "code": "model.addConstr(\n    sum(SubstanceAmountPerContainer[0][t] * ContainersProduced[t] \n        for t in range(NumOilTypes)) \n    <= AvailableSubstances[0]\n)"
+        },
+        {
+            "description": "The total amount of substance B used in Oil Max and Oil Max Pro must not exceed 346 grams",
+            "formulation": "$\\\\sum_{j=1}^{NumOilTypes} SubstanceAmountPerContainer[2, j] \\\\cdot ContainersProduced[j] \\\\leq AvailableSubstances[2]$",
+            "code": "model.addConstr(\n    sum(SubstanceAmountPerContainer[2][j] * ContainersProduced[j] \n        for j in range(NumOilTypes)) \n    <= AvailableSubstances[2]\n)"
+        },
+        {
+            "description": "The total amount of substance C used in Oil Max and Oil Max Pro must not exceed 1643 grams",
+            "formulation": "$\\\\sum_{j=1}^{NumOilTypes} SubstanceAmountPerContainer[3, j] \\\\cdot ContainersProduced[j] \\\\leq AvailableSubstances[3]$",
+            "code": "model.addConstr(\n    sum(SubstanceAmountPerContainer[2][j] * ContainersProduced[j] \n        for j in range(NumOilTypes)) \n    <= AvailableSubstances[2]\n)"
+        },
+        {
+            "description": "The number of containers of each type of oil produced must be non-negative",
+            "formulation": "$\\\\forall i \\\\in \\\\{1, \\\\dots, NumOilTypes\\\\},\\\\ ContainersProduced[i] \\\\ge 0$",
+            "code": "for i in range(NumOilTypes):\n    model.addConstr(ContainersProduced[i] >= 0)"
+        },
+        {
+            "description": "The number of containers of each type of oil produced must be an integer",
+            "formulation": "$\\\\forall i = 1, \\\\dots, NumOilTypes, \\\\; ContainersProduced[i] \\\\in \\\\mathbb{Z}_{\\\\ge 0}$",
+            "code": "for i in range(NumOilTypes):\n    model.addConstr(ContainersProduced[i] >= 0)"
+        }
+    ],
+    "variables": {
+        "ContainersProduced": {
+            "shape": [
+                "NumOilTypes"
+            ],
+            "type": "integer",
+            "definition": "Number of containers produced for each type of car oil"
+        }
+    }
+}

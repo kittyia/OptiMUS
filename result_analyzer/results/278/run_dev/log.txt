@@ -1,0 +1,232 @@
+----
+[
+    "For each machine s, the total worker-hours used by all parts cannot exceed its available capacity: sum over k of (Time[k,s] * x[k]) <= Capacity[s]",
+    "The production quantity of each part must be non-negative: x[k] >= 0 for all k"
+]
+----
++++++++++++++++++++
+++ Constraint Qs ++
++++++++++++++++++++
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+A small firm specializes in making some types of spare automobile parts. Each part has to go through several machines. We know the required worker-hours for each part on each machine. We also know the profit made on each part. Each machine has a capacity in terms of worker-hours. The firm wants to determine how many of each part to make in order to maximize profit.
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "NumParts": {
+        "definition": "Number of types of spare parts",
+        "shape": [],
+        "type": "int"
+    },
+    "NumMachines": {
+        "definition": "Number of machines",
+        "shape": [],
+        "type": "int"
+    },
+    "Time": {
+        "definition": "Worker-hours required to produce one unit of part k on machine s",
+        "shape": [
+            "NumParts",
+            "NumMachines"
+        ],
+        "type": "string"
+    },
+    "Profit": {
+        "definition": "Profit from producing one unit of part k",
+        "shape": [
+            "NumParts"
+        ],
+        "type": "string"
+    },
+    "Capacity": {
+        "definition": "Available worker-hours capacity of machine s",
+        "shape": [
+            "NumMachines"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: For each machine s, the total worker-hours used by all parts cannot exceed its available capacity: sum over k of (Time[k,s] * x[k]) <= Capacity[s]
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is definitely a constraint and it should be explicitly included in the (MI)LP formulation.
+
+Reasoning:
+
+- Each part requires a certain number of worker-hours on each machine (`Time[k,s]`).
+- If we produce `x[k]` units of part k, then the total worker-hours used on machine s is  
+  \[
+  \sum_k \text{Time}[k,s] \cdot x[k].
+  \]
+- Each machine has a limited capacity in worker-hours (`Capacity[s]`).
+- Since machine capacity is limited, total usage cannot exceed available capacity.
+
+This is a classic resource capacity constraint in production planning models. Without it, the model could produce unlimited quantities of the most profitable part, which would violate the real-world limitation described.
+
+Therefore, this constraint is essential and must be included in the model.
+
+5 OUT OF 5
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+A small firm specializes in making some types of spare automobile parts. Each part has to go through several machines. We know the required worker-hours for each part on each machine. We also know the profit made on each part. Each machine has a capacity in terms of worker-hours. The firm wants to determine how many of each part to make in order to maximize profit.
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "NumParts": {
+        "definition": "Number of types of spare parts",
+        "shape": [],
+        "type": "int"
+    },
+    "NumMachines": {
+        "definition": "Number of machines",
+        "shape": [],
+        "type": "int"
+    },
+    "Time": {
+        "definition": "Worker-hours required to produce one unit of part k on machine s",
+        "shape": [
+            "NumParts",
+            "NumMachines"
+        ],
+        "type": "string"
+    },
+    "Profit": {
+        "definition": "Profit from producing one unit of part k",
+        "shape": [
+            "NumParts"
+        ],
+        "type": "string"
+    },
+    "Capacity": {
+        "definition": "Available worker-hours capacity of machine s",
+        "shape": [
+            "NumMachines"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: The production quantity of each part must be non-negative: x[k] >= 0 for all k
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is** a constraint.
+
+In this problem, the decision variables \( x[k] \) represent the quantity of each part produced. In reality, production quantities cannot be negative — it is physically impossible to produce a negative number of parts. 
+
+In mathematical optimization models (LP/MILP), unless otherwise specified, variables are typically unrestricted in sign by default. Therefore, if we want to ensure that production quantities are feasible and meaningful, we **must explicitly impose non-negativity constraints**:
+
+\[
+x[k] \ge 0 \quad \forall k
+\]
+
+This is a standard and necessary modeling constraint. It defines the domain of the decision variables and ensures the model remains physically and economically meaningful.
+
+✅ It is definitely a constraint.  
+✅ It must be explicitly modeled (unless the modeling language automatically assumes non-negativity, which should not be relied upon without confirmation).
+
+**Confidence level:** 5 OUT OF 5
++--+
+---
+The confidence score is 5, which is high enough.
+---
+
+
+
+++++++++++++++++++++++++++++++
+Extracting constraint formulations
+++++++++++++++++++++++++++++++
+
+
+
+----
+{
+    "FORMULATION": "$\\forall s = 1, \\dots, \\text{NumMachines}, \\; \\sum_{k=1}^{\\text{NumParts}} \\text{Time}[k,s] \\cdot x[k] \\leq \\text{Capacity}[s]$",
+    "NEW VARIABLES": {
+        "x": {
+            "shape": "[NumParts]",
+            "type": "continuous",
+            "definition": "Number of units of part k to produce"
+        }
+    },
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\forall s = 1, \\dots, \\text{NumMachines}, \\; \\sum_{k=1}^{\\text{NumParts}} \\text{Time}[k,s] \\cdot x[k] \\leq \\text{Capacity}[s]$
+{'x': {'shape': '[NumParts]', 'type': 'continuous', 'definition': 'Number of units of part k to produce'}}
+[]
+----
+----
+{
+    "FORMULATION": "$\\forall k = 1, \\dots, NumParts,\\; x[k] \\ge 0$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\forall k = 1, \\dots, NumParts,\\; x[k] \\ge 0$
+{}
+[]
+----
+Code executed successfully. Output:
+Restricted license - for non-production use only - expires 2027-11-29
+Gurobi Optimizer version 13.0.1 build v13.0.1rc0 (linux64 - "Alibaba Cloud Linux 3.2104 U12.3 (OpenAnolis Edition)")
+
+CPU model: Intel(R) Xeon(R) Platinum, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 1 physical cores, 2 logical processors, using up to 2 threads
+
+Optimize a model with 7 rows, 5 columns and 15 nonzeros (Max)
+Model fingerprint: 0x89b4dfe0
+Model has 5 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [1e+00, 3e+00]
+  Objective range  [1e+01, 4e+01]
+  Bounds range     [0e+00, 0e+00]
+  RHS range        [7e+02, 1e+03]
+
+Presolve removed 5 rows and 0 columns
+Presolve time: 0.00s
+Presolved: 2 rows, 5 columns, 10 nonzeros
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0    1.4000000e+04   4.993738e+01   0.000000e+00      0s
+       3    1.2000000e+04   0.000000e+00   0.000000e+00      0s
+
+Solved in 3 iterations and 0.00 seconds (0.00 work units)
+Optimal objective  1.200000000e+04
+Optimal Objective Value:  12000.0
+Optimal Objective Value:  12000.0
+

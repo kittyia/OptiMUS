@@ -1,0 +1,541 @@
+----
+[
+    "For each time period, the total available capacity (oil-fired capacity plus active coal capacity plus active nuclear capacity) must be at least equal to the electricity demand in that period",
+    "For each time period, the active nuclear capacity must not exceed MaxNuke times the total available capacity (oil-fired plus active coal plus active nuclear capacity)",
+    "In each time period, the active coal capacity is equal to the sum of coal capacities built in the current and previous CoalLife - 1 periods (i.e., coal plants operate only for CoalLife periods)",
+    "In each time period, the active nuclear capacity is equal to the sum of nuclear capacities built in the current and previous NukeLife - 1 periods (i.e., nuclear plants operate only for NukeLife periods)",
+    "The amount of coal and nuclear capacity built in each time period must be non-negative"
+]
+----
++++++++++++++++++++
+++ Constraint Qs ++
++++++++++++++++++++
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+A state is planning its electricity capacity for the next several years. The state has a forecast of the demand for electricity each year, which is presumed to be accurate. Currently, there are existing oil-fired power plants that will continue to operate and provide some of the needed electricity.
+To meet the growing demand, the state is considering building either coal-fired or nuclear power plants. Building coal plants costs a certain amount per unit of capacity, and similarly, building nuclear plants has its own cost per unit of capacity.
+However, there are limitations. For political and safety reasons, the state has decided that nuclear power should not exceed a certain percentage of the total electricity capacity. Additionally, coal plants have a certain lifespan, after which they will no longer be operational, and the same goes for nuclear plants.
+The goal is to figure out the most cost-effective plan to expand electricity capacity by deciding how much to invest in coal and nuclear plants each year, while adhering to the constraints on nuclear power and considering the lifespan of each type of plant.
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "T": {
+        "definition": "Number of time periods",
+        "shape": [],
+        "type": "int"
+    },
+    "Demand": {
+        "definition": "Demand for electricity in each time period",
+        "shape": [
+            "T"
+        ],
+        "type": "string"
+    },
+    "OilCap": {
+        "definition": "Available capacity from existing oil-fired plants in each time period",
+        "shape": [
+            "T"
+        ],
+        "type": "string"
+    },
+    "CoalCost": {
+        "definition": "Cost per unit of capacity for building a coal plant",
+        "shape": [],
+        "type": "int"
+    },
+    "NukeCost": {
+        "definition": "Cost per unit of capacity for building a nuclear plant",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxNuke": {
+        "definition": "Maximum fraction of total capacity that can be nuclear",
+        "shape": [],
+        "type": "float"
+    },
+    "CoalLife": {
+        "definition": "Lifespan of a coal plant in time periods",
+        "shape": [],
+        "type": "int"
+    },
+    "NukeLife": {
+        "definition": "Lifespan of a nuclear plant in time periods",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: For each time period, the total available capacity (oil-fired capacity plus active coal capacity plus active nuclear capacity) must be at least equal to the electricity demand in that period
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is absolutely a constraint and it must be explicitly modeled.
+
+### Why this is a constraint
+
+The entire purpose of the planning problem is to ensure that future electricity demand is met at minimum cost. The description states:
+
+- Demand is forecast and presumed accurate.
+- Existing oil plants provide some capacity.
+- Additional coal and nuclear plants may be built to meet growing demand.
+
+If we do **not** enforce that total available capacity (oil + active coal + active nuclear) is at least demand in each period, the model could choose to build no new plants at all (to minimize cost), even when demand exceeds available oil capacity. That would clearly violate the real-world requirement of serving demand.
+
+Therefore, this condition is:
+
+- Structurally necessary  
+- Implied directly by the planning objective  
+- A core feasibility constraint in any capacity expansion model  
+
+Mathematically, for each period \( t \):
+
+\[
+\text{OilCap}_t + \text{ActiveCoal}_t + \text{ActiveNuke}_t \ge \text{Demand}_t
+\]
+
+This is a standard capacity adequacy constraint in generation expansion planning models.
+
+### Confidence
+
+There is essentially no ambiguity here. This is a fundamental modeling constraint.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+A state is planning its electricity capacity for the next several years. The state has a forecast of the demand for electricity each year, which is presumed to be accurate. Currently, there are existing oil-fired power plants that will continue to operate and provide some of the needed electricity.
+To meet the growing demand, the state is considering building either coal-fired or nuclear power plants. Building coal plants costs a certain amount per unit of capacity, and similarly, building nuclear plants has its own cost per unit of capacity.
+However, there are limitations. For political and safety reasons, the state has decided that nuclear power should not exceed a certain percentage of the total electricity capacity. Additionally, coal plants have a certain lifespan, after which they will no longer be operational, and the same goes for nuclear plants.
+The goal is to figure out the most cost-effective plan to expand electricity capacity by deciding how much to invest in coal and nuclear plants each year, while adhering to the constraints on nuclear power and considering the lifespan of each type of plant.
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "T": {
+        "definition": "Number of time periods",
+        "shape": [],
+        "type": "int"
+    },
+    "Demand": {
+        "definition": "Demand for electricity in each time period",
+        "shape": [
+            "T"
+        ],
+        "type": "string"
+    },
+    "OilCap": {
+        "definition": "Available capacity from existing oil-fired plants in each time period",
+        "shape": [
+            "T"
+        ],
+        "type": "string"
+    },
+    "CoalCost": {
+        "definition": "Cost per unit of capacity for building a coal plant",
+        "shape": [],
+        "type": "int"
+    },
+    "NukeCost": {
+        "definition": "Cost per unit of capacity for building a nuclear plant",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxNuke": {
+        "definition": "Maximum fraction of total capacity that can be nuclear",
+        "shape": [],
+        "type": "float"
+    },
+    "CoalLife": {
+        "definition": "Lifespan of a coal plant in time periods",
+        "shape": [],
+        "type": "int"
+    },
+    "NukeLife": {
+        "definition": "Lifespan of a nuclear plant in time periods",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: For each time period, the active nuclear capacity must not exceed MaxNuke times the total available capacity (oil-fired plus active coal plus active nuclear capacity)
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is clearly a constraint and should be explicitly modeled.
+
+The problem statement says:
+
+> “For political and safety reasons, the state has decided that nuclear power should not exceed a certain percentage of the total electricity capacity.”
+
+This directly translates into a mathematical restriction on the system in every time period. Since capacity evolves over time (due to investment decisions and plant lifetimes), this limit must be enforced **for each time period**.
+
+Let:
+- \( N_t \) = active nuclear capacity in period \( t \)  
+- \( C_t \) = active coal capacity in period \( t \)  
+- \( O_t \) = oil capacity in period \( t \)  
+
+The constraint is:
+
+\[
+N_t \le \text{MaxNuke} \cdot (O_t + C_t + N_t)
+\quad \forall t
+\]
+
+This is a structural policy constraint, not something implied automatically by other constraints. If we omit it, the model could invest arbitrarily heavily in nuclear power (if cheaper), violating the political restriction.
+
+It is also linear (can be rearranged as \((1 - \text{MaxNuke})N_t \le \text{MaxNuke}(O_t + C_t)\)), so it fits cleanly into an LP/MILP framework.
+
+Therefore, this absolutely belongs in the formulation.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+A state is planning its electricity capacity for the next several years. The state has a forecast of the demand for electricity each year, which is presumed to be accurate. Currently, there are existing oil-fired power plants that will continue to operate and provide some of the needed electricity.
+To meet the growing demand, the state is considering building either coal-fired or nuclear power plants. Building coal plants costs a certain amount per unit of capacity, and similarly, building nuclear plants has its own cost per unit of capacity.
+However, there are limitations. For political and safety reasons, the state has decided that nuclear power should not exceed a certain percentage of the total electricity capacity. Additionally, coal plants have a certain lifespan, after which they will no longer be operational, and the same goes for nuclear plants.
+The goal is to figure out the most cost-effective plan to expand electricity capacity by deciding how much to invest in coal and nuclear plants each year, while adhering to the constraints on nuclear power and considering the lifespan of each type of plant.
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "T": {
+        "definition": "Number of time periods",
+        "shape": [],
+        "type": "int"
+    },
+    "Demand": {
+        "definition": "Demand for electricity in each time period",
+        "shape": [
+            "T"
+        ],
+        "type": "string"
+    },
+    "OilCap": {
+        "definition": "Available capacity from existing oil-fired plants in each time period",
+        "shape": [
+            "T"
+        ],
+        "type": "string"
+    },
+    "CoalCost": {
+        "definition": "Cost per unit of capacity for building a coal plant",
+        "shape": [],
+        "type": "int"
+    },
+    "NukeCost": {
+        "definition": "Cost per unit of capacity for building a nuclear plant",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxNuke": {
+        "definition": "Maximum fraction of total capacity that can be nuclear",
+        "shape": [],
+        "type": "float"
+    },
+    "CoalLife": {
+        "definition": "Lifespan of a coal plant in time periods",
+        "shape": [],
+        "type": "int"
+    },
+    "NukeLife": {
+        "definition": "Lifespan of a nuclear plant in time periods",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: In each time period, the active coal capacity is equal to the sum of coal capacities built in the current and previous CoalLife - 1 periods (i.e., coal plants operate only for CoalLife periods)
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is indeed a constraint, and it should be explicitly modeled in the (MI)LP formulation.
+
+Reasoning step by step:
+
+- The decision variables will include how much coal capacity is built in each time period.
+- However, the system operates based on *active* capacity, not just newly built capacity.
+- Because coal plants only operate for `CoalLife` periods, capacity built in period \( t \) remains available through periods \( t, t+1, \dots, t+CoalLife-1 \).
+- Therefore, in any period \( t \), the active coal capacity must equal the sum of coal capacity built in periods \( t, t-1, \dots, t-(CoalLife-1) \), provided those indices are valid.
+
+Without this constraint:
+- The model would not correctly enforce plant lifetimes.
+- Coal capacity could implicitly last forever, or disappear immediately, depending on how the rest of the model is written.
+- The demand satisfaction and nuclear fraction constraints would be based on incorrect available capacity.
+
+This is a structural dynamic constraint that links investment decisions across time. It is essential to correctly represent the lifespan limitation described in the problem.
+
+So yes — this is absolutely a constraint that must be explicitly included in the model.
+
+5 OUT OF 5
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+A state is planning its electricity capacity for the next several years. The state has a forecast of the demand for electricity each year, which is presumed to be accurate. Currently, there are existing oil-fired power plants that will continue to operate and provide some of the needed electricity.
+To meet the growing demand, the state is considering building either coal-fired or nuclear power plants. Building coal plants costs a certain amount per unit of capacity, and similarly, building nuclear plants has its own cost per unit of capacity.
+However, there are limitations. For political and safety reasons, the state has decided that nuclear power should not exceed a certain percentage of the total electricity capacity. Additionally, coal plants have a certain lifespan, after which they will no longer be operational, and the same goes for nuclear plants.
+The goal is to figure out the most cost-effective plan to expand electricity capacity by deciding how much to invest in coal and nuclear plants each year, while adhering to the constraints on nuclear power and considering the lifespan of each type of plant.
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "T": {
+        "definition": "Number of time periods",
+        "shape": [],
+        "type": "int"
+    },
+    "Demand": {
+        "definition": "Demand for electricity in each time period",
+        "shape": [
+            "T"
+        ],
+        "type": "string"
+    },
+    "OilCap": {
+        "definition": "Available capacity from existing oil-fired plants in each time period",
+        "shape": [
+            "T"
+        ],
+        "type": "string"
+    },
+    "CoalCost": {
+        "definition": "Cost per unit of capacity for building a coal plant",
+        "shape": [],
+        "type": "int"
+    },
+    "NukeCost": {
+        "definition": "Cost per unit of capacity for building a nuclear plant",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxNuke": {
+        "definition": "Maximum fraction of total capacity that can be nuclear",
+        "shape": [],
+        "type": "float"
+    },
+    "CoalLife": {
+        "definition": "Lifespan of a coal plant in time periods",
+        "shape": [],
+        "type": "int"
+    },
+    "NukeLife": {
+        "definition": "Lifespan of a nuclear plant in time periods",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: In each time period, the active nuclear capacity is equal to the sum of nuclear capacities built in the current and previous NukeLife - 1 periods (i.e., nuclear plants operate only for NukeLife periods)
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is indeed a constraint, and it should be explicitly modeled in the (MI)LP formulation.
+
+Reasoning step by step:
+
+- The decision variables in this problem are the amounts of coal and nuclear capacity built in each time period.
+- However, demand and the nuclear share limit apply to *active* capacity in each time period, not just newly built capacity.
+- Because nuclear plants have a finite lifespan (NukeLife), capacity built in a given period only contributes to total available capacity for a limited number of periods.
+- Therefore, we must explicitly model how active nuclear capacity in period \( t \) depends on nuclear capacity built in periods \( t, t-1, \dots, t-(\text{NukeLife}-1) \).
+
+This relationship is not automatically implied by other constraints. It is a dynamic accounting constraint that links:
+- build decisions (investment variables), and  
+- operational capacity available in each period.
+
+Without this constraint (or an equivalent formulation), the model would not correctly reflect plant retirement, and nuclear capacity could incorrectly persist forever.
+
+So yes, this is a structural modeling constraint that must be included (either explicitly as written or embedded equivalently in another formulation).
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+A state is planning its electricity capacity for the next several years. The state has a forecast of the demand for electricity each year, which is presumed to be accurate. Currently, there are existing oil-fired power plants that will continue to operate and provide some of the needed electricity.
+To meet the growing demand, the state is considering building either coal-fired or nuclear power plants. Building coal plants costs a certain amount per unit of capacity, and similarly, building nuclear plants has its own cost per unit of capacity.
+However, there are limitations. For political and safety reasons, the state has decided that nuclear power should not exceed a certain percentage of the total electricity capacity. Additionally, coal plants have a certain lifespan, after which they will no longer be operational, and the same goes for nuclear plants.
+The goal is to figure out the most cost-effective plan to expand electricity capacity by deciding how much to invest in coal and nuclear plants each year, while adhering to the constraints on nuclear power and considering the lifespan of each type of plant.
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "T": {
+        "definition": "Number of time periods",
+        "shape": [],
+        "type": "int"
+    },
+    "Demand": {
+        "definition": "Demand for electricity in each time period",
+        "shape": [
+            "T"
+        ],
+        "type": "string"
+    },
+    "OilCap": {
+        "definition": "Available capacity from existing oil-fired plants in each time period",
+        "shape": [
+            "T"
+        ],
+        "type": "string"
+    },
+    "CoalCost": {
+        "definition": "Cost per unit of capacity for building a coal plant",
+        "shape": [],
+        "type": "int"
+    },
+    "NukeCost": {
+        "definition": "Cost per unit of capacity for building a nuclear plant",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxNuke": {
+        "definition": "Maximum fraction of total capacity that can be nuclear",
+        "shape": [],
+        "type": "float"
+    },
+    "CoalLife": {
+        "definition": "Lifespan of a coal plant in time periods",
+        "shape": [],
+        "type": "int"
+    },
+    "NukeLife": {
+        "definition": "Lifespan of a nuclear plant in time periods",
+        "shape": [],
+        "type": "int"
+    }
+}
+
+
+Consider this potential constraint: The amount of coal and nuclear capacity built in each time period must be non-negative
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is** a constraint that should be explicitly modeled (typically as a non-negativity restriction on decision variables).
+
+### Step-by-step reasoning:
+
+- The decision variables in this problem are the amounts of coal and nuclear capacity built in each time period.
+- Physically and logically, it is impossible to build a negative amount of capacity.
+- If non-negativity is not enforced, the model could:
+  - Build negative capacity (which would artificially reduce costs if costs are positive), and
+  - Potentially distort the capacity balance constraints.
+
+In linear and mixed-integer programming, non-negativity is usually enforced either:
+- Explicitly as constraints (e.g., \( \text{CoalBuild}_t \ge 0 \)), or  
+- Implicitly by defining the variable domain as non-negative.
+
+Even if handled as a variable bound rather than a “structural constraint,” it **must** be included in the formulation.
+
+So yes — this is a valid and necessary modeling constraint.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
+
+
+
+++++++++++++++++++++++++++++++
+Extracting constraint formulations
+++++++++++++++++++++++++++++++
+
+
+
+----
+{
+    "FORMULATION": "$\\forall t = 1, \\dots, T:\\; OilCap[t] + CoalCap[t] + NukeCap[t] \\geq Demand[t]$",
+    "NEW VARIABLES": {
+        "CoalBuild": {
+            "shape": "[T]",
+            "type": "continuous",
+            "definition": "New coal-fired capacity built in each time period"
+        },
+        "NukeBuild": {
+            "shape": "[T]",
+            "type": "continuous",
+            "definition": "New nuclear capacity built in each time period"
+        },
+        "CoalCap": {
+            "shape": "[T]",
+            "type": "continuous",
+            "definition": "Total active coal-fired capacity available in each time period"
+        },
+        "NukeCap": {
+            "shape": "[T]",
+            "type": "continuous",
+            "definition": "Total active nuclear capacity available in each time period"
+        }
+    },
+    "AUXILIARY CONSTRAINTS": [
+        "$\\forall t = 1, \\dots, T:\\; CoalCap[t] = \\sum_{\\tau = \\max(1, t - CoalLife + 1)}^{t} CoalBuild[\\tau]$",
+        "$\\forall t = 1, \\dots, T:\\; NukeCap[t] = \\sum_{\\tau = \\max(1, t - NukeLife + 1)}^{t} NukeBuild[\\tau]$"
+    ]
+}
+----

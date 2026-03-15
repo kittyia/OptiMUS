@@ -1,0 +1,84 @@
+{
+    "description": "A village delivers mail to nearby villages either by runners or canoers. Runners can carry three bags of mail each time and takes 4 hours. Canoers can carry ten bags of mail each time and takes 2 hours. At most 33% of deliveries can be by canoe. Additionally, the village can spare at most 200 total hours and at least 4 runners must be used. How many of each way to deliver must be used to maximize the total amount of mail that can be delivered?",
+    "parameters": {
+        "RunnerCapacity": {
+            "definition": "Number of bags a runner can carry each trip",
+            "shape": [],
+            "type": "int"
+        },
+        "RunnerTime": {
+            "definition": "Time a runner takes per trip (in hours)",
+            "shape": [],
+            "type": "int"
+        },
+        "CanoeCapacity": {
+            "definition": "Number of bags a canoeer can carry each trip",
+            "shape": [],
+            "type": "int"
+        },
+        "CanoeTime": {
+            "definition": "Time a canoeer takes per trip (in hours)",
+            "shape": [],
+            "type": "int"
+        },
+        "MaxCanoePercentage": {
+            "definition": "Maximum fraction of total deliveries that can be made by canoe",
+            "shape": [],
+            "type": "float"
+        },
+        "MaxTotalHours": {
+            "definition": "Maximum total hours the village can spare for deliveries",
+            "shape": [],
+            "type": "int"
+        },
+        "MinRunners": {
+            "definition": "Minimum number of runners that must be used",
+            "shape": [],
+            "type": "int"
+        }
+    },
+    "objective": {
+        "description": "\"Maximize the total amount of mail (number of bags) delivered by runners and canoeers\"",
+        "formulation": "$\\max \\; \\text{RunnerCapacity} \\cdot \\text{RunnerTrips} \\;+\\; \\text{CanoeCapacity} \\cdot \\text{CanoeTrips}$",
+        "code": "model.setObjective(RunnerCapacity * RunnerTrips + CanoeCapacity * CanoeTrips, GRB.MAXIMIZE)"
+    },
+    "constraints": [
+        {
+            "description": "4 * (number of runner trips) + 2 * (number of canoe trips) <= 200",
+            "formulation": "$RunnerTime \\\\cdot RunnerTrips + CanoeTime \\\\cdot CanoeTrips \\\\leq MaxTotalHours$",
+            "code": "model.addConstr(RunnerTime * RunnerTrips + CanoeTime * CanoeTrips <= MaxTotalHours)"
+        },
+        {
+            "description": "67 * (number of canoe trips) <= 33 * (number of runner trips)",
+            "formulation": "$67 \\\\cdot CanoeTrips \\\\leq 33 \\\\cdot RunnerTrips$",
+            "code": "model.addConstr(67 * CanoeTrips <= 33 * RunnerTrips)"
+        },
+        {
+            "description": "(number of runner trips) >= 4",
+            "formulation": "$RunnerTrips \\\\geq 4$",
+            "code": "model.addConstr(RunnerTrips >= MinRunners)"
+        },
+        {
+            "description": "(number of canoe trips) >= 0",
+            "formulation": "$CanoeTrips \\\\geq 0$",
+            "code": "model.addConstr(CanoeTrips >= 0)"
+        },
+        {
+            "description": "(number of runner trips) and (number of canoe trips) must be integers",
+            "formulation": "$RunnerTrips \\\\in \\\\mathbb{Z}_{\\\\geq 0}, \\\\; CanoeTrips \\\\in \\\\mathbb{Z}_{\\\\geq 0}$",
+            "code": "model.addConstr(RunnerTrips >= 0)\nmodel.addConstr(CanoeTrips >= 0)"
+        }
+    ],
+    "variables": {
+        "RunnerTrips": {
+            "shape": [],
+            "type": "integer",
+            "definition": "Number of runner trips used to deliver mail"
+        },
+        "CanoeTrips": {
+            "shape": [],
+            "type": "integer",
+            "definition": "Number of canoe trips used to deliver mail"
+        }
+    }
+}

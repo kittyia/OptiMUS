@@ -1,0 +1,94 @@
+{
+    "description": "A strata-management company is looking into purchasing two types of air conditioners, a low-power and a high-power model. A low-powered air conditioner can cool down 12 housing units and uses 150 units of electricity every day. A high-power model can cool down 17 housing units and uses 250 units of electricity every day. Since the low-powered model is not good for the aesthetics, the strata decided to limit the number of low-powered models to only 30% and at least 7 high-powered models must be used. If the apartment needs to condition at least 250 housing units and has 3400 units of electricity available, how many of each air conditioner should the strata company buy to minimize the total number of air conditioners?",
+    "parameters": {
+        "LowPowerCoolingCapacity": {
+            "definition": "Cooling capacity of a low-powered air conditioner (number of housing units it can cool)",
+            "shape": [],
+            "type": "int"
+        },
+        "LowPowerElectricityUsage": {
+            "definition": "Electricity usage of a low-powered air conditioner (units per day)",
+            "shape": [],
+            "type": "int"
+        },
+        "HighPowerCoolingCapacity": {
+            "definition": "Cooling capacity of a high-powered air conditioner (number of housing units it can cool)",
+            "shape": [],
+            "type": "int"
+        },
+        "HighPowerElectricityUsage": {
+            "definition": "Electricity usage of a high-powered air conditioner (units per day)",
+            "shape": [],
+            "type": "int"
+        },
+        "MaxLowPowerPercentage": {
+            "definition": "Maximum percentage of low-powered air conditioners allowed",
+            "shape": [],
+            "type": "float"
+        },
+        "MinHighPowerModels": {
+            "definition": "Minimum number of high-powered air conditioners required",
+            "shape": [],
+            "type": "int"
+        },
+        "TotalCoolingRequired": {
+            "definition": "Total number of housing units to be cooled",
+            "shape": [],
+            "type": "int"
+        },
+        "TotalElectricityAvailable": {
+            "definition": "Total units of electricity available",
+            "shape": [],
+            "type": "int"
+        }
+    },
+    "objective": {
+        "description": "\"Minimize the total number of air conditioners purchased (low-power and high-power combined)\"",
+        "formulation": "$\\min \\left( LowPowerUnits + HighPowerUnits \\right)$",
+        "code": "model.setObjective(LowPowerUnits + HighPowerUnits, GRB.MINIMIZE)"
+    },
+    "constraints": [
+        {
+            "description": "12 * LowPowerUnits + 17 * HighPowerUnits >= TotalCoolingRequired",
+            "formulation": "$12 \\\\cdot LowPowerUnits + 17 \\\\cdot HighPowerUnits \\\\geq TotalCoolingRequired$",
+            "code": "model.addConstr(\n    LowPowerCoolingCapacity * LowPowerUnits\n    + HighPowerCoolingCapacity * HighPowerUnits\n    >= TotalCoolingRequired\n)"
+        },
+        {
+            "description": "150 * LowPowerUnits + 250 * HighPowerUnits <= TotalElectricityAvailable",
+            "formulation": "$LowPowerElectricityUsage \\\\cdot LowPowerUnits + HighPowerElectricityUsage \\\\cdot HighPowerUnits \\\\leq TotalElectricityAvailable$",
+            "code": "model.addConstr(\n    LowPowerElectricityUsage * LowPowerUnits +\n    HighPowerElectricityUsage * HighPowerUnits\n    <= TotalElectricityAvailable\n)"
+        },
+        {
+            "description": "LowPowerUnits <= MaxLowPowerPercentage * (LowPowerUnits + HighPowerUnits)",
+            "formulation": "$LowPowerUnits \\\\leq MaxLowPowerPercentage \\\\cdot (LowPowerUnits + HighPowerUnits)$",
+            "code": "model.addConstr(LowPowerUnits <= MaxLowPowerPercentage * (LowPowerUnits + HighPowerUnits))"
+        },
+        {
+            "description": "HighPowerUnits >= MinHighPowerModels",
+            "formulation": "$HighPowerUnits \\\\ge MinHighPowerModels$",
+            "code": "model.addConstr(HighPowerUnits >= MinHighPowerModels)"
+        },
+        {
+            "description": "LowPowerUnits >= 0",
+            "formulation": "$LowPowerUnits \\\\ge 0$",
+            "code": "model.addConstr(LowPowerUnits >= 0)"
+        },
+        {
+            "description": "LowPowerUnits and HighPowerUnits are integers",
+            "formulation": "$LowPowerUnits, \\\\; HighPowerUnits \\\\in \\\\mathbb{Z}_{\\\\geq 0}$",
+            "code": "model.addConstr(LowPowerUnits >= 0)\nmodel.addConstr(HighPowerUnits >= 0)"
+        }
+    ],
+    "variables": {
+        "LowPowerUnits": {
+            "shape": [],
+            "type": "integer",
+            "definition": "Number of low-powered air conditioners to purchase"
+        },
+        "HighPowerUnits": {
+            "shape": [],
+            "type": "integer",
+            "definition": "Number of high-powered air conditioners to purchase"
+        }
+    }
+}

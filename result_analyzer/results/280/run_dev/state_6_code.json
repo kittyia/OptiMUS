@@ -1,0 +1,51 @@
+{
+    "description": "There is a road divided into a number of segments, and we want to illuminate it using a number of lamps. Each lamp has a certain power, and the illumination of each segment is equal to sum of the powers of all lamps, multiplied by some known coefficients. We are given the desired illumination of each segment, and we want to choose the powers of the lamps so that the illuminations are as close to the desired illuminations as possible.\n",
+    "parameters": {
+        "NumSegments": {
+            "definition": "Number of road segments",
+            "shape": [],
+            "type": "int"
+        },
+        "NumLamps": {
+            "definition": "Number of lamps",
+            "shape": [],
+            "type": "int"
+        },
+        "Coefficients": {
+            "definition": "Coefficient showing how much illumination segment i gets from lamp j",
+            "shape": [
+                "NumSegments",
+                "NumLamps"
+            ],
+            "type": "string"
+        },
+        "DesiredIlluminations": {
+            "definition": "Desired illumination level for each segment",
+            "shape": [
+                "NumSegments"
+            ],
+            "type": "string"
+        }
+    },
+    "objective": {
+        "description": "\"Minimize the total deviation between the achieved illumination of each road segment and its desired illumination level.\"",
+        "formulation": "$\\min \\sum_{i=1}^{\\text{NumSegments}} \\left| \\sum_{j=1}^{\\text{NumLamps}} \\text{Coefficients}_{i,j} \\,\\text{LampPower}_j \\;-\\; \\text{DesiredIlluminations}_i \\right|$",
+        "code": "model.setObjective(\n    quicksum(\n        abs_(\n            quicksum(Coefficients[i][j] * LampPower[j] for j in range(NumLamps))\n            - DesiredIlluminations[i]\n        )\n        for i in range(NumSegments)\n    ),\n    GRB.MINIMIZE\n)"
+    },
+    "constraints": [
+        {
+            "description": "LampPower[j] must be greater than or equal to 0 for all lamps j",
+            "formulation": "$\\\\forall j = 1, \\\\dots, \\\\text{NumLamps}, \\\\; LampPower[j] \\\\geq 0$",
+            "code": "for j in range(NumLamps):\n    model.addConstr(LampPower[j] >= 0)"
+        }
+    ],
+    "variables": {
+        "LampPower": {
+            "shape": [
+                "NumLamps"
+            ],
+            "type": "continuous",
+            "definition": "Power level of lamp j"
+        }
+    }
+}

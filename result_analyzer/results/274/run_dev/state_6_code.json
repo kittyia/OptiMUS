@@ -1,0 +1,48 @@
+{
+    "description": "A hospital needs to create a weekly schedule for its nurses working the night shift from 12 PM to 8 AM. The demand for nurses during the night shift varies each day of the week. For each day, there is a specific number of nurses required.\nEach nurse works for a certain number of consecutive days on the night shift, followed by several days off, ensuring they have a balanced work-rest schedule over the week. The challenge is to determine the minimum number of nurses the hospital needs to hire to meet the varying daily demands for the night shift throughout the week.",
+    "parameters": {
+        "T": {
+            "definition": "Total number of days in the scheduling period",
+            "shape": [],
+            "type": "int"
+        },
+        "Period": {
+            "definition": "Number of consecutive days each nurse works",
+            "shape": [],
+            "type": "int"
+        },
+        "Demand": {
+            "definition": "Number of nurses required on each day",
+            "shape": [
+                "T"
+            ],
+            "type": "string"
+        }
+    },
+    "objective": {
+        "description": "\"Minimize the total number of nurses required to meet the daily night shift demand over the scheduling period\"",
+        "formulation": "$\\min \\sum_{t=1}^{T} Start_{t}$",
+        "code": "model.setObjective(quicksum(Start[t] for t in range(T)), GRB.MINIMIZE)"
+    },
+    "constraints": [
+        {
+            "description": "For each day t in the scheduling period, the sum of nurses who start their consecutive Period of work on day t and on the previous Period - 1 days (with wrap-around over the week if scheduling is cyclic) must be greater than or equal to Demand[t]",
+            "formulation": "$\\\\forall t = 1, \\\\dots, T:\\\\; \\\\sum_{k=0}^{Period-1} Start\\\\left[((t - k - 1) \\\\bmod T) + 1\\\\right] \\\\geq Demand[t]$",
+            "code": "for t in range(T):\n    model.addConstr(\n        sum(Start[(t - k) % T] for k in range(Period)) >= Demand[t]\n    )"
+        },
+        {
+            "description": "The number of nurses starting work on any day must be a nonnegative integer",
+            "formulation": "$\\\\forall t = 1, \\\\dots, T,\\\\; Start[t] \\\\geq 0$",
+            "code": "for t in range(T):\n    model.addConstr(Start[t] >= 0)"
+        }
+    ],
+    "variables": {
+        "Start": {
+            "shape": [
+                "T"
+            ],
+            "type": "integer",
+            "definition": "Number of nurses who start their consecutive Period of night shifts on day t"
+        }
+    }
+}

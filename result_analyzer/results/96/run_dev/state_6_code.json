@@ -1,0 +1,83 @@
+{
+    "description": "A drug company is making allergy pills and fever reducing pills in two factories, factory 1 and factory 2. Factory 1 produces 20 allergy pills and 15 fever reducing pills per hour. Factory 2 produces 10 allergy pills and 30 fever reducing pills per hour.  Factory 1 is much more efficient and only requires 20 units of a rare compound while factory 2 requires 30 units of a rare compound. The company only has available 1000 units of the rare compound. If the company must make at least 700 allergy pills and 600 fever reducing pills, how many hours should each factory be run to minimize the total time needed?",
+    "parameters": {
+        "NumFactories": {
+            "definition": "Number of factories",
+            "shape": [],
+            "type": "int"
+        },
+        "NumProducts": {
+            "definition": "Number of product types",
+            "shape": [],
+            "type": "int"
+        },
+        "ProductionRate": {
+            "definition": "Production rate of product i in factory j per hour",
+            "shape": [
+                "NumProducts",
+                "NumFactories"
+            ],
+            "type": "string"
+        },
+        "ResourceRequirement": {
+            "definition": "Resource requirement of factory j per hour",
+            "shape": [
+                "NumFactories"
+            ],
+            "type": "string"
+        },
+        "TotalResource": {
+            "definition": "Total available units of the rare compound",
+            "shape": [],
+            "type": "int"
+        },
+        "MinProduction": {
+            "definition": "Minimum required production of product i",
+            "shape": [
+                "NumProducts"
+            ],
+            "type": "string"
+        }
+    },
+    "objective": {
+        "description": "\"Minimize the total number of hours that the two factories are operated\"",
+        "formulation": "$\\min \\sum_{j=1}^{\\text{NumFactories}} Hours_j$",
+        "code": "model.setObjective(quicksum(Hours[j] for j in range(NumFactories)), GRB.MINIMIZE)"
+    },
+    "constraints": [
+        {
+            "description": "20 * Hours_Factory1 + 10 * Hours_Factory2 >= 700",
+            "formulation": "$20 \\\\cdot Hours[1] + 10 \\\\cdot Hours[2] \\\\geq 700$",
+            "code": "model.addConstr(20 * Hours[0] + 10 * Hours[1] >= 700)"
+        },
+        {
+            "description": "15 * Hours_Factory1 + 30 * Hours_Factory2 >= 600",
+            "formulation": "$15 \\\\, Hours[1] + 30 \\\\, Hours[2] \\\\geq 600$",
+            "code": "model.addConstr(15 * Hours[0] + 30 * Hours[1] >= 600)"
+        },
+        {
+            "description": "20 * Hours_Factory1 + 30 * Hours_Factory2 <= 1000",
+            "formulation": "$\\\\sum_{j=1}^{NumFactories} ResourceRequirement[j] \\\\cdot Hours[j] \\\\leq TotalResource$",
+            "code": "model.addConstr(\n    sum(ResourceRequirement[j] * Hours[j] for j in range(NumFactories)) \n    <= TotalResource\n)"
+        },
+        {
+            "description": "Hours_Factory1 >= 0",
+            "formulation": "$Hours[1] \\\\geq 0$",
+            "code": "model.addConstr(Hours[0] >= 0)"
+        },
+        {
+            "description": "Hours_Factory2 >= 0",
+            "formulation": "$Hours[2] \\\\geq 0$",
+            "code": "model.addConstr(Hours[1] >= 0)"
+        }
+    ],
+    "variables": {
+        "Hours": {
+            "shape": [
+                "NumFactories"
+            ],
+            "type": "continuous",
+            "definition": "Number of hours each factory is operated"
+        }
+    }
+}

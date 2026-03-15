@@ -1,0 +1,140 @@
+----
+[
+    "For each data point k, -d_k ≤ y_k - (c * x_k^2 + b * x_k + a) ≤ d_k"
+]
+----
++++++++++++++++++++
+++ Constraint Qs ++
++++++++++++++++++++
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+PROBLEM INFO:
+
+- A quantity y is known to depend on another quantity x. A set of corresponding values has been collected for x and y and is presented.
+- The \var{k}-th y value takes \var{y_{k}} and the \var{k}-th x value takes \var{x_{k}}.
+
+INPUT FORMAT:
+
+{
+    "y": [y_{k} for k = 1,...,K],
+    "x": [x_{k} for k = 1,...,K]
+}
+
+
+OBJECTIVE: Fit the ‘best’ quadratic curve y = c * x^2 + b * x + a to this set of data points. The objective is to minimize the sum of absolute deviations of each observed value of y from the value predicted by the quadratic relationship.
+
+OUTPUT INFO:
+
+- \var{quadratic} represents the coefficient of quadratic term
+- \var{linear} represents the coefficient of linear term
+- \var{constant} represents the coefficient of constant
+
+OUTPUT FORMAT:
+
+{
+    "quadratic": quadratic,
+    "linear": linear,
+    "constant": constant
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "K": {
+        "definition": "Number of data points",
+        "shape": [],
+        "type": "int"
+    },
+    "ObservedValues": {
+        "definition": "Observed y values at each data point k",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    },
+    "ObservedXValues": {
+        "definition": "Observed x values at each data point k",
+        "shape": [
+            "K"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: For each data point k, -d_k ≤ y_k - (c * x_k^2 + b * x_k + a) ≤ d_k
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is indeed a constraint**, and it is essential to the LP formulation.
+
+### Why?
+
+The objective is to minimize the **sum of absolute deviations**:
+
+\[
+\min \sum_{k=1}^K |y_k - (c x_k^2 + b x_k + a)|
+\]
+
+Absolute values are not linear, so to formulate this as a linear program, we introduce auxiliary variables \( d_k \ge 0 \) such that:
+
+\[
+d_k \ge |y_k - (c x_k^2 + b x_k + a)|
+\]
+
+This is equivalently enforced using the pair of linear constraints:
+
+\[
+-d_k \le y_k - (c x_k^2 + b x_k + a) \le d_k
+\]
+
+Then the LP objective becomes:
+
+\[
+\min \sum_{k=1}^K d_k
+\]
+
+Without these constraints, the \( d_k \) variables would not correctly represent the absolute deviations, and the model would be incorrect.
+
+So yes — this is a **core modeling constraint** required to linearize the absolute value term.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
+
+
+
+++++++++++++++++++++++++++++++
+Extracting constraint formulations
+++++++++++++++++++++++++++++++
+
+
+
+----
+{
+    "FORMULATION": "$\\forall k = 1, \\dots, K:\\; -deviation[k] \\leq ObservedValues[k] - (quadratic \\cdot ObservedXValues[k]^2 + linear \\cdot ObservedXValues[k] + constant) \\leq deviation[k]$",
+    "NEW VARIABLES": {
+        "deviation": {
+            "shape": ["K"],
+            "type": "continuous",
+            "definition": "Absolute deviation between observed and predicted y value for each data point k"
+        }
+    },
+    "AUXILIARY CONSTRAINTS": [
+        "$\\forall k = 1, \\dots, K:\\; deviation[k] \\geq 0$"
+    ]
+}
+----

@@ -1,0 +1,137 @@
+{
+    "description": "PROBLEM TYPE: LP\nPROBLEM INFO:\n\n- An economy consists of several industries. \n- Each unit produced by one of the industries (a unit will be taken as \u00a31\u2019s worth of value of production) requires inputs from possibly its own industry as well as other industries. \n- Industry \\var{k} requires \\var{inputone_{k, j}} input from industy \\var{j}.\n- Industry \\var{k} requires \\var{manpowerone_{k}} units of manpower.\n- There is a time lag in the economy so that the output in year t + 1 requires an input in year t.\n- Output from an industry may also be used to build productive capacity for itself or other industries in future years.\n- To give unit increases (capacity for \u00a31\u2019s worth of extra production) in productive capacity of industry \\var{k}, \\var{j} units of industry \\var{inputtwo_{k, j}} and \\var{manpowertwo{k}} units of manpower are needed.\n- Input from an industry in year t results in a (permanent) increase in productive capacity in year t + 2.\n- Stocks of goods may be held from year to year. \n- At present (year 0), the stocks of industry \\var{k} is \\var{stock_{k}}, and the capacity of industry \\var{k} is \\var{capacity_{k}}.\n- An exogenous consumption requirement of \\var{demand_{k}} units from industry \\var{k} has to be satisfied in every year except year 0.\n\n\nINPUT FORMAT:\n\n{\n    \"inputone\": [[inputone_{k, j} for j in 1,...,K] for k in 1,...,K],\n    \"manpowerone\": [manpowerone_{k} for k in 1,...,K],\n    \"inputtwo\": [[inputtwo_{k, j} for j in 1,...,K] for k in 1,...,K],\n    \"manpowertwo\": [manpowertwo_{k} for k in 1,...,K],\n    \"stock\": [stock_{k} for k in 1,...,K],\n    \"capacity\": [capacity_{k} for k in 1,...,K],\n    \"demand\": [demand_{k} for k in 1,...,K]\n}\n\n\nOBJECTIVE: Maximize the total manpower requirement over five years\n\nOUTPUT INFO:\n\n- \\var{produce} represents the amount of units produced by each industry in each year\n- \\var{buildcapa} represents the amount of units used to build productive capacity for each industry in each year\n- \\var{stockhold} represents the amount of stock of each industry held in each year\n\nOUTPUT FORMAT:\n\n{\n    \"produce\": [[produce_{k, t} for t in 1,...,T] for k in 1,...,K],\n    \"buildcapa\": [[buildcapa_{k, t} for t in 1,...,T] for k in 1,...,K],\n    \"stockhold\": [[stock_{k, t} for t in 1,...,T] for for k in 1,...,K]\n}",
+    "parameters": {
+        "K": {
+            "definition": "The number of years over which the total manpower requirement is maximized",
+            "shape": [],
+            "type": "string"
+        },
+        "NumIndustries": {
+            "definition": "The number of industries in the economy",
+            "shape": [],
+            "type": "string"
+        },
+        "ManpowerOne": {
+            "definition": "Manpower requirements for operations one in each industry",
+            "shape": [
+                "NumIndustries"
+            ],
+            "type": "string"
+        },
+        "ManpowerTwo": {
+            "definition": "Manpower requirements for operations two in each industry",
+            "shape": [
+                "NumIndustries"
+            ],
+            "type": "string"
+        },
+        "Stock": {
+            "definition": "Stock level of product k at the beginning of the year",
+            "shape": [
+                "NumIndustries"
+            ],
+            "type": "string"
+        },
+        "Capacity": {
+            "definition": "Production capacity for product k for the year",
+            "shape": [
+                "NumIndustries"
+            ],
+            "type": "string"
+        },
+        "Demand": {
+            "definition": "Demand for product k for the year",
+            "shape": [
+                "NumIndustries"
+            ],
+            "type": "string"
+        },
+        "InputOne": {
+            "definition": "Input one coefficient for product k with respect to product j",
+            "shape": [
+                "NumIndustries",
+                "NumIndustries"
+            ],
+            "type": "string"
+        },
+        "InputTwo": {
+            "definition": "Input two coefficient for product k with respect to product j",
+            "shape": [
+                "NumIndustries",
+                "NumIndustries"
+            ],
+            "type": "string"
+        }
+    },
+    "objective": {
+        "description": "Maximize the total manpower requirement over five years",
+        "formulation": "$\\max \\sum_{k=1}^{NumIndustries} \\sum_{t=1}^{K} \\left( ManpowerOne_k \\, produce_{k,t} + ManpowerTwo_k \\, buildcapa_{k,t} \\right)$",
+        "code": "model.setObjective(\n    quicksum(\n        ManpowerOne[k] * produce[k, t] + ManpowerTwo[k] * buildcapa[k, t]\n        for k in range(NumIndustries)\n        for t in range(K)\n    ),\n    GRB.MAXIMIZE\n)"
+    },
+    "constraints": [
+        {
+            "description": "Production of each industry k in each year t must not exceed the available productive capacity of industry k in year t",
+            "formulation": "$\\\\forall k = 1, \\\\dots, \\\\text{NumIndustries}, \\\\; \\\\forall t = 1, \\\\dots, K:\\\\; produce_{k,t} \\\\leq capacityAvail_{k,t}$",
+            "code": "for k in range(NumIndustries):\n    for t in range(K):\n        model.addConstr(produce[k, t] <= capacityAvail[k, t])"
+        },
+        {
+            "description": "Productive capacity of industry k in year t equals initial capacity plus all capacity increases decided in years up to t-2",
+            "formulation": "$\\\\forall k = 1,\\\\dots,\\\\text{NumIndustries},\\\\; \\\\forall t = 1,\\\\dots,K:\\\\; capacityAvail_{k,t} = Capacity_k + \\\\sum_{\\\\tau=1}^{t-2} buildcapa_{k,\\\\tau}$",
+            "code": "for k in range(NumIndustries):\n    for t in range(K):\n        model.addConstr(\n            capacityAvail[k, t] == Capacity[k] + \n            sum(buildcapa[k, tau] for tau in range(0, t-1))\n        )"
+        },
+        {
+            "description": "For each industry k and year t \u2265 1, stock balance must hold: stockhold_{k,t} = (initial stock_{k} if t=1 else stockhold_{k,t-1}) + produce_{k,t} \u2212 total intermediate input of product k used in year t+1 for production and capacity building \u2212 demand_{k}",
+            "formulation": "$\\\\forall k=1,\\\\dots,\\\\text{NumIndustries}:$ \\n$\\\\quad \\\\text{stockhold}_{k,1} = \\\\text{Stock}_k + \\\\text{produce}_{k,1} - \\\\sum_{j=1}^{\\\\text{NumIndustries}} \\\\left( \\\\text{InputOne}_{j,k} \\\\cdot \\\\text{produce}_{j,2} + \\\\text{InputTwo}_{j,k} \\\\cdot \\\\text{buildcapa}_{j,2} \\\\right) - \\\\text{Demand}_k,$\\n\\n$\\\\forall k=1,\\\\dots,\\\\text{NumIndustries},\\\\; t=2,\\\\dots,K-1:$\\n$\\\\quad \\\\text{stockhold}_{k,t} = \\\\text{stockhold}_{k,t-1} + \\\\text{produce}_{k,t} - \\\\sum_{j=1}^{\\\\text{NumIndustries}} \\\\left( \\\\text{InputOne}_{j,k} \\\\cdot \\\\text{produce}_{j,t+1} + \\\\text{InputTwo}_{j,k} \\\\cdot \\\\text{buildcapa}_{j,t+1} \\\\right) - \\\\text{Demand}_k,$\\n\\n$\\\\forall k=1,\\\\dots,\\\\text{NumIndustries}:$\\n$\\\\quad \\\\text{stockhold}_{k,K} = \\\\text{stockhold}_{k,K-1} + \\\\text{produce}_{k,K} - \\\\text{Demand}_k.$",
+            "code": "for k in range(NumIndustries):\n    if K > 1:\n        # t = 1 (index 0)\n        model.addConstr(\n            stockhold[k, 0] ==\n            Stock[k] + produce[k, 0]\n            - sum(\n                InputOne[j][k] * produce[j, 1] +\n                InputTwo[j][k] * buildcapa[j, 1]\n                for j in range(NumIndustries)\n            )\n            - Demand[k]\n        )\n\n        # t = 2, ..., K-1 (indices 1 to K-2)\n        for t in range(1, K - 1):\n            model.addConstr(\n                stockhold[k, t] ==\n                stockhold[k, t - 1] + produce[k, t]\n                - sum(\n                    InputOne[j][k] * produce[j, t + 1] +\n                    InputTwo[j][k] * buildcapa[j, t + 1]\n                    for j in range(NumIndustries)\n                )\n                - Demand[k]\n            )\n\n        # t = K (index K-1)\n        model.addConstr(\n            stockhold[k, K - 1] ==\n            stockhold[k, K - 2] + produce[k, K - 1]\n            - Demand[k]\n        )\n    else:\n        # Special case when K = 1\n        model.addConstr(\n            stockhold[k, 0] ==\n            Stock[k] + produce[k, 0]\n            - Demand[k]\n        )"
+        },
+        {
+            "description": "Stock levels for each industry k and year t must be nonnegative",
+            "formulation": "$\\\\forall k = 1, \\\\dots, \\\\text{NumIndustries}, \\\\; \\\\forall t = 1, \\\\dots, K:\\\\; stockhold_{k,t} \\\\geq 0$",
+            "code": "for k in range(NumIndustries):\n    for t in range(K):\n        model.addConstr(stockhold[k, t] >= 0)"
+        },
+        {
+            "description": "Production levels produce_{k,t} must be nonnegative for all industries and years",
+            "formulation": "$\\\\forall k = 1,\\\\dots,\\\\text{NumIndustries},\\\\; \\\\forall t = 1,\\\\dots,K:\\\\; produce[k,t] \\\\geq 0$",
+            "code": "for k in range(NumIndustries):\n    for t in range(K):\n        model.addConstr(produce[k, t] >= 0)"
+        },
+        {
+            "description": "Capacity expansion decisions buildcapa_{k,t} must be nonnegative for all industries and years",
+            "formulation": "$\\\\forall k = 1, \\\\dots, \\\\text{NumIndustries},\\\\; \\\\forall t = 1, \\\\dots, K:\\\\; buildcapa_{k,t} \\\\geq 0$",
+            "code": "for k in range(NumIndustries):\n    for t in range(K):\n        model.addConstr(buildcapa[k, t] >= 0)"
+        }
+    ],
+    "variables": {
+        "produce": {
+            "shape": [
+                "NumIndustries",
+                "K"
+            ],
+            "type": "continuous",
+            "definition": "Amount produced by each industry in each year"
+        },
+        "capacityAvail": {
+            "shape": [
+                "NumIndustries",
+                "K"
+            ],
+            "type": "continuous",
+            "definition": "Available productive capacity of each industry in each year"
+        },
+        "buildcapa": {
+            "shape": [
+                "NumIndustries",
+                "K"
+            ],
+            "type": "continuous",
+            "definition": "Amount of units used to build productive capacity for each industry in each year"
+        },
+        "stockhold": {
+            "shape": [
+                "NumIndustries",
+                "K"
+            ],
+            "type": "continuous",
+            "definition": "Amount of stock of each industry held at the end of each year"
+        }
+    }
+}

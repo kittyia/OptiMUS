@@ -1,0 +1,2011 @@
+----
+[
+    "For each system i, the number of units produced x_i must be greater than or equal to the number of preorders: x_i >= Preorder_i",
+    "For each system i, the number of units produced x_i must not exceed its maximum demand: x_i <= Demand_i",
+    "The total number of systems produced cannot exceed the available CPUs: sum_i x_i <= MaxCpu",
+    "The total disk drives used cannot exceed the available disk supply: sum_i (DiskDrives_i * x_i) <= MaxDisk",
+    "For each system i, the total memory boards required must be satisfied by regular and alternative boards: r_i + a_i = MemoryBoards_i * x_i",
+    "The total regular memory boards used cannot exceed the available regular memory supply: sum_i r_i <= MaxMemory",
+    "The total alternative memory boards used cannot exceed the available alternative memory: sum_i a_i <= AltMemory",
+    "Alternative memory boards can only be used for compatible systems: a_i <= AltCompatible_i * (MemoryBoards_i * x_i) for all i",
+    "The total production of general-purpose systems cannot exceed their family demand: sum_{i: IsWorkstation_i = false} x_i <= DemandGP",
+    "The total production of workstation systems cannot exceed their family demand: sum_{i: IsWorkstation_i = true} x_i <= DemandWS",
+    "Non-negativity constraints: x_i >= 0, r_i >= 0, a_i >= 0 for all i"
+]
+----
++++++++++++++++++++
+++ Constraint Qs ++
++++++++++++++++++++
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+- Digital Equipment Corporation (DEC) has introduced new families of \var{N} computer systems with different memory, disk storage, and expansion capabilities.
+- Each system \var{i} is either a general-purpose (GP) system or a workstation (WS) system.
+- Each system \var{i} can have an integer number of disk drives, and on average \var{disk_i} units of disk drive per system are requested by customers for system \var{i}.
+- System \var{i} uses \var{mem_i} units of 256K memory boards per system on average.
+- System \var{i} has a price of \var{price_i} dollars.
+- The in-house supplier of CPUs for DEC could provide at most \var{max_cpu} units, due to debugging problems.
+- The supply of disk drives is uncertain and is estimated by the manufacturer to be in the range of \var{min_disk} to \var{max_disk} units.
+- the supply of 256K memory boards is also limited in the range of \var{min_mem} to \var{max_mem} units.
+- Maximum demand for system \var{i} in the next quarter is estimated to be \var{demand_i} units.
+- Maximum demand for the whole GP family in the next quarter is estimated to be \var{demand_GP} units.
+- Maximum demand for the whole WS family in the next quarter is estimated to be \var{demand_WS} units.
+- Included in the projections, there are \var{preorder_i} orders for system \var{i} that have already been received and have to be fulfilled in the next quarter.
+- To address the shortage of 256K memory boards, DEC has access to \var{alt_mem} units of an alternative memory board that can only be used in certain systems.
+- you can assume the number of systems produced is a floating point number to make the problem easier to solve.
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "N": {
+        "definition": "Number of computer systems",
+        "shape": [],
+        "type": "int"
+    },
+    "IsWorkstation": {
+        "definition": "Whether system i is a workstation (true) or general-purpose (false)",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "Price": {
+        "definition": "Price of system i in dollars",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "DiskDrives": {
+        "definition": "Average number of disk drives per unit of system i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MemoryBoards": {
+        "definition": "Number of 256K memory boards per unit of system i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MaxCpu": {
+        "definition": "Maximum number of CPUs available",
+        "shape": [],
+        "type": "int"
+    },
+    "MinDisk": {
+        "definition": "Minimum available disk drive supply",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxDisk": {
+        "definition": "Maximum available disk drive supply",
+        "shape": [],
+        "type": "int"
+    },
+    "MinMemory": {
+        "definition": "Minimum available memory board supply",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxMemory": {
+        "definition": "Maximum available memory board supply",
+        "shape": [],
+        "type": "int"
+    },
+    "Demand": {
+        "definition": "Maximum demand for system i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "DemandGP": {
+        "definition": "Maximum total demand for all general-purpose systems",
+        "shape": [],
+        "type": "int"
+    },
+    "DemandWS": {
+        "definition": "Maximum total demand for all workstation systems",
+        "shape": [],
+        "type": "int"
+    },
+    "Preorder": {
+        "definition": "Number of pre-orders for system i that must be fulfilled",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "AltMemory": {
+        "definition": "Number of alternative memory boards available",
+        "shape": [],
+        "type": "int"
+    },
+    "AltCompatible": {
+        "definition": "Whether alternative memory board is compatible with system i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: For each system i, the number of units produced x_i must be greater than or equal to the number of preorders: x_i >= Preorder_i
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is definitely a constraint** and it should be explicitly included in the (MI)LP formulation.
+
+### Reasoning
+
+The problem statement says:
+
+> “Included in the projections, there are `preorder_i` orders for system i that have already been received and have to be fulfilled in the next quarter.”
+
+This clearly states that these orders **must** be satisfied within the planning horizon. Since:
+
+- \( x_i \) represents the number of units of system \( i \) produced in the next quarter,
+- and there is no mention of:
+  - existing inventory,
+  - backlog,
+  - or external sourcing,
+
+the only way to fulfill those preorders is to produce at least that many units.
+
+Therefore, the following constraint is required:
+
+\[
+x_i \ge \text{Preorder}_i \quad \forall i = 1, \dots, N
+\]
+
+Without this constraint, the model could produce fewer units than the committed orders, which would violate the problem statement.
+
+### Conclusion
+
+✅ This is a necessary and structurally important constraint.  
+✅ It directly reflects a hard business requirement.  
+✅ It must be explicitly modeled.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+- Digital Equipment Corporation (DEC) has introduced new families of \var{N} computer systems with different memory, disk storage, and expansion capabilities.
+- Each system \var{i} is either a general-purpose (GP) system or a workstation (WS) system.
+- Each system \var{i} can have an integer number of disk drives, and on average \var{disk_i} units of disk drive per system are requested by customers for system \var{i}.
+- System \var{i} uses \var{mem_i} units of 256K memory boards per system on average.
+- System \var{i} has a price of \var{price_i} dollars.
+- The in-house supplier of CPUs for DEC could provide at most \var{max_cpu} units, due to debugging problems.
+- The supply of disk drives is uncertain and is estimated by the manufacturer to be in the range of \var{min_disk} to \var{max_disk} units.
+- the supply of 256K memory boards is also limited in the range of \var{min_mem} to \var{max_mem} units.
+- Maximum demand for system \var{i} in the next quarter is estimated to be \var{demand_i} units.
+- Maximum demand for the whole GP family in the next quarter is estimated to be \var{demand_GP} units.
+- Maximum demand for the whole WS family in the next quarter is estimated to be \var{demand_WS} units.
+- Included in the projections, there are \var{preorder_i} orders for system \var{i} that have already been received and have to be fulfilled in the next quarter.
+- To address the shortage of 256K memory boards, DEC has access to \var{alt_mem} units of an alternative memory board that can only be used in certain systems.
+- you can assume the number of systems produced is a floating point number to make the problem easier to solve.
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "N": {
+        "definition": "Number of computer systems",
+        "shape": [],
+        "type": "int"
+    },
+    "IsWorkstation": {
+        "definition": "Whether system i is a workstation (true) or general-purpose (false)",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "Price": {
+        "definition": "Price of system i in dollars",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "DiskDrives": {
+        "definition": "Average number of disk drives per unit of system i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MemoryBoards": {
+        "definition": "Number of 256K memory boards per unit of system i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MaxCpu": {
+        "definition": "Maximum number of CPUs available",
+        "shape": [],
+        "type": "int"
+    },
+    "MinDisk": {
+        "definition": "Minimum available disk drive supply",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxDisk": {
+        "definition": "Maximum available disk drive supply",
+        "shape": [],
+        "type": "int"
+    },
+    "MinMemory": {
+        "definition": "Minimum available memory board supply",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxMemory": {
+        "definition": "Maximum available memory board supply",
+        "shape": [],
+        "type": "int"
+    },
+    "Demand": {
+        "definition": "Maximum demand for system i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "DemandGP": {
+        "definition": "Maximum total demand for all general-purpose systems",
+        "shape": [],
+        "type": "int"
+    },
+    "DemandWS": {
+        "definition": "Maximum total demand for all workstation systems",
+        "shape": [],
+        "type": "int"
+    },
+    "Preorder": {
+        "definition": "Number of pre-orders for system i that must be fulfilled",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "AltMemory": {
+        "definition": "Number of alternative memory boards available",
+        "shape": [],
+        "type": "int"
+    },
+    "AltCompatible": {
+        "definition": "Whether alternative memory board is compatible with system i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: For each system i, the number of units produced x_i must not exceed its maximum demand: x_i <= Demand_i
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is indeed a constraint and it should be explicitly included in the (MI)LP formulation.
+
+The problem statement clearly says:
+
+> “Maximum demand for system i in the next quarter is estimated to be demand_i units.”
+
+This directly implies that the number of units produced (and therefore sold) of system \( i \), denoted \( x_i \), cannot exceed this maximum demand. Since production beyond demand would not generate additional revenue (and is not indicated as storable or backorderable), it is standard and necessary in such production planning models to impose:
+
+\[
+x_i \le \text{Demand}_i \quad \forall i
+\]
+
+This is a classic upper-bound demand constraint and is fully consistent with the rest of the formulation (which also includes family-level demand limits and preorder lower bounds).
+
+There is no ambiguity in the wording — “maximum demand” clearly implies an upper limit — so this constraint should absolutely be modeled explicitly.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+- Digital Equipment Corporation (DEC) has introduced new families of \var{N} computer systems with different memory, disk storage, and expansion capabilities.
+- Each system \var{i} is either a general-purpose (GP) system or a workstation (WS) system.
+- Each system \var{i} can have an integer number of disk drives, and on average \var{disk_i} units of disk drive per system are requested by customers for system \var{i}.
+- System \var{i} uses \var{mem_i} units of 256K memory boards per system on average.
+- System \var{i} has a price of \var{price_i} dollars.
+- The in-house supplier of CPUs for DEC could provide at most \var{max_cpu} units, due to debugging problems.
+- The supply of disk drives is uncertain and is estimated by the manufacturer to be in the range of \var{min_disk} to \var{max_disk} units.
+- the supply of 256K memory boards is also limited in the range of \var{min_mem} to \var{max_mem} units.
+- Maximum demand for system \var{i} in the next quarter is estimated to be \var{demand_i} units.
+- Maximum demand for the whole GP family in the next quarter is estimated to be \var{demand_GP} units.
+- Maximum demand for the whole WS family in the next quarter is estimated to be \var{demand_WS} units.
+- Included in the projections, there are \var{preorder_i} orders for system \var{i} that have already been received and have to be fulfilled in the next quarter.
+- To address the shortage of 256K memory boards, DEC has access to \var{alt_mem} units of an alternative memory board that can only be used in certain systems.
+- you can assume the number of systems produced is a floating point number to make the problem easier to solve.
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "N": {
+        "definition": "Number of computer systems",
+        "shape": [],
+        "type": "int"
+    },
+    "IsWorkstation": {
+        "definition": "Whether system i is a workstation (true) or general-purpose (false)",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "Price": {
+        "definition": "Price of system i in dollars",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "DiskDrives": {
+        "definition": "Average number of disk drives per unit of system i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MemoryBoards": {
+        "definition": "Number of 256K memory boards per unit of system i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MaxCpu": {
+        "definition": "Maximum number of CPUs available",
+        "shape": [],
+        "type": "int"
+    },
+    "MinDisk": {
+        "definition": "Minimum available disk drive supply",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxDisk": {
+        "definition": "Maximum available disk drive supply",
+        "shape": [],
+        "type": "int"
+    },
+    "MinMemory": {
+        "definition": "Minimum available memory board supply",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxMemory": {
+        "definition": "Maximum available memory board supply",
+        "shape": [],
+        "type": "int"
+    },
+    "Demand": {
+        "definition": "Maximum demand for system i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "DemandGP": {
+        "definition": "Maximum total demand for all general-purpose systems",
+        "shape": [],
+        "type": "int"
+    },
+    "DemandWS": {
+        "definition": "Maximum total demand for all workstation systems",
+        "shape": [],
+        "type": "int"
+    },
+    "Preorder": {
+        "definition": "Number of pre-orders for system i that must be fulfilled",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "AltMemory": {
+        "definition": "Number of alternative memory boards available",
+        "shape": [],
+        "type": "int"
+    },
+    "AltCompatible": {
+        "definition": "Whether alternative memory board is compatible with system i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: The total number of systems produced cannot exceed the available CPUs: sum_i x_i <= MaxCpu
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is indeed a valid and necessary constraint.
+
+Reasoning step by step:
+
+- Each computer system requires one CPU.
+- The in-house supplier can provide at most **MaxCpu** CPUs.
+- Therefore, the total number of systems produced (across all types) cannot exceed the total number of CPUs available.
+- If \( x_i \) denotes the number of units produced of system \( i \), then total CPU usage is:
+
+\[
+\sum_{i=1}^N x_i
+\]
+
+- Since CPU supply is capped at **MaxCpu**, the constraint
+
+\[
+\sum_{i=1}^N x_i \le \text{MaxCpu}
+\]
+
+is both logically required and directly implied by the problem description.
+
+There is no ambiguity here: every system needs exactly one CPU, and CPU availability is globally limited.
+
+**Confidence level: 5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+- Digital Equipment Corporation (DEC) has introduced new families of \var{N} computer systems with different memory, disk storage, and expansion capabilities.
+- Each system \var{i} is either a general-purpose (GP) system or a workstation (WS) system.
+- Each system \var{i} can have an integer number of disk drives, and on average \var{disk_i} units of disk drive per system are requested by customers for system \var{i}.
+- System \var{i} uses \var{mem_i} units of 256K memory boards per system on average.
+- System \var{i} has a price of \var{price_i} dollars.
+- The in-house supplier of CPUs for DEC could provide at most \var{max_cpu} units, due to debugging problems.
+- The supply of disk drives is uncertain and is estimated by the manufacturer to be in the range of \var{min_disk} to \var{max_disk} units.
+- the supply of 256K memory boards is also limited in the range of \var{min_mem} to \var{max_mem} units.
+- Maximum demand for system \var{i} in the next quarter is estimated to be \var{demand_i} units.
+- Maximum demand for the whole GP family in the next quarter is estimated to be \var{demand_GP} units.
+- Maximum demand for the whole WS family in the next quarter is estimated to be \var{demand_WS} units.
+- Included in the projections, there are \var{preorder_i} orders for system \var{i} that have already been received and have to be fulfilled in the next quarter.
+- To address the shortage of 256K memory boards, DEC has access to \var{alt_mem} units of an alternative memory board that can only be used in certain systems.
+- you can assume the number of systems produced is a floating point number to make the problem easier to solve.
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "N": {
+        "definition": "Number of computer systems",
+        "shape": [],
+        "type": "int"
+    },
+    "IsWorkstation": {
+        "definition": "Whether system i is a workstation (true) or general-purpose (false)",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "Price": {
+        "definition": "Price of system i in dollars",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "DiskDrives": {
+        "definition": "Average number of disk drives per unit of system i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MemoryBoards": {
+        "definition": "Number of 256K memory boards per unit of system i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MaxCpu": {
+        "definition": "Maximum number of CPUs available",
+        "shape": [],
+        "type": "int"
+    },
+    "MinDisk": {
+        "definition": "Minimum available disk drive supply",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxDisk": {
+        "definition": "Maximum available disk drive supply",
+        "shape": [],
+        "type": "int"
+    },
+    "MinMemory": {
+        "definition": "Minimum available memory board supply",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxMemory": {
+        "definition": "Maximum available memory board supply",
+        "shape": [],
+        "type": "int"
+    },
+    "Demand": {
+        "definition": "Maximum demand for system i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "DemandGP": {
+        "definition": "Maximum total demand for all general-purpose systems",
+        "shape": [],
+        "type": "int"
+    },
+    "DemandWS": {
+        "definition": "Maximum total demand for all workstation systems",
+        "shape": [],
+        "type": "int"
+    },
+    "Preorder": {
+        "definition": "Number of pre-orders for system i that must be fulfilled",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "AltMemory": {
+        "definition": "Number of alternative memory boards available",
+        "shape": [],
+        "type": "int"
+    },
+    "AltCompatible": {
+        "definition": "Whether alternative memory board is compatible with system i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: The total disk drives used cannot exceed the available disk supply: sum_i (DiskDrives_i * x_i) <= MaxDisk
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is clearly a real constraint and should be explicitly included in the (MI)LP formulation.
+
+Reasoning step by step:
+
+- Each system \( i \) requires on average \( \text{DiskDrives}_i \) disk drives per unit produced.
+- If \( x_i \) is the number of units produced of system \( i \), then total disk usage is:
+  \[
+  \sum_i \text{DiskDrives}_i \cdot x_i
+  \]
+- The problem states that disk drive supply is limited and estimated to be in the range \(\text{MinDisk}\) to \(\text{MaxDisk}\).
+- This clearly indicates a resource capacity constraint.
+- Even though supply is uncertain, \(\text{MaxDisk}\) represents an upper bound on availability, so production cannot exceed this amount.
+- Therefore, the constraint
+  \[
+  \sum_i \text{DiskDrives}_i \cdot x_i \le \text{MaxDisk}
+  \]
+  is structurally necessary in the deterministic version of the model.
+
+This is a standard resource capacity constraint and is absolutely central to the formulation.
+
+5 OUT OF 5
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+- Digital Equipment Corporation (DEC) has introduced new families of \var{N} computer systems with different memory, disk storage, and expansion capabilities.
+- Each system \var{i} is either a general-purpose (GP) system or a workstation (WS) system.
+- Each system \var{i} can have an integer number of disk drives, and on average \var{disk_i} units of disk drive per system are requested by customers for system \var{i}.
+- System \var{i} uses \var{mem_i} units of 256K memory boards per system on average.
+- System \var{i} has a price of \var{price_i} dollars.
+- The in-house supplier of CPUs for DEC could provide at most \var{max_cpu} units, due to debugging problems.
+- The supply of disk drives is uncertain and is estimated by the manufacturer to be in the range of \var{min_disk} to \var{max_disk} units.
+- the supply of 256K memory boards is also limited in the range of \var{min_mem} to \var{max_mem} units.
+- Maximum demand for system \var{i} in the next quarter is estimated to be \var{demand_i} units.
+- Maximum demand for the whole GP family in the next quarter is estimated to be \var{demand_GP} units.
+- Maximum demand for the whole WS family in the next quarter is estimated to be \var{demand_WS} units.
+- Included in the projections, there are \var{preorder_i} orders for system \var{i} that have already been received and have to be fulfilled in the next quarter.
+- To address the shortage of 256K memory boards, DEC has access to \var{alt_mem} units of an alternative memory board that can only be used in certain systems.
+- you can assume the number of systems produced is a floating point number to make the problem easier to solve.
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "N": {
+        "definition": "Number of computer systems",
+        "shape": [],
+        "type": "int"
+    },
+    "IsWorkstation": {
+        "definition": "Whether system i is a workstation (true) or general-purpose (false)",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "Price": {
+        "definition": "Price of system i in dollars",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "DiskDrives": {
+        "definition": "Average number of disk drives per unit of system i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MemoryBoards": {
+        "definition": "Number of 256K memory boards per unit of system i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MaxCpu": {
+        "definition": "Maximum number of CPUs available",
+        "shape": [],
+        "type": "int"
+    },
+    "MinDisk": {
+        "definition": "Minimum available disk drive supply",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxDisk": {
+        "definition": "Maximum available disk drive supply",
+        "shape": [],
+        "type": "int"
+    },
+    "MinMemory": {
+        "definition": "Minimum available memory board supply",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxMemory": {
+        "definition": "Maximum available memory board supply",
+        "shape": [],
+        "type": "int"
+    },
+    "Demand": {
+        "definition": "Maximum demand for system i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "DemandGP": {
+        "definition": "Maximum total demand for all general-purpose systems",
+        "shape": [],
+        "type": "int"
+    },
+    "DemandWS": {
+        "definition": "Maximum total demand for all workstation systems",
+        "shape": [],
+        "type": "int"
+    },
+    "Preorder": {
+        "definition": "Number of pre-orders for system i that must be fulfilled",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "AltMemory": {
+        "definition": "Number of alternative memory boards available",
+        "shape": [],
+        "type": "int"
+    },
+    "AltCompatible": {
+        "definition": "Whether alternative memory board is compatible with system i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: For each system i, the total memory boards required must be satisfied by regular and alternative boards: r_i + a_i = MemoryBoards_i * x_i
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is indeed a necessary constraint.
+
+### Why this is a real constraint
+
+- Each produced unit of system \( i \) requires \( \text{MemoryBoards}_i \cdot x_i \) memory boards.
+- There are **two types of memory boards**:
+  - Regular memory boards
+  - Alternative memory boards (only compatible with certain systems)
+
+If we introduce:
+- \( r_i \) = regular memory boards allocated to system \( i \)
+- \( a_i \) = alternative memory boards allocated to system \( i \)
+- \( x_i \) = number of systems \( i \) produced
+
+Then we must enforce:
+
+\[
+r_i + a_i = \text{MemoryBoards}_i \cdot x_i \quad \forall i
+\]
+
+This is a **material balance (linking) constraint** that ensures:
+- Memory usage per system is satisfied exactly,
+- Production decisions \( x_i \) are properly tied to component allocation decisions,
+- Alternative memory compatibility constraints can be enforced properly (e.g., \( a_i = 0 \) if not compatible).
+
+Without this constraint:
+- The model could allocate memory boards inconsistently with production,
+- Or count memory consumption incorrectly,
+- Or fail to enforce compatibility logic correctly.
+
+This is a standard and essential modeling constraint in multi-component production planning problems.
+
+### Confidence
+
+This is clearly a necessary structural constraint in the formulation.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+- Digital Equipment Corporation (DEC) has introduced new families of \var{N} computer systems with different memory, disk storage, and expansion capabilities.
+- Each system \var{i} is either a general-purpose (GP) system or a workstation (WS) system.
+- Each system \var{i} can have an integer number of disk drives, and on average \var{disk_i} units of disk drive per system are requested by customers for system \var{i}.
+- System \var{i} uses \var{mem_i} units of 256K memory boards per system on average.
+- System \var{i} has a price of \var{price_i} dollars.
+- The in-house supplier of CPUs for DEC could provide at most \var{max_cpu} units, due to debugging problems.
+- The supply of disk drives is uncertain and is estimated by the manufacturer to be in the range of \var{min_disk} to \var{max_disk} units.
+- the supply of 256K memory boards is also limited in the range of \var{min_mem} to \var{max_mem} units.
+- Maximum demand for system \var{i} in the next quarter is estimated to be \var{demand_i} units.
+- Maximum demand for the whole GP family in the next quarter is estimated to be \var{demand_GP} units.
+- Maximum demand for the whole WS family in the next quarter is estimated to be \var{demand_WS} units.
+- Included in the projections, there are \var{preorder_i} orders for system \var{i} that have already been received and have to be fulfilled in the next quarter.
+- To address the shortage of 256K memory boards, DEC has access to \var{alt_mem} units of an alternative memory board that can only be used in certain systems.
+- you can assume the number of systems produced is a floating point number to make the problem easier to solve.
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "N": {
+        "definition": "Number of computer systems",
+        "shape": [],
+        "type": "int"
+    },
+    "IsWorkstation": {
+        "definition": "Whether system i is a workstation (true) or general-purpose (false)",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "Price": {
+        "definition": "Price of system i in dollars",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "DiskDrives": {
+        "definition": "Average number of disk drives per unit of system i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MemoryBoards": {
+        "definition": "Number of 256K memory boards per unit of system i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MaxCpu": {
+        "definition": "Maximum number of CPUs available",
+        "shape": [],
+        "type": "int"
+    },
+    "MinDisk": {
+        "definition": "Minimum available disk drive supply",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxDisk": {
+        "definition": "Maximum available disk drive supply",
+        "shape": [],
+        "type": "int"
+    },
+    "MinMemory": {
+        "definition": "Minimum available memory board supply",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxMemory": {
+        "definition": "Maximum available memory board supply",
+        "shape": [],
+        "type": "int"
+    },
+    "Demand": {
+        "definition": "Maximum demand for system i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "DemandGP": {
+        "definition": "Maximum total demand for all general-purpose systems",
+        "shape": [],
+        "type": "int"
+    },
+    "DemandWS": {
+        "definition": "Maximum total demand for all workstation systems",
+        "shape": [],
+        "type": "int"
+    },
+    "Preorder": {
+        "definition": "Number of pre-orders for system i that must be fulfilled",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "AltMemory": {
+        "definition": "Number of alternative memory boards available",
+        "shape": [],
+        "type": "int"
+    },
+    "AltCompatible": {
+        "definition": "Whether alternative memory board is compatible with system i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: The total regular memory boards used cannot exceed the available regular memory supply: sum_i r_i <= MaxMemory
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is **definitely a constraint** and it should be explicitly modeled.
+
+### Why?
+
+The problem statement clearly says:
+
+> "The supply of 256K memory boards is also limited in the range of min_mem to max_mem units."
+
+This means memory boards are a **scarce resource**, and production decisions must respect the available supply. Therefore:
+
+- If system \( i \) uses `MemoryBoards_i` regular memory boards per unit,
+- And \( x_i \) is the number of systems produced,
+- Then total regular memory usage is:
+
+\[
+\sum_i MemoryBoards_i \cdot x_i
+\]
+
+If you introduce variables \( r_i \) to represent regular memory allocated to system \( i \), then:
+
+\[
+\sum_i r_i \le \text{MaxMemory}
+\]
+
+is absolutely required.
+
+This is a **core capacity constraint**, analogous to the CPU and disk constraints. Without it, the model could allocate unlimited regular memory, which contradicts the problem description.
+
+Even though the supply is given as a range \([MinMemory, MaxMemory]\), the **upper bound must be enforced** in a deterministic LP/MILP formulation.
+
+### Conclusion
+
+✅ This is clearly a necessary resource capacity constraint.  
+✅ It should be explicitly included in the model.  
+✅ There is no ambiguity in the problem statement about this limitation.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+- Digital Equipment Corporation (DEC) has introduced new families of \var{N} computer systems with different memory, disk storage, and expansion capabilities.
+- Each system \var{i} is either a general-purpose (GP) system or a workstation (WS) system.
+- Each system \var{i} can have an integer number of disk drives, and on average \var{disk_i} units of disk drive per system are requested by customers for system \var{i}.
+- System \var{i} uses \var{mem_i} units of 256K memory boards per system on average.
+- System \var{i} has a price of \var{price_i} dollars.
+- The in-house supplier of CPUs for DEC could provide at most \var{max_cpu} units, due to debugging problems.
+- The supply of disk drives is uncertain and is estimated by the manufacturer to be in the range of \var{min_disk} to \var{max_disk} units.
+- the supply of 256K memory boards is also limited in the range of \var{min_mem} to \var{max_mem} units.
+- Maximum demand for system \var{i} in the next quarter is estimated to be \var{demand_i} units.
+- Maximum demand for the whole GP family in the next quarter is estimated to be \var{demand_GP} units.
+- Maximum demand for the whole WS family in the next quarter is estimated to be \var{demand_WS} units.
+- Included in the projections, there are \var{preorder_i} orders for system \var{i} that have already been received and have to be fulfilled in the next quarter.
+- To address the shortage of 256K memory boards, DEC has access to \var{alt_mem} units of an alternative memory board that can only be used in certain systems.
+- you can assume the number of systems produced is a floating point number to make the problem easier to solve.
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "N": {
+        "definition": "Number of computer systems",
+        "shape": [],
+        "type": "int"
+    },
+    "IsWorkstation": {
+        "definition": "Whether system i is a workstation (true) or general-purpose (false)",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "Price": {
+        "definition": "Price of system i in dollars",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "DiskDrives": {
+        "definition": "Average number of disk drives per unit of system i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MemoryBoards": {
+        "definition": "Number of 256K memory boards per unit of system i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MaxCpu": {
+        "definition": "Maximum number of CPUs available",
+        "shape": [],
+        "type": "int"
+    },
+    "MinDisk": {
+        "definition": "Minimum available disk drive supply",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxDisk": {
+        "definition": "Maximum available disk drive supply",
+        "shape": [],
+        "type": "int"
+    },
+    "MinMemory": {
+        "definition": "Minimum available memory board supply",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxMemory": {
+        "definition": "Maximum available memory board supply",
+        "shape": [],
+        "type": "int"
+    },
+    "Demand": {
+        "definition": "Maximum demand for system i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "DemandGP": {
+        "definition": "Maximum total demand for all general-purpose systems",
+        "shape": [],
+        "type": "int"
+    },
+    "DemandWS": {
+        "definition": "Maximum total demand for all workstation systems",
+        "shape": [],
+        "type": "int"
+    },
+    "Preorder": {
+        "definition": "Number of pre-orders for system i that must be fulfilled",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "AltMemory": {
+        "definition": "Number of alternative memory boards available",
+        "shape": [],
+        "type": "int"
+    },
+    "AltCompatible": {
+        "definition": "Whether alternative memory board is compatible with system i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: The total alternative memory boards used cannot exceed the available alternative memory: sum_i a_i <= AltMemory
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is clearly a real constraint** and should be explicitly modeled.
+
+### Why?
+
+The description states:
+
+> “DEC has access to **alt_mem units** of an alternative memory board that can only be used in certain systems.”
+
+This means:
+
+- The alternative memory is a **limited resource**.
+- It is **shared across systems**.
+- It can only be used where compatible.
+- Therefore, the total allocation across all systems **cannot exceed AltMemory**.
+
+If we introduce decision variables such as:
+
+- \( a_i \) = number of alternative memory boards used in system \( i \),
+
+then the aggregate availability constraint
+
+\[
+\sum_i a_i \le \text{AltMemory}
+\]
+
+is **necessary** to enforce the resource limit.
+
+Without this constraint, the model could unrealistically use unlimited alternative memory boards.
+
+This is a standard resource-capacity constraint in production planning models.
+
+### Conclusion
+
+✅ It is definitely a constraint.  
+✅ It must be explicitly modeled.  
+✅ There is no ambiguity in the problem statement about the alternative memory being limited.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+- Digital Equipment Corporation (DEC) has introduced new families of \var{N} computer systems with different memory, disk storage, and expansion capabilities.
+- Each system \var{i} is either a general-purpose (GP) system or a workstation (WS) system.
+- Each system \var{i} can have an integer number of disk drives, and on average \var{disk_i} units of disk drive per system are requested by customers for system \var{i}.
+- System \var{i} uses \var{mem_i} units of 256K memory boards per system on average.
+- System \var{i} has a price of \var{price_i} dollars.
+- The in-house supplier of CPUs for DEC could provide at most \var{max_cpu} units, due to debugging problems.
+- The supply of disk drives is uncertain and is estimated by the manufacturer to be in the range of \var{min_disk} to \var{max_disk} units.
+- the supply of 256K memory boards is also limited in the range of \var{min_mem} to \var{max_mem} units.
+- Maximum demand for system \var{i} in the next quarter is estimated to be \var{demand_i} units.
+- Maximum demand for the whole GP family in the next quarter is estimated to be \var{demand_GP} units.
+- Maximum demand for the whole WS family in the next quarter is estimated to be \var{demand_WS} units.
+- Included in the projections, there are \var{preorder_i} orders for system \var{i} that have already been received and have to be fulfilled in the next quarter.
+- To address the shortage of 256K memory boards, DEC has access to \var{alt_mem} units of an alternative memory board that can only be used in certain systems.
+- you can assume the number of systems produced is a floating point number to make the problem easier to solve.
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "N": {
+        "definition": "Number of computer systems",
+        "shape": [],
+        "type": "int"
+    },
+    "IsWorkstation": {
+        "definition": "Whether system i is a workstation (true) or general-purpose (false)",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "Price": {
+        "definition": "Price of system i in dollars",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "DiskDrives": {
+        "definition": "Average number of disk drives per unit of system i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MemoryBoards": {
+        "definition": "Number of 256K memory boards per unit of system i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MaxCpu": {
+        "definition": "Maximum number of CPUs available",
+        "shape": [],
+        "type": "int"
+    },
+    "MinDisk": {
+        "definition": "Minimum available disk drive supply",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxDisk": {
+        "definition": "Maximum available disk drive supply",
+        "shape": [],
+        "type": "int"
+    },
+    "MinMemory": {
+        "definition": "Minimum available memory board supply",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxMemory": {
+        "definition": "Maximum available memory board supply",
+        "shape": [],
+        "type": "int"
+    },
+    "Demand": {
+        "definition": "Maximum demand for system i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "DemandGP": {
+        "definition": "Maximum total demand for all general-purpose systems",
+        "shape": [],
+        "type": "int"
+    },
+    "DemandWS": {
+        "definition": "Maximum total demand for all workstation systems",
+        "shape": [],
+        "type": "int"
+    },
+    "Preorder": {
+        "definition": "Number of pre-orders for system i that must be fulfilled",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "AltMemory": {
+        "definition": "Number of alternative memory boards available",
+        "shape": [],
+        "type": "int"
+    },
+    "AltCompatible": {
+        "definition": "Whether alternative memory board is compatible with system i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: Alternative memory boards can only be used for compatible systems: a_i <= AltCompatible_i * (MemoryBoards_i * x_i) for all i
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is indeed a valid modeling constraint — assuming:
+
+- \( x_i \) = number of systems of type \( i \) produced  
+- \( a_i \) = number of alternative memory boards allocated to system \( i \)  
+- \( \text{AltCompatible}_i \in \{0,1\} \)
+
+### Why this is a real constraint
+
+The statement in the description says:
+
+> Alternative memory board can only be used in certain systems.
+
+That creates **two modeling requirements**:
+
+1. If system \( i \) is **not compatible**, then no alternative memory can be used:
+   \[
+   a_i = 0
+   \]
+
+2. Even if compatible, the alternative memory used cannot exceed the total memory requirement of the produced systems:
+   \[
+   a_i \le \text{MemoryBoards}_i \cdot x_i
+   \]
+
+The proposed constraint:
+\[
+a_i \le \text{AltCompatible}_i \cdot (\text{MemoryBoards}_i \cdot x_i)
+\]
+
+correctly enforces both conditions:
+
+- If \( \text{AltCompatible}_i = 0 \), then \( a_i \le 0 \Rightarrow a_i = 0 \)
+- If \( \text{AltCompatible}_i = 1 \), then \( a_i \le \text{MemoryBoards}_i x_i \)
+
+So this is not redundant or cosmetic — it is **logically necessary** to correctly model compatibility restrictions.
+
+Without it, the model could assign alternative memory to incompatible systems.
+
+### Conclusion
+
+✅ This is a legitimate structural constraint that must be explicitly included in the formulation.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+- Digital Equipment Corporation (DEC) has introduced new families of \var{N} computer systems with different memory, disk storage, and expansion capabilities.
+- Each system \var{i} is either a general-purpose (GP) system or a workstation (WS) system.
+- Each system \var{i} can have an integer number of disk drives, and on average \var{disk_i} units of disk drive per system are requested by customers for system \var{i}.
+- System \var{i} uses \var{mem_i} units of 256K memory boards per system on average.
+- System \var{i} has a price of \var{price_i} dollars.
+- The in-house supplier of CPUs for DEC could provide at most \var{max_cpu} units, due to debugging problems.
+- The supply of disk drives is uncertain and is estimated by the manufacturer to be in the range of \var{min_disk} to \var{max_disk} units.
+- the supply of 256K memory boards is also limited in the range of \var{min_mem} to \var{max_mem} units.
+- Maximum demand for system \var{i} in the next quarter is estimated to be \var{demand_i} units.
+- Maximum demand for the whole GP family in the next quarter is estimated to be \var{demand_GP} units.
+- Maximum demand for the whole WS family in the next quarter is estimated to be \var{demand_WS} units.
+- Included in the projections, there are \var{preorder_i} orders for system \var{i} that have already been received and have to be fulfilled in the next quarter.
+- To address the shortage of 256K memory boards, DEC has access to \var{alt_mem} units of an alternative memory board that can only be used in certain systems.
+- you can assume the number of systems produced is a floating point number to make the problem easier to solve.
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "N": {
+        "definition": "Number of computer systems",
+        "shape": [],
+        "type": "int"
+    },
+    "IsWorkstation": {
+        "definition": "Whether system i is a workstation (true) or general-purpose (false)",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "Price": {
+        "definition": "Price of system i in dollars",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "DiskDrives": {
+        "definition": "Average number of disk drives per unit of system i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MemoryBoards": {
+        "definition": "Number of 256K memory boards per unit of system i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MaxCpu": {
+        "definition": "Maximum number of CPUs available",
+        "shape": [],
+        "type": "int"
+    },
+    "MinDisk": {
+        "definition": "Minimum available disk drive supply",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxDisk": {
+        "definition": "Maximum available disk drive supply",
+        "shape": [],
+        "type": "int"
+    },
+    "MinMemory": {
+        "definition": "Minimum available memory board supply",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxMemory": {
+        "definition": "Maximum available memory board supply",
+        "shape": [],
+        "type": "int"
+    },
+    "Demand": {
+        "definition": "Maximum demand for system i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "DemandGP": {
+        "definition": "Maximum total demand for all general-purpose systems",
+        "shape": [],
+        "type": "int"
+    },
+    "DemandWS": {
+        "definition": "Maximum total demand for all workstation systems",
+        "shape": [],
+        "type": "int"
+    },
+    "Preorder": {
+        "definition": "Number of pre-orders for system i that must be fulfilled",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "AltMemory": {
+        "definition": "Number of alternative memory boards available",
+        "shape": [],
+        "type": "int"
+    },
+    "AltCompatible": {
+        "definition": "Whether alternative memory board is compatible with system i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: The total production of general-purpose systems cannot exceed their family demand: sum_{i: IsWorkstation_i = false} x_i <= DemandGP
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is clearly a valid constraint and should be explicitly included in the (MI)LP formulation.
+
+The problem statement explicitly says:
+
+> "Maximum demand for the whole GP family in the next quarter is estimated to be demand_GP units."
+
+This directly implies that the total number of general-purpose (GP) systems produced cannot exceed this family-level demand cap. Therefore, the constraint
+
+\[
+\sum_{i : \text{IsWorkstation}_i = \text{false}} x_i \le \text{DemandGP}
+\]
+
+is a correct and necessary modeling component.
+
+Even if individual system-level demand constraints exist (i.e., \( x_i \le \text{Demand}_i \)), the family-level demand cap is an additional aggregate restriction and is not redundant unless explicitly stated otherwise (which it is not).
+
+There is no ambiguity in the wording — it clearly defines a maximum total demand for the GP family.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+- Digital Equipment Corporation (DEC) has introduced new families of \var{N} computer systems with different memory, disk storage, and expansion capabilities.
+- Each system \var{i} is either a general-purpose (GP) system or a workstation (WS) system.
+- Each system \var{i} can have an integer number of disk drives, and on average \var{disk_i} units of disk drive per system are requested by customers for system \var{i}.
+- System \var{i} uses \var{mem_i} units of 256K memory boards per system on average.
+- System \var{i} has a price of \var{price_i} dollars.
+- The in-house supplier of CPUs for DEC could provide at most \var{max_cpu} units, due to debugging problems.
+- The supply of disk drives is uncertain and is estimated by the manufacturer to be in the range of \var{min_disk} to \var{max_disk} units.
+- the supply of 256K memory boards is also limited in the range of \var{min_mem} to \var{max_mem} units.
+- Maximum demand for system \var{i} in the next quarter is estimated to be \var{demand_i} units.
+- Maximum demand for the whole GP family in the next quarter is estimated to be \var{demand_GP} units.
+- Maximum demand for the whole WS family in the next quarter is estimated to be \var{demand_WS} units.
+- Included in the projections, there are \var{preorder_i} orders for system \var{i} that have already been received and have to be fulfilled in the next quarter.
+- To address the shortage of 256K memory boards, DEC has access to \var{alt_mem} units of an alternative memory board that can only be used in certain systems.
+- you can assume the number of systems produced is a floating point number to make the problem easier to solve.
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "N": {
+        "definition": "Number of computer systems",
+        "shape": [],
+        "type": "int"
+    },
+    "IsWorkstation": {
+        "definition": "Whether system i is a workstation (true) or general-purpose (false)",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "Price": {
+        "definition": "Price of system i in dollars",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "DiskDrives": {
+        "definition": "Average number of disk drives per unit of system i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MemoryBoards": {
+        "definition": "Number of 256K memory boards per unit of system i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MaxCpu": {
+        "definition": "Maximum number of CPUs available",
+        "shape": [],
+        "type": "int"
+    },
+    "MinDisk": {
+        "definition": "Minimum available disk drive supply",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxDisk": {
+        "definition": "Maximum available disk drive supply",
+        "shape": [],
+        "type": "int"
+    },
+    "MinMemory": {
+        "definition": "Minimum available memory board supply",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxMemory": {
+        "definition": "Maximum available memory board supply",
+        "shape": [],
+        "type": "int"
+    },
+    "Demand": {
+        "definition": "Maximum demand for system i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "DemandGP": {
+        "definition": "Maximum total demand for all general-purpose systems",
+        "shape": [],
+        "type": "int"
+    },
+    "DemandWS": {
+        "definition": "Maximum total demand for all workstation systems",
+        "shape": [],
+        "type": "int"
+    },
+    "Preorder": {
+        "definition": "Number of pre-orders for system i that must be fulfilled",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "AltMemory": {
+        "definition": "Number of alternative memory boards available",
+        "shape": [],
+        "type": "int"
+    },
+    "AltCompatible": {
+        "definition": "Whether alternative memory board is compatible with system i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: The total production of workstation systems cannot exceed their family demand: sum_{i: IsWorkstation_i = true} x_i <= DemandWS
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is definitely a constraint**, and it should be explicitly modeled.
+
+### Why?
+
+The problem statement clearly says:
+
+> "Maximum demand for the whole WS family in the next quarter is estimated to be demand_WS units."
+
+That directly implies a **family-level demand cap** across all workstation systems combined. This is distinct from the individual system demand constraints \( x_i \leq Demand_i \). Both can be binding:
+
+- Individual system demand limits prevent overproducing a specific model.
+- The family demand limit restricts total workstation production even if individual model demands would allow more.
+
+So the correct modeling constraint is:
+
+\[
+\sum_{i : IsWorkstation_i = \text{true}} x_i \leq DemandWS
+\]
+
+This is structurally similar to the GP-family demand constraint and is clearly intended as part of the formulation.
+
+There is no ambiguity in the wording — it explicitly states a maximum for the whole WS family.
+
+### Confidence Level
+
+5 OUT OF 5
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+- Digital Equipment Corporation (DEC) has introduced new families of \var{N} computer systems with different memory, disk storage, and expansion capabilities.
+- Each system \var{i} is either a general-purpose (GP) system or a workstation (WS) system.
+- Each system \var{i} can have an integer number of disk drives, and on average \var{disk_i} units of disk drive per system are requested by customers for system \var{i}.
+- System \var{i} uses \var{mem_i} units of 256K memory boards per system on average.
+- System \var{i} has a price of \var{price_i} dollars.
+- The in-house supplier of CPUs for DEC could provide at most \var{max_cpu} units, due to debugging problems.
+- The supply of disk drives is uncertain and is estimated by the manufacturer to be in the range of \var{min_disk} to \var{max_disk} units.
+- the supply of 256K memory boards is also limited in the range of \var{min_mem} to \var{max_mem} units.
+- Maximum demand for system \var{i} in the next quarter is estimated to be \var{demand_i} units.
+- Maximum demand for the whole GP family in the next quarter is estimated to be \var{demand_GP} units.
+- Maximum demand for the whole WS family in the next quarter is estimated to be \var{demand_WS} units.
+- Included in the projections, there are \var{preorder_i} orders for system \var{i} that have already been received and have to be fulfilled in the next quarter.
+- To address the shortage of 256K memory boards, DEC has access to \var{alt_mem} units of an alternative memory board that can only be used in certain systems.
+- you can assume the number of systems produced is a floating point number to make the problem easier to solve.
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "N": {
+        "definition": "Number of computer systems",
+        "shape": [],
+        "type": "int"
+    },
+    "IsWorkstation": {
+        "definition": "Whether system i is a workstation (true) or general-purpose (false)",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "Price": {
+        "definition": "Price of system i in dollars",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "DiskDrives": {
+        "definition": "Average number of disk drives per unit of system i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MemoryBoards": {
+        "definition": "Number of 256K memory boards per unit of system i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "MaxCpu": {
+        "definition": "Maximum number of CPUs available",
+        "shape": [],
+        "type": "int"
+    },
+    "MinDisk": {
+        "definition": "Minimum available disk drive supply",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxDisk": {
+        "definition": "Maximum available disk drive supply",
+        "shape": [],
+        "type": "int"
+    },
+    "MinMemory": {
+        "definition": "Minimum available memory board supply",
+        "shape": [],
+        "type": "int"
+    },
+    "MaxMemory": {
+        "definition": "Maximum available memory board supply",
+        "shape": [],
+        "type": "int"
+    },
+    "Demand": {
+        "definition": "Maximum demand for system i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "DemandGP": {
+        "definition": "Maximum total demand for all general-purpose systems",
+        "shape": [],
+        "type": "int"
+    },
+    "DemandWS": {
+        "definition": "Maximum total demand for all workstation systems",
+        "shape": [],
+        "type": "int"
+    },
+    "Preorder": {
+        "definition": "Number of pre-orders for system i that must be fulfilled",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "AltMemory": {
+        "definition": "Number of alternative memory boards available",
+        "shape": [],
+        "type": "int"
+    },
+    "AltCompatible": {
+        "definition": "Whether alternative memory board is compatible with system i",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: Non-negativity constraints: x_i >= 0, r_i >= 0, a_i >= 0 for all i
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is** a constraint.
+
+In this production planning setting:
+
+- \( x_i \) = number of systems \( i \) produced  
+- \( r_i \) = regular memory boards allocated to system \( i \)  
+- \( a_i \) = alternative memory boards allocated to system \( i \)
+
+All of these represent **physical quantities**. Negative production or negative allocation of components is not meaningful in this context. Therefore, non-negativity is required for model correctness.
+
+Even though many solvers assume non-negativity by default if variables are declared with lower bounds of 0, this is still a **modeling constraint** that must be explicitly enforced in the (MI)LP formulation (either via variable domain declaration or explicit constraints).
+
+So yes, this should be included in the constraint list (or enforced via variable bounds).
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
+
+
+
+++++++++++++++++++++++++++++++
+Extracting constraint formulations
+++++++++++++++++++++++++++++++
+
+
+
+----
+{
+    "FORMULATION": "$\\forall i = 1, \\dots, N,\\; x[i] \\geq Preorder[i]$",
+    "NEW VARIABLES": {
+        "x": {
+            "shape": "[N]",
+            "type": "continuous",
+            "definition": "Number of units produced for system i"
+        }
+    },
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\forall i = 1, \\dots, N,\\; x[i] \\geq Preorder[i]$
+{'x': {'shape': '[N]', 'type': 'continuous', 'definition': 'Number of units produced for system i'}}
+[]
+----
+----
+{
+    "FORMULATION": "$\\forall i = 1, \\dots, N,\\; x_i \\leq Demand_i$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\forall i = 1, \\dots, N,\\; x_i \\leq Demand_i$
+{}
+[]
+----
+----
+{
+    "FORMULATION": "$\\sum_{i=1}^{N} x_i \\leq MaxCpu$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\sum_{i=1}^{N} x_i \\leq MaxCpu$
+{}
+[]
+----
+----
+{
+    "FORMULATION": "$\\sum_{i=1}^{N} DiskDrives_i \\; x_i \\leq MaxDisk$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\sum_{i=1}^{N} DiskDrives_i \\; x_i \\leq MaxDisk$
+{}
+[]
+----
+----
+{
+    "FORMULATION": "$\\forall i = 1, \\dots, N:\\; r_i + a_i = MemoryBoards_i \\cdot x_i$",
+    "NEW VARIABLES": {
+        "r": {
+            "shape": ["N"],
+            "type": "continuous",
+            "definition": "Number of regular 256K memory boards used for system i"
+        },
+        "a": {
+            "shape": ["N"],
+            "type": "continuous",
+            "definition": "Number of alternative memory boards used for system i"
+        }
+    },
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\forall i = 1, \\dots, N:\\; r_i + a_i = MemoryBoards_i \\cdot x_i$
+{'r': {'shape': ['N'], 'type': 'continuous', 'definition': 'Number of regular 256K memory boards used for system i'}, 'a': {'shape': ['N'], 'type': 'continuous', 'definition': 'Number of alternative memory boards used for system i'}}
+[]
+----
+----
+{
+    "FORMULATION": "$\\sum_{i=1}^{N} r_i \\leq MaxMemory$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\sum_{i=1}^{N} r_i \\leq MaxMemory$
+{}
+[]
+----
+----
+{
+    "FORMULATION": "$\\sum_{i=1}^{N} a_i \\leq AltMemory$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\sum_{i=1}^{N} a_i \\leq AltMemory$
+{}
+[]
+----
+----
+{
+    "FORMULATION": "$\\forall i = 1, \\dots, N:\\; a_i \\leq AltCompatible_i \\cdot MemoryBoards_i \\cdot x_i$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\forall i = 1, \\dots, N:\\; a_i \\leq AltCompatible_i \\cdot MemoryBoards_i \\cdot x_i$
+{}
+[]
+----
+----
+{
+    "FORMULATION": "$\\sum_{i: \\; IsWorkstation_i = \\text{false}} x_i \\leq DemandGP$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\sum_{i: \\; IsWorkstation_i = \\text{false}} x_i \\leq DemandGP$
+{}
+[]
+----
+----
+{
+    "FORMULATION": "$\\sum_{i: IsWorkstation_i = \\text{true}} x_i \\leq DemandWS$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\sum_{i: IsWorkstation_i = \\text{true}} x_i \\leq DemandWS$
+{}
+[]
+----
+----
+{
+    "FORMULATION": "$\\forall i = 1, \\dots, N:\\; x_i \\ge 0,\\; r_i \\ge 0,\\; a_i \\ge 0$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\forall i = 1, \\dots, N:\\; x_i \\ge 0,\\; r_i \\ge 0,\\; a_i \\ge 0$
+{}
+[]
+----
+Code executed successfully. Output:
+Restricted license - for non-production use only - expires 2027-11-29
+Gurobi Optimizer version 13.0.1 build v13.0.1rc0 (linux64 - "Alibaba Cloud Linux 3.2104 U12.3 (OpenAnolis Edition)")
+
+CPU model: Intel(R) Xeon(R) Platinum, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 1 physical cores, 2 logical processors, using up to 2 threads
+
+Optimize a model with 41 rows, 15 columns and 64 nonzeros (Max)
+Model fingerprint: 0x98c6abcb
+Model has 5 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [3e-01, 4e+00]
+  Objective range  [2e+04, 6e+04]
+  Bounds range     [0e+00, 0e+00]
+  RHS range        [3e+02, 1e+06]
+
+Presolve removed 36 rows and 8 columns
+Presolve time: 0.00s
+Presolved: 5 rows, 7 columns, 18 nonzeros
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0    3.7700000e+08   2.100000e+03   0.000000e+00      0s
+       4    2.8270588e+08   0.000000e+00   0.000000e+00      0s
+
+Solved in 4 iterations and 0.00 seconds (0.00 work units)
+Optimal objective  2.827058824e+08
+Optimal Objective Value:  282705882.3529412
+Optimal Objective Value:  282705882.3529412
+

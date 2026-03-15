@@ -1,0 +1,70 @@
+{
+    "description": "An office is buying printers for their headquarters, a premium model and regular model. The premium model can print 30 pages per minute while the regular model can print 20 pages per minute. In addition, the premium model requires 4 units of ink per minute while the regular model requires 3 units of ink per minute. The office wants to make sure that at least 200 pages can be printed per minute and that at most 35 units of ink are used per minute.  Since the premium model is more user friendly, the number regular printers must be less than the number of premium printers. How many of each printer should be bought to minimize the total number of printers in the office?",
+    "parameters": {
+        "NumPrinterTypes": {
+            "definition": "Number of different printer types",
+            "shape": [],
+            "type": "int"
+        },
+        "PrintingSpeed": {
+            "definition": "Pages printed per minute by each printer type",
+            "shape": [
+                "NumPrinterTypes"
+            ],
+            "type": "string"
+        },
+        "InkUsage": {
+            "definition": "Ink units used per minute by each printer type",
+            "shape": [
+                "NumPrinterTypes"
+            ],
+            "type": "string"
+        },
+        "MinPagesPerMinute": {
+            "definition": "Minimum number of pages to be printed per minute",
+            "shape": [],
+            "type": "int"
+        },
+        "MaxInkPerMinute": {
+            "definition": "Maximum number of ink units allowed per minute",
+            "shape": [],
+            "type": "int"
+        }
+    },
+    "objective": {
+        "description": "\"Minimize the total number of printers (premium and regular) purchased by the office\"",
+        "formulation": "$\\min \\sum_{i=1}^{NumPrinterTypes} NumPrinters_i$",
+        "code": ""
+    },
+    "constraints": [
+        {
+            "description": "Total pages printed per minute by all printers should be at least MinPagesPerMinute",
+            "formulation": "$\\\\sum_{t=1}^{NumPrinterTypes} PrintingSpeed[t] \\\\cdot NumPrinters[t] \\\\geq MinPagesPerMinute$",
+            "code": "model.addConstr(\n    sum(PrintingSpeed[t] * NumPrinters[t] for t in range(NumPrinterTypes)) \n    >= MinPagesPerMinute\n)"
+        },
+        {
+            "description": "Total ink usage per minute by all printers should be at most MaxInkPerMinute",
+            "formulation": "$\\\\sum_{i=1}^{NumPrinterTypes} InkUsage[i] \\\\cdot NumPrinters[i] \\\\leq MaxInkPerMinute$",
+            "code": "model.addConstr(\n    sum(InkUsage[i] * NumPrinters[i] for i in range(NumPrinterTypes)) \n    <= MaxInkPerMinute\n)"
+        },
+        {
+            "description": "The number of regular printers must be less than the number of premium printers",
+            "formulation": "$NumPrinters[2] \\\\leq NumPrinters[1] - 1$",
+            "code": "model.addConstr(NumPrinters[1] <= NumPrinters[0] - 1)"
+        },
+        {
+            "description": "The numbers of premium and regular printers purchased must be non-negative integers",
+            "formulation": "$\\\\forall i = 1, \\\\dots, NumPrinterTypes,\\\\; NumPrinters[i] \\\\in \\\\mathbb{Z}_{\\\\geq 0}$",
+            "code": "for i in range(NumPrinterTypes):\n    model.addConstr(NumPrinters[i] >= 0)"
+        }
+    ],
+    "variables": {
+        "NumPrinters": {
+            "shape": [
+                "NumPrinterTypes"
+            ],
+            "type": "integer",
+            "definition": "Number of printers purchased for each printer type"
+        }
+    }
+}

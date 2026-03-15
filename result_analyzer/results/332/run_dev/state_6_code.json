@@ -1,0 +1,76 @@
+{
+    "description": "PROBLEM TYPE: MILP\nPROBLEM INFO:\n\n- Before going on vacation you want to make floppy disk backups of important files. \n- You have at your disposal several blank floppy disks with capacities of \\var{capacity} GB. \n- They are given the size of the files that you want to save.\n- Each file \\var{j} has size \\var{size_{j}}.\n- Assuming that you do not have any programs to compress the data and that you have enough floppy disks available for back up everything.\n\nINPUT FORMAT:\n\n{\n\t\"capacity\": capacity,\n\t\"size\": [size_{j} for j in 1,...,N]\n}\n\nOBJECTIVE: How to distribute these files on the floppy disks in order to minimize the number of floppy disks used.\n\nOUTPUT INFO:\n\n- \\var{n_disks} represents the total number of floppy disks used\n- \\var{whichdisk} represents on which disk each file is distributed. Its length is determined by \\var{n_disks}\n\nOUTPUT FORMAT:\n\n{\n\t\"n_disks\": n_disks,\n\t\"whichdisk\": [disk_{j} for j in 1,...,N]\n}",
+    "parameters": {
+        "Capacity": {
+            "definition": "Total capacity of a floppy disk",
+            "shape": [],
+            "type": "int"
+        },
+        "NumFiles": {
+            "definition": "Number of files to save",
+            "shape": [],
+            "type": "int"
+        },
+        "Size": {
+            "definition": "Size of each file j",
+            "shape": [
+                "NumFiles"
+            ],
+            "type": "string"
+        }
+    },
+    "objective": {
+        "description": "\"Minimize the total number of floppy disks used to store all files without exceeding the capacity of any disk.\"",
+        "formulation": "$\\min \\sum_{k=1}^{NumFiles} useDisk_k$",
+        "code": "model.setObjective(quicksum(useDisk[k] for k in range(NumFiles)), GRB.MINIMIZE)"
+    },
+    "constraints": [
+        {
+            "description": "Each file must be assigned to exactly one floppy disk",
+            "formulation": "$\\\\forall j = 1, \\\\dots, \\\\text{NumFiles}: \\\\sum_{k=1}^{\\\\text{NumFiles}} assign[j,k] = 1$",
+            "code": "for j in range(NumFiles):\n    model.addConstr(\n        sum(assign[j, k] for k in range(NumFiles)) == 1\n    )"
+        },
+        {
+            "description": "For each floppy disk k: sum of sizes of files assigned to k must be less than or equal to Capacity times the binary variable indicating whether disk k is used",
+            "formulation": "$\\\\forall k = 1, \\\\dots, NumFiles:\\\\; \\\\sum_{j=1}^{NumFiles} Size[j] \\\\cdot assign[j,k] \\\\leq Capacity \\\\cdot useDisk[k]$",
+            "code": "for k in range(NumFiles):\n    model.addConstr(\n        sum(Size[j] * assign[j, k] for j in range(NumFiles)) \n        <= Capacity * useDisk[k]\n    )"
+        },
+        {
+            "description": "The total number of disks used equals the sum of the binary disk usage variables",
+            "formulation": "$nDisks = \\\\sum_{k=1}^{NumFiles} useDisk[k]$",
+            "code": "model.addConstr(nDisks == sum(useDisk[k] for k in range(NumFiles)))"
+        },
+        {
+            "description": "The assignment variables indicating whether file j is assigned to disk k must be binary (0 or 1)",
+            "formulation": "$\\\\forall j = 1, \\\\ldots, \\\\text{NumFiles},\\\\; \\\\forall k = 1, \\\\ldots, \\\\text{NumFiles}:\\\\; assign[j,k] \\\\in \\\\{0,1\\\\}$",
+            "code": "# The binary nature of assign[j,k] is enforced by defining the variable \n# with vtype=GRB.BINARY during variable creation, so no additional \n# constraints are required here."
+        },
+        {
+            "description": "The disk usage variables indicating whether disk k is used must be binary (0 or 1)",
+            "formulation": "$\\\\forall k = 1, \\\\dots, \\\\text{NumFiles}: \\\\; useDisk[k] \\\\in \\\\{0,1\\\\}$",
+            "code": "for k in range(NumFiles):\n    model.addConstr(useDisk[k] >= 0)\n    model.addConstr(useDisk[k] <= 1)"
+        }
+    ],
+    "variables": {
+        "assign": {
+            "shape": [
+                "NumFiles",
+                "NumFiles"
+            ],
+            "type": "binary",
+            "definition": "assign[j,k] equals 1 if file j is assigned to disk k, and 0 otherwise"
+        },
+        "useDisk": {
+            "shape": [
+                "NumFiles"
+            ],
+            "type": "binary",
+            "definition": "useDisk[k] equals 1 if disk k is used, and 0 otherwise"
+        },
+        "nDisks": {
+            "shape": [],
+            "type": "integer",
+            "definition": "Total number of floppy disks used"
+        }
+    }
+}

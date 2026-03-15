@@ -1,0 +1,1012 @@
+----
+Yes, there is redundancy in the constraint list.
+
+### Analysis
+
+1. **Machine capacity constraints (m = 1, ..., M-2)**  
+   These are necessary and distinct. Each machine has its own availability limit, so these constraints cannot be removed or combined.
+
+2. **Shared capacity constraint for machines M-1 and M**  
+   This correctly reflects the special condition that these two machines share availability and their individual limits are disregarded. This constraint is necessary and cannot be simplified further.
+
+3. **Minimum production constraints (batches_p ≥ MinBatches[p])**  
+   These are required to satisfy contractual obligations.
+
+4. **Nonnegativity constraints (batches_p ≥ 0)**  
+   These are **redundant**, because:
+   - The model already requires  
+     \[
+     \text{batches}_p \ge \text{MinBatches}[p]
+     \]
+   - Since minimum batch requirements represent contractual production quantities, they are inherently **nonnegative**.
+   - Therefore,  
+     \[
+     \text{batches}_p \ge \text{MinBatches}[p] \ge 0
+     \]
+     already guarantees nonnegativity.
+
+Thus, the explicit nonnegativity constraints can be removed.
+
+---
+
+### ✅ Updated Constraint List
+
+```python
+[
+    "For each machine m = 1, ..., M-2: Sum over p of (TimeRequired[m,p] * batches_p) must be less than or equal to Availability[m]",
+    "Sum over p of (TimeRequired[M-1,p] * batches_p) + Sum over p of (TimeRequired[M,p] * batches_p) must be less than or equal to Availability[M-1] + Availability[M]",
+    "For each part p = 1, ..., P: batches_p must be greater than or equal to MinBatches[p]"
+]
+```
+----
++++++++++++++++++++
+++ Constraint Qs ++
++++++++++++++++++++
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+
+PROBLEM INFO:
+
+- A division of an auto parts manufacturer produces \var{P} different parts using \var{M} different machines.
+- Batch of 100 part \var{p} requires \var{time_{m,p}} hours on machine \var{m}.
+- The division incurs a charge of \var{cost_{m}} per hour for using machine \var{m}.
+- Machine \var{m} has an availability of up to \var{available_{m}} hours per month.
+- Machine \var{M} and Machine \var{M-1} can share availability.
+- Individual availability conditions for Machine \var{M} and Machine \var{M-1} can be disregarded.
+- The division sells part \var{p} in batches of 100 at price of \var{price_{p}} per batch.
+- The division must produce at least \var{min_batches_{p}} batches of part \var{p} each month to fulfill a contract.
+
+INPUT FORMAT: 
+
+{
+    "time_required": [[time_{m,p} for p in 1, ..., P] for m in 1, ..., M],
+    "machine_costs": [cost_{m} for m in 1, ..., M],
+    "availability": [available_{m} for m in 1, ..., M],
+    "prices": [price_{p} for p in 1, ..., P],
+    "min_batches": [min_batches_{p} for p in 1, ..., P]
+}
+
+OBJECTIVE: How many batches of each part should the manufacturer produce each month to maximize profit?
+
+OUTPUT INFO:
+
+- the number of batches of each part produced \var{batches_{p}}.
+- \var{total_profit} represents the total profit obtained for the month.
+
+OUTPUT FORMAT:
+
+{
+    "batches": [batches_{p} for p in 1, ..., P],
+    "total_profit": total_profit
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "M": {
+        "definition": "Number of machines",
+        "shape": [],
+        "type": "int"
+    },
+    "P": {
+        "definition": "Number of parts to be produced",
+        "shape": [],
+        "type": "int"
+    },
+    "TimeRequired": {
+        "definition": "Time required to produce a batch of part p on machine m",
+        "shape": [
+            "M",
+            "P"
+        ],
+        "type": "string"
+    },
+    "MachineCosts": {
+        "definition": "Cost associated with running machine m",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    },
+    "Availability": {
+        "definition": "Availability of machine m per month",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    },
+    "Prices": {
+        "definition": "Selling price of a batch of part p",
+        "shape": [
+            "P"
+        ],
+        "type": "string"
+    },
+    "MinBatches": {
+        "definition": "Minimum number of batches of part p that should be produced",
+        "shape": [
+            "P"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: For each machine m = 1, ..., M-2: Sum over p of (TimeRequired[m,p] * batches_p) must be less than or equal to Availability[m]
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is indeed a valid and necessary constraint.
+
+### Reasoning
+
+- The problem states that each machine \( m \) has an availability of up to \( \text{available}_m \) hours per month.
+- However, it also specifies that **Machine \( M \)** and **Machine \( M-1 \)** can share availability and that their **individual availability conditions can be disregarded**.
+- This means:
+  - For machines \( m = 1, \dots, M-2 \), the standard availability constraint **does apply individually**.
+  - For machines \( M-1 \) and \( M \), availability must be modeled differently (with a shared constraint), so their individual constraints should *not* be included.
+
+The proposed constraint:
+
+\[
+\sum_{p=1}^{P} \text{TimeRequired}_{m,p} \cdot \text{batches}_p \le \text{Availability}_m
+\quad \text{for } m = 1, \dots, M-2
+\]
+
+correctly enforces the monthly time capacity of each machine that does **not** participate in the shared availability condition.
+
+This is a fundamental capacity constraint in the LP model and must be included.
+
+### Conclusion
+
+✅ Yes, this is a required constraint.  
+✅ It should explicitly be included in the LP formulation for machines \( 1, \dots, M-2 \).  
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+
+PROBLEM INFO:
+
+- A division of an auto parts manufacturer produces \var{P} different parts using \var{M} different machines.
+- Batch of 100 part \var{p} requires \var{time_{m,p}} hours on machine \var{m}.
+- The division incurs a charge of \var{cost_{m}} per hour for using machine \var{m}.
+- Machine \var{m} has an availability of up to \var{available_{m}} hours per month.
+- Machine \var{M} and Machine \var{M-1} can share availability.
+- Individual availability conditions for Machine \var{M} and Machine \var{M-1} can be disregarded.
+- The division sells part \var{p} in batches of 100 at price of \var{price_{p}} per batch.
+- The division must produce at least \var{min_batches_{p}} batches of part \var{p} each month to fulfill a contract.
+
+INPUT FORMAT: 
+
+{
+    "time_required": [[time_{m,p} for p in 1, ..., P] for m in 1, ..., M],
+    "machine_costs": [cost_{m} for m in 1, ..., M],
+    "availability": [available_{m} for m in 1, ..., M],
+    "prices": [price_{p} for p in 1, ..., P],
+    "min_batches": [min_batches_{p} for p in 1, ..., P]
+}
+
+OBJECTIVE: How many batches of each part should the manufacturer produce each month to maximize profit?
+
+OUTPUT INFO:
+
+- the number of batches of each part produced \var{batches_{p}}.
+- \var{total_profit} represents the total profit obtained for the month.
+
+OUTPUT FORMAT:
+
+{
+    "batches": [batches_{p} for p in 1, ..., P],
+    "total_profit": total_profit
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "M": {
+        "definition": "Number of machines",
+        "shape": [],
+        "type": "int"
+    },
+    "P": {
+        "definition": "Number of parts to be produced",
+        "shape": [],
+        "type": "int"
+    },
+    "TimeRequired": {
+        "definition": "Time required to produce a batch of part p on machine m",
+        "shape": [
+            "M",
+            "P"
+        ],
+        "type": "string"
+    },
+    "MachineCosts": {
+        "definition": "Cost associated with running machine m",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    },
+    "Availability": {
+        "definition": "Availability of machine m per month",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    },
+    "Prices": {
+        "definition": "Selling price of a batch of part p",
+        "shape": [
+            "P"
+        ],
+        "type": "string"
+    },
+    "MinBatches": {
+        "definition": "Minimum number of batches of part p that should be produced",
+        "shape": [
+            "P"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: Sum over p of (TimeRequired[M-1,p] * batches_p) + Sum over p of (TimeRequired[M,p] * batches_p) must be less than or equal to Availability[M-1] + Availability[M]
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is a valid and necessary constraint**.
+
+### Step-by-step reasoning:
+
+- Normally, each machine \( m \) would have its own availability constraint:
+
+\[
+\sum_{p=1}^{P} \text{TimeRequired}_{m,p} \cdot \text{batches}_p \le \text{Availability}_m
+\]
+
+- However, the problem explicitly states:
+
+> *Machine M and Machine M-1 can share availability.*  
+> *Individual availability conditions for Machine M and Machine M-1 can be disregarded.*
+
+This means:
+- We **must not** impose separate availability constraints for machines \(M-1\) and \(M\).
+- Instead, their total combined usage must not exceed their combined availability.
+
+So the correct modeling replacement is:
+
+\[
+\sum_{p=1}^{P} \text{TimeRequired}_{M-1,p} \cdot \text{batches}_p
++
+\sum_{p=1}^{P} \text{TimeRequired}_{M,p} \cdot \text{batches}_p
+\le
+\text{Availability}_{M-1} + \text{Availability}_M
+\]
+
+This properly enforces the shared-capacity condition.
+
+### Conclusion
+
+✅ This is indeed a required constraint.  
+✅ It correctly replaces the two individual machine availability constraints.  
+✅ It must be explicitly modeled in the LP formulation.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+
+PROBLEM INFO:
+
+- A division of an auto parts manufacturer produces \var{P} different parts using \var{M} different machines.
+- Batch of 100 part \var{p} requires \var{time_{m,p}} hours on machine \var{m}.
+- The division incurs a charge of \var{cost_{m}} per hour for using machine \var{m}.
+- Machine \var{m} has an availability of up to \var{available_{m}} hours per month.
+- Machine \var{M} and Machine \var{M-1} can share availability.
+- Individual availability conditions for Machine \var{M} and Machine \var{M-1} can be disregarded.
+- The division sells part \var{p} in batches of 100 at price of \var{price_{p}} per batch.
+- The division must produce at least \var{min_batches_{p}} batches of part \var{p} each month to fulfill a contract.
+
+INPUT FORMAT: 
+
+{
+    "time_required": [[time_{m,p} for p in 1, ..., P] for m in 1, ..., M],
+    "machine_costs": [cost_{m} for m in 1, ..., M],
+    "availability": [available_{m} for m in 1, ..., M],
+    "prices": [price_{p} for p in 1, ..., P],
+    "min_batches": [min_batches_{p} for p in 1, ..., P]
+}
+
+OBJECTIVE: How many batches of each part should the manufacturer produce each month to maximize profit?
+
+OUTPUT INFO:
+
+- the number of batches of each part produced \var{batches_{p}}.
+- \var{total_profit} represents the total profit obtained for the month.
+
+OUTPUT FORMAT:
+
+{
+    "batches": [batches_{p} for p in 1, ..., P],
+    "total_profit": total_profit
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "M": {
+        "definition": "Number of machines",
+        "shape": [],
+        "type": "int"
+    },
+    "P": {
+        "definition": "Number of parts to be produced",
+        "shape": [],
+        "type": "int"
+    },
+    "TimeRequired": {
+        "definition": "Time required to produce a batch of part p on machine m",
+        "shape": [
+            "M",
+            "P"
+        ],
+        "type": "string"
+    },
+    "MachineCosts": {
+        "definition": "Cost associated with running machine m",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    },
+    "Availability": {
+        "definition": "Availability of machine m per month",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    },
+    "Prices": {
+        "definition": "Selling price of a batch of part p",
+        "shape": [
+            "P"
+        ],
+        "type": "string"
+    },
+    "MinBatches": {
+        "definition": "Minimum number of batches of part p that should be produced",
+        "shape": [
+            "P"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: For each part p = 1, ..., P: batches_p must be greater than or equal to MinBatches[p]
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is **definitely a constraint** and must be explicitly included in the LP formulation.
+
+### Why?
+
+The problem statement clearly says:
+
+> "The division must produce at least \( \text{min\_batches}_p \) batches of part \( p \) each month to fulfill a contract."
+
+The word **“must”** indicates a mandatory requirement, not an objective preference. Therefore, this is a **hard lower bound constraint** on the decision variable:
+
+\[
+\text{batches}_p \ge \text{MinBatches}[p], \quad \forall p = 1, \dots, P
+\]
+
+This constraint ensures contractual obligations are satisfied regardless of profitability considerations.
+
+Without explicitly modeling this constraint, the LP solver could produce fewer batches (even zero) for a part if it were not profitable, violating the contractual requirement described in the problem.
+
+### Conclusion
+
+✅ It is absolutely a constraint.  
+✅ It must be explicitly included in the model.  
+✅ There is no ambiguity in the wording.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
+
+
+
+++++++++++++++++++++++++++++++
+Extracting constraint formulations
+++++++++++++++++++++++++++++++
+
+
+
+----
+{
+    "FORMULATION": "$\\forall m = 1, \\dots, M-2:\\; \\sum_{p=1}^{P} TimeRequired_{m,p} \\cdot batches_p \\leq Availability_m$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\forall m = 1, \\dots, M-2:\\; \\sum_{p=1}^{P} TimeRequired_{m,p} \\cdot batches_p \\leq Availability_m$
+{}
+[]
+----
+----
+{
+    "FORMULATION": "$\\sum_{p=1}^{P} TimeRequired[M-1,p] \\cdot batches[p] + \\sum_{p=1}^{P} TimeRequired[M,p] \\cdot batches[p] \\leq Availability[M-1] + Availability[M]$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\sum_{p=1}^{P} TimeRequired[M-1,p] \\cdot batches[p] + \\sum_{p=1}^{P} TimeRequired[M,p] \\cdot batches[p] \\leq Availability[M-1] + Availability[M]$
+{}
+[]
+----
+----
+{
+    "FORMULATION": "$\\forall p = 1, \\ldots, P:\\; batches[p] \\geq MinBatches[p]$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\forall p = 1, \\ldots, P:\\; batches[p] \\geq MinBatches[p]$
+{}
+[]
+----
+Iteration 1: Error encountered. Debugging...
+
+You are an Operations Research consultant hired to address optimization issues for a company. Below is the problem description and the problematic code, followed by the error it produces:
+
+Problem Description:
+PROBLEM TYPE: LP
+
+PROBLEM INFO:
+
+- A division of an auto parts manufacturer produces \var{P} different parts using \var{M} different machines.
+- Batch of 100 part \var{p} requires \var{time_{m,p}} hours on machine \var{m}.
+- The division incurs a charge of \var{cost_{m}} per hour for using machine \var{m}.
+- Machine \var{m} has an availability of up to \var{available_{m}} hours per month.
+- Machine \var{M} and Machine \var{M-1} can share availability.
+- Individual availability conditions for Machine \var{M} and Machine \var{M-1} can be disregarded.
+- The division sells part \var{p} in batches of 100 at price of \var{price_{p}} per batch.
+- The division must produce at least \var{min_batches_{p}} batches of part \var{p} each month to fulfill a contract.
+
+INPUT FORMAT: 
+
+{
+    "time_required": [[time_{m,p} for p in 1, ..., P] for m in 1, ..., M],
+    "machine_costs": [cost_{m} for m in 1, ..., M],
+    "availability": [available_{m} for m in 1, ..., M],
+    "prices": [price_{p} for p in 1, ..., P],
+    "min_batches": [min_batches_{p} for p in 1, ..., P]
+}
+
+OBJECTIVE: How many batches of each part should the manufacturer produce each month to maximize profit?
+
+OUTPUT INFO:
+
+- the number of batches of each part produced \var{batches_{p}}.
+- \var{total_profit} represents the total profit obtained for the month.
+
+OUTPUT FORMAT:
+
+{
+    "batches": [batches_{p} for p in 1, ..., P],
+    "total_profit": total_profit
+}
+
+Problematic Code:
+
+import os
+import numpy as np
+import json 
+from gurobipy import Model, GRB, quicksum
+
+
+model = Model("OptimizationProblem")
+
+with open("data.json", "r") as f:
+    data = json.load(f)
+
+
+
+
+### Define the parameters
+
+M = data["M"] # shape: [], definition: Number of machines
+
+P = data["P"] # shape: [], definition: Number of parts to be produced
+
+TimeRequired = data["TimeRequired"] # shape: ['M', 'P'], definition: Time required to produce a batch of part p on machine m
+
+MachineCosts = data["MachineCosts"] # shape: ['M'], definition: Cost associated with running machine m
+
+Availability = data["Availability"] # shape: ['M'], definition: Availability of machine m per month
+
+Prices = data["Prices"] # shape: ['P'], definition: Selling price of a batch of part p
+
+MinBatches = data["MinBatches"] # shape: ['P'], definition: Minimum number of batches of part p that should be produced
+
+
+
+### Define the variables
+
+
+
+### Define the constraints
+
+for m in range(M-2):
+    model.addConstr(
+        sum(TimeRequired[m][p] * batches[p] for p in range(P)) <= Availability[m]
+    )
+model.addConstr(
+    sum(TimeRequired[M-2][p] * batches[p] for p in range(P)) +
+    sum(TimeRequired[M-1][p] * batches[p] for p in range(P))
+    <= Availability[M-2] + Availability[M-1]
+)
+for p in range(P):
+    model.addConstr(batches[p] >= MinBatches[p])
+
+
+### Define the objective
+
+model.setObjective(
+    quicksum(Prices[p] * batches[p] for p in range(P))
+    - quicksum(
+        MachineCosts[m] * quicksum(TimeRequired[m][p] * batches[p] for p in range(P))
+        for m in range(M)
+    ),
+    GRB.MAXIMIZE
+)
+
+
+### Optimize the model
+
+model.optimize()
+
+
+
+### Output optimal objective value
+
+print("Optimal Objective Value: ", model.objVal)
+
+
+if model.status == GRB.OPTIMAL:
+    with open("output_solution.txt", "w") as f:
+        f.write(str(model.objVal))
+    print("Optimal Objective Value: ", model.objVal)
+else:
+    with open("output_solution.txt", "w") as f:
+        f.write(model.status)
+
+
+Error Message:
+Traceback (most recent call last):
+  File "/home/admin/OptiMUS/data/nlp4lp/340/run_dev/code.py", line 42, in <module>
+    sum(TimeRequired[m][p] * batches[p] for p in range(P)) <= Availability[m]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin/OptiMUS/data/nlp4lp/340/run_dev/code.py", line 42, in <genexpr>
+    sum(TimeRequired[m][p] * batches[p] for p in range(P)) <= Availability[m]
+                             ^^^^^^^
+NameError: name 'batches' is not defined
+
+
+Your task is to debug the code. Begin by assessing the situation, then provide the corrected code in the following format:
+
+=====
+import ...
+...
+
+=====
+
+- Ensure no output follows the closing ===== line.
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+==========
+
+
+
+
+Response received.
+```
+import os
+import numpy as np
+import json
+from gurobipy import Model, GRB, quicksum
+
+
+model = Model("OptimizationProblem")
+
+with open("data.json", "r") as f:
+    data = json.load(f)
+
+### Define the parameters
+
+M = data["M"]  # Number of machines
+P = data["P"]  # Number of parts
+
+TimeRequired = data["TimeRequired"]      # shape: [M][P]
+MachineCosts = data["MachineCosts"]      # shape: [M]
+Availability = data["Availability"]      # shape: [M]
+Prices = data["Prices"]                  # shape: [P]
+MinBatches = data["MinBatches"]          # shape: [P]
+
+### Define the variables
+
+batches = model.addVars(P, lb=0, vtype=GRB.CONTINUOUS, name="batches")
+
+### Define the constraints
+
+# Machine availability constraints except last two machines
+for m in range(M - 2):
+    model.addConstr(
+        quicksum(TimeRequired[m][p] * batches[p] for p in range(P))
+        <= Availability[m],
+        name=f"Machine_{m}_capacity"
+    )
+
+# Shared availability constraint for last two machines
+model.addConstr(
+    quicksum(TimeRequired[M - 2][p] * batches[p] for p in range(P)) +
+    quicksum(TimeRequired[M - 1][p] * batches[p] for p in range(P))
+    <= Availability[M - 2] + Availability[M - 1],
+    name="Shared_capacity"
+)
+
+# Minimum production constraints
+for p in range(P):
+    model.addConstr(
+        batches[p] >= MinBatches[p],
+        name=f"Min_batches_{p}"
+    )
+
+### Define the objective
+
+model.setObjective(
+    quicksum(Prices[p] * batches[p] for p in range(P))
+    - quicksum(
+        MachineCosts[m] *
+        quicksum(TimeRequired[m][p] * batches[p] for p in range(P))
+        for m in range(M)
+    ),
+    GRB.MAXIMIZE
+)
+
+### Optimize the model
+
+model.optimize()
+
+### Output results
+
+if model.status == GRB.OPTIMAL:
+    solution = {
+        "batches": [batches[p].X for p in range(P)],
+        "total_profit": model.objVal
+    }
+    with open("output_solution.txt", "w") as f:
+        f.write(json.dumps(solution))
+else:
+    with open("output_solution.txt", "w") as f:
+        f.write(str(model.status))
+```
+==========
+
+
+
+
+Iteration 1: Error encountered. Debugging...
+Iteration 2: Error encountered. Debugging...
+
+You are an Operations Research consultant hired to address optimization issues for a company. Below is the problem description and the problematic code, followed by the error it produces:
+
+Problem Description:
+PROBLEM TYPE: LP
+
+PROBLEM INFO:
+
+- A division of an auto parts manufacturer produces \var{P} different parts using \var{M} different machines.
+- Batch of 100 part \var{p} requires \var{time_{m,p}} hours on machine \var{m}.
+- The division incurs a charge of \var{cost_{m}} per hour for using machine \var{m}.
+- Machine \var{m} has an availability of up to \var{available_{m}} hours per month.
+- Machine \var{M} and Machine \var{M-1} can share availability.
+- Individual availability conditions for Machine \var{M} and Machine \var{M-1} can be disregarded.
+- The division sells part \var{p} in batches of 100 at price of \var{price_{p}} per batch.
+- The division must produce at least \var{min_batches_{p}} batches of part \var{p} each month to fulfill a contract.
+
+INPUT FORMAT: 
+
+{
+    "time_required": [[time_{m,p} for p in 1, ..., P] for m in 1, ..., M],
+    "machine_costs": [cost_{m} for m in 1, ..., M],
+    "availability": [available_{m} for m in 1, ..., M],
+    "prices": [price_{p} for p in 1, ..., P],
+    "min_batches": [min_batches_{p} for p in 1, ..., P]
+}
+
+OBJECTIVE: How many batches of each part should the manufacturer produce each month to maximize profit?
+
+OUTPUT INFO:
+
+- the number of batches of each part produced \var{batches_{p}}.
+- \var{total_profit} represents the total profit obtained for the month.
+
+OUTPUT FORMAT:
+
+{
+    "batches": [batches_{p} for p in 1, ..., P],
+    "total_profit": total_profit
+}
+
+Problematic Code:
+import os
+import numpy as np
+import json
+from gurobipy import Model, GRB, quicksum
+
+
+model = Model("OptimizationProblem")
+
+with open("data.json", "r") as f:
+    data = json.load(f)
+
+### Define the parameters
+
+M = data["M"]  # Number of machines
+P = data["P"]  # Number of parts
+
+TimeRequired = data["TimeRequired"]      # shape: [M][P]
+MachineCosts = data["MachineCosts"]      # shape: [M]
+Availability = data["Availability"]      # shape: [M]
+Prices = data["Prices"]                  # shape: [P]
+MinBatches = data["MinBatches"]          # shape: [P]
+
+### Define the variables
+
+batches = model.addVars(P, lb=0, vtype=GRB.CONTINUOUS, name="batches")
+
+### Define the constraints
+
+# Machine availability constraints except last two machines
+for m in range(M - 2):
+    model.addConstr(
+        quicksum(TimeRequired[m][p] * batches[p] for p in range(P))
+        <= Availability[m],
+        name=f"Machine_{m}_capacity"
+    )
+
+# Shared availability constraint for last two machines
+model.addConstr(
+    quicksum(TimeRequired[M - 2][p] * batches[p] for p in range(P)) +
+    quicksum(TimeRequired[M - 1][p] * batches[p] for p in range(P))
+    <= Availability[M - 2] + Availability[M - 1],
+    name="Shared_capacity"
+)
+
+# Minimum production constraints
+for p in range(P):
+    model.addConstr(
+        batches[p] >= MinBatches[p],
+        name=f"Min_batches_{p}"
+    )
+
+### Define the objective
+
+model.setObjective(
+    quicksum(Prices[p] * batches[p] for p in range(P))
+    - quicksum(
+        MachineCosts[m] *
+        quicksum(TimeRequired[m][p] * batches[p] for p in range(P))
+        for m in range(M)
+    ),
+    GRB.MAXIMIZE
+)
+
+### Optimize the model
+
+model.optimize()
+
+### Output results
+
+if model.status == GRB.OPTIMAL:
+    solution = {
+        "batches": [batches[p].X for p in range(P)],
+        "total_profit": model.objVal
+    }
+    with open("output_solution.txt", "w") as f:
+        f.write(json.dumps(solution))
+else:
+    with open("output_solution.txt", "w") as f:
+        f.write(str(model.status))
+``
+
+Error Message:
+  File "/home/admin/OptiMUS/data/nlp4lp/340/run_dev/code_1.py", line 80
+    ``
+    ^
+SyntaxError: invalid syntax
+
+
+Your task is to debug the code. Begin by assessing the situation, then provide the corrected code in the following format:
+
+=====
+import ...
+...
+
+=====
+
+- Ensure no output follows the closing ===== line.
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+==========
+
+
+
+
+Response received.
+=====
+import os
+import numpy as np
+import json
+from gurobipy import Model, GRB, quicksum
+
+model = Model("OptimizationProblem")
+
+with open("data.json", "r") as f:
+    data = json.load(f)
+
+### Define the parameters
+
+M = data["M"]  # Number of machines
+P = data["P"]  # Number of parts
+
+TimeRequired = data["TimeRequired"]      # shape: [M][P]
+MachineCosts = data["MachineCosts"]      # shape: [M]
+Availability = data["Availability"]      # shape: [M]
+Prices = data["Prices"]                  # shape: [P]
+MinBatches = data["MinBatches"]          # shape: [P]
+
+### Define the variables
+
+batches = model.addVars(P, lb=0, vtype=GRB.CONTINUOUS, name="batches")
+
+### Define the constraints
+
+# Machine availability constraints except last two machines
+for m in range(M - 2):
+    model.addConstr(
+        quicksum(TimeRequired[m][p] * batches[p] for p in range(P))
+        <= Availability[m],
+        name=f"Machine_{m}_capacity"
+    )
+
+# Shared availability constraint for last two machines
+model.addConstr(
+    quicksum(TimeRequired[M - 2][p] * batches[p] for p in range(P)) +
+    quicksum(TimeRequired[M - 1][p] * batches[p] for p in range(P))
+    <= Availability[M - 2] + Availability[M - 1],
+    name="Shared_capacity"
+)
+
+# Minimum production constraints
+for p in range(P):
+    model.addConstr(
+        batches[p] >= MinBatches[p],
+        name=f"Min_batches_{p}"
+    )
+
+### Define the objective
+
+model.setObjective(
+    quicksum(Prices[p] * batches[p] for p in range(P))
+    - quicksum(
+        MachineCosts[m] *
+        quicksum(TimeRequired[m][p] * batches[p] for p in range(P))
+        for m in range(M)
+    ),
+    GRB.MAXIMIZE
+)
+
+### Optimize the model
+
+model.optimize()
+
+### Output results
+
+if model.status == GRB.OPTIMAL:
+    solution = {
+        "batches": [batches[p].X for p in range(P)],
+        "total_profit": model.objVal
+    }
+    with open("output_solution.txt", "w") as f:
+        f.write(json.dumps(solution))
+else:
+    with open("output_solution.txt", "w") as f:
+        f.write(str(model.status))
+=====
+==========
+
+
+
+
+Iteration 2: Error encountered. Debugging...
+Code executed successfully. Output:
+Restricted license - for non-production use only - expires 2027-11-29
+Gurobi Optimizer version 13.0.1 build v13.0.1rc0 (linux64 - "Alibaba Cloud Linux 3.2104 U12.3 (OpenAnolis Edition)")
+
+CPU model: Intel(R) Xeon(R) Platinum, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 1 physical cores, 2 logical processors, using up to 2 threads
+
+Optimize a model with 6 rows, 4 columns and 12 nonzeros (Max)
+Model fingerprint: 0x53464104
+Model has 4 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [1e+00, 1e+01]
+  Objective range  [4e+01, 1e+02]
+  Bounds range     [0e+00, 0e+00]
+  RHS range        [1e+01, 8e+02]
+
+Presolve removed 4 rows and 0 columns
+Presolve time: 0.00s
+Presolved: 2 rows, 4 columns, 8 nonzeros
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0    1.0200000e+04   0.000000e+00   0.000000e+00      0s
+       0    1.0200000e+04   0.000000e+00   0.000000e+00      0s
+
+Solved in 0 iterations and 0.00 seconds (0.00 work units)
+Optimal objective  1.020000000e+04
+

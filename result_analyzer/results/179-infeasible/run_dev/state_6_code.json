@@ -1,0 +1,70 @@
+{
+    "description": "A chemical company is transporting their hydrogen using two different methods, high pressure tube trailers and liquefied hydrogen tankers. The first method is a high-pressure tube trailer which can transport 50 cubic meters each per trip at a cost of $500. The second method is using liquefied hydrogen tankers which can transport 30 cubic meters each per trip at a cost of $200. The company needs to transport at least 1000 cubic meters of hydrogen and they have budget of $3750 available. In addition, the number of transports done by the high pressure tube trailer method has to be less than the number of transports done by the liquefied hydrogen tanker method. How many of each transportation method should they use to minimize the total number of trips?",
+    "parameters": {
+        "TransportCapacity": {
+            "definition": "Transport capacity per trip for each transportation method",
+            "shape": [
+                "NumTransportMethods"
+            ],
+            "type": "string"
+        },
+        "TransportCost": {
+            "definition": "Transport cost per trip for each transportation method",
+            "shape": [
+                "NumTransportMethods"
+            ],
+            "type": "string"
+        },
+        "MinimumHydrogen": {
+            "definition": "Minimum total hydrogen to transport",
+            "shape": [],
+            "type": "int"
+        },
+        "Budget": {
+            "definition": "Available budget for transportation",
+            "shape": [],
+            "type": "int"
+        },
+        "NumTransportMethods": {
+            "definition": "Number of transportation methods",
+            "shape": [],
+            "type": "int"
+        }
+    },
+    "objective": {
+        "description": "\"Minimize the total number of transportation trips using both methods\"",
+        "formulation": "$\\min \\sum_{i=1}^{NumTransportMethods} NumTrips_i$",
+        "code": "model.setObjective(quicksum(NumTrips[i] for i in range(NumTransportMethods)), GRB.MINIMIZE)"
+    },
+    "constraints": [
+        {
+            "description": "The total hydrogen transported by all trips must be at least 1000 cubic meters",
+            "formulation": "$\\\\sum_{m=1}^{NumTransportMethods} TransportCapacity[m] \\\\cdot NumTrips[m] \\\\geq MinimumHydrogen$",
+            "code": "model.addConstr(\n    sum(TransportCapacity[m] * NumTrips[m] for m in range(NumTransportMethods)) \n    >= MinimumHydrogen\n)"
+        },
+        {
+            "description": "The total transportation cost must not exceed 3750 dollars",
+            "formulation": "$\\\\sum_{m=1}^{NumTransportMethods} TransportCost[m] \\\\cdot NumTrips[m] \\\\leq Budget$",
+            "code": "model.addConstr(\n    sum(TransportCost[m] * NumTrips[m] for m in range(NumTransportMethods)) <= Budget\n)"
+        },
+        {
+            "description": "The number of high-pressure tube trailer trips must be less than the number of liquefied hydrogen tanker trips",
+            "formulation": "$NumTrips[1] + 1 \\\\leq NumTrips[2]$",
+            "code": "model.addConstr(NumTrips[0] + 1 <= NumTrips[1])"
+        },
+        {
+            "description": "The number of trips for each transportation method must be a non-negative integer",
+            "formulation": "$\\\\forall m = 1, \\\\dots, \\\\text{NumTransportMethods}, \\\\; NumTrips[m] \\\\geq 0 \\\\; \\\\text{and} \\\\; NumTrips[m] \\\\in \\\\mathbb{Z}$",
+            "code": "for m in range(NumTransportMethods):\n    model.addConstr(NumTrips[m] >= 0)"
+        }
+    ],
+    "variables": {
+        "NumTrips": {
+            "shape": [
+                "NumTransportMethods"
+            ],
+            "type": "integer",
+            "definition": "Number of trips using each transportation method"
+        }
+    }
+}

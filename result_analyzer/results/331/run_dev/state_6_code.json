@@ -1,0 +1,107 @@
+{
+    "description": "PROBLEM TYPE: LP\nPROBLEM INFO:\n\n- A foundry receives a specific order for \\var{n_steel_quant} tons of steel. \n- This steel must meet the following characteristics: it must contain at least \\var{mn_percent} percentage of manganese (Mn) while its percentage of silicon (SI) must be between \\var{si_min} and \\var{si_max}.\n- To cast this steel, the foundry has limited quantities of several types of minerals.\n- The contents expressed in percentage per mineral \\var{k} are \\var{contsi_{k}} for Si and \\var{contmn_{k}} for Mn.\n- The process for producing steel is such that direct addition of Mn is possible.\n- This Manganese is available at a price of \\var{mang_price} million euros per ton. \n- As for the minerals, it costs \\var{cost_{k}} million euros per thousand tons for mineral \\var{k}.\n- The foundry plans to sell the steel produced at \\var{sell_price} million euros per ton.\n- The cost of smelting a ton of mineral is \\var{melt_price} million euros.\n\nINPUT FORMAT:\n\n{\n\t\"n_steel_quant\": n_steel_quant,\n\t\"mn_percent\": mn_percent,\n\t\"si_min\": si_min,\n\t\"si_max\": si_max,\n\t\"contsi\": [contsi_{k} for k in 1,...,K]\n\t\"contmn\": [contmn_{k} for k in 1,...,K]\n\t\"mang_price\": mang_price,\n\t\"cost\": [cost_{k} for k in 1,...,K]\n\t\"sell_price\": sell_price,\n\t\"melt_price\": melt_price\n}\n\nOBJECTIVE: How should the manufacture manage the steel to maximize profit?\n\nOUTPUT INFO:\n\n- \\var{amount} represents the amount of each mineral melted\n- \\var{num_mang} represents the amount of Manganese directly added\n\nOUTPUT FORMAT:\n\n{\n\t\"amount\": [amount_{k} for k in 1,...,K]\n\t\"num_mang\": [num_mang]\n}",
+    "parameters": {
+        "SteelQuantity": {
+            "definition": "Amount of steel to produce in tons",
+            "shape": [],
+            "type": "int"
+        },
+        "ManganesePercent": {
+            "definition": "Percentage of manganese in the steel required",
+            "shape": [],
+            "type": "float"
+        },
+        "SiliconMinPercent": {
+            "definition": "Minimum percentage of silicon in the steel required",
+            "shape": [],
+            "type": "float"
+        },
+        "SiliconMaxPercent": {
+            "definition": "Maximum percentage of silicon in the steel allowed",
+            "shape": [],
+            "type": "float"
+        },
+        "NumMinerals": {
+            "definition": "Number of different types of minerals available",
+            "shape": [],
+            "type": "int"
+        },
+        "SiliconContent": {
+            "definition": "Silicon content in the k-th stock",
+            "shape": [
+                "NumMinerals"
+            ],
+            "type": "string"
+        },
+        "ManganeseContent": {
+            "definition": "Manganese content in the k-th stock",
+            "shape": [
+                "NumMinerals"
+            ],
+            "type": "string"
+        },
+        "ManganesePrice": {
+            "definition": "Price of manganese per ton",
+            "shape": [],
+            "type": "float"
+        },
+        "MaterialCost": {
+            "definition": "Cost of the k-th stock material per ton",
+            "shape": [
+                "NumMinerals"
+            ],
+            "type": "string"
+        },
+        "SellingPrice": {
+            "definition": "Selling price of steel per ton",
+            "shape": [],
+            "type": "float"
+        },
+        "MeltingPrice": {
+            "definition": "Price to melt one ton of steel",
+            "shape": [],
+            "type": "float"
+        }
+    },
+    "objective": {
+        "description": "\"Maximize the total profit from producing and selling the required amount of steel, accounting for mineral costs, manganese purchase costs, and melting costs.\"",
+        "formulation": "$\\max \\; SellingPrice \\cdot SteelQuantity \\;-\\; \\sum_{k=1}^{NumMinerals} MaterialCost_k \\, amount_k \\;-\\; ManganesePrice \\cdot numMang \\;-\\; MeltingPrice \\sum_{k=1}^{NumMinerals} amount_k$",
+        "code": "model.setObjective(\n    SellingPrice * SteelQuantity\n    - quicksum(MaterialCost[k] * amount[k] for k in range(NumMinerals))\n    - ManganesePrice * numMang\n    - MeltingPrice * quicksum(amount[k] for k in range(NumMinerals)),\n    GRB.MAXIMIZE\n)"
+    },
+    "constraints": [
+        {
+            "description": "Sum of the amounts of all minerals melted plus the amount of directly added manganese must equal the required steel quantity",
+            "formulation": "$\\\\sum_{k=1}^{NumMinerals} amount_k + numMang = SteelQuantity$",
+            "code": "model.addConstr(\n    sum(amount[k] for k in range(NumMinerals)) + numMang == SteelQuantity\n)"
+        },
+        {
+            "description": "The total manganese content from minerals and directly added manganese divided by the steel quantity must be at least the required manganese percentage",
+            "formulation": "$\\\\sum_{k=1}^{NumMinerals} ManganeseContent_k \\\\cdot amount_k + numMang \\\\geq ManganesePercent \\\\cdot SteelQuantity$",
+            "code": "model.addConstr(\n    sum(ManganeseContent[k] * amount[k] for k in range(NumMinerals)) + numMang\n    >= ManganesePercent * SteelQuantity\n)"
+        },
+        {
+            "description": "The total silicon content from minerals divided by the steel quantity must be between the minimum and maximum required silicon percentages",
+            "formulation": "$\\\\frac{SiliconMinPercent}{100} \\\\cdot SteelQuantity \\\\leq \\\\sum_{k=1}^{NumMinerals} \\\\frac{SiliconContent[k]}{100} \\\\cdot amount[k] \\\\leq \\\\frac{SiliconMaxPercent}{100} \\\\cdot SteelQuantity$",
+            "code": "model.addConstr(\n    sum((SiliconContent[k] / 100.0) * amount[k] for k in range(NumMinerals)) \n    >= (SiliconMinPercent / 100.0) * SteelQuantity\n)\n\nmodel.addConstr(\n    sum((SiliconContent[k] / 100.0) * amount[k] for k in range(NumMinerals)) \n    <= (SiliconMaxPercent / 100.0) * SteelQuantity\n)"
+        },
+        {
+            "description": "All decision variables (mineral amounts and directly added manganese) must be non-negative",
+            "formulation": "$\\\\forall k = 1, \\\\dots, NumMinerals,\\\\; amount[k] \\\\ge 0 \\\\quad \\\\text{and} \\\\quad numMang \\\\ge 0$",
+            "code": "for k in range(NumMinerals):\n    model.addConstr(amount[k] >= 0)\n\nmodel.addConstr(numMang >= 0)"
+        }
+    ],
+    "variables": {
+        "amount": {
+            "shape": [
+                "NumMinerals"
+            ],
+            "type": "continuous",
+            "definition": "Amount of mineral k melted (in tons)"
+        },
+        "numMang": {
+            "shape": [],
+            "type": "continuous",
+            "definition": "Amount of manganese directly added (in tons)"
+        }
+    }
+}
