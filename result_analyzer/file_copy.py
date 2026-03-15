@@ -5,7 +5,7 @@ import shutil
 def copy_files():
     # 源目录和目标目录
     source_dir = "../data/nlp4lp"
-    target_dir = "./results"
+    target_dir = "./results/nlp4lp"
 
     # 确保目标目录存在
     os.makedirs(target_dir, exist_ok=True)
