@@ -154,13 +154,12 @@ class Logger:
         self.file = file
 
     def log(self, text):
-        with open(self.file, "a") as f:
-            f.write(text + "\n")
+        with open(self.file, "a", encoding="utf-8") as f:
+            f.write(str(text) + "\n")
 
     def reset(self):
-        with open(self.file, "w") as f:
+        with open(self.file, "w", encoding="utf-8") as f:
             f.write("")
-
 
 def create_state(parent_dir, run_dir):
     # read parameters.json
