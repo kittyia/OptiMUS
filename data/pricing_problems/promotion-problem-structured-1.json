@@ -1,0 +1,109 @@
+{
+  "problem_id": "promotion_vehicle_scheduling_6week_instance_01",
+  "problem_type": {
+    "class": "MINLP",
+    "is_linear": false,
+    "is_integer": true,
+    "has_binary": true,
+    "domain": "promotion_scheduling"
+  },
+  "parameters": {
+    "T": {
+      "description": "Number of weeks in the planning horizon",
+      "value": 6
+    },
+    "V": {
+      "description": "Set of promotion vehicles",
+      "value": ["flyer", "display", "tv_commercial"]
+    },
+    "alpha_t": {
+      "description": "Base profit in each week before any promotion vehicle is assigned",
+      "value": {
+        "1": 1200,
+        "2": 1350,
+        "3": 1280,
+        "4": 1420,
+        "5": 1500,
+        "6": 1380
+      }
+    },
+    "B_v_t": {
+      "description": "Multiplicative boost factor from assigning vehicle v in week t",
+      "value": {
+        "flyer": {
+          "1": 1.10,
+          "2": 1.08,
+          "3": 1.12,
+          "4": 1.09,
+          "5": 1.11,
+          "6": 1.07
+        },
+        "display": {
+          "1": 1.06,
+          "2": 1.09,
+          "3": 1.07,
+          "4": 1.10,
+          "5": 1.08,
+          "6": 1.09
+        },
+        "tv_commercial": {
+          "1": 1.15,
+          "2": 1.13,
+          "3": 1.12,
+          "4": 1.14,
+          "5": 1.16,
+          "6": 1.11
+        }
+      }
+    },
+    "C_v": {
+      "description": "Maximum number of times each vehicle can be used across the full horizon",
+      "value": {
+        "flyer": 2,
+        "display": 3,
+        "tv_commercial": 1
+      }
+    },
+    "L_t": {
+      "description": "Maximum number of vehicles that can be assigned in each week",
+      "value": {
+        "1": 1,
+        "2": 2,
+        "3": 1,
+        "4": 2,
+        "5": 1,
+        "6": 2
+      }
+    }
+  },
+  "variables": {
+    "x_v_t": {
+      "description": "Binary variable equal to 1 if vehicle v is assigned to week t, and 0 otherwise",
+      "type": "binary"
+    }
+  },
+  "objective": {
+    "sense": "maximize",
+    "expression": "sum_{t=1}^{6} alpha_t[t] * prod_{v in V} (B_v_t[v][t])^(x_v_t[v,t])"
+  },
+  "constraints": [
+    {
+      "id": "vehicle_usage_limit",
+      "type": "capacity",
+      "sense": "<=",
+      "expression": "sum_{t=1}^{6} x_v_t[v,t] <= C_v[v] for all v in V"
+    },
+    {
+      "id": "weekly_vehicle_limit",
+      "type": "capacity",
+      "sense": "<=",
+      "expression": "sum_{v in V} x_v_t[v,t] <= L_t[t] for all t = 1,...,6"
+    },
+    {
+      "id": "binary_domain",
+      "type": "domain",
+      "sense": "in",
+      "expression": "x_v_t[v,t] in {0,1} for all v in V and t = 1,...,6"
+    }
+  ]
+}

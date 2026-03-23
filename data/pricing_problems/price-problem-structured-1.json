@@ -1,0 +1,112 @@
+{
+  "problem_id": "pricing_problem_1",
+  "problem_type": {
+    "class": "MILP",
+    "is_linear": true,
+    "is_integer": true,
+    "has_binary": true,
+    "domain": "pricing"
+  },
+  "parameters": {
+    "Prices": {
+      "value": {
+        "1": [10, 12, 14],
+        "2": [8, 9, 11],
+        "3": [20, 22, 25]
+      },
+      "description": "candidate retail prices for each product"
+    },
+    "Demand": {
+      "value": {
+        "1": {"10": 100, "12": 80, "14": 60},
+        "2": {"8": 150, "9": 120, "11": 90},
+        "3": {"20": 70, "22": 55, "25": 40}
+      },
+      "description": "demand for each product at each candidate price"
+    },
+    "c_i": {
+      "value": {"1": 6, "2": 4, "3": 12},
+      "description": "unit production cost for each product"
+    },
+    "K_i": {
+      "value": {"1": 200, "2": 150, "3": 250},
+      "description": "fixed ordering cost for each product"
+    },
+    "h_i": {
+      "value": {"1": 0.5, "2": 0.4, "3": 0.8},
+      "description": "unit holding cost for each product"
+    },
+    "C": {
+      "value": 250,
+      "description": "capacity on total ordered units"
+    },
+    "M_i": {
+      "value": {"1": 1000, "2": 1000, "3": 1000},
+      "description": "big-M upper bound for order quantities"
+    }
+  },
+  "variables": {
+    "x_ip": {
+      "description": "1 if price p is chosen for product i",
+      "type": "binary"
+    },
+    "Q_i": {
+      "description": "order quantity for product i",
+      "type": "integer"
+    },
+    "y_ip": {
+      "description": "units of product i sold at price p",
+      "type": "continuous"
+    },
+    "y_i": {
+      "description": "total units of product i sold",
+      "type": "continuous"
+    },
+    "z_i": {
+      "description": "1 if product i is ordered",
+      "type": "binary"
+    }
+  },
+  "objective": {
+    "sense": "maximize",
+    "expression": "∑_i ∑_p Prices[i][p] * y_ip - ∑_i (c_i * Q_i + K_i * z_i + h_i * (Q_i - y_i))"
+  },
+  "constraints": [
+    {
+      "id": "one_price_per_product",
+      "type": "linear_equality",
+      "sense": "==",
+      "expression": "∑_p x_ip = 1 ∀ i"
+    },
+    {
+      "id": "sales_definition",
+      "type": "linear_equality",
+      "sense": "==",
+      "expression": "y_i = ∑_p y_ip ∀ i"
+    },
+    {
+      "id": "sales_leq_demand",
+      "type": "linear_inequality",
+      "sense": "≤",
+      "expression": "y_ip ≤ Demand[i][p] * x_ip ∀ i,p"
+    },
+    {
+      "id": "sales_leq_inventory",
+      "type": "linear_inequality",
+      "sense": "≤",
+      "expression": "y_i ≤ Q_i ∀ i"
+    },
+    {
+      "id": "fixed_order_link",
+      "type": "linear_inequality",
+      "sense": "≤",
+      "expression": "Q_i ≤ M_i * z_i ∀ i"
+    },
+    {
+      "id": "capacity",
+      "type": "linear_inequality",
+      "sense": "≤",
+      "expression": "∑_i Q_i ≤ C"
+    }
+  ]
+}

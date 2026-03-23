@@ -1,0 +1,96 @@
+{
+  "problem_id": "pricing_problem_2",
+  "problem_type": {
+    "class": "MILP",
+    "is_linear": true,
+    "is_integer": true,
+    "has_binary": true,
+    "domain": "pricing"
+  },
+  "parameters": {
+    "Prices": {
+      "value": {
+        "A": [7, 8, 10],
+        "B": [5, 6, 7]
+      },
+      "description": "candidate prices for each component"
+    },
+    "Demand": {
+      "value": {
+        "A": {"7": 120, "8": 100, "10": 70},
+        "B": {"5": 200, "6": 160, "7": 130}
+      },
+      "description": "demand for each component at each candidate price"
+    },
+    "c_i": {
+      "value": {"A": 5, "B": 3},
+      "description": "unit acquisition cost for each component"
+    },
+    "K_i": {
+      "value": {"A": 180, "B": 150},
+      "description": "fixed ordering cost for each component"
+    },
+    "B": {
+      "value": 1500,
+      "description": "total acquisition budget"
+    },
+    "M_i": {
+      "value": {"A": 1000, "B": 1000},
+      "description": "big-M upper bound for order quantities"
+    }
+  },
+  "variables": {
+    "x_ip": {
+      "description": "1 if price p is chosen for component i",
+      "type": "binary"
+    },
+    "Q_i": {
+      "description": "order quantity for component i",
+      "type": "integer"
+    },
+    "y_ip": {
+      "description": "units of component i sold at price p",
+      "type": "continuous"
+    },
+    "z_i": {
+      "description": "1 if component i is ordered",
+      "type": "binary"
+    }
+  },
+  "objective": {
+    "sense": "maximize",
+    "expression": "∑_i ∑_p Prices[i][p] * y_ip - ∑_i (c_i * Q_i + K_i * z_i)"
+  },
+  "constraints": [
+    {
+      "id": "one_price",
+      "type": "linear_equality",
+      "sense": "==",
+      "expression": "∑_p x_ip = 1 ∀ i"
+    },
+    {
+      "id": "sales_leq_demand",
+      "type": "linear_inequality",
+      "sense": "≤",
+      "expression": "y_ip ≤ Demand[i][p] * x_ip ∀ i,p"
+    },
+    {
+      "id": "sales_leq_inventory",
+      "type": "linear_inequality",
+      "sense": "≤",
+      "expression": "∑_p y_ip ≤ Q_i ∀ i"
+    },
+    {
+      "id": "fixed_order_link",
+      "type": "linear_inequality",
+      "sense": "≤",
+      "expression": "Q_i ≤ M_i * z_i ∀ i"
+    },
+    {
+      "id": "budget",
+      "type": "linear_inequality",
+      "sense": "≤",
+      "expression": "∑_i c_i * Q_i ≤ B"
+    }
+  ]
+}

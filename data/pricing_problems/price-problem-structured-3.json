@@ -1,0 +1,92 @@
+{
+  "problem_id": "pricing_problem_3",
+  "problem_type": {
+    "class": "MILP",
+    "is_linear": true,
+    "is_integer": true,
+    "has_binary": true,
+    "domain": "pricing"
+  },
+  "parameters": {
+    "w_i": {
+      "value": {"1": 6, "2": 9},
+      "description": "wholesale price for each product"
+    },
+    "RetailPrices": {
+      "value": {
+        "1": [10, 12],
+        "2": [15, 18]
+      },
+      "description": "candidate retail prices for each product"
+    },
+    "Demand": {
+      "value": {
+        "1": {
+          "R1": {"10": 80, "12": 60},
+          "R2": {"10": 50, "12": 35}
+        },
+        "2": {
+          "R1": {"15": 40, "18": 28},
+          "R2": {"15": 55, "18": 38}
+        }
+      },
+      "description": "demand for each product, retailer, and candidate price"
+    },
+    "c_i": {
+      "value": {"1": 4, "2": 6},
+      "description": "unit production cost for each product"
+    },
+    "h_i": {
+      "value": {"1": 0.7, "2": 1.0},
+      "description": "unit holding cost for leftover inventory of each product"
+    },
+    "C": {
+      "value": 200,
+      "description": "total production capacity across all products"
+    }
+  },
+  "variables": {
+    "x_ijp": {
+      "description": "1 if retailer j lists product i at price p",
+      "type": "binary"
+    },
+    "Q_i": {
+      "description": "inventory reserved by wholesaler for product i",
+      "type": "integer"
+    },
+    "y_ijp": {
+      "description": "units of product i sold by retailer j at price p",
+      "type": "continuous"
+    }
+  },
+  "objective": {
+    "sense": "maximize",
+    "expression": "∑_i ∑_j ∑_p w_i * y_ijp - ∑_i (c_i * Q_i + h_i * (Q_i - ∑_j ∑_p y_ijp))"
+  },
+  "constraints": [
+    {
+      "id": "at_most_one_price_per_retailer_product",
+      "type": "linear_inequality",
+      "sense": "≤",
+      "expression": "∑_p x_ijp ≤ 1 ∀ i,j"
+    },
+    {
+      "id": "sales_leq_demand",
+      "type": "linear_inequality",
+      "sense": "≤",
+      "expression": "y_ijp ≤ Demand[i][j][p] * x_ijp ∀ i,j,p"
+    },
+    {
+      "id": "inventory_limit",
+      "type": "linear_inequality",
+      "sense": "≤",
+      "expression": "∑_j ∑_p y_ijp ≤ Q_i ∀ i"
+    },
+    {
+      "id": "capacity",
+      "type": "linear_inequality",
+      "sense": "≤",
+      "expression": "∑_i Q_i ≤ C"
+    }
+  ]
+}

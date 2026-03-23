@@ -1,0 +1,92 @@
+{
+  "problem_id": "assortment_mnl_single_stage",
+  "problem_type": {
+    "class": "MIP",
+    "is_linear": true,
+    "is_integer": true,
+    "has_binary": true,
+    "domain": "pricing"
+  },
+  "parameters": {
+    "r": {
+      "description": "revenue of phone i ($)",
+      "value": [12, 11, 10, 9, 8, 7, 6, 5]
+    },
+    "v": {
+      "description": "popularity score of phone i (walk-away no-buy option = 1.0)",
+      "value": [3.0, 2.5, 2.2, 2.0, 1.8, 1.5, 1.2, 1.0]
+    },
+    "capacity": {
+      "description": "maximum number of phones that can be featured",
+      "value": 5
+    }
+  },
+  "variables": {
+    "x_i": {
+      "description": "1 if phone i is featured on homepage (i=1..8)",
+      "type": "binary"
+    },
+    "t": {
+      "description": "1 / (1 + sum_{i} v_i * x_i)",
+      "type": "continuous"
+    },
+    "y_i": {
+      "description": "x_i * t, i.e., t if phone i is featured, 0 otherwise",
+      "type": "continuous"
+    }
+  },
+  "objective": {
+    "sense": "maximize",
+    "expression": "∑_{i=1}^{8} r_i * v_i * y_i"
+  },
+  "constraints": [
+    {
+      "id": "fractional_reformulation",
+      "type": "linear_equality",
+      "sense": "=",
+      "expression": "t + ∑_{i=1}^{8} v_i * y_i = 1"
+    },
+    {
+      "id": "capacity_constraint",
+      "type": "linear_inequality",
+      "sense": "<=",
+      "expression": "∑_{i=1}^{8} x_i ≤ capacity"
+    },
+    {
+      "id": "y_upper_bound_t",
+      "type": "linear_inequality",
+      "sense": "<=",
+      "expression": "y_i ≤ t, ∀ i=1..8"
+    },
+    {
+      "id": "y_lower_bound",
+      "type": "linear_inequality",
+      "sense": ">=",
+      "expression": "y_i ≥ 0, ∀ i=1..8"
+    },
+    {
+      "id": "y_leq_x",
+      "type": "linear_inequality",
+      "sense": "<=",
+      "expression": "y_i ≤ x_i, ∀ i=1..8"
+    },
+    {
+      "id": "y_geq_t_minus_one_plus_x",
+      "type": "linear_inequality",
+      "sense": ">=",
+      "expression": "y_i ≥ t - (1 - x_i), ∀ i=1..8"
+    },
+    {
+      "id": "t_bounds",
+      "type": "linear_inequality",
+      "sense": "<=",
+      "expression": "t ≤ 1"
+    },
+    {
+      "id": "t_lower_bound",
+      "type": "linear_inequality",
+      "sense": ">=",
+      "expression": "t ≥ 0"
+    }
+  ]
+}
