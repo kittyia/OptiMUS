@@ -1,0 +1,72 @@
+{
+    "description": "An appliance company sells and installs refrigerators and stoves. Each refrigerator takes 60 minutes of mover time and 20 minutes of setup time. Each stove takes 45 minutes of mover time and 25 minutes of setup time. The company has available 20000 minutes of mover time and 13000 minutes of setup time. If the profit per refrigerator is $400 and the profit per stove is $260, how many of each should they sell in order to maximize profit?",
+    "parameters": {
+        "NumProducts": {
+            "definition": "Number of different products sold by the company",
+            "shape": [],
+            "type": "int"
+        },
+        "MoverTimePerProduct": {
+            "definition": "Amount of mover time required to sell one unit of each product",
+            "shape": [
+                "NumProducts"
+            ],
+            "type": "string"
+        },
+        "SetupTimePerProduct": {
+            "definition": "Amount of setup time required to sell one unit of each product",
+            "shape": [
+                "NumProducts"
+            ],
+            "type": "string"
+        },
+        "ProfitPerProduct": {
+            "definition": "Profit per unit of each product",
+            "shape": [
+                "NumProducts"
+            ],
+            "type": "string"
+        },
+        "TotalMoverTime": {
+            "definition": "Total available mover time",
+            "shape": [],
+            "type": "int"
+        },
+        "TotalSetupTime": {
+            "definition": "Total available setup time",
+            "shape": [],
+            "type": "int"
+        }
+    },
+    "objective": {
+        "description": "\"The goal is to maximize the total profit from selling refrigerators and stoves\"",
+        "formulation": "$\\max \\sum_{i=1}^{NumProducts} ProfitPerProduct_i \\, Quantity_i$",
+        "code": "model.setObjective(quicksum(ProfitPerProduct[i] * Quantity[i] for i in range(NumProducts)), GRB.MAXIMIZE)"
+    },
+    "constraints": [
+        {
+            "description": "Sum over all products of (MoverTimePerProduct[i] * Quantity[i]) must be less than or equal to TotalMoverTime",
+            "formulation": "$\\\\sum_{i=1}^{NumProducts} MoverTimePerProduct[i] \\\\cdot Quantity[i] \\\\leq TotalMoverTime$",
+            "code": "model.addConstr(\n    sum(MoverTimePerProduct[i] * Quantity[i] for i in range(NumProducts))\n    <= TotalMoverTime\n)"
+        },
+        {
+            "description": "Sum over all products of (SetupTimePerProduct[i] * Quantity[i]) must be less than or equal to TotalSetupTime",
+            "formulation": "$\\\\sum_{i=1}^{NumProducts} SetupTimePerProduct[i] \\\\cdot Quantity[i] \\\\leq TotalSetupTime$",
+            "code": "model.addConstr(\n    sum(SetupTimePerProduct[i] * Quantity[i] for i in range(NumProducts))\n    <= TotalSetupTime\n)"
+        },
+        {
+            "description": "Quantity[i] must be a nonnegative integer for all products",
+            "formulation": "$\\\\forall i = 1, \\\\dots, \\\\text{NumProducts},\\\\; Quantity[i] \\\\in \\\\mathbb{Z}_{\\\\ge 0}$",
+            "code": "for i in range(NumProducts):\n    model.addConstr(Quantity[i] >= 0)"
+        }
+    ],
+    "variables": {
+        "Quantity": {
+            "shape": [
+                "NumProducts"
+            ],
+            "type": "integer",
+            "definition": "Number of units sold for each product"
+        }
+    }
+}

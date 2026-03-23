@@ -1,0 +1,68 @@
+{
+    "description": "A candy store mixes regular candy and sour candy to prepare two products, regular mix and sour surprise mix. Each kilogram of the regular mix contains 0.8 kg of regular candy and 0.2 kg of sour candy. The profit per kilogram of the regular mix is $3. Each kilogram of the sour surprise mix contains 0.1 kg of regular candy and 0.9 kg of sour candy. The profit per kilogram of the sour surprise mix is $5. The candy store has 80 kg of regular candy and 60 kg of sour candy available. How many kilograms of each type of candy mix should be created to maximize profits?",
+    "parameters": {
+        "NumMixes": {
+            "definition": "Number of different candy mixes prepared",
+            "shape": [],
+            "type": "int"
+        },
+        "NumCandyTypes": {
+            "definition": "Number of different candy types used",
+            "shape": [],
+            "type": "int"
+        },
+        "CompositionRequired": {
+            "definition": "Amount of each candy type required per kilogram of each mix",
+            "shape": [
+                "NumCandyTypes",
+                "NumMixes"
+            ],
+            "type": "string"
+        },
+        "ProfitPerMix": {
+            "definition": "Profit per kilogram of each mix",
+            "shape": [
+                "NumMixes"
+            ],
+            "type": "string"
+        },
+        "AvailableCandy": {
+            "definition": "Amount of each candy type available",
+            "shape": [
+                "NumCandyTypes"
+            ],
+            "type": "string"
+        }
+    },
+    "objective": {
+        "description": "\"Maximize the total profit from producing the regular mix and sour surprise mix.\"",
+        "formulation": "$\\max \\sum_{m=1}^{NumMixes} ProfitPerMix_{m} \\, MixAmount_{m}$",
+        "code": "model.setObjective(quicksum(ProfitPerMix[m] * MixAmount[m] for m in range(NumMixes)), GRB.MAXIMIZE)"
+    },
+    "constraints": [
+        {
+            "description": "0.8 kg of regular candy per kg of regular mix times the kilograms of regular mix plus 0.1 kg of regular candy per kg of sour surprise mix times the kilograms of sour surprise mix must not exceed 80 kg of regular candy available",
+            "formulation": "$0.8 \\\\, MixAmount[1] + 0.1 \\\\, MixAmount[2] \\\\leq 80$",
+            "code": "model.addConstr(0.8 * MixAmount[0] + 0.1 * MixAmount[1] <= 80)"
+        },
+        {
+            "description": "0.2 kg of sour candy per kg of regular mix times the kilograms of regular mix plus 0.9 kg of sour candy per kg of sour surprise mix times the kilograms of sour surprise mix must not exceed 60 kg of sour candy available",
+            "formulation": "$0.2 \\\\, MixAmount[1] + 0.9 \\\\, MixAmount[2] \\\\leq 60$",
+            "code": "model.addConstr(0.2 * MixAmount[0] + 0.9 * MixAmount[1] <= 60)"
+        },
+        {
+            "description": "The kilograms of regular mix produced and the kilograms of sour surprise mix produced must be non-negative",
+            "formulation": "$\\\\forall m \\\\in \\\\{1, \\\\dots, \\\\text{NumMixes}\\\\}, \\\\; MixAmount[m] \\\\geq 0$",
+            "code": "for m in range(NumMixes):\n    model.addConstr(MixAmount[m] >= 0)"
+        }
+    ],
+    "variables": {
+        "MixAmount": {
+            "shape": [
+                "NumMixes"
+            ],
+            "type": "continuous",
+            "definition": "Kilograms produced of each candy mix"
+        }
+    }
+}

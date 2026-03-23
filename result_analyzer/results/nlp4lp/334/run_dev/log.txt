@@ -1,0 +1,381 @@
+----
+Step-by-step reasoning:
+
+1. **Raw material constraints**  
+   \[
+   \sum_j req_{i,j} \cdot amount_j \le available_i
+   \]  
+   These constraints ensure material feasibility. They are necessary and cannot be derived from any other constraints. They must remain.
+
+2. **Demand upper bounds**  
+   \[
+   amount_j \le demand_j
+   \]  
+   These limit production by forecasted demand. They are necessary and not implied by material limits.
+
+3. **Non-negativity constraints**  
+   \[
+   amount_j \ge 0
+   \]  
+   These are required to prevent infeasible negative production quantities. They are not implied by the other constraints.
+
+However, constraints (2) and (3) both apply to each product \( j \) and can be combined into a single bound constraint:
+
+\[
+0 \le amount_j \le demand_j
+\]
+
+This does not remove any modeling requirement and simplifies the formulation.
+
+There is no redundancy, but two constraints can be merged.
+
+Updated constraint list:
+
+[
+    "For each raw material i, the total amount used across all products cannot exceed the available amount: sum over j of (req_{i,j} * amount_{j}) <= available_{i}",
+    "For each product j, the production amount must satisfy the demand and non-negativity bounds: 0 <= amount_{j} <= demand_{j}"
+]
+----
++++++++++++++++++++
+++ Constraint Qs ++
++++++++++++++++++++
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+
+PROBLEM INFO:
+
+- Wild Sports produces \var{M} different products using \var{N} different raw materials.
+- The company has \var{available_{i}} of raw material \var{i} available.
+- Product \var{j} requires \var{req_{i,j}} units of material \var{i} per unit produced.
+- Product \var{j} has a selling price of \var{price_j} per unit.
+- Product \var{j} has a production cost of \var{cost_j} per unit produced.
+- Product \var{j} has a forecasted maximum demand of \var{demand_j} for the month.
+
+INPUT FORMAT: 
+
+{
+    "available": [available_{i} for i in 1, ..., N],
+    "requirements": [[req_{i,j} for i in 1, ..., N] for j in 1, ..., M],
+    "prices": [price_{j} for j in 1, ..., M],
+    "costs": [cost_{j} for j in 1, ..., M],
+    "demands": [demand_{j} for j in 1, ..., M]
+}
+
+OBJECTIVE: How many of each product should the sports produce in order to maximize its profit for the month?
+
+OUTPUT INFO:
+
+- the amount of each product produced \var{amount_{j}}.
+- \var{total_profit} shows the total profit of the company for the month.
+
+OUTPUT FORMAT:
+
+{
+    "amount": [amount_{j} for j in 1, ..., M],
+    "total_profit": total_profit
+}
+
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "N": {
+        "definition": "Number of different raw materials",
+        "shape": [],
+        "type": "int"
+    },
+    "M": {
+        "definition": "Number of different products",
+        "shape": [],
+        "type": "int"
+    },
+    "Available": {
+        "definition": "Amount of raw material i available",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "Requirements": {
+        "definition": "Amount of raw material i required to produce one unit of product j",
+        "shape": [
+            "N",
+            "M"
+        ],
+        "type": "string"
+    },
+    "Prices": {
+        "definition": "Price at which product j can be sold",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    },
+    "Costs": {
+        "definition": "Cost of producing one unit of product j",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    },
+    "Demands": {
+        "definition": "Demand for product j",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: For each raw material i, the total amount used across all products cannot exceed the available amount: sum over j of (req_{i,j} * amount_{j}) <= available_{i}
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is **definitely a constraint** and it must be explicitly included in the LP formulation.
+
+### Why?
+
+- The company has a *limited* amount of each raw material \( i \):  
+  \[
+  \text{available}_i
+  \]
+- Each unit of product \( j \) consumes  
+  \[
+  \text{req}_{i,j}
+  \]
+  units of material \( i \).
+- If we produce \( \text{amount}_j \) units of product \( j \), then total consumption of material \( i \) is:
+  \[
+  \sum_{j=1}^{M} \text{req}_{i,j} \cdot \text{amount}_j
+  \]
+
+Since we cannot use more material than is available, we must enforce:
+
+\[
+\sum_{j=1}^{M} \text{req}_{i,j} \cdot \text{amount}_j \le \text{available}_i
+\quad \forall i = 1, \dots, N
+\]
+
+This is a **core resource capacity constraint**, and without it the model would allow unlimited production regardless of material limits, which would make the problem incorrect.
+
+### Conclusion
+
+✅ This is absolutely a constraint.  
+✅ It is essential to the LP formulation.  
+✅ It must be modeled explicitly.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP
+
+PROBLEM INFO:
+
+- Wild Sports produces \var{M} different products using \var{N} different raw materials.
+- The company has \var{available_{i}} of raw material \var{i} available.
+- Product \var{j} requires \var{req_{i,j}} units of material \var{i} per unit produced.
+- Product \var{j} has a selling price of \var{price_j} per unit.
+- Product \var{j} has a production cost of \var{cost_j} per unit produced.
+- Product \var{j} has a forecasted maximum demand of \var{demand_j} for the month.
+
+INPUT FORMAT: 
+
+{
+    "available": [available_{i} for i in 1, ..., N],
+    "requirements": [[req_{i,j} for i in 1, ..., N] for j in 1, ..., M],
+    "prices": [price_{j} for j in 1, ..., M],
+    "costs": [cost_{j} for j in 1, ..., M],
+    "demands": [demand_{j} for j in 1, ..., M]
+}
+
+OBJECTIVE: How many of each product should the sports produce in order to maximize its profit for the month?
+
+OUTPUT INFO:
+
+- the amount of each product produced \var{amount_{j}}.
+- \var{total_profit} shows the total profit of the company for the month.
+
+OUTPUT FORMAT:
+
+{
+    "amount": [amount_{j} for j in 1, ..., M],
+    "total_profit": total_profit
+}
+
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "N": {
+        "definition": "Number of different raw materials",
+        "shape": [],
+        "type": "int"
+    },
+    "M": {
+        "definition": "Number of different products",
+        "shape": [],
+        "type": "int"
+    },
+    "Available": {
+        "definition": "Amount of raw material i available",
+        "shape": [
+            "N"
+        ],
+        "type": "string"
+    },
+    "Requirements": {
+        "definition": "Amount of raw material i required to produce one unit of product j",
+        "shape": [
+            "N",
+            "M"
+        ],
+        "type": "string"
+    },
+    "Prices": {
+        "definition": "Price at which product j can be sold",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    },
+    "Costs": {
+        "definition": "Cost of producing one unit of product j",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    },
+    "Demands": {
+        "definition": "Demand for product j",
+        "shape": [
+            "M"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: For each product j, the production amount must satisfy the demand and non-negativity bounds: 0 <= amount_{j} <= demand_{j}
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is** a constraint and it should be explicitly included in the LP formulation.
+
+### Why?
+
+- The problem states that each product has a **forecasted maximum demand** \( demand_j \).
+- Since the objective is to maximize profit and there is no indication that excess production can be stored or sold later, production cannot exceed demand.
+- Therefore, we must enforce:
+  
+\[
+0 \le \text{amount}_j \le \text{demand}_j \quad \forall j = 1, \dots, M
+\]
+
+- The **non-negativity constraint** \( \text{amount}_j \ge 0 \) is standard in production LPs.
+- The **upper bound** \( \text{amount}_j \le demand_j \) is necessary to prevent the model from producing unlimited units of highly profitable products.
+
+Without this constraint, the LP would ignore market limitations and potentially produce more than can be sold, which contradicts the problem statement.
+
+✅ This constraint is clearly required and should be explicitly modeled.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
+
+
+
+++++++++++++++++++++++++++++++
+Extracting constraint formulations
+++++++++++++++++++++++++++++++
+
+
+
+----
+{
+    "FORMULATION": "$\\forall i = 1, \\dots, N, \\; \\sum_{j=1}^{M} Requirements_{i,j} \\cdot amount_j \\le Available_i$",
+    "NEW VARIABLES": {
+        "amount": {
+            "shape": "[M]",
+            "type": "continuous",
+            "definition": "The amount of product j produced during the month"
+        }
+    },
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\forall i = 1, \\dots, N, \\; \\sum_{j=1}^{M} Requirements_{i,j} \\cdot amount_j \\le Available_i$
+{'amount': {'shape': '[M]', 'type': 'continuous', 'definition': 'The amount of product j produced during the month'}}
+[]
+----
+----
+{
+    "FORMULATION": "$\\forall j = 1, \\ldots, M, \\; 0 \\leq amount_j \\leq Demands_j$",
+    "NEW VARIABLES": {},
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\forall j = 1, \\ldots, M, \\; 0 \\leq amount_j \\leq Demands_j$
+{}
+[]
+----
+Code executed successfully. Output:
+Restricted license - for non-production use only - expires 2027-11-29
+Gurobi Optimizer version 13.0.1 build v13.0.1rc0 (linux64 - "Alibaba Cloud Linux 3.2104 U12.3 (OpenAnolis Edition)")
+
+CPU model: Intel(R) Xeon(R) Platinum, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 1 physical cores, 2 logical processors, using up to 2 threads
+
+Optimize a model with 9 rows, 3 columns and 14 nonzeros (Max)
+Model fingerprint: 0xe83fbac1
+Model has 3 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [1e+00, 5e+01]
+  Objective range  [2e+00, 1e+01]
+  Bounds range     [0e+00, 0e+00]
+  RHS range        [2e+03, 2e+05]
+
+Presolve removed 6 rows and 0 columns
+Presolve time: 0.00s
+Presolved: 3 rows, 3 columns, 8 nonzeros
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0    8.8016002e+04   5.565500e+03   0.000000e+00      0s
+       2    6.2666667e+04   0.000000e+00   0.000000e+00      0s
+
+Solved in 2 iterations and 0.00 seconds (0.00 work units)
+Optimal objective  6.266666667e+04
+Optimal Objective Value:  62666.66666666667
+Optimal Objective Value:  62666.66666666667
+

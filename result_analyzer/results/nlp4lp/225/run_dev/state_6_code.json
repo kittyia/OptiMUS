@@ -1,0 +1,74 @@
+{
+    "description": "A dentist has 3000 units of resin to fill cavities in both molars and canines. Molars require 20 units of resin and 3 units of pain killer. Canines require 15 units of resin and 2.3 units of pain killer. Since this dentist sees more cavities in canines, at least 60% of cavities filled must be in canines. In addition, the dentist must reserve materials to fill at least 45 molars. How many of each type of teeth should the dentist schedule to fill to minimize the amount of pain killer needed?",
+    "parameters": {
+        "TotalResin": {
+            "definition": "Total amount of resin available for filling cavities",
+            "shape": [],
+            "type": "int"
+        },
+        "ResinPerMolar": {
+            "definition": "Units of resin required to fill one molar",
+            "shape": [],
+            "type": "int"
+        },
+        "ResinPerCanine": {
+            "definition": "Units of resin required to fill one canine",
+            "shape": [],
+            "type": "int"
+        },
+        "PainKillerPerMolar": {
+            "definition": "Units of pain killer required to fill one molar",
+            "shape": [],
+            "type": "int"
+        },
+        "PainKillerPerCanine": {
+            "definition": "Units of pain killer required to fill one canine",
+            "shape": [],
+            "type": "float"
+        },
+        "MinPercentageCanines": {
+            "definition": "Minimum fraction of cavities filled that must be canines",
+            "shape": [],
+            "type": "float"
+        },
+        "MinNumMolars": {
+            "definition": "Minimum number of molars that must be filled",
+            "shape": [],
+            "type": "int"
+        }
+    },
+    "objective": {
+        "description": "\"Minimize the total amount of pain killer required to fill the scheduled molars and canines\"",
+        "formulation": "$\\min \\; PainKillerPerMolar \\cdot NumMolars + PainKillerPerCanine \\cdot NumCanines$",
+        "code": "model.setObjective(\n    PainKillerPerMolar * NumMolars + PainKillerPerCanine * NumCanines,\n    GRB.MINIMIZE\n)"
+    },
+    "constraints": [
+        {
+            "description": "20 times the number of molars filled plus 15 times the number of canines filled should not exceed 3000 units of resin",
+            "formulation": "$20 \\\\cdot NumMolars + 15 \\\\cdot NumCanines \\\\leq TotalResin$",
+            "code": "model.addConstr(ResinPerMolar * NumMolars + ResinPerCanine * NumCanines <= TotalResin)"
+        },
+        {
+            "description": "The number of canines filled must be at least 60% of the total number of cavities filled",
+            "formulation": "$NumCanines \\\\geq MinPercentageCanines \\\\cdot (NumMolars + NumCanines)$",
+            "code": "model.addConstr(NumCanines >= MinPercentageCanines * (NumMolars + NumCanines))"
+        },
+        {
+            "description": "The number of molars filled must be at least 45",
+            "formulation": "$NumMolars \\\\ge MinNumMolars$",
+            "code": "model.addConstr(NumMolars >= MinNumMolars)"
+        }
+    ],
+    "variables": {
+        "NumMolars": {
+            "shape": [],
+            "type": "integer",
+            "definition": "Number of molars to be filled"
+        },
+        "NumCanines": {
+            "shape": [],
+            "type": "integer",
+            "definition": "Number of canines to be filled"
+        }
+    }
+}

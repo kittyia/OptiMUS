@@ -1,0 +1,84 @@
+{
+    "description": "A hospital hires ultrasound technicians and graduate researchers to image patients. An ultrasound technician works 8 hours per shift while a graduate researcher works 5 hours per shift. Ultrasound technicians are paid $300 per shift while graduate researchers are paid $100 per shift. However, due to regulations, there must be twice as many ultrasound technician shifts than graduate researcher shifts. Currently, the hospital needs 500 hours of ultrasound services to meet needs. If the hospital has a budget of $14000, how many of each worker certified to use the ultrasound should be scheduled to reduce the total number of workers?",
+    "parameters": {
+        "UltrasoundTechnicianShiftHours": {
+            "definition": "The number of hours an ultrasound technician works per shift",
+            "shape": [],
+            "type": "int"
+        },
+        "GraduateResearcherShiftHours": {
+            "definition": "The number of hours a graduate researcher works per shift",
+            "shape": [],
+            "type": "int"
+        },
+        "UltrasoundTechnicianPayment": {
+            "definition": "The payment an ultrasound technician receives per shift",
+            "shape": [],
+            "type": "int"
+        },
+        "GraduateResearcherPayment": {
+            "definition": "The payment a graduate researcher receives per shift",
+            "shape": [],
+            "type": "int"
+        },
+        "ShiftRatio": {
+            "definition": "The required ratio of ultrasound technician shifts to graduate researcher shifts",
+            "shape": [],
+            "type": "int"
+        },
+        "RequiredUltrasoundServiceHours": {
+            "definition": "The total number of ultrasound service hours required",
+            "shape": [],
+            "type": "int"
+        },
+        "TotalBudget": {
+            "definition": "The total budget available for workers' payments",
+            "shape": [],
+            "type": "int"
+        }
+    },
+    "objective": {
+        "description": "Minimize the total number of workers (ultrasound technicians and graduate researchers) scheduled",
+        "formulation": "$\\min \\; UltrasoundTechnicianShifts + GraduateResearcherShifts$",
+        "code": "model.setObjective(UltrasoundTechnicianShifts + GraduateResearcherShifts, GRB.MINIMIZE)"
+    },
+    "constraints": [
+        {
+            "description": "8 times the number of ultrasound technician shifts plus 5 times the number of graduate researcher shifts must be at least 500",
+            "formulation": "$8 \\\\cdot UltrasoundTechnicianShifts + 5 \\\\cdot GraduateResearcherShifts \\\\geq 500$",
+            "code": "model.addConstr(\n    UltrasoundTechnicianShiftHours * UltrasoundTechnicianShifts\n    + GraduateResearcherShiftHours * GraduateResearcherShifts\n    >= RequiredUltrasoundServiceHours\n)"
+        },
+        {
+            "description": "300 times the number of ultrasound technician shifts plus 100 times the number of graduate researcher shifts must be less than or equal to 14000",
+            "formulation": "$300 \\\\cdot UltrasoundTechnicianShifts + 100 \\\\cdot GraduateResearcherShifts \\\\leq 14000$",
+            "code": "model.addConstr(\n    UltrasoundTechnicianPayment * UltrasoundTechnicianShifts\n    + GraduateResearcherPayment * GraduateResearcherShifts\n    <= TotalBudget\n)"
+        },
+        {
+            "description": "The number of ultrasound technician shifts must be equal to 2 times the number of graduate researcher shifts",
+            "formulation": "$UltrasoundTechnicianShifts = 2 \\\\cdot GraduateResearcherShifts$",
+            "code": "model.addConstr(UltrasoundTechnicianShifts == ShiftRatio * GraduateResearcherShifts)"
+        },
+        {
+            "description": "The number of graduate researcher shifts must be non-negative",
+            "formulation": "$GraduateResearcherShifts \\\\geq 0$",
+            "code": "model.addConstr(GraduateResearcherShifts >= 0)"
+        },
+        {
+            "description": "The number of graduate researcher shifts must be an integer",
+            "formulation": "$GraduateResearcherShifts \\\\in \\\\mathbb{Z}_{\\\\geq 0}$",
+            "code": "model.addConstr(GraduateResearcherShifts >= 0)"
+        }
+    ],
+    "variables": {
+        "UltrasoundTechnicianShifts": {
+            "shape": [],
+            "type": "integer",
+            "definition": "The number of ultrasound technician shifts scheduled"
+        },
+        "GraduateResearcherShifts": {
+            "shape": [],
+            "type": "integer",
+            "definition": "The number of graduate researcher shifts scheduled"
+        }
+    }
+}

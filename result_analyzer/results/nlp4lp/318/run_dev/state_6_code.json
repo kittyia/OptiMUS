@@ -1,0 +1,71 @@
+{
+    "description": "PROBLEM TYPE: MIP\nPROBLEM INFO:\n\n- A large company wishes to move some of its departments out of London. \n- There are benefits to be derived from doing this (cheaper housing, government incentives, easier recruitment, etc.), which have been costed. \n- Also, however, there will be greater costs of communication between departments. \n- These have also been costed for all possible locations of each department.\n- The company comprises several departmens. \n- There are several possible cities for relocation, or a department may be kept in London. \n- None of these cities (including London) may be the location for more than three of the departments.\n- Benefits for department \\var{k} from relocation at city \\var{l} is \\var{benefit_{k, l}} (in thousands of pounds).\n- Communication costs are of the form \\var{communication_{k, j}} * \\var{cost_{l, m}}.\n- \\var{communication_{k, j}} is the quantity of communication between department \\var{k} and city \\var{j}.\n- \\var{cost_{l, m}} is the unit cost of communication between city \\var{l} and city \\var{m}.\n\n\nINPUT FORMAT:\n\n{\n\t\"benefit\": [[benefit_{k, l} for l in 1,...,L] for k in 1,...,K],\n\t\"communication\": [[communication_{k, j} for j in 1,...,K] for k in 1,...,K],\n\t\"cost\": [[cost_{l, m} for m in 1,...,L] for l in 1,...,L],\n}\n\n\nOBJECTIVE: Where should each department be located so as to minimize overall yearly cost?\n\nOUTPUT INFO:\n\n- \\var{islocated_{k, l}} represents whether department \\var{k} is relocated at city \\var{l}\n\nOUTPUT FORMAT:\n\n{\n    \"islocated\": [[islocated_{k, l} for l in 1,...,L] for k in 1,...K],\n}",
+    "parameters": {
+        "K": {
+            "definition": "Number of departments",
+            "shape": [],
+            "type": "int"
+        },
+        "L": {
+            "definition": "Number of possible locations",
+            "shape": [],
+            "type": "int"
+        },
+        "Benefit": {
+            "definition": "Benefit of department k being located at location l",
+            "shape": [
+                "K",
+                "L"
+            ],
+            "type": "string"
+        },
+        "Communication": {
+            "definition": "Communication costs between departments k and j",
+            "shape": [
+                "K",
+                "K"
+            ],
+            "type": "string"
+        },
+        "Cost": {
+            "definition": "Cost of locating at location l with requirement m",
+            "shape": [
+                "L",
+                "L"
+            ],
+            "type": "string"
+        }
+    },
+    "objective": {
+        "description": "Minimize the total yearly cost, equal to the total inter-department communication costs (based on assigned locations) minus the total relocation benefits obtained from assigning departments to cities.",
+        "formulation": "$\\min \\sum_{k=1}^{K} \\sum_{j=1}^{K} \\sum_{l=1}^{L} \\sum_{m=1}^{L} Communication_{k,j} \\, Cost_{l,m} \\, islocated_{k,l} \\, islocated_{j,m} \\;-\\; \\sum_{k=1}^{K} \\sum_{l=1}^{L} Benefit_{k,l} \\, islocated_{k,l}$",
+        "code": "model.setObjective(\n    quicksum(\n        Communication[k][j] * Cost[l][m] * islocated[k, l] * islocated[j, m]\n        for k in range(K)\n        for j in range(K)\n        for l in range(L)\n        for m in range(L)\n    )\n    - quicksum(\n        Benefit[k][l] * islocated[k, l]\n        for k in range(K)\n        for l in range(L)\n    ),\n    GRB.MINIMIZE\n)"
+    },
+    "constraints": [
+        {
+            "description": "Each department must be assigned to exactly one location (for each department k, the sum over all locations l of islocated_{k,l} equals 1)",
+            "formulation": "$\\\\forall k = 1, \\\\dots, K: \\\\sum_{l=1}^{L} islocated_{k,l} = 1$",
+            "code": "for k in range(K):\n    model.addConstr(sum(islocated[k, l] for l in range(L)) == 1)"
+        },
+        {
+            "description": "No location may host more than three departments (for each location l, the sum over all departments k of islocated_{k,l} is less than or equal to 3)",
+            "formulation": "$\\\\forall l = 1, \\\\ldots, L, \\\\; \\\\sum_{k=1}^{K} islocated_{k,l} \\\\leq 3$",
+            "code": "for l in range(L):\n    model.addConstr(\n        sum(islocated[k, l] for k in range(K)) <= 3\n    )"
+        },
+        {
+            "description": "islocated_{k,l} is a binary variable and must be either 0 or 1 for all departments k and locations l",
+            "formulation": "$\\\\forall k = 1, \\\\dots, K, \\\\; \\\\forall l = 1, \\\\dots, L:\\\\; islocated_{k,l} \\\\in \\\\{0,1\\\\}$",
+            "code": "for k in range(K):\n    for l in range(L):\n        model.addConstr(islocated[k, l] >= 0)\n        model.addConstr(islocated[k, l] <= 1)"
+        }
+    ],
+    "variables": {
+        "islocated": {
+            "shape": [
+                "K",
+                "L"
+            ],
+            "type": "binary",
+            "definition": "Binary variable equal to 1 if department k is located at location l, and 0 otherwise"
+        }
+    }
+}

@@ -1,0 +1,90 @@
+{
+    "description": "- Consider a rocket that travels along a straight path. \n- Let x_t, v_t, and a_t be the position, velocity, and acceleration, respectively, of the rocket at time t.\n- By discretizing time and by taking the time increment to be unity, we obtain an approximate discrete-time model of the form \n    \n    x_{t+1} = x_t + v_t\n    v_{t+1} = v_t + a_t\n\n- We assume that the acceleration a_t is under our control, as it is determined by the rocket thrust.\n- In a rough model, the magnitude |a_t| of the accelera\u00adtion can be assumed to be equal to the rate of fuel consumption at time t.\n- Suppose that we have x_0 and v_0 as the initial position and velocity, respectively, of the rocket.\n- We wish the rocket to take off and reach a target position x_T with speed v_T at time T.\n- The goal is to achieve this with the least pressure on the passengers, minimizing the maximum thrust required.",
+    "parameters": {
+        "InitialPosition": {
+            "definition": "Initial position of the rocket",
+            "shape": [],
+            "type": "int"
+        },
+        "InitialVelocity": {
+            "definition": "Initial velocity of the rocket",
+            "shape": [],
+            "type": "int"
+        },
+        "FinalPosition": {
+            "definition": "Target final position of the rocket",
+            "shape": [],
+            "type": "int"
+        },
+        "FinalVelocity": {
+            "definition": "Target final velocity of the rocket",
+            "shape": [],
+            "type": "int"
+        },
+        "TotalTime": {
+            "definition": "Total number of time steps",
+            "shape": [],
+            "type": "int"
+        }
+    },
+    "objective": {
+        "description": "\"Minimize the maximum absolute acceleration (maximum thrust) over all time steps in order to reduce the peak pressure on the passengers\"",
+        "formulation": "\\max_{t = 0, \\dots, \\text{TotalTime} - 1} \\left| \\text{Acceleration}_t \\right|",
+        "code": "max_thrust = model.addVar(vtype=GRB.CONTINUOUS, name=\"max_thrust\")\n\nfor t in range(TotalTime):\n    model.addConstr(max_thrust >= Acceleration[t])\n    model.addConstr(max_thrust >= -Acceleration[t])\n\nmodel.setObjective(max_thrust, GRB.MINIMIZE)"
+    },
+    "constraints": [
+        {
+            "description": "x_{t+1} = x_t + v_t for t = 0, 1, ..., TotalTime - 1",
+            "formulation": "$\\\\forall t = 0, \\\\dots, \\\\text{TotalTime} - 1:\\\\; Position_{t+1} = Position_t + Velocity_t$",
+            "code": "for t in range(TotalTime):\n    model.addConstr(Position[t+1] == Position[t] + Velocity[t])"
+        },
+        {
+            "description": "v_{t+1} = v_t + a_t for t = 0, 1, ..., TotalTime - 1",
+            "formulation": "$\\\\forall t = 0, \\\\ldots, \\\\text{TotalTime} - 1:\\\\; Velocity[t+1] = Velocity[t] + Acceleration[t]$",
+            "code": "for t in range(TotalTime):\n    model.addConstr(Velocity[t+1] == Velocity[t] + Acceleration[t])"
+        },
+        {
+            "description": "x_0 = InitialPosition",
+            "formulation": "$Position_0 = InitialPosition$",
+            "code": "model.addConstr(Position[0] == InitialPosition)"
+        },
+        {
+            "description": "v_0 = InitialVelocity",
+            "formulation": "$Velocity[0] = InitialVelocity$",
+            "code": "model.addConstr(Velocity[0] == InitialVelocity)"
+        },
+        {
+            "description": "x_{TotalTime} = FinalPosition",
+            "formulation": "$Position[TotalTime] = FinalPosition$",
+            "code": "model.addConstr(Position[TotalTime] == FinalPosition)"
+        },
+        {
+            "description": "v_{TotalTime} = FinalVelocity",
+            "formulation": "$Velocity[TotalTime] = FinalVelocity$",
+            "code": "model.addConstr(Velocity[TotalTime] == FinalVelocity)"
+        }
+    ],
+    "variables": {
+        "Position": {
+            "shape": [
+                "TotalTime+1"
+            ],
+            "type": "continuous",
+            "definition": "Position of the rocket at each time step t = 0, ..., TotalTime"
+        },
+        "Velocity": {
+            "shape": [
+                "TotalTime+1"
+            ],
+            "type": "continuous",
+            "definition": "Velocity of the rocket at each time step t = 0, ..., TotalTime"
+        },
+        "Acceleration": {
+            "shape": [
+                "TotalTime"
+            ],
+            "type": "continuous",
+            "definition": "Acceleration (thrust control input) of the rocket at each time step t = 0, ..., TotalTime - 1"
+        }
+    }
+}

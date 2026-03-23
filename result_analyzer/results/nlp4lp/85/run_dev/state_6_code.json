@@ -1,0 +1,77 @@
+{
+    "description": "A mining company has available a total of 100 square miles of mining sites and considering the use of two mining techniques: heap leaching and vat leaching. For each square mile of land, heap leaching technique can have a daily production of 3 tons of rare earth oxide per square miles but it also creates 8 tons of polluted wastewater and requires 10 extraction machines. On the other hand, vat leaching technique produces 5 tons of rare earth oxide per square miles per day while creating 17 tons of polluted wastewater and requiring 20 extraction machines. There are 100 machines available and due to environmental regulations, the amount of polluted wastewater must be at most 90 tons daily. Find the proportion of lands that use each mining technique in order to maximize the daily production of rare earth oxide.",
+    "parameters": {
+        "TotalLand": {
+            "definition": "Total land available for mining in square miles",
+            "shape": [],
+            "type": "int"
+        },
+        "TotalMachines": {
+            "definition": "Total number of extraction machines available",
+            "shape": [],
+            "type": "int"
+        },
+        "MaxWastewater": {
+            "definition": "Maximum allowed polluted wastewater per day in tons",
+            "shape": [],
+            "type": "int"
+        },
+        "NumTechniques": {
+            "definition": "Number of mining techniques",
+            "shape": [],
+            "type": "int"
+        },
+        "ProductionRate": {
+            "definition": "Daily production of rare earth oxide per square mile for each mining technique",
+            "shape": [
+                "NumTechniques"
+            ],
+            "type": "string"
+        },
+        "WastewaterRate": {
+            "definition": "Daily polluted wastewater created per square mile for each mining technique",
+            "shape": [
+                "NumTechniques"
+            ],
+            "type": "string"
+        },
+        "MachinesRequired": {
+            "definition": "Number of extraction machines required per square mile for each mining technique",
+            "shape": [
+                "NumTechniques"
+            ],
+            "type": "string"
+        }
+    },
+    "objective": {
+        "description": "\"Maximize the total daily production of rare earth oxide from the mining sites\"",
+        "formulation": "$\\max \\sum_{i=1}^{NumTechniques} ProductionRate_i \\, LandUsed_i$",
+        "code": ""
+    },
+    "constraints": [
+        {
+            "description": "The total number of extraction machines used across all mining techniques must not exceed TotalMachines",
+            "formulation": "$\\\\sum_{t=1}^{NumTechniques} MachinesRequired[t] \\\\cdot LandUsed[t] \\\\leq TotalMachines$",
+            "code": "model.addConstr(\n    sum(MachinesRequired[t] * LandUsed[t] for t in range(NumTechniques)) \n    <= TotalMachines\n)"
+        },
+        {
+            "description": "The total amount of polluted wastewater produced per day across all mining techniques must not exceed MaxWastewater",
+            "formulation": "$\\\\sum_{t=1}^{NumTechniques} WastewaterRate[t] \\\\cdot LandUsed[t] \\\\le MaxWastewater$",
+            "code": "model.addConstr(\n    sum(WastewaterRate[t] * LandUsed[t] for t in range(NumTechniques)) \n    <= MaxWastewater\n)"
+        },
+        {
+            "description": "The land allocated to each mining technique must be non-negative",
+            "formulation": "$\\\\forall t = 1, \\\\dots, NumTechniques,\\\\; LandUsed[t] \\\\geq 0$",
+            "code": "for t in range(NumTechniques):\n    model.addConstr(LandUsed[t] >= 0)"
+        }
+    ],
+    "variables": {
+        "LandUsed": {
+            "shape": [
+                "NumTechniques"
+            ],
+            "type": "continuous",
+            "definition": "Amount of land in square miles allocated to each mining technique"
+        }
+    }
+}

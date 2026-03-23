@@ -1,0 +1,78 @@
+{
+    "description": "Consider a communication network made up of several nodes. These nodes are connected by communication links that allow one-way transmission of data from one node to another. Each link between nodes has a specific capacity, meaning it can carry a certain number of bits per second, and there is a cost associated with transmitting data along each link. \nEach node in the network generates data that needs to be sent to another specific node. This data can be sent directly or by passing through several intermediate nodes. Additionally, data from the same origin to the same destination can be split up and sent through different paths.\nThe goal is to determine the paths that all data should take to reach their intended destinations, while keeping the total transmission cost as low as possible.\n\n\n",
+    "parameters": {
+        "NumNodes": {
+            "definition": "Total number of nodes in the network",
+            "shape": [],
+            "type": "int"
+        },
+        "Capacity": {
+            "definition": "Capacity of the communication link from node i to node j in bits per second",
+            "shape": [
+                "NumNodes",
+                "NumNodes"
+            ],
+            "type": "string"
+        },
+        "Cost": {
+            "definition": "Cost of transmitting data along the link from node i to node j",
+            "shape": [
+                "NumNodes",
+                "NumNodes"
+            ],
+            "type": "string"
+        },
+        "NumSourceDestPairs": {
+            "definition": "Number of source-destination pairs",
+            "shape": [],
+            "type": "int"
+        },
+        "SourceDestPairs": {
+            "definition": "Source and destination node indices for each pair",
+            "shape": [
+                "NumSourceDestPairs",
+                "2"
+            ],
+            "type": "string"
+        },
+        "SourceData": {
+            "definition": "Amount of data each source needs to send in bits",
+            "shape": [
+                "NumSourceDestPairs"
+            ],
+            "type": "string"
+        }
+    },
+    "objective": {
+        "description": "Minimize the total transmission cost of sending all data from each source node to its corresponding destination node across the network",
+        "formulation": "$\\min \\sum_{k=1}^{\\text{NumSourceDestPairs}} \\sum_{i=1}^{\\text{NumNodes}} \\sum_{j=1}^{\\text{NumNodes}} \\text{Cost}_{i,j} \\,\\text{Flow}_{k,i,j}$"
+    },
+    "constraints": [
+        {
+            "description": "For each source-destination pair k and for each node i: sum over j of flow from i to j for pair k minus sum over j of flow from j to i for pair k must equal b_{k,i}, where b_{k,i} = SourceData[k] if i is the source of k, b_{k,i} = -SourceData[k] if i is the destination of k, and b_{k,i} = 0 otherwise",
+            "formulation": "$\\\\forall k = 1,\\\\dots,\\\\text{NumSourceDestPairs},\\\\; \\\\forall i = 1,\\\\dots,\\\\text{NumNodes}: \\\\\\\\ \\\\sum_{j=1}^{\\\\text{NumNodes}} Flow[k,i,j] - \\\\sum_{j=1}^{\\\\text{NumNodes}} Flow[k,j,i] = b_{k,i}$, \\\\\\\\ \\\\text{where } b_{k,i} = \\\\begin{cases} \\\\text{SourceData}[k] & \\\\text{if } i = \\\\text{SourceDestPairs}[k,1] \\\\\\\\ -\\\\text{SourceData}[k] & \\\\text{if } i = \\\\text{SourceDestPairs}[k,2] \\\\\\\\ 0 & \\\\text{otherwise} \\\\end{cases}$",
+            "code": null
+        },
+        {
+            "description": "For each link from node i to node j, the sum of flows over all source-destination pairs on that link must not exceed the capacity of the link",
+            "formulation": "$\\\\forall i = 1, \\\\dots, \\\\text{NumNodes}, \\\\; \\\\forall j = 1, \\\\dots, \\\\text{NumNodes}: \\\\; \\\\sum_{k=1}^{\\\\text{NumSourceDestPairs}} Flow[k,i,j] \\\\leq Capacity[i,j]$",
+            "code": null
+        },
+        {
+            "description": "All flow variables must be non-negative",
+            "formulation": "$\\\\forall k = 1, \\\\dots, \\\\text{NumSourceDestPairs},\\\\ \\\\forall i = 1, \\\\dots, \\\\text{NumNodes},\\\\ \\\\forall j = 1, \\\\dots, \\\\text{NumNodes}:\\\\ \\\\text{Flow}[k,i,j] \\\\geq 0$",
+            "code": null
+        }
+    ],
+    "variables": {
+        "Flow": {
+            "shape": [
+                "NumSourceDestPairs",
+                "NumNodes",
+                "NumNodes"
+            ],
+            "type": "continuous",
+            "definition": "Amount of data flow for source-destination pair k transmitted from node i to node j"
+        }
+    }
+}

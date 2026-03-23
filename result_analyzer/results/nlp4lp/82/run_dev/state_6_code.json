@@ -1,0 +1,65 @@
+{
+    "description": "A toy company can build two factory types, a medium sized factory and a small factory. A medium sized factory can make 50 toys per day and requires 3 operators. A small factory can make 35 toys per day and requires 2 operators. The company must make at least 250 toys per day but they only have available 16 operators. How many of each factory should the company build to minimize the total number of factories?",
+    "parameters": {
+        "NumFactoryTypes": {
+            "definition": "Number of factory types",
+            "shape": [],
+            "type": "int"
+        },
+        "ProductionRate": {
+            "definition": "Production rate of each factory type (toys per day)",
+            "shape": [
+                "NumFactoryTypes"
+            ],
+            "type": "string"
+        },
+        "OperatorRequirement": {
+            "definition": "Number of operators required for each factory type",
+            "shape": [
+                "NumFactoryTypes"
+            ],
+            "type": "string"
+        },
+        "TotalProductionRequirement": {
+            "definition": "Minimum number of toys required per day",
+            "shape": [],
+            "type": "int"
+        },
+        "TotalAvailableOperators": {
+            "definition": "Total number of available operators",
+            "shape": [],
+            "type": "int"
+        }
+    },
+    "objective": {
+        "description": "\"Minimize the total number of factories (medium and small) built\"",
+        "formulation": "$\\min \\sum_{i=1}^{\\text{NumFactoryTypes}} \\text{NumFactories}_i$",
+        "code": ""
+    },
+    "constraints": [
+        {
+            "description": "The total daily production from all factories must be at least TotalProductionRequirement (250 toys per day)",
+            "formulation": "$\\\\sum_{i=1}^{NumFactoryTypes} ProductionRate[i] \\\\cdot NumFactories[i] \\\\geq TotalProductionRequirement$",
+            "code": "model.addConstr(\n    sum(ProductionRate[i] * NumFactories[i] for i in range(NumFactoryTypes)) \n    >= TotalProductionRequirement\n)"
+        },
+        {
+            "description": "The total number of operators required by all factories must not exceed TotalAvailableOperators (16 operators)",
+            "formulation": "$\\\\sum_{i=1}^{NumFactoryTypes} OperatorRequirement[i] \\\\cdot NumFactories[i] \\\\leq TotalAvailableOperators$",
+            "code": "model.addConstr(\n    quicksum(OperatorRequirement[i] * NumFactories[i] for i in range(NumFactoryTypes))\n    <= TotalAvailableOperators\n)"
+        },
+        {
+            "description": "The number of factories built for each factory type must be a non-negative integer",
+            "formulation": "$\\\\forall i = 1, \\\\dots, NumFactoryTypes,\\\\; NumFactories[i] \\\\in \\\\mathbb{Z}_{\\\\geq 0}$",
+            "code": "for i in range(NumFactoryTypes):\n    model.addConstr(NumFactories[i] >= 0)"
+        }
+    ],
+    "variables": {
+        "NumFactories": {
+            "shape": [
+                "NumFactoryTypes"
+            ],
+            "type": "integer",
+            "definition": "Number of factories to build for each factory type"
+        }
+    }
+}

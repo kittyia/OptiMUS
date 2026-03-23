@@ -1,0 +1,94 @@
+{
+    "description": "A hospital prepares batches of medication patches and anti-biotic creams. Each medication patch requires 3 minutes to prepare and 5 units of materials. Each anti-biotic cream requires 5 minutes to prepare and 6 units of materials. Since anti-biotic creams are used more often, there must be at least twice as many anti-biotic creams as medication patches. Due to storage reasons, the hospital can make at most 100 batches of medication patches and anti-biotic creams in total. The hospital has available 400 minutes of staff to spare and 530 units of materials. If each batch of medication patches can treat 3 people and each batch of anti-biotic cream can treat 2 people, how many batches of each should be made to maximize the number of people that can be treated?",
+    "parameters": {
+        "PreparationTimeMedicationPatch": {
+            "definition": "Preparation time per batch of medication patches",
+            "shape": [],
+            "type": "int"
+        },
+        "PreparationTimeAntiBioticCream": {
+            "definition": "Preparation time per batch of anti-biotic creams",
+            "shape": [],
+            "type": "int"
+        },
+        "MaterialRequiredMedicationPatch": {
+            "definition": "Material required per batch of medication patches",
+            "shape": [],
+            "type": "int"
+        },
+        "MaterialRequiredAntiBioticCream": {
+            "definition": "Material required per batch of anti-biotic creams",
+            "shape": [],
+            "type": "int"
+        },
+        "MinRatioAntiBioticCreamToMedicationPatch": {
+            "definition": "Minimum ratio of anti-biotic creams to medication patches",
+            "shape": [],
+            "type": "int"
+        },
+        "MaxTotalBatches": {
+            "definition": "Maximum total number of batches",
+            "shape": [],
+            "type": "int"
+        },
+        "AvailableStaffTime": {
+            "definition": "Available staff time in minutes",
+            "shape": [],
+            "type": "int"
+        },
+        "AvailableMaterials": {
+            "definition": "Available units of materials",
+            "shape": [],
+            "type": "int"
+        },
+        "TreatmentPerBatchMedicationPatch": {
+            "definition": "Number of people treated by each batch of medication patches",
+            "shape": [],
+            "type": "int"
+        },
+        "TreatmentPerBatchAntiBioticCream": {
+            "definition": "Number of people treated by each batch of anti-biotic creams",
+            "shape": [],
+            "type": "int"
+        }
+    },
+    "objective": {
+        "description": "\"Maximize the total number of people that can be treated by producing batches of medication patches and anti-biotic creams\"",
+        "formulation": "$\\max \\; TreatmentPerBatchMedicationPatch \\cdot MedicationPatches + TreatmentPerBatchAntiBioticCream \\cdot AntiBioticCreams$",
+        "code": "model.setObjective(\n    TreatmentPerBatchMedicationPatch * MedicationPatches +\n    TreatmentPerBatchAntiBioticCream * AntiBioticCreams,\n    GRB.MAXIMIZE\n)"
+    },
+    "constraints": [
+        {
+            "description": "Total preparation time for medication patches and anti-biotic creams should not exceed available staff time (3 * MedicationPatches + 5 * AntiBioticCreams \u2264 400)",
+            "formulation": "$3 \\\\cdot MedicationPatches + 5 \\\\cdot AntiBioticCreams \\\\leq AvailableStaffTime$",
+            "code": "model.addConstr(\n    PreparationTimeMedicationPatch * MedicationPatches\n    + PreparationTimeAntiBioticCream * AntiBioticCreams\n    <= AvailableStaffTime\n)"
+        },
+        {
+            "description": "Total materials used for medication patches and anti-biotic creams should not exceed available materials (5 * MedicationPatches + 6 * AntiBioticCreams \u2264 530)",
+            "formulation": "$MaterialRequiredMedicationPatch \\\\cdot MedicationPatches + MaterialRequiredAntiBioticCream \\\\cdot AntiBioticCreams \\\\leq AvailableMaterials$",
+            "code": "model.addConstr(MaterialRequiredMedicationPatch * MedicationPatches + MaterialRequiredAntiBioticCream * AntiBioticCreams <= AvailableMaterials)"
+        },
+        {
+            "description": "The number of anti-biotic cream batches must be at least twice the number of medication patch batches (AntiBioticCreams \u2265 2 * MedicationPatches)",
+            "formulation": "$AntiBioticCreams \\\\ge 2 \\\\cdot MedicationPatches$",
+            "code": "model.addConstr(AntiBioticCreams >= MinRatioAntiBioticCreamToMedicationPatch * MedicationPatches)"
+        },
+        {
+            "description": "The number of medication patch batches and anti-biotic cream batches must be non-negative (MedicationPatches \u2265 0, AntiBioticCreams \u2265 0)",
+            "formulation": "$MedicationPatches \\\\geq 0, \\\\; AntiBioticCreams \\\\geq 0$",
+            "code": "model.addConstr(MedicationPatches >= 0)\nmodel.addConstr(AntiBioticCreams >= 0)"
+        }
+    ],
+    "variables": {
+        "MedicationPatches": {
+            "shape": [],
+            "type": "integer",
+            "definition": "Number of batches of medication patches to produce"
+        },
+        "AntiBioticCreams": {
+            "shape": [],
+            "type": "integer",
+            "definition": "Number of batches of anti-biotic creams to produce"
+        }
+    }
+}

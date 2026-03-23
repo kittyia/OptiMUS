@@ -1,0 +1,1612 @@
+----
+[
+    "For each week w, regular_used_w ≤ RegularLabor_w",
+    "For each week w, overtime_used_w ≤ OvertimeLabor_w",
+    "For each week w, regular_baskets_w = regular_used_w / AssemblyTime",
+    "For each week w, overtime_baskets_w = overtime_used_w / AssemblyTime",
+    "For each week w, inventory_w = inventory_{w-1} + regular_baskets_w + overtime_baskets_w - Demand_w",
+    "Inventory_0 = 0 (no baskets available at the start of week 1)",
+    "For each week w, inventory_w ≥ 0",
+    "regular_used_w ≥ 0 for all weeks w",
+    "overtime_used_w ≥ 0 for all weeks w"
+]
+----
++++++++++++++++++++
+++ Constraint Qs ++
++++++++++++++++++++
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP or MILP
+
+PROBLEM INFO:
+
+- A fine foods company produces gift baskets for a season that lasts \var{W} weeks.
+- The demand for week \var{w} is \var{demand_{w}} and the demand must be met.
+- Regular labor is available for \var{regular_labor_{w}} hours per week and costs $\var{regular_cost}/h.
+- Overtime labor is available for \var{overtime_labor_{w}} hours per week and costs $\var{overtime_cost}/h.
+- Each basket takes \var{assembly_time} hours of labor to assemble.
+- The material cost for each basket is $\var{material_cost} and it sells for $\var{selling_price}.
+- Unsold baskets from a week incur a $\var{holding_cost} holding cost. 
+- No baskets are available at the start of week 1.
+- Unsold baskets at the end of week \var{W} have a salvage value of $var{salvage_value} and do not incur a holding cost.
+
+INPUT FORMAT: 
+
+{
+    "regular_cost": regular_cost,
+    "overtime_cost": overtime_cost,
+    "assembly_time": assembly_time,
+    "material_cost": material_cost,
+    "selling_price": selling_price,
+    "holding_cost": holding_cost,
+    "salvage_value": salvage_value,
+    "demand": [demand_{w} for w in 1, ..., W],
+    "regular_labor": [regular_labor_{w} for w in 1, ..., W],
+    "overtime_labor": [overtime_labor_{w} for w in 1, ..., W]
+}
+
+OBJECTIVE: How much regular and overtime labor should be utilized each week to assemble the baskets to maximize the profit over the season?
+
+OUTPUT INFO:
+
+- the hours of regular labor used each week \var{regular_used_{w}}.
+- the hours of overtime labor used each week \var{overtime_used_{w}}.
+- the number of baskets assembled with regular labor \var{regular_basket_{w}}.
+- the number of baskets assembled with overtime labor \var{overtime_basket_{w}}.
+- the number of baskets on hand at the end of week \var{inventory_{w}}.
+- \var{total_profit} shows the total profit of the company for the season.
+
+OUTPUT FORMAT:
+
+{
+    "regular_used": [regular_used_{w} for w in 1, ..., W],
+    "overtime_used": [overtime_used_{w} for w in 1, ..., W],
+    "regular_baskets": [regular_basket_{w} for w in 1, ..., W],
+    "overtime_baskets": [overtime_basket_{w} for w in 1, ..., W],
+    "inventory": [inventory_{w} for w in 1, ..., W],
+    "total_profit": total_profit
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "RegularCost": {
+        "definition": "Cost of regular labor per unit of time",
+        "shape": [],
+        "type": "int"
+    },
+    "OvertimeCost": {
+        "definition": "Cost of overtime labor per unit of time",
+        "shape": [],
+        "type": "int"
+    },
+    "AssemblyTime": {
+        "definition": "Time required to assemble a single basket",
+        "shape": [],
+        "type": "float"
+    },
+    "MaterialCost": {
+        "definition": "Cost of materials per basket",
+        "shape": [],
+        "type": "int"
+    },
+    "SellingPrice": {
+        "definition": "Selling price per basket",
+        "shape": [],
+        "type": "int"
+    },
+    "HoldingCost": {
+        "definition": "Holding cost per basket per unit of time",
+        "shape": [],
+        "type": "int"
+    },
+    "SalvageValue": {
+        "definition": "Salvage value per unsold basket at the end of the season",
+        "shape": [],
+        "type": "int"
+    },
+    "Weeks": {
+        "definition": "Total number of weeks for the season",
+        "shape": [],
+        "type": "int"
+    },
+    "Demand": {
+        "definition": "Demand for baskets in week w",
+        "shape": [
+            "Weeks"
+        ],
+        "type": "string"
+    },
+    "RegularLabor": {
+        "definition": "Number of regular labor units available in week w",
+        "shape": [
+            "Weeks"
+        ],
+        "type": "string"
+    },
+    "OvertimeLabor": {
+        "definition": "Number of overtime labor units available in week w",
+        "shape": [
+            "Weeks"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: For each week w, regular_used_w ≤ RegularLabor_w
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is definitely a required constraint**, and it should explicitly appear in the (MI)LP formulation.
+
+### Why?
+
+The problem states:
+
+> “Regular labor is available for \( \text{regular\_labor}_w \) hours per week.”
+
+This clearly defines an **upper bound on available regular labor hours** in each week. Since the decision variable is:
+
+- \( \text{regular\_used}_w \): hours of regular labor used in week \( w \),
+
+we must ensure that the amount used does not exceed what is available.
+
+Thus, the constraint
+
+\[
+\text{regular\_used}_w \le \text{RegularLabor}_w \quad \forall w
+\]
+
+is a **standard capacity constraint**.
+
+Without this constraint:
+- The model could use unlimited regular labor,
+- Leading to infeasible or unrealistic solutions,
+- Violating the problem statement.
+
+This is a fundamental structural constraint in production planning models.
+
+### Conclusion  
+✅ This is absolutely a real and necessary constraint.  
+✅ It should be explicitly modeled.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP or MILP
+
+PROBLEM INFO:
+
+- A fine foods company produces gift baskets for a season that lasts \var{W} weeks.
+- The demand for week \var{w} is \var{demand_{w}} and the demand must be met.
+- Regular labor is available for \var{regular_labor_{w}} hours per week and costs $\var{regular_cost}/h.
+- Overtime labor is available for \var{overtime_labor_{w}} hours per week and costs $\var{overtime_cost}/h.
+- Each basket takes \var{assembly_time} hours of labor to assemble.
+- The material cost for each basket is $\var{material_cost} and it sells for $\var{selling_price}.
+- Unsold baskets from a week incur a $\var{holding_cost} holding cost. 
+- No baskets are available at the start of week 1.
+- Unsold baskets at the end of week \var{W} have a salvage value of $var{salvage_value} and do not incur a holding cost.
+
+INPUT FORMAT: 
+
+{
+    "regular_cost": regular_cost,
+    "overtime_cost": overtime_cost,
+    "assembly_time": assembly_time,
+    "material_cost": material_cost,
+    "selling_price": selling_price,
+    "holding_cost": holding_cost,
+    "salvage_value": salvage_value,
+    "demand": [demand_{w} for w in 1, ..., W],
+    "regular_labor": [regular_labor_{w} for w in 1, ..., W],
+    "overtime_labor": [overtime_labor_{w} for w in 1, ..., W]
+}
+
+OBJECTIVE: How much regular and overtime labor should be utilized each week to assemble the baskets to maximize the profit over the season?
+
+OUTPUT INFO:
+
+- the hours of regular labor used each week \var{regular_used_{w}}.
+- the hours of overtime labor used each week \var{overtime_used_{w}}.
+- the number of baskets assembled with regular labor \var{regular_basket_{w}}.
+- the number of baskets assembled with overtime labor \var{overtime_basket_{w}}.
+- the number of baskets on hand at the end of week \var{inventory_{w}}.
+- \var{total_profit} shows the total profit of the company for the season.
+
+OUTPUT FORMAT:
+
+{
+    "regular_used": [regular_used_{w} for w in 1, ..., W],
+    "overtime_used": [overtime_used_{w} for w in 1, ..., W],
+    "regular_baskets": [regular_basket_{w} for w in 1, ..., W],
+    "overtime_baskets": [overtime_basket_{w} for w in 1, ..., W],
+    "inventory": [inventory_{w} for w in 1, ..., W],
+    "total_profit": total_profit
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "RegularCost": {
+        "definition": "Cost of regular labor per unit of time",
+        "shape": [],
+        "type": "int"
+    },
+    "OvertimeCost": {
+        "definition": "Cost of overtime labor per unit of time",
+        "shape": [],
+        "type": "int"
+    },
+    "AssemblyTime": {
+        "definition": "Time required to assemble a single basket",
+        "shape": [],
+        "type": "float"
+    },
+    "MaterialCost": {
+        "definition": "Cost of materials per basket",
+        "shape": [],
+        "type": "int"
+    },
+    "SellingPrice": {
+        "definition": "Selling price per basket",
+        "shape": [],
+        "type": "int"
+    },
+    "HoldingCost": {
+        "definition": "Holding cost per basket per unit of time",
+        "shape": [],
+        "type": "int"
+    },
+    "SalvageValue": {
+        "definition": "Salvage value per unsold basket at the end of the season",
+        "shape": [],
+        "type": "int"
+    },
+    "Weeks": {
+        "definition": "Total number of weeks for the season",
+        "shape": [],
+        "type": "int"
+    },
+    "Demand": {
+        "definition": "Demand for baskets in week w",
+        "shape": [
+            "Weeks"
+        ],
+        "type": "string"
+    },
+    "RegularLabor": {
+        "definition": "Number of regular labor units available in week w",
+        "shape": [
+            "Weeks"
+        ],
+        "type": "string"
+    },
+    "OvertimeLabor": {
+        "definition": "Number of overtime labor units available in week w",
+        "shape": [
+            "Weeks"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: For each week w, overtime_used_w ≤ OvertimeLabor_w
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is clearly a required constraint.
+
+The problem states:
+
+> “Overtime labor is available for \( \text{overtime\_labor}_w \) hours per week…”
+
+This directly implies a capacity limit on overtime labor usage in each week. Therefore, the model must enforce:
+
+\[
+\text{overtime\_used}_w \le \text{overtime\_labor}_w \quad \forall w
+\]
+
+Without this constraint, the optimizer could use unlimited overtime (if profitable), which would contradict the problem statement.
+
+This is a standard resource capacity constraint and should **definitely** be included in the (MI)LP formulation.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP or MILP
+
+PROBLEM INFO:
+
+- A fine foods company produces gift baskets for a season that lasts \var{W} weeks.
+- The demand for week \var{w} is \var{demand_{w}} and the demand must be met.
+- Regular labor is available for \var{regular_labor_{w}} hours per week and costs $\var{regular_cost}/h.
+- Overtime labor is available for \var{overtime_labor_{w}} hours per week and costs $\var{overtime_cost}/h.
+- Each basket takes \var{assembly_time} hours of labor to assemble.
+- The material cost for each basket is $\var{material_cost} and it sells for $\var{selling_price}.
+- Unsold baskets from a week incur a $\var{holding_cost} holding cost. 
+- No baskets are available at the start of week 1.
+- Unsold baskets at the end of week \var{W} have a salvage value of $var{salvage_value} and do not incur a holding cost.
+
+INPUT FORMAT: 
+
+{
+    "regular_cost": regular_cost,
+    "overtime_cost": overtime_cost,
+    "assembly_time": assembly_time,
+    "material_cost": material_cost,
+    "selling_price": selling_price,
+    "holding_cost": holding_cost,
+    "salvage_value": salvage_value,
+    "demand": [demand_{w} for w in 1, ..., W],
+    "regular_labor": [regular_labor_{w} for w in 1, ..., W],
+    "overtime_labor": [overtime_labor_{w} for w in 1, ..., W]
+}
+
+OBJECTIVE: How much regular and overtime labor should be utilized each week to assemble the baskets to maximize the profit over the season?
+
+OUTPUT INFO:
+
+- the hours of regular labor used each week \var{regular_used_{w}}.
+- the hours of overtime labor used each week \var{overtime_used_{w}}.
+- the number of baskets assembled with regular labor \var{regular_basket_{w}}.
+- the number of baskets assembled with overtime labor \var{overtime_basket_{w}}.
+- the number of baskets on hand at the end of week \var{inventory_{w}}.
+- \var{total_profit} shows the total profit of the company for the season.
+
+OUTPUT FORMAT:
+
+{
+    "regular_used": [regular_used_{w} for w in 1, ..., W],
+    "overtime_used": [overtime_used_{w} for w in 1, ..., W],
+    "regular_baskets": [regular_basket_{w} for w in 1, ..., W],
+    "overtime_baskets": [overtime_basket_{w} for w in 1, ..., W],
+    "inventory": [inventory_{w} for w in 1, ..., W],
+    "total_profit": total_profit
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "RegularCost": {
+        "definition": "Cost of regular labor per unit of time",
+        "shape": [],
+        "type": "int"
+    },
+    "OvertimeCost": {
+        "definition": "Cost of overtime labor per unit of time",
+        "shape": [],
+        "type": "int"
+    },
+    "AssemblyTime": {
+        "definition": "Time required to assemble a single basket",
+        "shape": [],
+        "type": "float"
+    },
+    "MaterialCost": {
+        "definition": "Cost of materials per basket",
+        "shape": [],
+        "type": "int"
+    },
+    "SellingPrice": {
+        "definition": "Selling price per basket",
+        "shape": [],
+        "type": "int"
+    },
+    "HoldingCost": {
+        "definition": "Holding cost per basket per unit of time",
+        "shape": [],
+        "type": "int"
+    },
+    "SalvageValue": {
+        "definition": "Salvage value per unsold basket at the end of the season",
+        "shape": [],
+        "type": "int"
+    },
+    "Weeks": {
+        "definition": "Total number of weeks for the season",
+        "shape": [],
+        "type": "int"
+    },
+    "Demand": {
+        "definition": "Demand for baskets in week w",
+        "shape": [
+            "Weeks"
+        ],
+        "type": "string"
+    },
+    "RegularLabor": {
+        "definition": "Number of regular labor units available in week w",
+        "shape": [
+            "Weeks"
+        ],
+        "type": "string"
+    },
+    "OvertimeLabor": {
+        "definition": "Number of overtime labor units available in week w",
+        "shape": [
+            "Weeks"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: For each week w, regular_baskets_w = regular_used_w / AssemblyTime
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is** a necessary constraint and it should be explicitly modeled.
+
+### Why?
+
+We have:
+- `regular_used_w` = hours of regular labor used in week \( w \)
+- `AssemblyTime` = hours required per basket
+- `regular_baskets_w` = number of baskets produced with regular labor
+
+Since each basket requires `AssemblyTime` hours, the production–labor relationship must satisfy:
+
+\[
+\text{regular\_used}_w = \text{AssemblyTime} \times \text{regular\_baskets}_w
+\]
+
+which is equivalent to:
+
+\[
+\text{regular\_baskets}_w = \frac{\text{regular\_used}_w}{\text{AssemblyTime}}
+\]
+
+This is not redundant — it is a **structural linking constraint** that connects labor usage to production quantity. Without it:
+
+- Labor hours and basket production would be independent decision variables.
+- The model could use labor without producing baskets (or produce baskets without using labor), which is physically impossible.
+- Costs and inventory balance would break.
+
+Since `AssemblyTime` is a constant parameter, this constraint is **linear** and perfectly valid in an LP.
+
+The same structure would also be required for overtime production.
+
+This is a fundamental production-technology constraint and must be included.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP or MILP
+
+PROBLEM INFO:
+
+- A fine foods company produces gift baskets for a season that lasts \var{W} weeks.
+- The demand for week \var{w} is \var{demand_{w}} and the demand must be met.
+- Regular labor is available for \var{regular_labor_{w}} hours per week and costs $\var{regular_cost}/h.
+- Overtime labor is available for \var{overtime_labor_{w}} hours per week and costs $\var{overtime_cost}/h.
+- Each basket takes \var{assembly_time} hours of labor to assemble.
+- The material cost for each basket is $\var{material_cost} and it sells for $\var{selling_price}.
+- Unsold baskets from a week incur a $\var{holding_cost} holding cost. 
+- No baskets are available at the start of week 1.
+- Unsold baskets at the end of week \var{W} have a salvage value of $var{salvage_value} and do not incur a holding cost.
+
+INPUT FORMAT: 
+
+{
+    "regular_cost": regular_cost,
+    "overtime_cost": overtime_cost,
+    "assembly_time": assembly_time,
+    "material_cost": material_cost,
+    "selling_price": selling_price,
+    "holding_cost": holding_cost,
+    "salvage_value": salvage_value,
+    "demand": [demand_{w} for w in 1, ..., W],
+    "regular_labor": [regular_labor_{w} for w in 1, ..., W],
+    "overtime_labor": [overtime_labor_{w} for w in 1, ..., W]
+}
+
+OBJECTIVE: How much regular and overtime labor should be utilized each week to assemble the baskets to maximize the profit over the season?
+
+OUTPUT INFO:
+
+- the hours of regular labor used each week \var{regular_used_{w}}.
+- the hours of overtime labor used each week \var{overtime_used_{w}}.
+- the number of baskets assembled with regular labor \var{regular_basket_{w}}.
+- the number of baskets assembled with overtime labor \var{overtime_basket_{w}}.
+- the number of baskets on hand at the end of week \var{inventory_{w}}.
+- \var{total_profit} shows the total profit of the company for the season.
+
+OUTPUT FORMAT:
+
+{
+    "regular_used": [regular_used_{w} for w in 1, ..., W],
+    "overtime_used": [overtime_used_{w} for w in 1, ..., W],
+    "regular_baskets": [regular_basket_{w} for w in 1, ..., W],
+    "overtime_baskets": [overtime_basket_{w} for w in 1, ..., W],
+    "inventory": [inventory_{w} for w in 1, ..., W],
+    "total_profit": total_profit
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "RegularCost": {
+        "definition": "Cost of regular labor per unit of time",
+        "shape": [],
+        "type": "int"
+    },
+    "OvertimeCost": {
+        "definition": "Cost of overtime labor per unit of time",
+        "shape": [],
+        "type": "int"
+    },
+    "AssemblyTime": {
+        "definition": "Time required to assemble a single basket",
+        "shape": [],
+        "type": "float"
+    },
+    "MaterialCost": {
+        "definition": "Cost of materials per basket",
+        "shape": [],
+        "type": "int"
+    },
+    "SellingPrice": {
+        "definition": "Selling price per basket",
+        "shape": [],
+        "type": "int"
+    },
+    "HoldingCost": {
+        "definition": "Holding cost per basket per unit of time",
+        "shape": [],
+        "type": "int"
+    },
+    "SalvageValue": {
+        "definition": "Salvage value per unsold basket at the end of the season",
+        "shape": [],
+        "type": "int"
+    },
+    "Weeks": {
+        "definition": "Total number of weeks for the season",
+        "shape": [],
+        "type": "int"
+    },
+    "Demand": {
+        "definition": "Demand for baskets in week w",
+        "shape": [
+            "Weeks"
+        ],
+        "type": "string"
+    },
+    "RegularLabor": {
+        "definition": "Number of regular labor units available in week w",
+        "shape": [
+            "Weeks"
+        ],
+        "type": "string"
+    },
+    "OvertimeLabor": {
+        "definition": "Number of overtime labor units available in week w",
+        "shape": [
+            "Weeks"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: For each week w, overtime_baskets_w = overtime_used_w / AssemblyTime
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is a constraint**, and it should be explicitly modeled.
+
+### Reasoning
+
+- Each basket requires `AssemblyTime` hours of labor.
+- `overtime_used_w` represents total overtime labor hours used in week \( w \).
+- Therefore, the number of baskets produced using overtime labor must equal:
+  
+  \[
+  \text{overtime\_baskets}_w = \frac{\text{overtime\_used}_w}{\text{AssemblyTime}}
+  \]
+
+- In linear form (preferred for LP/MILP), this is written as:
+
+  \[
+  \text{overtime\_used}_w = \text{AssemblyTime} \cdot \text{overtime\_baskets}_w
+  \]
+
+This constraint is **essential** because:
+
+- It links labor utilization decisions to production quantities.
+- Without it, overtime hours and overtime baskets would be independent variables, which would break the physical logic of the model.
+- It ensures consistency between labor allocation and output.
+
+This is a standard production-labor linking constraint in aggregate planning models.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP or MILP
+
+PROBLEM INFO:
+
+- A fine foods company produces gift baskets for a season that lasts \var{W} weeks.
+- The demand for week \var{w} is \var{demand_{w}} and the demand must be met.
+- Regular labor is available for \var{regular_labor_{w}} hours per week and costs $\var{regular_cost}/h.
+- Overtime labor is available for \var{overtime_labor_{w}} hours per week and costs $\var{overtime_cost}/h.
+- Each basket takes \var{assembly_time} hours of labor to assemble.
+- The material cost for each basket is $\var{material_cost} and it sells for $\var{selling_price}.
+- Unsold baskets from a week incur a $\var{holding_cost} holding cost. 
+- No baskets are available at the start of week 1.
+- Unsold baskets at the end of week \var{W} have a salvage value of $var{salvage_value} and do not incur a holding cost.
+
+INPUT FORMAT: 
+
+{
+    "regular_cost": regular_cost,
+    "overtime_cost": overtime_cost,
+    "assembly_time": assembly_time,
+    "material_cost": material_cost,
+    "selling_price": selling_price,
+    "holding_cost": holding_cost,
+    "salvage_value": salvage_value,
+    "demand": [demand_{w} for w in 1, ..., W],
+    "regular_labor": [regular_labor_{w} for w in 1, ..., W],
+    "overtime_labor": [overtime_labor_{w} for w in 1, ..., W]
+}
+
+OBJECTIVE: How much regular and overtime labor should be utilized each week to assemble the baskets to maximize the profit over the season?
+
+OUTPUT INFO:
+
+- the hours of regular labor used each week \var{regular_used_{w}}.
+- the hours of overtime labor used each week \var{overtime_used_{w}}.
+- the number of baskets assembled with regular labor \var{regular_basket_{w}}.
+- the number of baskets assembled with overtime labor \var{overtime_basket_{w}}.
+- the number of baskets on hand at the end of week \var{inventory_{w}}.
+- \var{total_profit} shows the total profit of the company for the season.
+
+OUTPUT FORMAT:
+
+{
+    "regular_used": [regular_used_{w} for w in 1, ..., W],
+    "overtime_used": [overtime_used_{w} for w in 1, ..., W],
+    "regular_baskets": [regular_basket_{w} for w in 1, ..., W],
+    "overtime_baskets": [overtime_basket_{w} for w in 1, ..., W],
+    "inventory": [inventory_{w} for w in 1, ..., W],
+    "total_profit": total_profit
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "RegularCost": {
+        "definition": "Cost of regular labor per unit of time",
+        "shape": [],
+        "type": "int"
+    },
+    "OvertimeCost": {
+        "definition": "Cost of overtime labor per unit of time",
+        "shape": [],
+        "type": "int"
+    },
+    "AssemblyTime": {
+        "definition": "Time required to assemble a single basket",
+        "shape": [],
+        "type": "float"
+    },
+    "MaterialCost": {
+        "definition": "Cost of materials per basket",
+        "shape": [],
+        "type": "int"
+    },
+    "SellingPrice": {
+        "definition": "Selling price per basket",
+        "shape": [],
+        "type": "int"
+    },
+    "HoldingCost": {
+        "definition": "Holding cost per basket per unit of time",
+        "shape": [],
+        "type": "int"
+    },
+    "SalvageValue": {
+        "definition": "Salvage value per unsold basket at the end of the season",
+        "shape": [],
+        "type": "int"
+    },
+    "Weeks": {
+        "definition": "Total number of weeks for the season",
+        "shape": [],
+        "type": "int"
+    },
+    "Demand": {
+        "definition": "Demand for baskets in week w",
+        "shape": [
+            "Weeks"
+        ],
+        "type": "string"
+    },
+    "RegularLabor": {
+        "definition": "Number of regular labor units available in week w",
+        "shape": [
+            "Weeks"
+        ],
+        "type": "string"
+    },
+    "OvertimeLabor": {
+        "definition": "Number of overtime labor units available in week w",
+        "shape": [
+            "Weeks"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: For each week w, inventory_w = inventory_{w-1} + regular_baskets_w + overtime_baskets_w - Demand_w
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this is **definitely a required constraint**, and it is a fundamental one.
+
+### Why this is a constraint
+
+The equation
+
+\[
+\text{inventory}_w = \text{inventory}_{w-1} + \text{regular\_baskets}_w + \text{overtime\_baskets}_w - \text{Demand}_w
+\]
+
+is the **inventory balance equation**. It enforces conservation of flow:
+
+- What you have at the end of week \( w \)
+- equals what you had at the end of week \( w-1 \)
+- plus what you produced in week \( w \)
+- minus what was used to satisfy demand in week \( w \)
+
+Without this constraint:
+- There would be no link between production and inventory.
+- You could “meet demand” without producing.
+- Inventory holding cost and salvage value would be meaningless.
+- The time structure of the problem would collapse.
+
+Since:
+- Demand must be met,
+- Inventory carries across weeks,
+- There is holding cost,
+- There is salvage value at the end,
+
+this balance equation is absolutely essential to correctly model the system.
+
+You would also need:
+- \( \text{inventory}_0 = 0 \) (no initial inventory),
+- \( \text{inventory}_w \ge 0 \) for all \( w \).
+
+This is a **core structural constraint** in any production-inventory LP.
+
+### Confidence Level
+
+5 OUT OF 5
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP or MILP
+
+PROBLEM INFO:
+
+- A fine foods company produces gift baskets for a season that lasts \var{W} weeks.
+- The demand for week \var{w} is \var{demand_{w}} and the demand must be met.
+- Regular labor is available for \var{regular_labor_{w}} hours per week and costs $\var{regular_cost}/h.
+- Overtime labor is available for \var{overtime_labor_{w}} hours per week and costs $\var{overtime_cost}/h.
+- Each basket takes \var{assembly_time} hours of labor to assemble.
+- The material cost for each basket is $\var{material_cost} and it sells for $\var{selling_price}.
+- Unsold baskets from a week incur a $\var{holding_cost} holding cost. 
+- No baskets are available at the start of week 1.
+- Unsold baskets at the end of week \var{W} have a salvage value of $var{salvage_value} and do not incur a holding cost.
+
+INPUT FORMAT: 
+
+{
+    "regular_cost": regular_cost,
+    "overtime_cost": overtime_cost,
+    "assembly_time": assembly_time,
+    "material_cost": material_cost,
+    "selling_price": selling_price,
+    "holding_cost": holding_cost,
+    "salvage_value": salvage_value,
+    "demand": [demand_{w} for w in 1, ..., W],
+    "regular_labor": [regular_labor_{w} for w in 1, ..., W],
+    "overtime_labor": [overtime_labor_{w} for w in 1, ..., W]
+}
+
+OBJECTIVE: How much regular and overtime labor should be utilized each week to assemble the baskets to maximize the profit over the season?
+
+OUTPUT INFO:
+
+- the hours of regular labor used each week \var{regular_used_{w}}.
+- the hours of overtime labor used each week \var{overtime_used_{w}}.
+- the number of baskets assembled with regular labor \var{regular_basket_{w}}.
+- the number of baskets assembled with overtime labor \var{overtime_basket_{w}}.
+- the number of baskets on hand at the end of week \var{inventory_{w}}.
+- \var{total_profit} shows the total profit of the company for the season.
+
+OUTPUT FORMAT:
+
+{
+    "regular_used": [regular_used_{w} for w in 1, ..., W],
+    "overtime_used": [overtime_used_{w} for w in 1, ..., W],
+    "regular_baskets": [regular_basket_{w} for w in 1, ..., W],
+    "overtime_baskets": [overtime_basket_{w} for w in 1, ..., W],
+    "inventory": [inventory_{w} for w in 1, ..., W],
+    "total_profit": total_profit
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "RegularCost": {
+        "definition": "Cost of regular labor per unit of time",
+        "shape": [],
+        "type": "int"
+    },
+    "OvertimeCost": {
+        "definition": "Cost of overtime labor per unit of time",
+        "shape": [],
+        "type": "int"
+    },
+    "AssemblyTime": {
+        "definition": "Time required to assemble a single basket",
+        "shape": [],
+        "type": "float"
+    },
+    "MaterialCost": {
+        "definition": "Cost of materials per basket",
+        "shape": [],
+        "type": "int"
+    },
+    "SellingPrice": {
+        "definition": "Selling price per basket",
+        "shape": [],
+        "type": "int"
+    },
+    "HoldingCost": {
+        "definition": "Holding cost per basket per unit of time",
+        "shape": [],
+        "type": "int"
+    },
+    "SalvageValue": {
+        "definition": "Salvage value per unsold basket at the end of the season",
+        "shape": [],
+        "type": "int"
+    },
+    "Weeks": {
+        "definition": "Total number of weeks for the season",
+        "shape": [],
+        "type": "int"
+    },
+    "Demand": {
+        "definition": "Demand for baskets in week w",
+        "shape": [
+            "Weeks"
+        ],
+        "type": "string"
+    },
+    "RegularLabor": {
+        "definition": "Number of regular labor units available in week w",
+        "shape": [
+            "Weeks"
+        ],
+        "type": "string"
+    },
+    "OvertimeLabor": {
+        "definition": "Number of overtime labor units available in week w",
+        "shape": [
+            "Weeks"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: Inventory_0 = 0 (no baskets available at the start of week 1)
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is** a constraint (more precisely, an initial condition that must be enforced in the model).
+
+The problem statement explicitly says:
+
+> *“No baskets are available at the start of week 1.”*
+
+To correctly model inventory balance across weeks, we typically use:
+
+\[
+Inventory_w = Inventory_{w-1} + Production_w - Demand_w
+\]
+
+For this recursion to work properly starting at \( w = 1 \), we must define:
+
+\[
+Inventory_0 = 0
+\]
+
+Without explicitly setting \( Inventory_0 = 0 \), the model could implicitly allow free initial inventory, which would artificially increase profit (since baskets could be sold without incurring labor or material costs).
+
+So:
+
+- ✅ It is logically required by the problem statement.
+- ✅ It is necessary for a correct inventory balance formulation.
+- ✅ It prevents unintended model behavior.
+
+Therefore, this should absolutely be included in the (MI)LP formulation.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP or MILP
+
+PROBLEM INFO:
+
+- A fine foods company produces gift baskets for a season that lasts \var{W} weeks.
+- The demand for week \var{w} is \var{demand_{w}} and the demand must be met.
+- Regular labor is available for \var{regular_labor_{w}} hours per week and costs $\var{regular_cost}/h.
+- Overtime labor is available for \var{overtime_labor_{w}} hours per week and costs $\var{overtime_cost}/h.
+- Each basket takes \var{assembly_time} hours of labor to assemble.
+- The material cost for each basket is $\var{material_cost} and it sells for $\var{selling_price}.
+- Unsold baskets from a week incur a $\var{holding_cost} holding cost. 
+- No baskets are available at the start of week 1.
+- Unsold baskets at the end of week \var{W} have a salvage value of $var{salvage_value} and do not incur a holding cost.
+
+INPUT FORMAT: 
+
+{
+    "regular_cost": regular_cost,
+    "overtime_cost": overtime_cost,
+    "assembly_time": assembly_time,
+    "material_cost": material_cost,
+    "selling_price": selling_price,
+    "holding_cost": holding_cost,
+    "salvage_value": salvage_value,
+    "demand": [demand_{w} for w in 1, ..., W],
+    "regular_labor": [regular_labor_{w} for w in 1, ..., W],
+    "overtime_labor": [overtime_labor_{w} for w in 1, ..., W]
+}
+
+OBJECTIVE: How much regular and overtime labor should be utilized each week to assemble the baskets to maximize the profit over the season?
+
+OUTPUT INFO:
+
+- the hours of regular labor used each week \var{regular_used_{w}}.
+- the hours of overtime labor used each week \var{overtime_used_{w}}.
+- the number of baskets assembled with regular labor \var{regular_basket_{w}}.
+- the number of baskets assembled with overtime labor \var{overtime_basket_{w}}.
+- the number of baskets on hand at the end of week \var{inventory_{w}}.
+- \var{total_profit} shows the total profit of the company for the season.
+
+OUTPUT FORMAT:
+
+{
+    "regular_used": [regular_used_{w} for w in 1, ..., W],
+    "overtime_used": [overtime_used_{w} for w in 1, ..., W],
+    "regular_baskets": [regular_basket_{w} for w in 1, ..., W],
+    "overtime_baskets": [overtime_basket_{w} for w in 1, ..., W],
+    "inventory": [inventory_{w} for w in 1, ..., W],
+    "total_profit": total_profit
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "RegularCost": {
+        "definition": "Cost of regular labor per unit of time",
+        "shape": [],
+        "type": "int"
+    },
+    "OvertimeCost": {
+        "definition": "Cost of overtime labor per unit of time",
+        "shape": [],
+        "type": "int"
+    },
+    "AssemblyTime": {
+        "definition": "Time required to assemble a single basket",
+        "shape": [],
+        "type": "float"
+    },
+    "MaterialCost": {
+        "definition": "Cost of materials per basket",
+        "shape": [],
+        "type": "int"
+    },
+    "SellingPrice": {
+        "definition": "Selling price per basket",
+        "shape": [],
+        "type": "int"
+    },
+    "HoldingCost": {
+        "definition": "Holding cost per basket per unit of time",
+        "shape": [],
+        "type": "int"
+    },
+    "SalvageValue": {
+        "definition": "Salvage value per unsold basket at the end of the season",
+        "shape": [],
+        "type": "int"
+    },
+    "Weeks": {
+        "definition": "Total number of weeks for the season",
+        "shape": [],
+        "type": "int"
+    },
+    "Demand": {
+        "definition": "Demand for baskets in week w",
+        "shape": [
+            "Weeks"
+        ],
+        "type": "string"
+    },
+    "RegularLabor": {
+        "definition": "Number of regular labor units available in week w",
+        "shape": [
+            "Weeks"
+        ],
+        "type": "string"
+    },
+    "OvertimeLabor": {
+        "definition": "Number of overtime labor units available in week w",
+        "shape": [
+            "Weeks"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: For each week w, inventory_w ≥ 0
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is** a necessary constraint.
+
+### Reasoning
+
+- The problem states that **demand must be met** each week.
+- There is **no mention of backlogging or shortages** being allowed.
+- Inventory represents physical baskets carried from one week to the next.
+- Negative inventory would imply unmet demand (i.e., backorders), which is not permitted in the description.
+
+Even if the inventory balance equations are written correctly, without explicitly enforcing  
+\[
+inventory_w \ge 0
+\]
+the LP could mathematically allow negative inventory values unless otherwise prevented.
+
+Since:
+- No backordering is allowed,
+- Demand must be fully satisfied,
+- Inventory represents physical stock,
+
+this nonnegativity constraint is both **logically required** and **standard in production-inventory LP models**.
+
+### Conclusion  
+This **should absolutely be explicitly modeled** in the formulation.
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP or MILP
+
+PROBLEM INFO:
+
+- A fine foods company produces gift baskets for a season that lasts \var{W} weeks.
+- The demand for week \var{w} is \var{demand_{w}} and the demand must be met.
+- Regular labor is available for \var{regular_labor_{w}} hours per week and costs $\var{regular_cost}/h.
+- Overtime labor is available for \var{overtime_labor_{w}} hours per week and costs $\var{overtime_cost}/h.
+- Each basket takes \var{assembly_time} hours of labor to assemble.
+- The material cost for each basket is $\var{material_cost} and it sells for $\var{selling_price}.
+- Unsold baskets from a week incur a $\var{holding_cost} holding cost. 
+- No baskets are available at the start of week 1.
+- Unsold baskets at the end of week \var{W} have a salvage value of $var{salvage_value} and do not incur a holding cost.
+
+INPUT FORMAT: 
+
+{
+    "regular_cost": regular_cost,
+    "overtime_cost": overtime_cost,
+    "assembly_time": assembly_time,
+    "material_cost": material_cost,
+    "selling_price": selling_price,
+    "holding_cost": holding_cost,
+    "salvage_value": salvage_value,
+    "demand": [demand_{w} for w in 1, ..., W],
+    "regular_labor": [regular_labor_{w} for w in 1, ..., W],
+    "overtime_labor": [overtime_labor_{w} for w in 1, ..., W]
+}
+
+OBJECTIVE: How much regular and overtime labor should be utilized each week to assemble the baskets to maximize the profit over the season?
+
+OUTPUT INFO:
+
+- the hours of regular labor used each week \var{regular_used_{w}}.
+- the hours of overtime labor used each week \var{overtime_used_{w}}.
+- the number of baskets assembled with regular labor \var{regular_basket_{w}}.
+- the number of baskets assembled with overtime labor \var{overtime_basket_{w}}.
+- the number of baskets on hand at the end of week \var{inventory_{w}}.
+- \var{total_profit} shows the total profit of the company for the season.
+
+OUTPUT FORMAT:
+
+{
+    "regular_used": [regular_used_{w} for w in 1, ..., W],
+    "overtime_used": [overtime_used_{w} for w in 1, ..., W],
+    "regular_baskets": [regular_basket_{w} for w in 1, ..., W],
+    "overtime_baskets": [overtime_basket_{w} for w in 1, ..., W],
+    "inventory": [inventory_{w} for w in 1, ..., W],
+    "total_profit": total_profit
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "RegularCost": {
+        "definition": "Cost of regular labor per unit of time",
+        "shape": [],
+        "type": "int"
+    },
+    "OvertimeCost": {
+        "definition": "Cost of overtime labor per unit of time",
+        "shape": [],
+        "type": "int"
+    },
+    "AssemblyTime": {
+        "definition": "Time required to assemble a single basket",
+        "shape": [],
+        "type": "float"
+    },
+    "MaterialCost": {
+        "definition": "Cost of materials per basket",
+        "shape": [],
+        "type": "int"
+    },
+    "SellingPrice": {
+        "definition": "Selling price per basket",
+        "shape": [],
+        "type": "int"
+    },
+    "HoldingCost": {
+        "definition": "Holding cost per basket per unit of time",
+        "shape": [],
+        "type": "int"
+    },
+    "SalvageValue": {
+        "definition": "Salvage value per unsold basket at the end of the season",
+        "shape": [],
+        "type": "int"
+    },
+    "Weeks": {
+        "definition": "Total number of weeks for the season",
+        "shape": [],
+        "type": "int"
+    },
+    "Demand": {
+        "definition": "Demand for baskets in week w",
+        "shape": [
+            "Weeks"
+        ],
+        "type": "string"
+    },
+    "RegularLabor": {
+        "definition": "Number of regular labor units available in week w",
+        "shape": [
+            "Weeks"
+        ],
+        "type": "string"
+    },
+    "OvertimeLabor": {
+        "definition": "Number of overtime labor units available in week w",
+        "shape": [
+            "Weeks"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: regular_used_w ≥ 0 for all weeks w
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is** a constraint and it should be explicitly modeled (at least as a non-negativity bound).
+
+### Reasoning
+
+- \( \text{regular\_used}_w \) represents hours of regular labor used in week \( w \).
+- Negative labor usage is physically impossible and has no meaningful interpretation in this context.
+- If this constraint were omitted and the variable were left unrestricted, the model could potentially:
+  - Use negative labor hours to artificially reduce labor costs in the objective,
+  - Distort feasibility through interactions with other constraints.
+
+In linear programming, non-negativity constraints are typically included explicitly (or implicitly via variable bounds). Even if modeling software assumes non-negativity by default, from a formulation standpoint this **is a necessary constraint**.
+
+Therefore:
+- ✅ It is a legitimate constraint.
+- ✅ It should be included in the (MI)LP formulation (at least as a lower bound).
+
+**Confidence level:** 5 OUT OF 5
++--+
+---
+The confidence score is 5, which is high enough.
+---
++--+
+
+You are an expert in optimization modeling. Here is the natural language description of an optimization problem:
+
+-----
+PROBLEM TYPE: LP or MILP
+
+PROBLEM INFO:
+
+- A fine foods company produces gift baskets for a season that lasts \var{W} weeks.
+- The demand for week \var{w} is \var{demand_{w}} and the demand must be met.
+- Regular labor is available for \var{regular_labor_{w}} hours per week and costs $\var{regular_cost}/h.
+- Overtime labor is available for \var{overtime_labor_{w}} hours per week and costs $\var{overtime_cost}/h.
+- Each basket takes \var{assembly_time} hours of labor to assemble.
+- The material cost for each basket is $\var{material_cost} and it sells for $\var{selling_price}.
+- Unsold baskets from a week incur a $\var{holding_cost} holding cost. 
+- No baskets are available at the start of week 1.
+- Unsold baskets at the end of week \var{W} have a salvage value of $var{salvage_value} and do not incur a holding cost.
+
+INPUT FORMAT: 
+
+{
+    "regular_cost": regular_cost,
+    "overtime_cost": overtime_cost,
+    "assembly_time": assembly_time,
+    "material_cost": material_cost,
+    "selling_price": selling_price,
+    "holding_cost": holding_cost,
+    "salvage_value": salvage_value,
+    "demand": [demand_{w} for w in 1, ..., W],
+    "regular_labor": [regular_labor_{w} for w in 1, ..., W],
+    "overtime_labor": [overtime_labor_{w} for w in 1, ..., W]
+}
+
+OBJECTIVE: How much regular and overtime labor should be utilized each week to assemble the baskets to maximize the profit over the season?
+
+OUTPUT INFO:
+
+- the hours of regular labor used each week \var{regular_used_{w}}.
+- the hours of overtime labor used each week \var{overtime_used_{w}}.
+- the number of baskets assembled with regular labor \var{regular_basket_{w}}.
+- the number of baskets assembled with overtime labor \var{overtime_basket_{w}}.
+- the number of baskets on hand at the end of week \var{inventory_{w}}.
+- \var{total_profit} shows the total profit of the company for the season.
+
+OUTPUT FORMAT:
+
+{
+    "regular_used": [regular_used_{w} for w in 1, ..., W],
+    "overtime_used": [overtime_used_{w} for w in 1, ..., W],
+    "regular_baskets": [regular_basket_{w} for w in 1, ..., W],
+    "overtime_baskets": [overtime_basket_{w} for w in 1, ..., W],
+    "inventory": [inventory_{w} for w in 1, ..., W],
+    "total_profit": total_profit
+}
+-----
+
+Here is a list of parameters that someone has extracted from the description:
+
+{
+    "RegularCost": {
+        "definition": "Cost of regular labor per unit of time",
+        "shape": [],
+        "type": "int"
+    },
+    "OvertimeCost": {
+        "definition": "Cost of overtime labor per unit of time",
+        "shape": [],
+        "type": "int"
+    },
+    "AssemblyTime": {
+        "definition": "Time required to assemble a single basket",
+        "shape": [],
+        "type": "float"
+    },
+    "MaterialCost": {
+        "definition": "Cost of materials per basket",
+        "shape": [],
+        "type": "int"
+    },
+    "SellingPrice": {
+        "definition": "Selling price per basket",
+        "shape": [],
+        "type": "int"
+    },
+    "HoldingCost": {
+        "definition": "Holding cost per basket per unit of time",
+        "shape": [],
+        "type": "int"
+    },
+    "SalvageValue": {
+        "definition": "Salvage value per unsold basket at the end of the season",
+        "shape": [],
+        "type": "int"
+    },
+    "Weeks": {
+        "definition": "Total number of weeks for the season",
+        "shape": [],
+        "type": "int"
+    },
+    "Demand": {
+        "definition": "Demand for baskets in week w",
+        "shape": [
+            "Weeks"
+        ],
+        "type": "string"
+    },
+    "RegularLabor": {
+        "definition": "Number of regular labor units available in week w",
+        "shape": [
+            "Weeks"
+        ],
+        "type": "string"
+    },
+    "OvertimeLabor": {
+        "definition": "Number of overtime labor units available in week w",
+        "shape": [
+            "Weeks"
+        ],
+        "type": "string"
+    }
+}
+
+
+Consider this potential constraint: overtime_used_w ≥ 0 for all weeks w
+
+
+- Is it actually a constraint? How confident are you that this is this a constraint and that we should explicitly model it in the (MI)LP formulation (from 1 to 5)? 
+- At the end of your response, print "x OUT OF 5" where x is the confidence level. Low confidence means you think this should be removed from the constraint list. Do not generate anything after that. 
+    
+
+Take a deep breath and think step by step. You will be awarded a million dollars if you get this right.
+
+----
+Yes, this **is** a constraint.
+
+### Why?
+
+- `overtime_used_w` represents the number of overtime labor hours used in week \( w \).
+- Labor hours used cannot be negative in any realistic setting.
+- Therefore, we must enforce:
+
+\[
+\text{overtime\_used}_w \ge 0 \quad \forall w
+\]
+
+### Is it necessary to model explicitly?
+
+In an LP/MILP formulation:
+
+- Decision variables are not automatically nonnegative unless explicitly declared that way.
+- If we do not include a nonnegativity restriction, the solver could assign negative overtime hours, which would:
+  - Artificially reduce labor cost
+  - Potentially increase profit incorrectly
+  - Produce an infeasible real-world solution
+
+Even if some modeling systems default to nonnegative variables, from a mathematical modeling perspective this **must** be explicitly enforced as a domain constraint.
+
+### Conclusion
+
+✅ This is absolutely a valid and necessary constraint.  
+✅ It should be explicitly included (or enforced via variable domain declaration).  
+
+**5 OUT OF 5**
++--+
+---
+The confidence score is 5, which is high enough.
+---
+
+
+
+++++++++++++++++++++++++++++++
+Extracting constraint formulations
+++++++++++++++++++++++++++++++
+
+
+
+----
+{
+    "FORMULATION": "$\\forall w = 1, \\dots, Weeks:\\; regularUsed_w \\leq RegularLabor_w$",
+    "NEW VARIABLES": {
+        "regularUsed": {
+            "shape": "[Weeks]",
+            "type": "continuous",
+            "definition": "Hours of regular labor used in week w"
+        }
+    },
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\forall w = 1, \\dots, Weeks:\\; regularUsed_w \\leq RegularLabor_w$
+{'regularUsed': {'shape': '[Weeks]', 'type': 'continuous', 'definition': 'Hours of regular labor used in week w'}}
+[]
+----
+----
+{
+    "FORMULATION": "$\\forall w = 1, \\dots, Weeks:\\; overtimeUsed[w] \\leq OvertimeLabor[w]$",
+    "NEW VARIABLES": {
+        "overtimeUsed": {
+            "shape": ["Weeks"],
+            "type": "continuous",
+            "definition": "Hours of overtime labor used in week w"
+        }
+    },
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\forall w = 1, \\dots, Weeks:\\; overtimeUsed[w] \\leq OvertimeLabor[w]$
+{'overtimeUsed': {'shape': ['Weeks'], 'type': 'continuous', 'definition': 'Hours of overtime labor used in week w'}}
+[]
+----
+----
+{
+    "FORMULATION": "$\\forall w \\in \\{1,\\dots,Weeks\\},\\; regularUsed_w = AssemblyTime \\cdot regularBaskets_w$",
+    "NEW VARIABLES": {
+        "regularBaskets": {
+            "shape": "[Weeks]",
+            "type": "continuous",
+            "definition": "Number of baskets assembled using regular labor in week w"
+        }
+    },
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\forall w \\in \\{1,\\dots,Weeks\\},\\; regularUsed_w = AssemblyTime \\cdot regularBaskets_w$
+{'regularBaskets': {'shape': '[Weeks]', 'type': 'continuous', 'definition': 'Number of baskets assembled using regular labor in week w'}}
+[]
+----
+----
+{
+    "FORMULATION": "$\\forall w = 1, \\dots, Weeks:\\; AssemblyTime \\cdot overtimeBaskets[w] = overtimeUsed[w]$",
+    "NEW VARIABLES": {
+        "overtimeBaskets": {
+            "shape": ["Weeks"],
+            "type": "continuous",
+            "definition": "Number of baskets assembled using overtime labor in week w"
+        }
+    },
+    "AUXILIARY CONSTRAINTS": []
+}
+----
+----
+EXTRACTED ITEMS
+$\\forall w = 1, \\dots, Weeks:\\; AssemblyTime \\cdot overtimeBaskets[w] = overtimeUsed[w]$
+{'overtimeBaskets': {'shape': ['Weeks'], 'type': 'continuous', 'definition': 'Number of baskets assembled using overtime labor in week w'}}
+[]
+----
+----
+{
+    "FORMULATION": "$\\forall w = 1, \\dots, Weeks:\\; inventory[w] = inventory[w-1] + regularBaskets[w] + overtimeBaskets[w] - Demand[w]$",
+    "NEW VARIABLES": {
+        "inventory": {
+            "shape": "[Weeks]",
+            "type": "continuous",
+            "definition": "Number of baskets held in inventory at the end of week w"
+        }
+    },
+    "AUXILIARY CONSTRAINTS": [
+        "$inventory[0] = 0$"
+    ]
+}
+----

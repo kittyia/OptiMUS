@@ -1,0 +1,84 @@
+{
+    "description": "A taxi company will purchase vehicles to rent to their drivers. They are interested in purchasing either motorcycles or sedans. A motorcycle can transport 30 people, produces 4 units of pollution, and earns the taxi company $100 per shift. A sedan can transport 70 people, produces 15 units of pollution and earns the company $225 per shift. Because not every customer is comfortable with a motorcycle, at most 25% of vehicles can be motorcycles. Additionally, the company has committed to producing less than 200 units of pollution. The company needs to transport at least 1200 people every shift. How many of each type of vehicle should be used to maximize the total earnings for the taxi company per shift?",
+    "parameters": {
+        "NumVehicleTypes": {
+            "definition": "Number of different vehicle types.",
+            "shape": [],
+            "type": "int"
+        },
+        "TransportCapacity": {
+            "definition": "The number of people each vehicle type can transport per shift.",
+            "shape": [
+                "NumVehicleTypes"
+            ],
+            "type": "string"
+        },
+        "Pollution": {
+            "definition": "The units of pollution each vehicle type produces per shift.",
+            "shape": [
+                "NumVehicleTypes"
+            ],
+            "type": "string"
+        },
+        "Earnings": {
+            "definition": "The earnings the company makes per shift from each vehicle type.",
+            "shape": [
+                "NumVehicleTypes"
+            ],
+            "type": "string"
+        },
+        "MaxVehiclePercentage": {
+            "definition": "The maximum proportion of the total number of vehicles that can be of each vehicle type.",
+            "shape": [
+                "NumVehicleTypes"
+            ],
+            "type": "string"
+        },
+        "PollutionCap": {
+            "definition": "The maximum total units of pollution allowed per shift.",
+            "shape": [],
+            "type": "int"
+        },
+        "MinTransportCapacity": {
+            "definition": "The minimum number of people that need to be transported per shift.",
+            "shape": [],
+            "type": "int"
+        }
+    },
+    "objective": {
+        "description": "\"Maximize the total earnings per shift from motorcycles and sedans.\"",
+        "formulation": "$\\max \\sum_{i=1}^{NumVehicleTypes} Earnings_i \\, NumVehicles_i$",
+        "code": "model.setObjective(quicksum(Earnings[i] * NumVehicles[i] for i in range(NumVehicleTypes)), GRB.MAXIMIZE)"
+    },
+    "constraints": [
+        {
+            "description": "The total pollution produced by all vehicles per shift must not exceed the pollution cap of 200 units",
+            "formulation": "$\\\\sum_{i=1}^{NumVehicleTypes} Pollution[i] \\\\cdot NumVehicles[i] \\\\leq PollutionCap$",
+            "code": "model.addConstr(\n    sum(Pollution[i] * NumVehicles[i] for i in range(NumVehicleTypes)) <= PollutionCap\n)"
+        },
+        {
+            "description": "The total number of people transported per shift must be at least 1200",
+            "formulation": "$\\\\sum_{i=1}^{NumVehicleTypes} TransportCapacity[i] \\\\cdot NumVehicles[i] \\\\geq MinTransportCapacity$",
+            "code": "model.addConstr(\n    sum(TransportCapacity[i] * NumVehicles[i] for i in range(NumVehicleTypes)) >= MinTransportCapacity\n)"
+        },
+        {
+            "description": "The number of motorcycles must be at most 25% of the total number of vehicles",
+            "formulation": "$NumVehicles[1] \\\\leq 0.25 \\\\sum_{i=1}^{NumVehicleTypes} NumVehicles[i]$",
+            "code": "model.addConstr(NumVehicles[0] <= 0.25 * sum(NumVehicles[i] for i in range(NumVehicleTypes)))"
+        },
+        {
+            "description": "The numbers of motorcycles and sedans must be non-negative integers",
+            "formulation": "$\\\\forall i = 1, \\\\dots, NumVehicleTypes:\\\\; NumVehicles[i] \\\\geq 0$",
+            "code": "for i in range(NumVehicleTypes):\n    model.addConstr(NumVehicles[i] >= 0)"
+        }
+    ],
+    "variables": {
+        "NumVehicles": {
+            "shape": [
+                "NumVehicleTypes"
+            ],
+            "type": "integer",
+            "definition": "The number of vehicles of each type to be used per shift"
+        }
+    }
+}

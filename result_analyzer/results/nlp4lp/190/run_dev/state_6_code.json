@@ -1,0 +1,68 @@
+{
+    "description": "A meat processing plant uses two machines, a meat slicer and a meat packer, to make their hams and pork ribs. To produce one batch of hams requires 4 hours on the meat slicer and 2.5 hours on the meat packer. To produce one batch of pork ribs requires 2 hours on the meat slicer and 3.5 hours on the meat packer. Each machine runs for at most 4000 hours per year. If the profit per batch of hams is $150 and the profit per batch of pork ribs is $300, how many batches of each should be made to maximize profit?",
+    "parameters": {
+        "NumProducts": {
+            "definition": "Number of products",
+            "shape": [],
+            "type": "int"
+        },
+        "NumMachines": {
+            "definition": "Number of machines",
+            "shape": [],
+            "type": "int"
+        },
+        "ProfitPerBatch": {
+            "definition": "Profit per batch of each product",
+            "shape": [
+                "NumProducts"
+            ],
+            "type": "string"
+        },
+        "TimeRequired": {
+            "definition": "Time required on each machine to produce one batch of each product",
+            "shape": [
+                "NumMachines",
+                "NumProducts"
+            ],
+            "type": "string"
+        },
+        "MaxHours": {
+            "definition": "Maximum available hours per year for each machine",
+            "shape": [
+                "NumMachines"
+            ],
+            "type": "string"
+        }
+    },
+    "objective": {
+        "description": "\"Maximize the total profit from producing batches of hams and pork ribs\"",
+        "formulation": "$\\max \\sum_{i=1}^{NumProducts} ProfitPerBatch_i \\cdot ProduceBatches_i$",
+        "code": "model.setObjective(quicksum(ProfitPerBatch[i] * ProduceBatches[i] for i in range(NumProducts)), GRB.MAXIMIZE)"
+    },
+    "constraints": [
+        {
+            "description": "4 hours times the number of ham batches plus 2 hours times the number of pork rib batches should not exceed 4000 hours (meat slicer time constraint)",
+            "formulation": "$4 ProduceBatches[1] + 2 ProduceBatches[2] \\\\leq 4000$",
+            "code": "model.addConstr(TimeRequired[0][0] * ProduceBatches[0] + TimeRequired[0][1] * ProduceBatches[1] <= MaxHours[0])"
+        },
+        {
+            "description": "2.5 hours times the number of ham batches plus 3.5 hours times the number of pork rib batches should not exceed 4000 hours (meat packer time constraint)",
+            "formulation": "$2.5 \\\\, ProduceBatches[1] + 3.5 \\\\, ProduceBatches[2] \\\\leq 4000$",
+            "code": "model.addConstr(2.5 * ProduceBatches[1] + 3.5 * ProduceBatches[2] <= 4000)"
+        },
+        {
+            "description": "The number of ham batches and the number of pork rib batches produced must be non-negative",
+            "formulation": "$\\\\forall p = 1, \\\\dots, NumProducts,\\\\; ProduceBatches[p] \\\\ge 0$",
+            "code": "for p in range(NumProducts):\n    model.addConstr(ProduceBatches[p] >= 0)"
+        }
+    ],
+    "variables": {
+        "ProduceBatches": {
+            "shape": [
+                "NumProducts"
+            ],
+            "type": "continuous",
+            "definition": "Number of batches produced for each product (index 1: hams, index 2: pork ribs)"
+        }
+    }
+}

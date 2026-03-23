@@ -1,0 +1,68 @@
+{
+    "description": "Platinum in combination with palladium has been used as a catalyst in cars and it changes carbon monoxide, which is toxic, into carbon dioxide. An automotive company is comparing two different catalysts, a palladium-heavy catalyst and a platinum-heavy catalyst. The process with a palladium-heavy catalyst requires 15 units of platinum and 25 units of palladium and can perform the conversion to carbon dioxide at a rate of 5 units per second. A platinum-heavy catalyst requires 20 units of platinum and 14 units of palladium and converts to carbon dioxide at a rate of 4 units per second. There are 450 units of platinum and 390 units of palladium available. How many of each catalyst should be used to maximize the amount converted into carbon dioxide?",
+    "parameters": {
+        "NumCatalysts": {
+            "definition": "Number of catalyst types",
+            "shape": [],
+            "type": "int"
+        },
+        "NumResources": {
+            "definition": "Number of resources",
+            "shape": [],
+            "type": "int"
+        },
+        "ResourceRequirement": {
+            "definition": "Amount of resource r required per unit of catalyst c",
+            "shape": [
+                "NumResources",
+                "NumCatalysts"
+            ],
+            "type": "string"
+        },
+        "ConversionRate": {
+            "definition": "Conversion rate per unit of catalyst c",
+            "shape": [
+                "NumCatalysts"
+            ],
+            "type": "string"
+        },
+        "TotalResource": {
+            "definition": "Total amount of resource r available",
+            "shape": [
+                "NumResources"
+            ],
+            "type": "string"
+        }
+    },
+    "objective": {
+        "description": "\"The goal is to maximize the total amount of carbon monoxide converted into carbon dioxide per second by selecting the optimal number of each catalyst type.\"",
+        "formulation": "$\\max \\sum_{c=1}^{NumCatalysts} ConversionRate_{c} \\, CatalystUnits_{c}$",
+        "code": "model.setObjective(quicksum(ConversionRate[c] * CatalystUnits[c] for c in range(NumCatalysts)), GRB.MAXIMIZE)"
+    },
+    "constraints": [
+        {
+            "description": "15 units of platinum are required per unit of palladium-heavy catalyst and 20 units of platinum are required per unit of platinum-heavy catalyst; the total platinum used cannot exceed 450 units",
+            "formulation": "$15 \\\\cdot CatalystUnits[1] + 20 \\\\cdot CatalystUnits[2] \\\\leq 450$",
+            "code": "model.addConstr(\n    sum(ResourceRequirement[0][c] * CatalystUnits[c] for c in range(NumCatalysts))\n    <= TotalResource[0]\n)"
+        },
+        {
+            "description": "25 units of palladium are required per unit of palladium-heavy catalyst and 14 units of palladium are required per unit of platinum-heavy catalyst; the total palladium used cannot exceed 390 units",
+            "formulation": "$25 \\\\, CatalystUnits[1] + 14 \\\\, CatalystUnits[2] \\\\leq 390$",
+            "code": "model.addConstr(\n    sum(ResourceRequirement[1][c] * CatalystUnits[c] for c in range(NumCatalysts))\n    <= TotalResource[1]\n)"
+        },
+        {
+            "description": "The number of palladium-heavy catalysts used and the number of platinum-heavy catalysts used must both be non-negative",
+            "formulation": "$\\\\forall c = 1, \\\\dots, NumCatalysts:\\\\; CatalystUnits[c] \\\\geq 0$",
+            "code": "for c in range(NumCatalysts):\n    model.addConstr(CatalystUnits[c] >= 0)"
+        }
+    ],
+    "variables": {
+        "CatalystUnits": {
+            "shape": [
+                "NumCatalysts"
+            ],
+            "type": "continuous",
+            "definition": "Number of units used of each catalyst type"
+        }
+    }
+}
