@@ -177,8 +177,16 @@ def create_state(parent_dir, run_dir):
         json.dump(data, f, indent=4)
 
     # read the description
-    with open(os.path.join(parent_dir, "description.txt"), "r") as f:
-        desc = f.read()
+    # with open(os.path.join(parent_dir, "description.txt"), "r") as f:
+    #     desc = f.read()
+    # 读取 description.txt（先 utf-8，失败再 latin-1/gbk 兜底）
+    desc_path = os.path.join(parent_dir, "description.txt")
+    try:
+        with open(desc_path, "r", encoding="utf-8") as f:
+            desc = f.read()
+    except UnicodeDecodeError:
+        with open(desc_path, "r", encoding="gbk", errors="replace") as f:
+            desc = f.read()
 
     state = {"description": desc, "parameters": params}
     return state

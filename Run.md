@@ -1,7 +1,7 @@
 main.py运行命令：
 
 ```bash
-python .\main.py --api_key "*********" --base_url "https://1yvxf19722895.vicp.fun/v1" --model "Qwen/Qwen3-8B" --dir .\data\nlp4lp\1
+python .\main.py --api_key "*********" --base_url "http://hjcloud-sz.hsk.top:41210/v1" --model "Qwen3-32B" --dir ".\data\pricing_problems\assortment-problem-structured-1"
 ```
 
 batch_run.py运行命令：
